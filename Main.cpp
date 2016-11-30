@@ -1,19 +1,26 @@
-// Copyright 2016 Till Kolditz, Stefan de Bruijn
+// Copyright (c) 2016 Till Kolditz, Stefan de Bruijn
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-// http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 
 #include <string>
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <algorithm>
 
@@ -124,44 +131,44 @@ int main()
 	AlignedBlock output(2 * rawDataSize, 64); // AN coding generates twice as much output data as input data
 	std::vector<std::vector<TestInfos>> vecTestInfos;
 
-#define WarmUp(a) do { std::cout << "# WarmUp " << #a << std::endl; ExpandTest< a , 1, 1024>::WarmUp(#a , iterations, input, output); } while (0)
+#define WarmUp(type, name) do { std::cout << "# WarmUp " << #type << std::endl; ExpandTest< type , 1, 1024>::WarmUp(#name , iterations, input, output); } while (0)
 
-	WarmUp(XOR_seq_16_8);
+	WarmUp(CopyTest, "Copy");
 
 #undef WarmUp
 
-#define TestCase(a) do { std::cout << "# Testing " << #a << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<1, 1024>()()); ExpandTest< a , 1, 1024>::Execute(vec, #a , iterations, input, output); } while (0)
+#define TestCase(type,name) do { std::cout << "# " << std::setw(2) << (vecTestInfos.size() + 1) <<  ": Testing " << #type << " (" << name << ")" << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<1, 1024>()()); ExpandTest< type , 1, 1024>::Execute(vec, name , iterations, input, output); } while (0)
 
-	TestCase(CopyTest);
+	TestCase(CopyTest, "Copy");
 
 	// 16-bit data tests
-	TestCase(XOR_seq_16_8);
-	TestCase(XOR_seq_16_16);
-	TestCase(XOR_sse42_8x16_16);
-	TestCase(XOR_sse42_8x16_8x16);
+	// TestCase(XOR_seq_16_8, "XOR Seq 8");
+	TestCase(XOR_seq_16_16, "XOR Seq");
+	// TestCase(XOR_sse42_8x16_16, "XOR SSE4.2 16");
+	TestCase(XOR_sse42_8x16_8x16, "XOR SSE4.2");
 #ifdef __AVX2__
-	TestCase(XOR_avx2_16x16_16);
-	TestCase(XOR_avx2_16x16_16x16);
+	// TestCase(XOR_avx2_16x16_16, "XOR AVX2 16");
+	TestCase(XOR_avx2_16x16_16x16, "XOR AVX2");
 #endif
 
-	TestCase(AN_seq_16_32);
-	TestCase(AN_sse42_8x16_8x32);
+	TestCase(AN_seq_16_32, "AN Seq");
+	TestCase(AN_sse42_8x16_8x32, "AN SSE4.2");
 #ifdef __AVX2__
-	TestCase(AN_avx2_16x16_16x32);
+	TestCase(AN_avx2_16x16_16x32, "AN AVX2");
 #endif
-	TestCase(Hamming_seq_16);
+	TestCase(Hamming_seq_16, "Hamming");
 	
 	// 32-bit data tests
-	TestCase(XOR_seq_32_8);
-	TestCase(XOR_seq_32_32);
-	TestCase(XOR_sse42_4x32_32);
-	TestCase(XOR_sse42_4x32_4x32);
+	// TestCase(XOR_seq_32_8, "XOR Seq 8");
+	TestCase(XOR_seq_32_32, "XOR Seq");
+	// TestCase(XOR_sse42_4x32_32, "XOR SSE4.2 16");
+	TestCase(XOR_sse42_4x32_4x32, "XOR SSE4.2");
 #ifdef __AVX2__
-	TestCase(XOR_avx2_8x32_32);
-	TestCase(XOR_avx2_8x32_8x32);
+	// TestCase(XOR_avx2_8x32_32, "XOR AVX2 16");
+	TestCase(XOR_avx2_8x32_8x32, "XOR AVX2");
 #endif
 
-	TestCase(Hamming_seq_32);
+	TestCase(Hamming_seq_32, "Hamming");
 
 #undef TestCase
 

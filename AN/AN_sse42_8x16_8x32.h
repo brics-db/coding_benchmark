@@ -1,16 +1,22 @@
-// Copyright 2016 Till Kolditz, Stefan de Bruijn
+// Copyright (c) 2016 Till Kolditz, Stefan de Bruijn
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-// http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 
 #pragma once
 
@@ -85,21 +91,23 @@ struct AN_sse42_8x16_8x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public SS
 				// compiler unrolling
 				for (size_t k = 0; k < UNROLL; ++k)
 				{
-					auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data++), mm_ainv);
+					auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mm_ainv);
 					if (0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi32(_mm_min_epu32(mmIn, mm_unencmax), mmIn)))
 					{ // we need to do this "hack" because comparison is only on signed integers!
 						throw ErrorInfo(reinterpret_cast<uint32_t*> (data) - this->out.template begin<uint32_t>(), iteration);
 					}
+					++data;
 				}
 			}
 			// here follows the non-unrolled remainder
-			for (; data <= (dataEnd - 1); ++data)
+			while (data <= (dataEnd - 1))
 			{
 				auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mm_ainv);
 				if (0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi32(_mm_min_epu32(mmIn, mm_unencmax), mmIn)))
 				{ // we need to do this "hack" because comparison is only on signed integers!
 					throw ErrorInfo(reinterpret_cast<uint32_t*> (data) - this->out.template begin<uint32_t>(), iteration);
 				}
+				++data;
 			}
 			if (data < dataEnd)
 			{
