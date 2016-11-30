@@ -22,7 +22,7 @@
     <ProjectGUID>{612A4F94-6CD4-330F-98CF-ACF17BD04C1D}</ProjectGUID>
     <Keyword>Win32Proj</Keyword>
     <Platform>x64</Platform>
-    <ProjectName>an_vs_xor</ProjectName>
+    <ProjectName>CodingBenchmark</ProjectName>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

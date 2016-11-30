@@ -19,9 +19,9 @@ SET(CMAKE_CXX_COMPILER_INIT g++-6)
 
 IF(POLICY CMP0048)
     CMAKE_POLICY(SET CMP0048 NEW)
-    PROJECT(ANvsXOR VERSION 0.5 LANGUAGES CXX)
+    PROJECT(CodingBenchmark VERSION 0.5 LANGUAGES CXX)
 ELSE()
-    PROJECT(ANvsXOR LANGUAGES CXX)
+    PROJECT(CodingBenchmark LANGUAGES CXX)
 ENDIF()
 
 ADD_DEFINITIONS(-Wall)
@@ -60,6 +60,6 @@ MACRO( add_nonvectorized arg_name arg_source_files)
     MESSAGE(STATUS "Add nonvectorized executable ${arg_name}")
 ENDMACRO( add_nonvectorized )
 
-add_vectorized(an_vs_xor "Main.cpp Test.cpp Util/ErrorInfo.cpp Util/TestInfo.cpp Util/Stopwatch.cpp Util/CPU.cpp")
-add_nonvectorized(an_vs_xor_novec "Main.cpp Test.cpp Util/ErrorInfo.cpp Util/TestInfo.cpp Util/Stopwatch.cpp Util/CPU.cpp")
+add_vectorized(benchmark "Main.cpp Test.cpp Util/ErrorInfo.cpp Util/TestInfo.cpp Util/Stopwatch.cpp Util/CPU.cpp")
+add_nonvectorized(benchmark_novec "Main.cpp Test.cpp Util/ErrorInfo.cpp Util/TestInfo.cpp Util/Stopwatch.cpp Util/CPU.cpp")
 

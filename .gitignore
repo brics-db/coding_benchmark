@@ -27,3 +27,7 @@
 *.exe
 *.out
 *.app
+
+/CodingBenchmark.VC.VC.opendb
+/CodingBenchmark.VC.db
+/x64
