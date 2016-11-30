@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Test.cpp" />
+    <ClCompile Include="Util\CPU.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\Stopwatch.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\ErrorInfo.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\TestInfo.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AN\AN_avx2_16x16_16x32.h">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="AN\AN_seq_16_32.h">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="AN\AN_sse42_8x16_8x32.h">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="AN\ANTest.h">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\AlignedBlock.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\CPU.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\Intrinsics.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\Stopwatch.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_seq_16_8.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_seq_16_16.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_seq_32_8.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_seq_32_32.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_sse42_4x32_32.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_sse42_8x16_16.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\ErrorInfo.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\TestInfo.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Test.hpp" />
+    <ClInclude Include="XOR\XOR_avx2_16x16_16x16.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_sse42_4x32_4x32.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_seq.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_sse42.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_avx2.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_avx2_8x32_8x32.h" />
+    <ClInclude Include="XOR\XOR_avx2_8x32_32.h" />
+    <ClInclude Include="XOR\XOR_avx2_16x16_16.h" />
+    <ClInclude Include="XOR\XOR_base.h" />
+    <ClInclude Include="XOR\XOR_sse42_8x16_8x16.h">
+      <Filter>XOR</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="AN">
+      <UniqueIdentifier>{0149baf8-3fff-4b31-9cca-983a716c3b3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="XOR">
+      <UniqueIdentifier>{b01feee7-f521-4753-8864-b60c06c4dfe1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{a15e87e6-5f89-48ef-96d6-2fd824510b6c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
