@@ -126,7 +126,7 @@ int main()
 
 #define WarmUp(a) do { std::cout << "# WarmUp " << #a << std::endl; ExpandTest< a , 1, 1024>::WarmUp(#a , iterations, input, output); } while (0)
 
-	WarmUp(CopyTest);
+	WarmUp(XOR_seq_16_8);
 
 #undef WarmUp
 
@@ -134,6 +134,7 @@ int main()
 
 	TestCase(CopyTest);
 
+	// 16-bit data tests
 	TestCase(XOR_seq_16_8);
 	TestCase(XOR_seq_16_16);
 	TestCase(XOR_sse42_8x16_16);
@@ -148,7 +149,9 @@ int main()
 #ifdef __AVX2__
 	TestCase(AN_avx2_16x16_16x32);
 #endif
+	TestCase(Hamming_seq_16);
 	
+	// 32-bit data tests
 	TestCase(XOR_seq_32_8);
 	TestCase(XOR_seq_32_32);
 	TestCase(XOR_sse42_4x32_32);
@@ -158,7 +161,6 @@ int main()
 	TestCase(XOR_avx2_8x32_8x32);
 #endif
 
-	TestCase(Hamming_seq_16);
 	TestCase(Hamming_seq_32);
 
 #undef TestCase
