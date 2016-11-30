@@ -19,12 +19,15 @@ SET(CMAKE_CXX_COMPILER_INIT g++-6)
 
 IF(POLICY CMP0048)
     CMAKE_POLICY(SET CMP0048 NEW)
-    PROJECT(ANvsXOR VERSION 0.1 LANGUAGES CXX)
+    PROJECT(ANvsXOR VERSION 0.5 LANGUAGES CXX)
 ELSE()
     PROJECT(ANvsXOR LANGUAGES CXX)
 ENDIF()
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -march=native -Wno-ignored-attributes")
+ADD_DEFINITIONS(-Wall)
+ADD_DEFINITIONS(-pedantic)
+ADD_DEFINITIONS(-march=native)
+ADD_DEFINITIONS(-Wno-ignored-attributes)
 
 MACRO( add_vectorized arg_name arg_source_files)
     STRING(REPLACE " " ";" TMP_SOURCE_FILES "${arg_source_files}")
@@ -36,6 +39,7 @@ MACRO( add_vectorized arg_name arg_source_files)
 
     SET_PROPERTY(TARGET ${arg_name} PROPERTY CXX_STANDARD 14)
     SET_PROPERTY(TARGET ${arg_name} PROPERTY CXX_STANDARD_REQUIRED ON)
+	TARGET_COMPILE_OPTIONS(${arg_name} PRIVATE "-O2")
 
     MESSAGE(STATUS "Add vectorized executable ${arg_name}")
 ENDMACRO( add_vectorized )

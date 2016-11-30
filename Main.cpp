@@ -27,6 +27,8 @@
 #include "Util/TestInfo.hpp"
 #include "Util/ErrorInfo.hpp"
 
+#include "CopyTest.hpp"
+
 #include "XOR/XOR_seq_16_8.h"
 #include "XOR/XOR_seq_16_16.h"
 #include "XOR/XOR_seq_32_8.h"
@@ -47,6 +49,9 @@
 #ifdef __AVX2__
 #include "AN/AN_avx2_16x16_16x32.h"
 #endif
+
+#include "Hamming/Hamming_seq_16.hpp"
+#include "Hamming/Hamming_seq_32.hpp"
 
 template<size_t start, size_t end>
 struct ComputeNumRuns
@@ -121,11 +126,13 @@ int main()
 
 #define WarmUp(a) do { std::cout << "# WarmUp " << #a << std::endl; ExpandTest< a , 1, 1024>::WarmUp(#a , iterations, input, output); } while (0)
 
-	WarmUp(XOR_seq_16_8);
+	WarmUp(CopyTest);
 
 #undef WarmUp
 
 #define TestCase(a) do { std::cout << "# Testing " << #a << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<1, 1024>()()); ExpandTest< a , 1, 1024>::Execute(vec, #a , iterations, input, output); } while (0)
+
+	TestCase(CopyTest);
 
 	TestCase(XOR_seq_16_8);
 	TestCase(XOR_seq_16_16);
@@ -150,6 +157,9 @@ int main()
 	TestCase(XOR_avx2_8x32_32);
 	TestCase(XOR_avx2_8x32_8x32);
 #endif
+
+	TestCase(Hamming_seq_16);
+	TestCase(Hamming_seq_32);
 
 #undef TestCase
 

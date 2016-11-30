@@ -14,13 +14,26 @@
 
 #pragma once
 
-#if defined(_WIN32)
+#if defined(_MSC_VER) // Visual C++
+
 #include <intrin.h>
-#else
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386) || defined(_M_IX86)
-#include <immintrin.h>
-#elif defined(__arm__)
+
+#define __builtin_popcount __popcnt
+#define __builtin_popcountl __popcnt
+#define __builtin_popcountll __popcnt64
+
+#elif defined(__arm__) // ARM
+
 #error "Not supported"
-#endif
+
+#else // Linux
+
+#include <immintrin.h>
+
+inline void _ReadWriteBarrier() // just to make it the same name as in Visual Studio, which we want to support
+{
+	asm volatile ("" : : : "memory");
+}
+
 #endif
 

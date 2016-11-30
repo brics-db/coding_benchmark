@@ -19,8 +19,8 @@
 #include "../Test.hpp"
 #include "../Util/Intrinsics.h"
 
-template<typename DATA, typename CS, size_t UNROLL>
-class ANTest : public Test<DATA, CS>
+template<typename DATAIN, typename DATAOUT, size_t UNROLL>
+class ANTest : public Test<DATAIN, DATAOUT>
 {
 protected:
 	const uint32_t A;
@@ -28,7 +28,7 @@ protected:
 
 public:
 	ANTest(const char* const name, AlignedBlock & in, AlignedBlock & out, const uint32_t A, const uint32_t A_INV) :
-		Test<DATA, CS>(name, in, out),
+		Test<DATAIN, DATAOUT>(name, in, out),
 		A(A),
 		A_INV(A_INV)
 	{}
