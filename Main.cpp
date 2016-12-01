@@ -51,7 +51,8 @@
 #include "XOR/XOR_avx2_8x32_8x32.h"
 #endif
 
-#include "AN/AN_seq_16_32.h"
+#include "AN/AN_seq_16_32_u.h"
+#include "AN/AN_seq_16_32_s.h"
 #include "AN/AN_sse42_8x16_8x32.h"
 #ifdef __AVX2__
 #include "AN/AN_avx2_16x16_16x32.h"
@@ -151,7 +152,8 @@ int main()
 	TestCase(XOR_avx2_16x16_16x16, "XOR AVX2");
 #endif
 
-	TestCase(AN_seq_16_32, "AN Seq");
+	TestCase(AN_seq_16_32_u, "AN Seq U");
+	TestCase(AN_seq_16_32_u, "AN Seq S");
 	TestCase(AN_sse42_8x16_8x32, "AN SSE4.2");
 #ifdef __AVX2__
 	TestCase(AN_avx2_16x16_16x32, "AN AVX2");

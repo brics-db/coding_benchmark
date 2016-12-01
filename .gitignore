@@ -31,3 +31,11 @@
 /CodingBenchmark.VC.VC.opendb
 /CodingBenchmark.VC.db
 /x64
+/CMakeCache.txt
+/CMakeFiles/
+/Makefile
+/benchmark
+/benchmark_novec
+/cmake_install.cmake
+/nbproject/private/
+

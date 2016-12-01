@@ -19,13 +19,13 @@
 #include "ANTest.h"
 
 template<size_t UNROLL>
-struct AN_seq_16_32 : public ANTest<uint16_t, uint32_t, UNROLL>, public SequentialTest
+struct AN_seq_16_32_u : public ANTest<uint16_t, uint32_t, UNROLL>, public SequentialTest
 {
-	AN_seq_16_32(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-		ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, 63877ul, 3510769485ul)
+	AN_seq_16_32_u(const char* const name, AlignedBlock & in, AlignedBlock & out) :
+		ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, 63'877ul, 3'510'769'485ul)
 	{}
 	
-	virtual ~AN_seq_16_32()
+	virtual ~AN_seq_16_32_u()
 	{}
 
 	void RunEnc(const size_t numIterations) override
@@ -35,9 +35,9 @@ struct AN_seq_16_32 : public ANTest<uint16_t, uint32_t, UNROLL>, public Sequenti
 			auto dataIn = this->in.template begin<uint16_t>();
 			auto dataInEnd = this->in.template end<uint16_t>();
 			auto dataOut = this->out.template begin<uint32_t>();
-			// compiler-unrolled loop
 			while (dataIn <= (dataInEnd - UNROLL))
 			{
+				// let the compiler unroll the loop
 				for (size_t unroll = 0; unroll < UNROLL; ++unroll)
 				{
 					*dataOut++ = *dataIn++ * this->A;
@@ -64,9 +64,9 @@ struct AN_seq_16_32 : public ANTest<uint16_t, uint32_t, UNROLL>, public Sequenti
 			size_t i = 0;
 			auto data = this->out.template begin<uint32_t>();
 			uint32_t maxUnenc = std::numeric_limits<uint16_t>::max();
-			// compiler-unrolled loop
 			while (i <= (numValues - UNROLL))
 			{
+				// let the compiler unroll the loop
 				for (size_t k = 0; k < UNROLL; ++k)
 				{
 					if ((*data * this->A_INV) > maxUnenc)

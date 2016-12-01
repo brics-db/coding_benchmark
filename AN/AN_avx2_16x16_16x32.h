@@ -48,6 +48,7 @@ struct AN_avx2_16x16_16x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public A
 			__m256i mmShuffle2 = _mm256_set_epi32(0xFFFF0F0E, 0xFFFF0D0C, 0xFFFF0B0A, 0xFFFF0908, 0xFFFF0F0E, 0xFFFF0D0C, 0xFFFF0B0A, 0xFFFF0908);
 			while (dataIn <= (dataInEnd - UNROLL))
 			{
+				// let the compiler unroll the loop
 				for (size_t unroll = 0; unroll < UNROLL; ++unroll)
 				{
 					__m256i m256 = _mm256_lddqu_si256(dataIn++);
@@ -101,7 +102,7 @@ struct AN_avx2_16x16_16x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public A
 			__m256i mm_ainv = _mm256_set1_epi32(this->A_INV);
 			while (data <= (dataEnd - UNROLL))
 			{
-				// compiler unrolling
+				// let the compiler unroll the loop
 				for (size_t k = 0; k < UNROLL; ++k)
 				{
 					auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(data), mm_ainv);

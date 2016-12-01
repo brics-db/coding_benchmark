@@ -45,9 +45,9 @@ struct AN_sse42_8x16_8x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public SS
 			__m128i mm_A = _mm_set1_epi32(this->A);
 			__m128i mmShuffle1 = _mm_set_epi32(0xFFFF0706, 0xFFFF0504, 0xFFFF0302, 0xFFFF0100);
 			__m128i mmShuffle2 = _mm_set_epi32(0xFFFF0F0E, 0xFFFF0D0C, 0xFFFF0B0A, 0xFFFF0908);
-			// compiler-unrolled loop
 			while (dataIn <= (dataInEnd - UNROLL))
 			{
+				// let the compiler unroll the loop
 				for (size_t unroll = 0; unroll < UNROLL; ++unroll)
 				{
 					auto mmIn = _mm_lddqu_si128(dataIn++);
@@ -88,7 +88,7 @@ struct AN_sse42_8x16_8x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public SS
 			__m128i mm_ainv = _mm_set1_epi32(this->A_INV);
 			while (data <= (dataEnd - UNROLL))
 			{
-				// compiler unrolling
+				// let the compiler unroll the loop
 				for (size_t k = 0; k < UNROLL; ++k)
 				{
 					auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mm_ainv);
