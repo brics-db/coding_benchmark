@@ -5,8 +5,11 @@
       <df name="Util">
         <in>CPU.cpp</in>
         <in>ErrorInfo.cpp</in>
+        <in>Euclidean.hpp</in>
         <in>Stopwatch.cpp</in>
         <in>TestInfo.cpp</in>
+        <in>VFunc.hpp</in>
+        <in>newfile.hpp</in>
       </df>
       <in>Main.cpp</in>
       <in>Test.cpp</in>
@@ -70,6 +73,8 @@
         <ccTool flags="0">
         </ccTool>
       </item>
+      <item path="Util/Euclidean.hpp" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="Util/Stopwatch.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>
@@ -77,6 +82,10 @@
       <item path="Util/TestInfo.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>
+      </item>
+      <item path="Util/VFunc.hpp" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Util/newfile.hpp" ex="false" tool="3" flavor2="0">
       </item>
       <folder path="0/Util">
         <ccTool>

@@ -25,10 +25,16 @@ set xlabel "unroll / block size"
 set ylabel "Runtime [ns]"
 
 set output 'plot_encode.pdf'
-#plot for [col=2:11] 'an_vs_xor.csv' using 1:col with lines title columnhead
-plot for [col=2:11] 'an_vs_xor.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+#plot for [col=2:11] 'benchmark.csv' using 1:col with lines title columnhead
+plot for [col=2:14] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+
+set output 'plot_encode2.pdf'
+plot for [col=2:13] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_encode_novec.pdf'
-#plot for [col=2:11] 'an_vs_xor_novec.csv' using 1:col with lines title columnhead
-plot for [col=2:11] 'an_vs_xor_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+#plot for [col=2:14] 'benchmark_novec.csv' using 1:col with lines title columnhead
+plot for [col=2:14] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+
+set output 'plot_encode_novec2.pdf'
+plot for [col=2:13] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 

@@ -27,8 +27,8 @@
 template<size_t UNROLL>
 struct AN_avx2_16x16_16x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public AVX2Test
 {
-	AN_avx2_16x16_16x32(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-		ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, 63877ul, 3510769485ul)
+	AN_avx2_16x16_16x32(const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
+		ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv)
 	{}
 
 	virtual ~AN_avx2_16x16_16x32()

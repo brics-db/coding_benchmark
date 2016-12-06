@@ -39,8 +39,8 @@ struct TestInfo {
 };
 
 struct TestInfos {
-	const char* name;
-	const char* simd;
+	std::string name;
+	std::string simd;
 	TestInfo encode;
 	TestInfo check;
 	TestInfo arithmetic;

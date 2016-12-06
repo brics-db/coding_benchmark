@@ -31,7 +31,7 @@ struct TestBase0
 struct TestBase : virtual public TestBase0
 {
 protected:
-	const char* const name;
+	const char* name;
 	AlignedBlock in;
 	AlignedBlock out;
 
@@ -110,24 +110,27 @@ struct AVX2Test : virtual public TestBase0
 template<typename DATA, typename CS>
 struct Test : public TestBase
 {
+
 	Test(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-		TestBase(name, in, out)
-	{}
+			TestBase(name, in, out) { }
 
-	virtual ~Test()
-	{}
+	virtual
+	~Test() { }
 
-	virtual size_t getInputTypeSize() override
+	virtual size_t
+	getInputTypeSize() override
 	{
-		return sizeof(DATA);
+		return sizeof (DATA);
 	}
 
-	virtual size_t getOutputTypeSize() override
+	virtual size_t
+	getOutputTypeSize() override
 	{
-		return sizeof(CS);
+		return sizeof (CS);
 	}
 
-	void ResetBuffers() override
+	void
+	ResetBuffers() override
 	{
 		// Reset buffers:
 		// uint16_t* const pInEnd = in.end<uint16_t>();

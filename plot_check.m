@@ -25,9 +25,15 @@ set xlabel "unroll / block size"
 set ylabel "Runtime [ns]"
 
 set output 'plot_check.pdf'
-#plot for [col=12:21] 'an_vs_xor.csv' using 1:col with lines title columnhead
-plot for [col=12:21] 'an_vs_xor.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+#plot for [col=12:21] 'benchmark.csv' using 1:col with lines title columnhead
+plot for [col=15:27] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
+set output 'plot_check_2.pdf'
+plot for [col=15:26] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+		
 set output 'plot_check_novec.pdf'
-plot for [col=12:21] 'an_vs_xor_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=15:27] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+		
+set output 'plot_check_novec2.pdf'
+plot for [col=15:26] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 

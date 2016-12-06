@@ -22,8 +22,8 @@ template<size_t UNROLL>
 struct AN_seq_16_32_s : public ANTest<int16_t, int32_t, UNROLL>, public SequentialTest
 {
 
-	AN_seq_16_32_s(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-			ANTest<int16_t, int32_t, UNROLL>(name, in, out, 63'877l, -784'197'811l) { }
+	AN_seq_16_32_s(const char* const name, AlignedBlock & in, AlignedBlock & out, int32_t A = 63'877l, int32_t Ainv = -784'197'811l) :
+			ANTest<int16_t, int32_t, UNROLL>(name, in, out, A, Ainv) { }
 
 	virtual
 	~AN_seq_16_32_s() { }
