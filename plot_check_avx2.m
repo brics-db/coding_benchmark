@@ -25,25 +25,26 @@ set xlabel "unroll / block size"
 set ylabel "Runtime [ns]"
 
 set output 'plot_check_16bit.pdf'
-plot for [col=15:24] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=19:31] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_check_16bit_noHamming.pdf'
-plot for [col=15:23] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=19:30] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_check_32bit.pdf'
-plot for [col=25:27] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot 'benchmark.csv' using 1:2 lw 2 ps 0.5 with linespoints title columnhead,
+	for [col=32:35] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_check_32bit_noHamming.pdf'
-plot for [col=25:26] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=32:34] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_check_novec_16bit.pdf'
-plot for [col=15:24] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=19:31] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_check_novec_16bit_noHamming.pdf'
-plot for [col=15:23] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=19:30] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_check_novec_32bit.pdf'
-plot for [col=25:27] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=32:35] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_check_novec_32bit_noHamming.pdf'
-plot for [col=25:26] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=32:34] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead

@@ -25,25 +25,25 @@ set xlabel "unroll / block size"
 set ylabel "Runtime [ns]"
 
 set output 'plot_encode_16bit.pdf'
-plot for [col=2:11] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=2:14] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_encode_16bit_noHamming.pdf'
-plot for [col=2:10] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=2:13] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_encode_32bit.pdf'
-plot for [col=12:14] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=15:18] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_encode_32bit_noHamming.pdf'
-plot for [col=12:13] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=15:17] 'benchmark.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_encode_novec_16bit.pdf'
-plot for [col=2:11] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=2:14] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_encode_novec_16bit2.pdf'
-plot for [col=2:10] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=2:13] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_encode_novec_32bit.pdf'
-plot for [col=12:14] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=15:18] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
 
 set output 'plot_encode_novec_32bit_noHamming.pdf'
-plot for [col=12:13] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead
+plot for [col=15:17] 'benchmark_novec.csv' using 1:col lw 2 ps 0.5 with linespoints title columnhead

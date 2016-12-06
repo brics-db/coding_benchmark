@@ -131,59 +131,34 @@ void printResults(std::vector<std::vector<TestInfos>> &vector);
 void
 printUsage(char* argv[])
 {
-	std::cerr << "Usage: " << argv[0] << " <A 1> <A 2>\n" << std::setw(6) << "A" << ":   AN coding parameter (positive, odd, non-zero integer, 0 < A < 2^16)" << std::endl;
+	std::cerr << "Usage: " << argv[0] << " <A>\n" << std::setw(6) << "A" << ":   AN coding parameter (positive, odd, non-zero integer, 0 < A < 2^16)" << std::endl;
 }
 
 int
-checkArgs(int argc, char* argv[], size_t & AUser1, size_t & AUser2)
+checkArgs(int argc, char* argv[], size_t & AUser1)
 {
 	if (argc == 1)
 	{
 		return 0;
 	}
-	if (argc != 3)
+	if (argc != 2)
 	{
 		printUsage(argv);
 		return 1;
 	}
 	char* endPtr = nullptr;
 	AUser1 = strtoull(argv[1], &endPtr, 0);
-	if (endPtr == argv[1] || AUser1 == 0)
+	if (endPtr == argv[1] || AUser1 == 0 || (AUser1 & 1) == 0)
 	{
-		std::cerr << "Error: first argument is not a valid positive non-zero integer!\n";
+		std::cerr << "Error: A is not a valid positive, non-zero, odd integer!\n";
 		printUsage(argv);
 		return 2;
 	}
 	if (AUser1 > (1ull << 16))
 	{
-		std::cerr << "Error: Given A1 is too large!\n";
+		std::cerr << "Error: Given A is too large!\n";
 		printUsage(argv);
 		return 3;
-	}
-	if ((AUser1 & 1) == 0)
-	{
-		std::cerr << "Error: first argument is not odd!\n";
-		printUsage(argv);
-		return 4;
-	}
-	AUser2 = strtoull(argv[1], &endPtr, 0);
-	if (endPtr == argv[1] || AUser2 == 0)
-	{
-		std::cerr << "Error: second argument is not a valid positive non-zero integer!\n";
-		printUsage(argv);
-		return 5;
-	}
-	if (AUser2 > (1ull << 16))
-	{
-		std::cerr << "Error: Given A2 is too large!\n";
-		printUsage(argv);
-		return 6;
-	}
-	if ((AUser2 & 1) == 0)
-	{
-		std::cerr << "Error: second argument is not odd!\n";
-		printUsage(argv);
-		return 7;
 	}
 	return 0;
 }
@@ -192,17 +167,15 @@ int
 main(int argc, char* argv[])
 {
 	const size_t rawDataSize = 1'024 * 1'024; // size in BYTES
-	const size_t iterations = 1'024;
+	const size_t iterations = 4'000;
 
 	size_t AUser1 = 64'311;
-	size_t AUser2 = 881;
-	int result = checkArgs(argc, argv, AUser1, AUser2);
+	int result = checkArgs(argc, argv, AUser1);
 	if (result != 0)
 	{
 		return result;
 	}
 	size_t AUser1Inv = ext_euclidean(AUser1, 32);
-	size_t AUser2Inv = ext_euclidean(AUser2, 32);
 
 	AlignedBlock input(rawDataSize, 64);
 	AlignedBlock output(2 * rawDataSize, 64); // AN coding generates twice as much output data as input data
@@ -210,18 +183,15 @@ main(int argc, char* argv[])
 
 #define WarmUp(type, name) do { std::cout << "# WarmUp " << #type << std::endl; ExpandTest< type , 1, 1024>::WarmUp(#name , iterations, input, output); } while (0)
 
-	WarmUp(CopyTest, "Copy");
-
-#undef WarmUp
-
 #define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
 
 #define TestCase2(type,name) do { std::cout << "# " << std::setw(2) << (vecTestInfos.size() + 1) <<  ": Testing " << #type << " (" << name << ")" << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<1, 1024>()()); ExpandTest< type , 1, 1024>::Execute(vec, name , iterations, input, output); } while (0)
 
 #define TestCase4(type,name,A,Ainv) do { std::cout << "# " << std::setw(2) << (vecTestInfos.size() + 1) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<1, 1024>()()); ExpandTest< type , 1, 1024>::Execute(vec, name, iterations, input, output, A, Ainv); } while (0)
 
-	TestCase(CopyTest, "Copy");
+	WarmUp(CopyTest, "Copy");
 
+	TestCase(CopyTest, "Copy");
 	// 16-bit data tests
 	// TestCase(XOR_seq_16_8, "XOR Seq 8");
 	TestCase(XOR_seq_16_16, "XOR Seq");
@@ -231,7 +201,6 @@ main(int argc, char* argv[])
 	// TestCase(XOR_avx2_16x16_16, "XOR AVX2 16");
 	TestCase(XOR_avx2_16x16_16x16, "XOR AVX2");
 #endif
-
 	TestCase(AN_seq_16_32_u, "AN Seq U", 28'691, 1'441'585'691);
 	TestCase(AN_seq_16_32_s, "AN Seq S", 28'691, 1'441'585'691);
 	TestCase(AN_sse42_8x16_8x32, "AN SSE4.2", 28'691, 1'441'585'691);
@@ -244,13 +213,6 @@ main(int argc, char* argv[])
 #ifdef __AVX2__
 	TestCase(AN_avx2_16x16_16x32, "AN AVX2", AUser1, AUser1Inv);
 #endif
-	TestCase(AN_seq_16_32_u, "AN Seq U", AUser2, AUser2Inv);
-	TestCase(AN_seq_16_32_s, "AN Seq S", AUser2, AUser2Inv);
-	TestCase(AN_sse42_8x16_8x32, "AN SSE4.2", AUser2, AUser2Inv);
-#ifdef __AVX2__
-	TestCase(AN_avx2_16x16_16x32, "AN AVX2", AUser2, AUser2Inv);
-#endif
-
 	TestCase(Hamming_seq_16, "Hamming");
 
 	// 32-bit data tests
@@ -262,10 +224,12 @@ main(int argc, char* argv[])
 	// TestCase(XOR_avx2_8x32_32, "XOR AVX2 16");
 	TestCase(XOR_avx2_8x32_8x32, "XOR AVX2");
 #endif
-
 	TestCase(Hamming_seq_32, "Hamming");
 
+#undef WarmUp
 #undef TestCase
+#undef TestCase2
+#undef TestCase4
 
 	printResults(vecTestInfos);
 }
