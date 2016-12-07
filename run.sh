@@ -5,8 +5,7 @@ rm -Rf build
 # build
 mkdir build
 pushd build
-cmake ..
-make
+(cmake -DCMAKE_BUILD_TYPE=Release .. && make) || exit 1
 # run and set affinity to a single core
 taskset -c 1 ./benchmark >benchmark.csv
 taskset -c 1 ./benchmark_novec >benchmark_novec.csv

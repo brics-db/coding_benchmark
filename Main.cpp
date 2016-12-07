@@ -56,6 +56,8 @@
 
 #include "Hamming/Hamming_seq_16.hpp"
 #include "Hamming/Hamming_seq_32.hpp"
+#include "Hamming/Hamming_sse42_16.hpp"
+#include "Hamming/Hamming_sse42_32.hpp"
 
 template<size_t start, size_t end>
 struct ComputeNumRuns
@@ -126,6 +128,7 @@ struct ExpandTest<TestCollection, start, start>
 	}
 };
 
+template<bool doRelative>
 void printResults(std::vector<std::vector<TestInfos>> &vector);
 
 void
@@ -167,7 +170,7 @@ int
 main(int argc, char* argv[])
 {
 	const size_t rawDataSize = 1'024 * 1'024; // size in BYTES
-	const size_t iterations = 4'000;
+	const size_t iterations = 128;
 
 	size_t AUser1 = 64'311;
 	int result = checkArgs(argc, argv, AUser1);
@@ -192,48 +195,46 @@ main(int argc, char* argv[])
 	WarmUp(CopyTest, "Copy");
 
 	TestCase(CopyTest, "Copy");
-	// 16-bit data tests
-	// TestCase(XOR_seq_16_8, "XOR Seq 8");
+
+	// 16-bit data sequential tests
 	TestCase(XOR_seq_16_16, "XOR Seq");
-	// TestCase(XOR_sse42_8x16_16, "XOR SSE4.2 16");
-	TestCase(XOR_sse42_8x16_8x16, "XOR SSE4.2");
-#ifdef __AVX2__
-	// TestCase(XOR_avx2_16x16_16, "XOR AVX2 16");
-	TestCase(XOR_avx2_16x16_16x16, "XOR AVX2");
-#endif
 	TestCase(AN_seq_16_32_u, "AN Seq U", 28'691, 1'441'585'691);
 	TestCase(AN_seq_16_32_s, "AN Seq S", 28'691, 1'441'585'691);
-	TestCase(AN_sse42_8x16_8x32, "AN SSE4.2", 28'691, 1'441'585'691);
-#ifdef __AVX2__
-	TestCase(AN_avx2_16x16_16x32, "AN AVX2", 28'691, 1'441'585'691);
-#endif
 	TestCase(AN_seq_16_32_u, "AN Seq U", AUser1, AUser1Inv);
 	TestCase(AN_seq_16_32_s, "AN Seq S", AUser1, AUser1Inv);
+	TestCase(Hamming_seq_16, "Hamming Seq");
+
+	// 16-bit data vectorized tests
+	TestCase(XOR_sse42_8x16_8x16, "XOR SSE4.2");
+	TestCase(AN_sse42_8x16_8x32, "AN SSE4.2", 28'691, 1'441'585'691);
 	TestCase(AN_sse42_8x16_8x32, "AN SSE4.2", AUser1, AUser1Inv);
+	TestCase(Hamming_sse42_16, "Hamming SSE4.2");
 #ifdef __AVX2__
+	TestCase(XOR_avx2_16x16_16x16, "XOR AVX2");
+	TestCase(AN_avx2_16x16_16x32, "AN AVX2", 28'691, 1'441'585'691);
 	TestCase(AN_avx2_16x16_16x32, "AN AVX2", AUser1, AUser1Inv);
 #endif
-	TestCase(Hamming_seq_16, "Hamming");
 
-	// 32-bit data tests
-	// TestCase(XOR_seq_32_8, "XOR Seq 8");
+	// 32-bit data sequential tests
 	TestCase(XOR_seq_32_32, "XOR Seq");
-	// TestCase(XOR_sse42_4x32_32, "XOR SSE4.2 16");
+	TestCase(Hamming_seq_32, "Hamming");
+
+	// 32-bit data vectorized tests
 	TestCase(XOR_sse42_4x32_4x32, "XOR SSE4.2");
+	TestCase(Hamming_sse42_32, "Hamming SSE4.2");
 #ifdef __AVX2__
-	// TestCase(XOR_avx2_8x32_32, "XOR AVX2 16");
 	TestCase(XOR_avx2_8x32_8x32, "XOR AVX2");
 #endif
-	TestCase(Hamming_seq_32, "Hamming");
 
 #undef WarmUp
 #undef TestCase
 #undef TestCase2
 #undef TestCase4
 
-	printResults(vecTestInfos);
+	printResults<true>(vecTestInfos);
 }
 
+template<bool doRelative>
 void
 printResults(std::vector<std::vector<TestInfos>> &results)
 {
@@ -241,6 +242,19 @@ printResults(std::vector<std::vector<TestInfos>> &results)
 	for (auto & v : results)
 	{
 		maxPos = std::max(maxPos, v.size());
+	}
+	std::vector<double> baseEncode(maxPos);
+	std::vector<double> baseCheck(maxPos);
+	std::vector<double> baseArith(maxPos);
+	std::vector<double> baseDecode(maxPos);
+
+	for (size_t i = 0; i < maxPos; ++i)
+	{
+		auto & r = results[0][i]; // copy results
+		baseEncode[i] = static_cast<double> (r.encode.nanos);
+		baseCheck[i] = static_cast<double> (r.check.nanos);
+		baseArith[i] = static_cast<double> (r.arithmetic.nanos);
+		baseDecode[i] = static_cast<double> (r.decode.nanos);
 	}
 
 	// The following does pretty-print everything so that it can be easily used as input for gnuplot & co.
@@ -293,7 +307,10 @@ printResults(std::vector<std::vector<TestInfos>> &results)
 				std::cout << ',';
 				if (pos < v.size() && v[pos].encode.error == nullptr)
 				{
-					std::cout << v[pos].encode.nanos;
+					if (doRelative)
+						std::cout << (static_cast<double> (v[pos].encode.nanos) / baseEncode[pos]);
+					else
+						std::cout << v[pos].encode.nanos;
 				}
 			}
 		}
@@ -305,7 +322,10 @@ printResults(std::vector<std::vector<TestInfos>> &results)
 				std::cout << ',';
 				if (pos < v.size() && v[pos].check.error == nullptr)
 				{
-					std::cout << v[pos].check.nanos;
+					if (doRelative)
+						std::cout << (static_cast<double> (v[pos].check.nanos) / baseCheck[pos]);
+					else
+						std::cout << v[pos].check.nanos;
 				}
 			}
 		}
@@ -317,7 +337,10 @@ printResults(std::vector<std::vector<TestInfos>> &results)
 				std::cout << ',';
 				if (pos < v.size() && v[pos].arithmetic.error == nullptr)
 				{
-					std::cout << v[pos].arithmetic.nanos;
+					if (doRelative)
+						std::cout << (static_cast<double> (v[pos].arithmetic.nanos) / baseArith[pos]);
+					else
+						std::cout << v[pos].arithmetic.nanos;
 				}
 			}
 		}
@@ -329,7 +352,10 @@ printResults(std::vector<std::vector<TestInfos>> &results)
 				std::cout << ',';
 				if (pos < v.size() && v[pos].decode.error == nullptr)
 				{
-					std::cout << v[pos].decode.nanos;
+					if (doRelative)
+						std::cout << (static_cast<double> (v[pos].decode.nanos) / baseDecode[pos]);
+					else
+						std::cout << v[pos].decode.nanos;
 				}
 			}
 		}

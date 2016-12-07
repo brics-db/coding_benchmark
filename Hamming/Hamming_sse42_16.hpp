@@ -12,24 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 /* 
- * File:   Hamming_seq_32.hpp
+ * File:   Hamming_sse42_16.hpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
- * Created on 30. November 2016, 13:06
+ * Created on 07. December 2016, 22:10
  */
 
 #pragma once
 
-#include "Hamming_seq.hpp"
+#include "Hamming_sse42.hpp"
 
 template<size_t UNROLL>
-struct Hamming_seq_32 : public Hamming_seq<uint32_t, UNROLL>
+struct Hamming_sse42_16 : public Hamming_sse42<uint16_t, UNROLL>
 {
 
-    Hamming_seq_32(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-    Hamming_seq<uint32_t, UNROLL>(name, in, out) { }
+	Hamming_sse42_16(const char* const name, AlignedBlock & in, AlignedBlock & out) :
+			Hamming_sse42<uint16_t, UNROLL>(name, in, out) { }
 
-    virtual
-    ~Hamming_seq_32() { }
+	virtual
+	~Hamming_sse42_16() { }
 
 };

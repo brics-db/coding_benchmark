@@ -39,7 +39,7 @@ MACRO( add_vectorized arg_name arg_source_files)
 
     SET_PROPERTY(TARGET ${arg_name} PROPERTY CXX_STANDARD 14)
     SET_PROPERTY(TARGET ${arg_name} PROPERTY CXX_STANDARD_REQUIRED ON)
-	TARGET_COMPILE_OPTIONS(${arg_name} PRIVATE "-O2")
+#	TARGET_COMPILE_OPTIONS(${arg_name} PRIVATE "-O2")
 
     MESSAGE(STATUS "Add vectorized executable ${arg_name}")
 ENDMACRO( add_vectorized )
