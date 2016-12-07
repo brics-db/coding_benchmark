@@ -170,7 +170,7 @@ int
 main(int argc, char* argv[])
 {
 	const size_t rawDataSize = 1'024 * 1'024; // size in BYTES
-	const size_t iterations = 128;
+	const size_t iterations = 4'000;
 
 	size_t AUser1 = 64'311;
 	int result = checkArgs(argc, argv, AUser1);
