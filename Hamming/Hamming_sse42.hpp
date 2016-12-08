@@ -41,6 +41,12 @@ struct hamming_sse42_32_t
 template<typename OrigType>
 struct TypeMapSSE42;
 
+/*
+ * For the following algorithms, see
+ * https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+ * Credit also goes to the book "Hacker's Delight" 2nd Edition, by Henry S. Warren, Jr., published at Addison-Wesley
+ */
+
 template<>
 struct TypeMapSSE42<uint16_t>
 {
@@ -52,15 +58,13 @@ struct TypeMapSSE42<uint16_t>
 		static auto pattern1 = _mm_set1_epi16(0x5555);
 		static auto pattern2 = _mm_set1_epi16(0x3333);
 		static auto pattern3 = _mm_set1_epi16(0x0F0F);
-		static auto pattern4 = _mm_set1_epi16(0x001F);
+		static auto pattern4 = _mm_set1_epi16(0x0101);
 		static auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0E0C0A0806040200);
 		auto temp = _mm_sub_epi16(data, _mm_and_si128(_mm_srli_epi16(data, 1), pattern1));
 		temp = _mm_add_epi16(_mm_and_si128(temp, pattern2), _mm_and_si128(_mm_srli_epi16(temp, 2), pattern2));
 		temp = _mm_and_si128(_mm_add_epi16(temp, _mm_srli_epi16(temp, 4)), pattern3);
-		temp = _mm_add_epi16(temp, _mm_srli_epi16(temp, 8));
-		temp = _mm_and_si128(temp, pattern4);
-		temp = _mm_shuffle_epi8(temp, shuffle);
-		return static_cast<uint64_t> (_mm_extract_epi64(temp, 0));
+		temp = _mm_srli_epi16(_mm_mullo_epi16(temp, pattern4), 8);
+		return static_cast<uint64_t> (_mm_extract_epi64(_mm_shuffle_epi8(temp, shuffle), 0));
 	}
 
 	static uint64_t
@@ -103,16 +107,13 @@ struct TypeMapSSE42<uint32_t>
 		static auto pattern1 = _mm_set1_epi32(0x55555555);
 		static auto pattern2 = _mm_set1_epi32(0x33333333);
 		static auto pattern3 = _mm_set1_epi32(0x0F0F0F0F);
-		static auto pattern4 = _mm_set1_epi32(0x0000003F);
+		static auto pattern4 = _mm_set1_epi32(0x01010101);
 		static auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFF0C080400);
 		auto temp = _mm_sub_epi32(data, _mm_and_si128(_mm_srli_epi32(data, 1), pattern1));
 		temp = _mm_add_epi32(_mm_and_si128(temp, pattern2), _mm_and_si128(_mm_srli_epi32(temp, 2), pattern2));
 		temp = _mm_and_si128(_mm_add_epi32(temp, _mm_srli_epi32(temp, 4)), pattern3);
-		temp = _mm_add_epi32(temp, _mm_srli_epi32(temp, 8));
-		temp = _mm_add_epi32(temp, _mm_srli_epi32(temp, 16));
-		temp = _mm_and_si128(temp, pattern4);
-		temp = _mm_shuffle_epi8(temp, shuffle);
-		return static_cast<uint32_t> (_mm_extract_epi32(temp, 0));
+		temp = _mm_srli_epi32(_mm_mullo_epi32(temp, pattern4), 24);
+		return static_cast<uint32_t> (_mm_extract_epi32(_mm_shuffle_epi8(temp, shuffle), 0));
 	}
 
 	static uint32_t
