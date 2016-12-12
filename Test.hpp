@@ -18,7 +18,7 @@
 #include <cstring>
 #include <cstdint>
 
-#include "Util/AlignedBlock.h"
+#include "Util/AlignedBlock.hpp"
 #include "Util/TestInfo.hpp"
 
 struct TestBase0

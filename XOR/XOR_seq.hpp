@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "XOR_base.h"
+#include "XOR_base.hpp"
 
 template<typename DATA, typename CS, size_t BLOCKSIZE>
 struct XOR_seq : public Test<DATA, CS>

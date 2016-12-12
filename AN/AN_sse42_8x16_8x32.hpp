@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <limits>
 
-#include "ANTest.h"
+#include "ANTest.hpp"
 
 template<size_t UNROLL>
 struct AN_sse42_8x16_8x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public SSE42Test

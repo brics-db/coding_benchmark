@@ -14,15 +14,18 @@
 
 #pragma once
 
-#include "XOR_sse42.h"
+#include <cstdint>
+
+#include "XOR_seq.hpp"
+#include "../Util/Intrinsics.hpp"
 
 template<size_t BLOCKSIZE>
-struct XOR_sse42_8x16_8x16 : public XOR_sse42<uint16_t, __m128i, BLOCKSIZE>, public SSE42Test
+struct XOR_seq_32_32 : public XOR_seq<uint32_t, uint32_t, BLOCKSIZE>, public SequentialTest
 {
-	XOR_sse42_8x16_8x16(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-		XOR_sse42<uint16_t, __m128i, BLOCKSIZE>(name, in, out)
+	XOR_seq_32_32(const char* const name, AlignedBlock & in, AlignedBlock & out) :
+		XOR_seq<uint32_t, uint32_t, BLOCKSIZE>(name, in, out)
 	{}
 
-	virtual ~XOR_sse42_8x16_8x16()
+	virtual ~XOR_seq_32_32()
 	{}
 };

@@ -24,7 +24,7 @@
 #endif
 
 #include "Test.hpp"
-#include "Util/AlignedBlock.h"
+#include "Util/AlignedBlock.hpp"
 #include "Util/TestInfo.hpp"
 #include "Util/ErrorInfo.hpp"
 #include "Util/VFunc.hpp"
@@ -32,26 +32,26 @@
 
 #include "CopyTest.hpp"
 
-#include "XOR/XOR_seq_16_8.h"
-#include "XOR/XOR_seq_16_16.h"
-#include "XOR/XOR_seq_32_8.h"
-#include "XOR/XOR_seq_32_32.h"
-#include "XOR/XOR_sse42_8x16_16.h"
-#include "XOR/XOR_sse42_8x16_8x16.h"
-#include "XOR/XOR_sse42_4x32_32.h"
-#include "XOR/XOR_sse42_4x32_4x32.h"
+#include "XOR/XOR_seq_16_8.hpp"
+#include "XOR/XOR_seq_16_16.hpp"
+#include "XOR/XOR_seq_32_8.hpp"
+#include "XOR/XOR_seq_32_32.hpp"
+#include "XOR/XOR_sse42_8x16_16.hpp"
+#include "XOR/XOR_sse42_8x16_8x16.hpp"
+#include "XOR/XOR_sse42_4x32_32.hpp"
+#include "XOR/XOR_sse42_4x32_4x32.hpp"
 #ifdef __AVX2__
-#include "XOR/XOR_avx2_16x16_16.h"
-#include "XOR/XOR_avx2_16x16_16x16.h"
-#include "XOR/XOR_avx2_8x32_32.h"
-#include "XOR/XOR_avx2_8x32_8x32.h"
+#include "XOR/XOR_avx2_16x16_16.hpp"
+#include "XOR/XOR_avx2_16x16_16x16.hpp"
+#include "XOR/XOR_avx2_8x32_32.hpp"
+#include "XOR/XOR_avx2_8x32_8x32.hpp"
 #endif
 
-#include "AN/AN_seq_16_32_u.h"
-#include "AN/AN_seq_16_32_s.h"
-#include "AN/AN_sse42_8x16_8x32.h"
+#include "AN/AN_seq_16_32_u.hpp"
+#include "AN/AN_seq_16_32_s.hpp"
+#include "AN/AN_sse42_8x16_8x32.hpp"
 #ifdef __AVX2__
-#include "AN/AN_avx2_16x16_16x32.h"
+#include "AN/AN_avx2_16x16_16x32.hpp"
 #endif
 
 #include "Hamming/Hamming_seq_16.hpp"

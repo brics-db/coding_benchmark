@@ -18,7 +18,7 @@
 #include <sstream>
 
 #include "../Test.hpp"
-#include "../Util/Intrinsics.h"
+#include "../Util/Intrinsics.hpp"
 
 template<typename DATAIN, typename DATAOUT, size_t UNROLL>
 class ANTest : public Test<DATAIN, DATAOUT>

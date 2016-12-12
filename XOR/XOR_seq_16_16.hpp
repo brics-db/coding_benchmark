@@ -14,15 +14,18 @@
 
 #pragma once
 
-#include "XOR_avx2.h"
+#include <cstdint>
+
+#include "XOR_seq.hpp"
+#include "../Util/Intrinsics.hpp"
 
 template<size_t BLOCKSIZE>
-struct XOR_avx2_16x16_16x16 : public XOR_avx2<uint16_t, __m256i, BLOCKSIZE>, public AVX2Test
+struct XOR_seq_16_16 : public XOR_seq<uint16_t, uint16_t, BLOCKSIZE>, public SequentialTest
 {
-	XOR_avx2_16x16_16x16(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-		XOR_avx2<uint16_t, __m256i, BLOCKSIZE>(name, in, out)
+	XOR_seq_16_16(const char* const name, AlignedBlock & in, AlignedBlock & out) :
+		XOR_seq<uint16_t, uint16_t, BLOCKSIZE>(name, in, out)
 	{}
 
-	virtual ~XOR_avx2_16x16_16x16()
+	virtual ~XOR_seq_16_16()
 	{}
 };

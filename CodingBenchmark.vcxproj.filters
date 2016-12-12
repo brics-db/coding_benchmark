@@ -17,46 +17,46 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AN\AN_avx2_16x16_16x32.h">
+    <ClInclude Include="AN\AN_avx2_16x16_16x32.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_seq_16_32.h">
+    <ClInclude Include="AN\AN_seq_16_32.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_sse42_8x16_8x32.h">
+    <ClInclude Include="AN\AN_sse42_8x16_8x32.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\ANTest.h">
+    <ClInclude Include="AN\ANTest.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="Util\AlignedBlock.h">
+    <ClInclude Include="Util\AlignedBlock.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="Util\CPU.h">
+    <ClInclude Include="Util\CPU.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="Util\Intrinsics.h">
+    <ClInclude Include="Util\Intrinsics.hpp">
       <Filter>Util</Filter>
     </ClInclude>
     <ClInclude Include="Util\Stopwatch.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_16_8.h">
+    <ClInclude Include="XOR\XOR_seq_16_8.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_16_16.h">
+    <ClInclude Include="XOR\XOR_seq_16_16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_32_8.h">
+    <ClInclude Include="XOR\XOR_seq_32_8.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_32_32.h">
+    <ClInclude Include="XOR\XOR_seq_32_32.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42_4x32_32.h">
+    <ClInclude Include="XOR\XOR_sse42_4x32_32.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42_8x16_16.h">
+    <ClInclude Include="XOR\XOR_sse42_8x16_16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
     <ClInclude Include="Util\ErrorInfo.hpp">
@@ -66,26 +66,26 @@
       <Filter>Util</Filter>
     </ClInclude>
     <ClInclude Include="Test.hpp" />
-    <ClInclude Include="XOR\XOR_avx2_16x16_16x16.h">
+    <ClInclude Include="XOR\XOR_avx2_16x16_16x16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42_4x32_4x32.h">
+    <ClInclude Include="XOR\XOR_sse42_4x32_4x32.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq.h">
+    <ClInclude Include="XOR\XOR_seq.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42.h">
+    <ClInclude Include="XOR\XOR_sse42.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_avx2.h">
+    <ClInclude Include="XOR\XOR_avx2.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_avx2_8x32_8x32.h" />
-    <ClInclude Include="XOR\XOR_avx2_8x32_32.h" />
-    <ClInclude Include="XOR\XOR_avx2_16x16_16.h" />
-    <ClInclude Include="XOR\XOR_base.h" />
-    <ClInclude Include="XOR\XOR_sse42_8x16_8x16.h">
+    <ClInclude Include="XOR\XOR_avx2_8x32_8x32.hpp" />
+    <ClInclude Include="XOR\XOR_avx2_8x32_32.hpp" />
+    <ClInclude Include="XOR\XOR_avx2_16x16_16.hpp" />
+    <ClInclude Include="XOR\XOR_base.hpp" />
+    <ClInclude Include="XOR\XOR_sse42_8x16_8x16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
   </ItemGroup>

@@ -14,15 +14,15 @@
 
 #pragma once
 
-#include "XOR_avx2.h"
+#include "XOR_sse42.hpp"
 
 template<size_t BLOCKSIZE>
-struct XOR_avx2_8x32_32 : public XOR_avx2<uint32_t, uint32_t, BLOCKSIZE>, public AVX2Test
+struct XOR_sse42_4x32_4x32 : public XOR_sse42<uint32_t, uint32_t, BLOCKSIZE>, public SSE42Test
 {
-	XOR_avx2_8x32_32(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-		XOR_avx2<uint32_t, uint32_t, BLOCKSIZE>(name, in, out)
+	XOR_sse42_4x32_4x32(const char* const name, AlignedBlock & in, AlignedBlock & out) :
+		XOR_sse42<uint32_t, uint32_t, BLOCKSIZE>(name, in, out)
 	{}
 
-	virtual ~XOR_avx2_8x32_32()
+	virtual ~XOR_sse42_4x32_4x32()
 	{}
 };

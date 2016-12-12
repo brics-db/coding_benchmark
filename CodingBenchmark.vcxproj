@@ -101,7 +101,7 @@
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <HeaderFileName>%(Filename).hpp</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
       <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
@@ -152,7 +152,7 @@
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <HeaderFileName>%(Filename).hpp</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
       <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
@@ -203,7 +203,7 @@
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <HeaderFileName>%(Filename).hpp</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
       <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
@@ -253,7 +253,7 @@
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <HeaderFileName>%(Filename).hpp</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
       <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
@@ -281,33 +281,33 @@
     <ClCompile Include="Util\TestInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AN\ANTest.h" />
-    <ClInclude Include="AN\AN_avx2_16x16_16x32.h" />
-    <ClInclude Include="AN\AN_seq_16_32.h" />
-    <ClInclude Include="AN\AN_sse42_8x16_8x32.h" />
+    <ClInclude Include="AN\ANTest.hpp" />
+    <ClInclude Include="AN\AN_avx2_16x16_16x32.hpp" />
+    <ClInclude Include="AN\AN_seq_16_32.hpp" />
+    <ClInclude Include="AN\AN_sse42_8x16_8x32.hpp" />
     <ClInclude Include="Test.hpp" />
-    <ClInclude Include="Util\AlignedBlock.h" />
-    <ClInclude Include="Util\CPU.h" />
+    <ClInclude Include="Util\AlignedBlock.hpp" />
+    <ClInclude Include="Util\CPU.hpp" />
     <ClInclude Include="Util\ErrorInfo.hpp" />
-    <ClInclude Include="Util\Intrinsics.h" />
+    <ClInclude Include="Util\Intrinsics.hpp" />
     <ClInclude Include="Util\Stopwatch.hpp" />
     <ClInclude Include="Util\TestInfo.hpp" />
-    <ClInclude Include="XOR\XOR_avx2.h" />
-    <ClInclude Include="XOR\XOR_avx2_16x16_16.h" />
-    <ClInclude Include="XOR\XOR_avx2_8x32_32.h" />
-    <ClInclude Include="XOR\XOR_avx2_8x32_8x32.h" />
-    <ClInclude Include="XOR\XOR_base.h" />
-    <ClInclude Include="XOR\XOR_seq.h" />
-    <ClInclude Include="XOR\XOR_avx2_16x16_16x16.h" />
-    <ClInclude Include="XOR\XOR_seq_16_16.h" />
-    <ClInclude Include="XOR\XOR_seq_16_8.h" />
-    <ClInclude Include="XOR\XOR_seq_32_32.h" />
-    <ClInclude Include="XOR\XOR_seq_32_8.h" />
-    <ClInclude Include="XOR\XOR_sse42_4x32_4x32.h" />
-    <ClInclude Include="XOR\XOR_sse42_4x32_32.h" />
-    <ClInclude Include="XOR\XOR_sse42_8x16_16.h" />
-    <ClInclude Include="XOR\XOR_sse42_8x16_8x16.h" />
-    <ClInclude Include="XOR\XOR_sse42.h" />
+    <ClInclude Include="XOR\XOR_avx2.hpp" />
+    <ClInclude Include="XOR\XOR_avx2_16x16_16.hpp" />
+    <ClInclude Include="XOR\XOR_avx2_8x32_32.hpp" />
+    <ClInclude Include="XOR\XOR_avx2_8x32_8x32.hpp" />
+    <ClInclude Include="XOR\XOR_base.hpp" />
+    <ClInclude Include="XOR\XOR_seq.hpp" />
+    <ClInclude Include="XOR\XOR_avx2_16x16_16x16.hpp" />
+    <ClInclude Include="XOR\XOR_seq_16_16.hpp" />
+    <ClInclude Include="XOR\XOR_seq_16_8.hpp" />
+    <ClInclude Include="XOR\XOR_seq_32_32.hpp" />
+    <ClInclude Include="XOR\XOR_seq_32_8.hpp" />
+    <ClInclude Include="XOR\XOR_sse42_4x32_4x32.hpp" />
+    <ClInclude Include="XOR\XOR_sse42_4x32_32.hpp" />
+    <ClInclude Include="XOR\XOR_sse42_8x16_16.hpp" />
+    <ClInclude Include="XOR\XOR_sse42_8x16_8x16.hpp" />
+    <ClInclude Include="XOR\XOR_sse42.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -17,7 +17,7 @@
 #include <iostream>
 
 #include "Test.hpp"
-#include "Util/CPU.h"
+#include "Util/CPU.hpp"
 #include "Util/Stopwatch.hpp"
 
 TestBase::TestBase(const char* const name, AlignedBlock & in, AlignedBlock & out) :

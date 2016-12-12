@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "XOR_base.h"
-#include "../Util/Intrinsics.h"
+#include "XOR_base.hpp"
+#include "../Util/Intrinsics.hpp"
 
 template<>
 __m256i computeFinalChecksum<__m256i, __m256i>(__m256i & checksum)
@@ -133,7 +133,7 @@ struct XOR_avx2 : public Test<DATA, CS>
 				auto dataOut = reinterpret_cast<CS*>(data256);
 				if (checksumsDiffer<CS>(*dataOut, computeFinalChecksum<__m256i, CS>(checksum))) // third, test checksum
 				{
-					throw ErrorInfo(dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
+					throw ErrorInfo(dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our ï¿½-Benchmark
 				}
 				++dataOut; // fourth, advance after the checksum to the next block of values
 				data256 = reinterpret_cast<__m256i*>(dataOut);
@@ -149,7 +149,7 @@ struct XOR_avx2 : public Test<DATA, CS>
 				auto dataOut = reinterpret_cast<CS*>(data256);
 				if (checksumsDiffer<CS>(*dataOut, computeFinalChecksum<__m256i, CS>(checksum))) // third, test checksum
 				{
-					throw ErrorInfo(dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
+					throw ErrorInfo(dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our ï¿½-Benchmark
 				}
 				++dataOut; // fourth, advance after the checksum to the next block of values
 				data256 = reinterpret_cast<__m256i*>(dataOut);
@@ -167,7 +167,7 @@ struct XOR_avx2 : public Test<DATA, CS>
 				auto dataOut = reinterpret_cast<DATA*>(data);
 				if (checksumsDiffer<DATA>(*dataOut, computeFinalChecksum<DATA, DATA>(checksum))) // third, test checksum
 				{
-					throw ErrorInfo(dataOut - this->out.template begin<DATA>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
+					throw ErrorInfo(dataOut - this->out.template begin<DATA>(), iteration); // this is not completely accurate, but not SO necessary for our ï¿½-Benchmark
 				}
 			}
 		}

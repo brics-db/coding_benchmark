@@ -16,7 +16,7 @@
 
 #include <cstdint>
 
-#include "ANTest.h"
+#include "ANTest.hpp"
 
 template<size_t UNROLL>
 struct AN_avx2_16x16_16x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public AVX2Test

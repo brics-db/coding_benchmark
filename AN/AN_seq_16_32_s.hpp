@@ -16,7 +16,7 @@
 
 #include <cstdint>
 
-#include "ANTest.h"
+#include "ANTest.hpp"
 
 template<size_t UNROLL>
 struct AN_seq_16_32_s : public ANTest<int16_t, int32_t, UNROLL>, public SequentialTest

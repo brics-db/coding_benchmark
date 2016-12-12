@@ -23,7 +23,7 @@
 #include <cstdint>
 
 #include "../Test.hpp"
-#include "../Util/Intrinsics.h"
+#include "../Util/Intrinsics.hpp"
 
 struct hamming_seq_16_t
 {

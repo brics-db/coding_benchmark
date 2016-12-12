@@ -24,7 +24,7 @@
 #include <cstring>
 
 #include "Test.hpp"
-#include "Util/Intrinsics.h"
+#include "Util/Intrinsics.hpp"
 
 template<size_t UNROLL>
 struct CopyTest : public Test<uint16_t, uint16_t>, public SequentialTest

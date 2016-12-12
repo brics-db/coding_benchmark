@@ -16,16 +16,16 @@
 
 #include <cstdint>
 
-#include "XOR_seq.h"
-#include "../Util/Intrinsics.h"
+#include "XOR_seq.hpp"
+#include "../Util/Intrinsics.hpp"
 
 template<size_t BLOCKSIZE>
-struct XOR_seq_32_32 : public XOR_seq<uint32_t, uint32_t, BLOCKSIZE>, public SequentialTest
+struct XOR_seq_32_8 : public XOR_seq<uint32_t, uint8_t, BLOCKSIZE>, public SequentialTest
 {
-	XOR_seq_32_32(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-		XOR_seq<uint32_t, uint32_t, BLOCKSIZE>(name, in, out)
+	XOR_seq_32_8(const char* const name, AlignedBlock & in, AlignedBlock & out) :
+		XOR_seq<uint32_t, uint8_t, BLOCKSIZE>(name, in, out)
 	{}
 
-	virtual ~XOR_seq_32_32()
+	virtual ~XOR_seq_32_8()
 	{}
 };
