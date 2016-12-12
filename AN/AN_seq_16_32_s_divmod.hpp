@@ -19,14 +19,14 @@
 #include "ANTest.hpp"
 
 template<size_t UNROLL>
-struct AN_seq_16_32_s : public ANTest<int16_t, int32_t, UNROLL>, public SequentialTest
+struct AN_seq_16_32_s_divmod : public ANTest<int16_t, int32_t, UNROLL>, public SequentialTest
 {
 
-	AN_seq_16_32_s(const char* const name, AlignedBlock & in, AlignedBlock & out, int32_t A = 63'877l, int32_t Ainv = -784'197'811l) :
+	AN_seq_16_32_s_divmod(const char* const name, AlignedBlock & in, AlignedBlock & out, int32_t A = 63'877l, int32_t Ainv = -784'197'811l) :
 			ANTest<int16_t, int32_t, UNROLL>(name, in, out, A, Ainv) { }
 
 	virtual
-	~AN_seq_16_32_s() { }
+	~AN_seq_16_32_s_divmod() { }
 
 	void
 	RunEnc(const size_t numIterations) override
@@ -66,15 +66,12 @@ struct AN_seq_16_32_s : public ANTest<int16_t, int32_t, UNROLL>, public Sequenti
 			const size_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
 			size_t i = 0;
 			auto data = this->out.template begin<int32_t>();
-			int32_t dMax = std::numeric_limits<int16_t>::max();
-			int32_t dMin = std::numeric_limits<int16_t>::min();
 			while (i <= (numValues - UNROLL))
 			{
 				// let the compiler unroll the loop
 				for (size_t k = 0; k < UNROLL; ++k)
 				{
-					int32_t d = (*data * this->A_INV);
-					if (d > dMax || d < dMin)
+					if ((*data % this->A) != 0)
 					{
 						throw ErrorInfo(data - this->out.template begin<int32_t>(), iteration);
 					}
@@ -87,8 +84,7 @@ struct AN_seq_16_32_s : public ANTest<int16_t, int32_t, UNROLL>, public Sequenti
 			{
 				do
 				{
-					int32_t d = (*data * this->A_INV);
-					if (d > dMax || d < dMin)
+					if ((*data % this->A) != 0)
 					{
 						throw ErrorInfo(data - this->out.template begin<int32_t>(), numIterations);
 					}

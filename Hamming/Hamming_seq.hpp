@@ -148,4 +148,33 @@ struct Hamming_seq : public Test<DATAIN, typename TypeMapSeq<DATAIN>::hamming_se
 		}
 	}
 
+	bool
+	DoDec() override
+	{
+		return true;
+	}
+
+	void
+	RunDec(const size_t numIterations) override
+	{
+		for (size_t iteration = 0; iteration < numIterations; ++iteration)
+		{
+			size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
+			size_t i = 0;
+			auto data = this->out.template begin<hamming_seq_t>();
+			auto dataOut = this->in.template begin<DATAIN>();
+			while (i <= (numValues - UNROLL))
+			{
+				for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut)
+				{
+					*dataOut = data->data;
+				}
+				i += UNROLL;
+			}
+			for (; i < numValues; ++i, ++data, ++dataOut)
+			{
+				*dataOut = data->data;
+			}
+		}
+	}
 };

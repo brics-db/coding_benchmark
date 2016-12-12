@@ -19,16 +19,17 @@
 #include "ANTest.hpp"
 
 template<size_t UNROLL>
-struct AN_avx2_16x16_16x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public AVX2Test
+struct AN_avx2_16x16_16x32_inv : public ANTest<uint16_t, uint32_t, UNROLL>, public AVX2Test
 {
-	AN_avx2_16x16_16x32(const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
-		ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv)
-	{}
 
-	virtual ~AN_avx2_16x16_16x32()
-	{}
+	AN_avx2_16x16_16x32_inv(const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
+			ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv) { }
 
-	void RunEnc(const size_t numIterations) override
+	virtual
+	~AN_avx2_16x16_16x32_inv() { }
+
+	void
+	RunEnc(const size_t numIterations) override
 	{
 		for (size_t iter = 0; iter < numIterations; ++iter)
 		{
@@ -54,16 +55,16 @@ struct AN_avx2_16x16_16x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public A
 					_mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp2, 1));
 				}
 			}
-			
-			while (dataIn <= (dataEnd - 1))
+
+			while (dataIn <= (dataInEnd - 1))
 			{
-					__m256i m256 = _mm256_lddqu_si256(dataIn++);
-					__m256i tmp1 = _mm256_mullo_epi32(_mm256_shuffle_epi8(m256, mmShuffle1), mm_A);
-					__m256i tmp2 = _mm256_mullo_epi32(_mm256_shuffle_epi8(m256, mmShuffle2), mm_A);
-					_mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp1, 0));
-					_mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp2, 0));
-					_mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp1, 1));
-					_mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp2, 1));
+				__m256i m256 = _mm256_lddqu_si256(dataIn++);
+				__m256i tmp1 = _mm256_mullo_epi32(_mm256_shuffle_epi8(m256, mmShuffle1), mm_A);
+				__m256i tmp2 = _mm256_mullo_epi32(_mm256_shuffle_epi8(m256, mmShuffle2), mm_A);
+				_mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp1, 0));
+				_mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp2, 0));
+				_mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp1, 1));
+				_mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp2, 1));
 			}
 
 			// multiply remaining numbers sequentially
@@ -74,18 +75,21 @@ struct AN_avx2_16x16_16x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public A
 				auto out32 = reinterpret_cast<uint32_t*> (dataOut);
 				do
 				{
-					*out32++ = static_cast<uint32_t>(*data16++) * this->A;
-				} while (data16 < data16End);
+					*out32++ = static_cast<uint32_t> (*data16++) * this->A;
+				}
+				while (data16 < data16End);
 			}
 		}
 	}
 
-	virtual bool DoCheck() override
+	virtual bool
+	DoCheck() override
 	{
 		return true;
 	}
 
-	virtual void RunCheck(const size_t numIterations) override
+	virtual void
+	RunCheck(const size_t numIterations) override
 	{
 		for (size_t iteration = 0; iteration < numIterations; ++iteration)
 		{
@@ -119,7 +123,7 @@ struct AN_avx2_16x16_16x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public A
 			}
 			if (data < dataEnd)
 			{
-				auto dataEnd2 = reinterpret_cast<uint32_t*>(dataEnd);
+				auto dataEnd2 = reinterpret_cast<uint32_t*> (dataEnd);
 				for (auto data2 = reinterpret_cast<uint32_t*> (data); data2 < dataEnd2; ++data2)
 				{
 					if ((*data2 * this->A_INV) > unencMax)

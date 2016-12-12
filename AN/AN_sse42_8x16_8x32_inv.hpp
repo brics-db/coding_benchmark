@@ -20,16 +20,17 @@
 #include "ANTest.hpp"
 
 template<size_t UNROLL>
-struct AN_sse42_8x16_8x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public SSE42Test
+struct AN_sse42_8x16_8x32_inv : public ANTest<uint16_t, uint32_t, UNROLL>, public SSE42Test
 {
-	AN_sse42_8x16_8x32(const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
-		ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv)
-	{}
 
-	virtual ~AN_sse42_8x16_8x32()
-	{}
+	AN_sse42_8x16_8x32_inv(const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
+			ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv) { }
 
-	void RunEnc(const size_t numIterations) override
+	virtual
+	~AN_sse42_8x16_8x32_inv() { }
+
+	void
+	RunEnc(const size_t numIterations) override
 	{
 		for (size_t iteration = 0; iteration < numIterations; ++iteration)
 		{
@@ -66,12 +67,14 @@ struct AN_sse42_8x16_8x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public SS
 		}
 	}
 
-	virtual bool DoCheck() override
+	virtual bool
+	DoCheck() override
 	{
 		return true;
 	}
 
-	virtual void RunCheck(const size_t numIterations) override
+	virtual void
+	RunCheck(const size_t numIterations) override
 	{
 		for (size_t iteration = 0; iteration < numIterations; ++iteration)
 		{
@@ -105,7 +108,7 @@ struct AN_sse42_8x16_8x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public SS
 			}
 			if (data < dataEnd)
 			{
-				auto dataEnd2 = reinterpret_cast<uint32_t*>(dataEnd);
+				auto dataEnd2 = reinterpret_cast<uint32_t*> (dataEnd);
 				for (auto data2 = reinterpret_cast<uint32_t*> (data); data2 < dataEnd2; ++data2)
 				{
 					if ((*data2 * this->A_INV) > unencMax)
@@ -179,5 +182,5 @@ struct AN_sse42_8x16_8x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public SS
 			// TODO remaining values like in RunEnc
 		}
 	}
-	*/
+	 */
 };

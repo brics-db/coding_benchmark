@@ -47,11 +47,15 @@
 #include "XOR/XOR_avx2_8x32_8x32.hpp"
 #endif
 
-#include "AN/AN_seq_16_32_u.hpp"
-#include "AN/AN_seq_16_32_s.hpp"
-#include "AN/AN_sse42_8x16_8x32.hpp"
+#include "AN/AN_seq_16_32_u_inv.hpp"
+#include "AN/AN_seq_16_32_u_divmod.hpp"
+#include "AN/AN_seq_16_32_s_inv.hpp"
+#include "AN/AN_seq_16_32_s_divmod.hpp"
+#include "AN/AN_sse42_8x16_8x32_inv.hpp"
+#include "AN/AN_sse42_8x16_8x32_divmod.hpp"
 #ifdef __AVX2__
-#include "AN/AN_avx2_16x16_16x32.hpp"
+#include "AN/AN_avx2_16x16_16x32_inv.hpp"
+#include "AN/AN_avx2_16x16_16x32_divmod.hpp"
 #endif
 
 #include "Hamming/Hamming_seq_16.hpp"
@@ -198,26 +202,34 @@ main(int argc, char* argv[])
 
 	// 16-bit data sequential tests
 	TestCase(XOR_seq_16_16, "XOR Seq");
-	TestCase(AN_seq_16_32_u, "AN Seq U", 28'691, 1'441'585'691);
-	TestCase(AN_seq_16_32_s, "AN Seq S", 28'691, 1'441'585'691);
-	TestCase(AN_seq_16_32_u, "AN Seq U", AUser1, AUser1Inv);
-	TestCase(AN_seq_16_32_s, "AN Seq S", AUser1, AUser1Inv);
+	TestCase(AN_seq_16_32_u_divmod, "AN Seq U", 28'691, 1'441'585'691);
+	TestCase(AN_seq_16_32_s_divmod, "AN Seq S", 28'691, 1'441'585'691);
+	TestCase(AN_seq_16_32_u_divmod, "AN Seq U", AUser1, AUser1Inv);
+	TestCase(AN_seq_16_32_s_divmod, "AN Seq S", AUser1, AUser1Inv);
+	TestCase(AN_seq_16_32_u_inv, "AN Seq U", 28'691, 1'441'585'691);
+	TestCase(AN_seq_16_32_s_inv, "AN Seq S", 28'691, 1'441'585'691);
+	TestCase(AN_seq_16_32_u_inv, "AN Seq U", AUser1, AUser1Inv);
+	TestCase(AN_seq_16_32_s_inv, "AN Seq S", AUser1, AUser1Inv);
 	TestCase(Hamming_seq_16, "Hamming Seq");
 
 	// 16-bit data vectorized tests
 	TestCase(XOR_sse42_8x16_8x16, "XOR SSE4.2");
-	TestCase(AN_sse42_8x16_8x32, "AN SSE4.2", 28'691, 1'441'585'691);
-	TestCase(AN_sse42_8x16_8x32, "AN SSE4.2", AUser1, AUser1Inv);
+	TestCase(AN_sse42_8x16_8x32_divmod, "AN SSE4.2", 28'691, 1'441'585'691);
+	TestCase(AN_sse42_8x16_8x32_divmod, "AN SSE4.2", AUser1, AUser1Inv);
+	TestCase(AN_sse42_8x16_8x32_inv, "AN SSE4.2", 28'691, 1'441'585'691);
+	TestCase(AN_sse42_8x16_8x32_inv, "AN SSE4.2", AUser1, AUser1Inv);
 	TestCase(Hamming_sse42_16, "Hamming SSE4.2");
 #ifdef __AVX2__
 	TestCase(XOR_avx2_16x16_16x16, "XOR AVX2");
-	TestCase(AN_avx2_16x16_16x32, "AN AVX2", 28'691, 1'441'585'691);
-	TestCase(AN_avx2_16x16_16x32, "AN AVX2", AUser1, AUser1Inv);
+	TestCase(AN_avx2_16x16_16x32_divmod, "AN AVX2", 28'691, 1'441'585'691);
+	TestCase(AN_avx2_16x16_16x32_divmod, "AN AVX2", AUser1, AUser1Inv);
+	TestCase(AN_avx2_16x16_16x32_inv, "AN AVX2", 28'691, 1'441'585'691);
+	TestCase(AN_avx2_16x16_16x32_inv, "AN AVX2", AUser1, AUser1Inv);
 #endif
 
 	// 32-bit data sequential tests
 	TestCase(XOR_seq_32_32, "XOR Seq");
-	TestCase(Hamming_seq_32, "Hamming");
+	TestCase(Hamming_seq_32, "Hamming Seq");
 
 	// 32-bit data vectorized tests
 	TestCase(XOR_sse42_4x32_4x32, "XOR SSE4.2");

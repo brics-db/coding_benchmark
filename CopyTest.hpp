@@ -66,4 +66,19 @@ struct CopyTest : public Test<uint16_t, uint16_t>, public SequentialTest
 		}
 	}
 
+	bool
+	DoDec() override
+	{
+		return true;
+	}
+
+	void
+	RunDec(const size_t numIterations) override
+	{
+		for (size_t iteration = 0; iteration < numIterations; ++iteration)
+		{
+			_ReadWriteBarrier();
+			memcpy(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+		}
+	}
 };

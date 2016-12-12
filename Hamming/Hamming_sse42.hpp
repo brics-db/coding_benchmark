@@ -240,4 +240,44 @@ struct Hamming_sse42 : public Test<DATAIN, typename TypeMapSSE42<DATAIN>::hammin
 		}
 	}
 
+	bool
+	DoDec() override
+	{
+		return true;
+	}
+
+	void
+	RunDec(const size_t numIterations) override
+	{
+		for (size_t iteration = 0; iteration < numIterations; ++iteration)
+		{
+			const size_t VALUES_PER_SIMDREG = sizeof (__m128i) / sizeof (DATAIN);
+			const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
+			size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
+			size_t i = 0;
+			auto data = this->out.template begin<hamming_sse42_t>();
+			auto dataOut = this->in.template begin<__m128i>();
+			while (i <= (numValues - VALUES_PER_UNROLL))
+			{
+				for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut)
+				{
+					*dataOut = data->data;
+				}
+				i += VALUES_PER_UNROLL;
+			}
+			for (; i <= (numValues - 1); i += VALUES_PER_SIMDREG, ++data, ++dataOut)
+			{
+				*dataOut = data->data;
+			}
+			if (i < numValues)
+			{
+				auto data2 = reinterpret_cast<hamming_seq_t*> (data);
+				auto dataOut2 = reinterpret_cast<DATAIN*> (dataOut);
+				for (; i < numValues; ++i, ++data2, ++dataOut2)
+				{
+					*dataOut2 = data2->data;
+				}
+			}
+		}
+	}
 };

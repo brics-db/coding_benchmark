@@ -19,16 +19,17 @@
 #include "ANTest.hpp"
 
 template<size_t UNROLL>
-struct AN_seq_16_32_u : public ANTest<uint16_t, uint32_t, UNROLL>, public SequentialTest
+struct AN_seq_16_32_u_inv : public ANTest<uint16_t, uint32_t, UNROLL>, public SequentialTest
 {
-	AN_seq_16_32_u(const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
-		ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv)
-	{}
-	
-	virtual ~AN_seq_16_32_u()
-	{}
 
-	void RunEnc(const size_t numIterations) override
+	AN_seq_16_32_u_inv(const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
+			ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv) { }
+
+	virtual
+	~AN_seq_16_32_u_inv() { }
+
+	void
+	RunEnc(const size_t numIterations) override
 	{
 		for (size_t iteration = 0; iteration < numIterations; ++iteration)
 		{
@@ -51,12 +52,14 @@ struct AN_seq_16_32_u : public ANTest<uint16_t, uint32_t, UNROLL>, public Sequen
 		}
 	}
 
-	virtual bool DoCheck() override
+	virtual bool
+	DoCheck() override
 	{
 		return true;
 	}
 
-	virtual void RunCheck(const size_t numIterations)
+	virtual void
+	RunCheck(const size_t numIterations)
 	{
 		for (size_t iteration = 0; iteration < numIterations; ++iteration)
 		{
@@ -88,7 +91,8 @@ struct AN_seq_16_32_u : public ANTest<uint16_t, uint32_t, UNROLL>, public Sequen
 					}
 					++data;
 					++i;
-				} while (i <= numValues);
+				}
+				while (i <= numValues);
 			}
 		}
 	}
