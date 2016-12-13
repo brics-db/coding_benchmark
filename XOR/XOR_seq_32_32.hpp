@@ -20,12 +20,13 @@
 #include "../Util/Intrinsics.hpp"
 
 template<size_t BLOCKSIZE>
-struct XOR_seq_32_32 : public XOR_seq<uint32_t, uint32_t, BLOCKSIZE>, public SequentialTest
-{
-	XOR_seq_32_32(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-		XOR_seq<uint32_t, uint32_t, BLOCKSIZE>(name, in, out)
-	{}
+struct XOR_seq_32_32 : public XOR_seq<uint32_t, uint32_t, BLOCKSIZE>, public SequentialTest {
 
-	virtual ~XOR_seq_32_32()
-	{}
+    XOR_seq_32_32 (const char* const name, AlignedBlock & in, AlignedBlock & out) :
+            XOR_seq<uint32_t, uint32_t, BLOCKSIZE>(name, in, out) {
+    }
+
+    virtual
+    ~XOR_seq_32_32 () {
+    }
 };

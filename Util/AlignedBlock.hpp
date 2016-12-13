@@ -18,61 +18,59 @@
 #include <cstdint>
 #include <memory>
 
-struct AlignedBlock
-{
-	const size_t nBytes;
-	const size_t alignment;
+struct AlignedBlock {
+
+    const size_t nBytes;
+    const size_t alignment;
 
 private:
-	std::shared_ptr<char> baseptr;
-	void* data;
+    std::shared_ptr<char> baseptr;
+    void* data;
 
 public:
-	AlignedBlock() :
-		nBytes(0),
-		alignment(0),
-		baseptr(nullptr),
-		data(nullptr)
-	{}
 
-	AlignedBlock(size_t nBytes, size_t alignment) :
-		nBytes(nBytes),
-		alignment(alignment),
-		baseptr(new char[nBytes + alignment])
-	{
-		size_t tmp = reinterpret_cast<size_t>(baseptr.get());
-		data = baseptr.get() + (alignment - (tmp & (alignment - 1)));
-	}
+    AlignedBlock () :
+            nBytes (0),
+            alignment (0),
+            baseptr (nullptr),
+            data (nullptr) {
+    }
 
-	AlignedBlock(AlignedBlock & other) :
-		nBytes(other.nBytes),
-		alignment(other.alignment),
-		baseptr(other.baseptr),
-		data(other.data)
-	{}
+    AlignedBlock (size_t nBytes, size_t alignment) :
+            nBytes (nBytes),
+            alignment (alignment),
+            baseptr (new char[nBytes + alignment]) {
+        size_t tmp = reinterpret_cast<size_t>(baseptr.get());
+        data = baseptr.get() + (alignment - (tmp & (alignment - 1)));
+    }
 
-	AlignedBlock & operator=(AlignedBlock & other)
-	{
-		this->~AlignedBlock();
-		new (this) AlignedBlock(other);
-		return *this;
-	}
+    AlignedBlock (AlignedBlock & other) :
+            nBytes (other.nBytes),
+            alignment (other.alignment),
+            baseptr (other.baseptr),
+            data (other.data) {
+    }
 
-	template<typename T = void>
-	T* begin()
-	{
-		return static_cast<T*>(data);
-	}
+    AlignedBlock & operator= (AlignedBlock & other) {
+        this->~AlignedBlock();
+        new (this) AlignedBlock(other);
+        return *this;
+    }
 
-	template<typename T = void>
-	constexpr T* end() const
-	{
-		return reinterpret_cast<T*>(static_cast<char*>(data) + nBytes);
-	}
+    template<typename T = void>
+    T*
+    begin () {
+        return static_cast<T*>(data);
+    }
 
-	~AlignedBlock()
-	{
-		data = nullptr;
-		// baseptr is now a std::shared_ptr and auto-deallocated, which deletes its contents as well
-	}
+    template<typename T = void>
+    constexpr T*
+    end () const {
+        return reinterpret_cast<T*>(static_cast<char*>(data) + nBytes);
+    }
+
+    ~AlignedBlock () {
+        data = nullptr;
+        // baseptr is now a std::shared_ptr and auto-deallocated, which deletes its contents as well
+    }
 };

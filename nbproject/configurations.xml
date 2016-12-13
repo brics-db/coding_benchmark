@@ -2,6 +2,11 @@
 <configurationDescriptor version="100">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
+      <df name="AN">
+        <in>AN_avx2_16x16_16x32.hpp</in>
+        <in>AN_seq_16_32.hpp</in>
+        <in>AN_sse42_8x16_8x32.hpp</in>
+      </df>
       <df name="Util">
         <in>CPU.cpp</in>
         <in>ErrorInfo.cpp</in>
@@ -57,6 +62,12 @@
           <preBuildCommand>${CMAKE} -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=${IDE_CC} -DCMAKE_CXX_COMPILER=${IDE_CXX} -DCMAKE_C_FLAGS_DEBUG="-g3 -gdwarf-2" -DCMAKE_CXX_FLAGS_DEBUG="-g3 -gdwarf-2" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .</preBuildCommand>
         </preBuild>
       </makefileType>
+      <item path="AN/AN_avx2_16x16_16x32.hpp" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="AN/AN_seq_16_32.hpp" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="AN/AN_sse42_8x16_8x32.hpp" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="Main.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>

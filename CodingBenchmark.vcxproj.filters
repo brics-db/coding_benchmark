@@ -17,22 +17,69 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Test.hpp" />
+    <ClInclude Include="CopyTest.hpp" />
+    <ClInclude Include="AN\ANTest.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
     <ClInclude Include="AN\AN_avx2_16x16_16x32.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="AN\AN_avx2_16x16_16x32_divmod.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="AN\AN_avx2_16x16_16x32_inv.hpp">
       <Filter>AN</Filter>
     </ClInclude>
     <ClInclude Include="AN\AN_seq_16_32.hpp">
       <Filter>AN</Filter>
     </ClInclude>
+    <ClInclude Include="AN\AN_seq_16_32_s_divmod.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="AN\AN_seq_16_32_s_inv.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="AN\AN_seq_16_32_u_divmod.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="AN\AN_seq_16_32_u_inv.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
     <ClInclude Include="AN\AN_sse42_8x16_8x32.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\ANTest.hpp">
+    <ClInclude Include="AN\AN_sse42_8x16_8x32_divmod.hpp">
       <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="AN\AN_sse42_8x16_8x32_inv.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="Hamming\Hamming_seq.hpp">
+      <Filter>Hamming</Filter>
+    </ClInclude>
+    <ClInclude Include="Hamming\Hamming_seq_16.hpp">
+      <Filter>Hamming</Filter>
+    </ClInclude>
+    <ClInclude Include="Hamming\Hamming_seq_32.hpp">
+      <Filter>Hamming</Filter>
+    </ClInclude>
+    <ClInclude Include="Hamming\Hamming_sse42.hpp">
+      <Filter>Hamming</Filter>
+    </ClInclude>
+    <ClInclude Include="Hamming\Hamming_sse42_16.hpp">
+      <Filter>Hamming</Filter>
+    </ClInclude>
+    <ClInclude Include="Hamming\Hamming_sse42_32.hpp">
+      <Filter>Hamming</Filter>
     </ClInclude>
     <ClInclude Include="Util\AlignedBlock.hpp">
       <Filter>Util</Filter>
     </ClInclude>
     <ClInclude Include="Util\CPU.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\ErrorInfo.hpp">
       <Filter>Util</Filter>
     </ClInclude>
     <ClInclude Include="Util\Intrinsics.hpp">
@@ -41,50 +88,54 @@
     <ClInclude Include="Util\Stopwatch.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_16_8.hpp">
-      <Filter>XOR</Filter>
-    </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_16_16.hpp">
-      <Filter>XOR</Filter>
-    </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_32_8.hpp">
-      <Filter>XOR</Filter>
-    </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_32_32.hpp">
-      <Filter>XOR</Filter>
-    </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42_4x32_32.hpp">
-      <Filter>XOR</Filter>
-    </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42_8x16_16.hpp">
-      <Filter>XOR</Filter>
-    </ClInclude>
-    <ClInclude Include="Util\ErrorInfo.hpp">
-      <Filter>Util</Filter>
-    </ClInclude>
     <ClInclude Include="Util\TestInfo.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="Test.hpp" />
+    <ClInclude Include="XOR\XOR_avx2.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_avx2_16x16_16.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
     <ClInclude Include="XOR\XOR_avx2_16x16_16x16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42_4x32_4x32.hpp">
+    <ClInclude Include="XOR\XOR_avx2_8x32_32.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_avx2_8x32_8x32.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_base.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
     <ClInclude Include="XOR\XOR_seq.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
+    <ClInclude Include="XOR\XOR_seq_16_16.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_seq_16_8.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_seq_32_32.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_seq_32_8.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
     <ClInclude Include="XOR\XOR_sse42.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_avx2.hpp">
+    <ClInclude Include="XOR\XOR_sse42_4x32_32.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_avx2_8x32_8x32.hpp" />
-    <ClInclude Include="XOR\XOR_avx2_8x32_32.hpp" />
-    <ClInclude Include="XOR\XOR_avx2_16x16_16.hpp" />
-    <ClInclude Include="XOR\XOR_base.hpp" />
+    <ClInclude Include="XOR\XOR_sse42_4x32_4x32.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="XOR\XOR_sse42_8x16_16.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
     <ClInclude Include="XOR\XOR_sse42_8x16_8x16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
@@ -93,11 +144,14 @@
     <Filter Include="AN">
       <UniqueIdentifier>{0149baf8-3fff-4b31-9cca-983a716c3b3b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="XOR">
-      <UniqueIdentifier>{b01feee7-f521-4753-8864-b60c06c4dfe1}</UniqueIdentifier>
+    <Filter Include="Hamming">
+      <UniqueIdentifier>{f0a3dbe5-37c8-83ce-6043-40c220dd0576}</UniqueIdentifier>
     </Filter>
     <Filter Include="Util">
       <UniqueIdentifier>{a15e87e6-5f89-48ef-96d6-2fd824510b6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="XOR">
+      <UniqueIdentifier>{b01feee7-f521-4753-8864-b60c06c4dfe1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

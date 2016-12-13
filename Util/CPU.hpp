@@ -16,73 +16,73 @@
 
 #include <cstdint>
 
-struct CPU
-{
-	enum Vendor
-	{
-		Other,
-		AMD,
-		Intel
-	};
+struct CPU {
 
-	static CPU& Instance()
-	{
-		static CPU instance;
-		return instance;
-	}
+    enum Vendor {
 
-	//  Vendor
-	Vendor CPUVendor;
+        Other,
+        AMD,
+        Intel
+    };
 
-	// OS:
-	bool OS_X64;
-	bool OS_AVX;
-	bool OS_AVX512;
+    static CPU&
+    Instance () {
+        static CPU instance;
+        return instance;
+    }
 
-	//  Misc.
-	bool MMX;
-	bool x64;
-	bool ABM;
-	bool RDRAND;
-	bool BMI1;
-	bool BMI2;
-	bool ADX;
-	bool PREFETCHWT1;
-	bool MPX;
+    //  Vendor
+    Vendor CPUVendor;
 
-	// SSE
-	bool SSE;
-	bool SSE2;
-	bool SSE3;
-	bool SSSE3;
-	bool SSE41;
-	bool SSE42;
-	bool SSE4a;
-	bool AES;
-	bool SHA;
+    // OS:
+    bool OS_X64;
+    bool OS_AVX;
+    bool OS_AVX512;
 
-	// AVX
-	bool AVX;
-	bool XOP;
-	bool FMA3;
-	bool FMA4;
-	bool AVX2;
+    //  Misc.
+    bool MMX;
+    bool x64;
+    bool ABM;
+    bool RDRAND;
+    bool BMI1;
+    bool BMI2;
+    bool ADX;
+    bool PREFETCHWT1;
+    bool MPX;
 
-	// AVX-512
-	bool AVX512_F;
-	bool AVX512_PF;
-	bool AVX512_ER;
-	bool AVX512_CD;
-	bool AVX512_VL;
-	bool AVX512_BW;
-	bool AVX512_DQ;
-	bool AVX512_IFMA;
-	bool AVX512_VBMI;
+    // SSE
+    bool SSE;
+    bool SSE2;
+    bool SSE3;
+    bool SSSE3;
+    bool SSE41;
+    bool SSE42;
+    bool SSE4a;
+    bool AES;
+    bool SHA;
+
+    // AVX
+    bool AVX;
+    bool XOP;
+    bool FMA3;
+    bool FMA4;
+    bool AVX2;
+
+    // AVX-512
+    bool AVX512_F;
+    bool AVX512_PF;
+    bool AVX512_ER;
+    bool AVX512_CD;
+    bool AVX512_VL;
+    bool AVX512_BW;
+    bool AVX512_DQ;
+    bool AVX512_IFMA;
+    bool AVX512_VBMI;
 
 private:
-	CPU();
+    CPU ();
 
-	bool x64Supported();
-	void CPUID(int32_t out[4], int32_t x);
-	uint64_t xgetbv(unsigned int index);
+    bool x64Supported ();
+    void CPUID (int32_t out[4], int32_t x);
+    uint64_t xgetbv (unsigned int index);
 };

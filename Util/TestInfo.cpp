@@ -14,75 +14,75 @@
 
 #include "TestInfo.hpp"
 
-TestInfo::TestInfo() :
-	isExecuted(false),
-	nanos(0),
-	error(nullptr)
-{}
-
-TestInfo::TestInfo(int64_t nanos) :
-	TestInfo(true, nanos, nullptr)
-{}
-
-TestInfo::TestInfo(const char* const error) :
-	TestInfo(true, 0, error)
-{}
-
-TestInfo::TestInfo(bool isExecuted, int64_t nanos, const char* const error) :
-	isExecuted(isExecuted),
-	nanos(nanos), 
-	error(error)
-{}
-
-TestInfo::TestInfo(TestInfo& other) :
-	isExecuted(other.isExecuted),
-	nanos(other.nanos),
-	error(other.error)
-{}
-
-TestInfo::~TestInfo()
-{}
-
-void TestInfo::set(int64_t nanos)
-{
-	this->isExecuted = true;
-	this->nanos = nanos;
-	this->error = nullptr;
+TestInfo::TestInfo () :
+        isExecuted (false),
+        nanos (0),
+        error (nullptr) {
 }
 
-void TestInfo::set(const char* const error)
-{
-	this->isExecuted = true;
-	this->nanos = 0;
-	this->error = error;
+TestInfo::TestInfo (int64_t nanos) :
+        TestInfo (true, nanos, nullptr) {
 }
 
-TestInfos::TestInfos(const char* name, const char* simd) :
-	name(name),
-	simd(simd),
-	encode(), 
-	check(), 
-	arithmetic(), 
-	decode()
-{}
+TestInfo::TestInfo (const char* const error) :
+        TestInfo (true, 0, error) {
+}
 
-TestInfos::TestInfos(const char* name, const char* simd, TestInfo& encode, TestInfo& check, TestInfo& arithmetic, TestInfo& decode) :
-	name(name),
-	simd(simd),
-	encode(encode),
-	check(check),
-	arithmetic(arithmetic),
-	decode(decode)
-{}
+TestInfo::TestInfo (bool isExecuted, int64_t nanos, const char* const error) :
+        isExecuted (isExecuted),
+        nanos (nanos),
+        error (error) {
+}
 
-TestInfos::TestInfos(TestInfos&& other) :
-	name(other.name),
-	simd(other.simd),
-	encode(other.encode),
-	check(other.check),
-	arithmetic(other.arithmetic),
-	decode(other.decode)
-{}
+TestInfo::TestInfo (TestInfo& other) :
+        isExecuted (other.isExecuted),
+        nanos (other.nanos),
+        error (other.error) {
+}
 
-TestInfos::~TestInfos()
-{}
+TestInfo::~TestInfo () {
+}
+
+void
+TestInfo::set (int64_t nanos) {
+    this->isExecuted = true;
+    this->nanos = nanos;
+    this->error = nullptr;
+}
+
+void
+TestInfo::set (const char* const error) {
+    this->isExecuted = true;
+    this->nanos = 0;
+    this->error = error;
+}
+
+TestInfos::TestInfos (const char* name, const char* simd) :
+        name (name),
+        simd (simd),
+        encode (),
+        check (),
+        arithmetic (),
+        decode () {
+}
+
+TestInfos::TestInfos (const char* name, const char* simd, TestInfo& encode, TestInfo& check, TestInfo& arithmetic, TestInfo& decode) :
+        name (name),
+        simd (simd),
+        encode (encode),
+        check (check),
+        arithmetic (arithmetic),
+        decode (decode) {
+}
+
+TestInfos::TestInfos (TestInfos&& other) :
+        name (other.name),
+        simd (other.simd),
+        encode (other.encode),
+        check (other.check),
+        arithmetic (other.arithmetic),
+        decode (other.decode) {
+}
+
+TestInfos::~TestInfos () {
+}

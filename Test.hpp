@@ -21,80 +21,80 @@
 #include "Util/AlignedBlock.hpp"
 #include "Util/TestInfo.hpp"
 
-struct TestBase0
-{
-	virtual const char* getSIMDtypeName() = 0;
+struct TestBase0 {
 
-	virtual bool HasCapabilities() = 0;
+    virtual const char* getSIMDtypeName () = 0;
+
+    virtual bool HasCapabilities () = 0;
 };
 
-struct TestBase : virtual public TestBase0
-{
+struct TestBase : virtual public TestBase0 {
+
 protected:
-	const char* name;
-	AlignedBlock in;
-	AlignedBlock out;
+    const char* name;
+    AlignedBlock in;
+    AlignedBlock out;
 
 public:
-	TestBase(const char* const name, AlignedBlock & in, AlignedBlock & out);
+    TestBase (const char* const name, AlignedBlock & in, AlignedBlock & out);
 
-	virtual ~TestBase();
+    virtual ~TestBase ();
 
-	virtual void ResetBuffers() = 0;
+    virtual void ResetBuffers () = 0;
 
-	virtual size_t getInputTypeSize() = 0;
+    virtual size_t getInputTypeSize () = 0;
 
-	virtual size_t getOutputTypeSize() = 0;
+    virtual size_t getOutputTypeSize () = 0;
 
-	// Encoding
-	virtual void PreEnc(const size_t numIterations);
+    // Encoding
+    virtual void PreEnc (const size_t numIterations);
 
-	virtual void RunEnc(const size_t numIterations) = 0;
+    virtual void RunEnc (const size_t numIterations) = 0;
 
-	// Check
-	virtual bool DoCheck();
+    // Check
+    virtual bool DoCheck ();
 
-	virtual void PreCheck(const size_t numIterations);
+    virtual void PreCheck (const size_t numIterations);
 
-	virtual void RunCheck(const size_t numIterations);
+    virtual void RunCheck (const size_t numIterations);
 
-	// Arithmetic
-	virtual bool DoArith();
+    // Arithmetic
+    virtual bool DoArith ();
 
-	virtual void PreArith(const size_t numIterations);
+    virtual void PreArith (const size_t numIterations);
 
-	virtual void RunArith(const size_t numIterations, uint16_t value);
+    virtual void RunArith (const size_t numIterations, uint16_t value);
 
-	// Decoding
-	virtual bool DoDec();
+    // Decoding
+    virtual bool DoDec ();
 
-	virtual void PreDec(const size_t numIterations);
+    virtual void PreDec (const size_t numIterations);
 
-	virtual void RunDec(const size_t numIterations);
+    virtual void RunDec (const size_t numIterations);
 
-	// Execute test:
-	TestInfos Execute(const size_t numIterations);
+    // Execute test:
+    TestInfos Execute (const size_t numIterations);
 };
 
-struct SequentialTest : virtual public TestBase0
-{
-	virtual const char* getSIMDtypeName() override;
+struct SequentialTest : virtual public TestBase0 {
 
-	virtual bool HasCapabilities() override;
+    virtual const char* getSIMDtypeName () override;
+
+    virtual bool HasCapabilities () override;
 };
 
-struct SSE42Test : virtual public TestBase0
-{
-	virtual const char* getSIMDtypeName() override;
+struct SSE42Test : virtual public TestBase0 {
 
-	virtual bool HasCapabilities() override;
+    virtual const char* getSIMDtypeName () override;
+
+    virtual bool HasCapabilities () override;
 };
 
-struct AVX2Test : virtual public TestBase0
-{
-	virtual const char* getSIMDtypeName() override;
+struct AVX2Test : virtual public TestBase0 {
 
-	virtual bool HasCapabilities() override;
+    virtual const char* getSIMDtypeName () override;
+
+    virtual bool HasCapabilities () override;
 };
 
 #ifdef _MSC_VER
@@ -108,39 +108,36 @@ struct AVX2Test : virtual public TestBase0
 #endif
 
 template<typename DATA, typename CS>
-struct Test : public TestBase
-{
+struct Test : public TestBase {
 
-	Test(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-			TestBase(name, in, out) { }
+    Test (const char* const name, AlignedBlock & in, AlignedBlock & out) :
+            TestBase (name, in, out) {
+    }
 
-	virtual
-	~Test() { }
+    virtual
+    ~Test () {
+    }
 
-	virtual size_t
-	getInputTypeSize() override
-	{
-		return sizeof (DATA);
-	}
+    virtual size_t
+    getInputTypeSize () override {
+        return sizeof (DATA);
+    }
 
-	virtual size_t
-	getOutputTypeSize() override
-	{
-		return sizeof (CS);
-	}
+    virtual size_t
+    getOutputTypeSize () override {
+        return sizeof (CS);
+    }
 
-	void
-	ResetBuffers() override
-	{
-		// Reset buffers:
-		// uint16_t* const pInEnd = in.end<uint16_t>();
-		DATA value = 12783u;
-		for (DATA* pIn = this->in.template begin<DATA>(); pIn < this->in.template end<DATA>(); ++pIn)
-		{
-			*pIn = value;
-			value = value * 7577u + 10467u;
-		}
+    void
+    ResetBuffers () override {
+        // Reset buffers:
+        // uint16_t* const pInEnd = in.end<uint16_t>();
+        DATA value = 12783u;
+        for (DATA* pIn = this->in.template begin<DATA>(); pIn < this->in.template end<DATA>(); ++pIn) {
+            *pIn = value;
+            value = value * 7577u + 10467u;
+        }
 
-		memset(this->out.begin(), 0, this->out.nBytes);
-	}
+        memset(this->out.begin(), 0, this->out.nBytes);
+    }
 };

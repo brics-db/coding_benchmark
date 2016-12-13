@@ -17,40 +17,42 @@
 #include "Stopwatch.hpp"
 
 struct TestInfo {
-	bool isExecuted;
-	int64_t nanos;
-	const char* error;
 
-	TestInfo();
+    bool isExecuted;
+    int64_t nanos;
+    const char* error;
 
-	TestInfo(int64_t nanos);
+    TestInfo ();
 
-	TestInfo(const char* const error);
+    TestInfo (int64_t nanos);
 
-	TestInfo(bool isExecuted, int64_t nanos, const char* const error);
+    TestInfo (const char* const error);
 
-	TestInfo(TestInfo& other);
+    TestInfo (bool isExecuted, int64_t nanos, const char* const error);
 
-	void set(int64_t nanos);
+    TestInfo (TestInfo& other);
 
-	void set(const char* const error);
+    void set (int64_t nanos);
 
-	~TestInfo();
+    void set (const char* const error);
+
+    ~TestInfo ();
 };
 
 struct TestInfos {
-	std::string name;
-	std::string simd;
-	TestInfo encode;
-	TestInfo check;
-	TestInfo arithmetic;
-	TestInfo decode;
 
-	TestInfos(const char* name, const char* simd);
+    std::string name;
+    std::string simd;
+    TestInfo encode;
+    TestInfo check;
+    TestInfo arithmetic;
+    TestInfo decode;
 
-	TestInfos(const char* name, const char* simd, TestInfo& encode, TestInfo& check, TestInfo& arithmetic, TestInfo& decode);
+    TestInfos (const char* name, const char* simd);
 
-	TestInfos(TestInfos&& other);
+    TestInfos (const char* name, const char* simd, TestInfo& encode, TestInfo& check, TestInfo& arithmetic, TestInfo& decode);
 
-	~TestInfos();
+    TestInfos (TestInfos&& other);
+
+    ~TestInfos ();
 };

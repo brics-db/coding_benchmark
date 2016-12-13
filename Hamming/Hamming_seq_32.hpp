@@ -23,13 +23,14 @@
 #include "Hamming_seq.hpp"
 
 template<size_t UNROLL>
-struct Hamming_seq_32 : public Hamming_seq<uint32_t, UNROLL>
-{
+struct Hamming_seq_32 : public Hamming_seq<uint32_t, UNROLL> {
 
-    Hamming_seq_32(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-    Hamming_seq<uint32_t, UNROLL>(name, in, out) { }
+    Hamming_seq_32 (const char* const name, AlignedBlock & in, AlignedBlock & out) :
+            Hamming_seq<uint32_t, UNROLL>(name, in, out) {
+    }
 
     virtual
-    ~Hamming_seq_32() { }
+    ~Hamming_seq_32 () {
+    }
 
 };

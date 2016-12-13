@@ -17,12 +17,13 @@
 #include "XOR_avx2.hpp"
 
 template<size_t BLOCKSIZE>
-struct XOR_avx2_16x16_16 : public XOR_avx2<uint16_t, uint16_t, BLOCKSIZE>, public AVX2Test
-{
-	XOR_avx2_16x16_16(const char* const name, AlignedBlock & in, AlignedBlock & out) :
-		XOR_avx2<uint16_t, uint16_t, BLOCKSIZE>(name, in, out)
-	{}
+struct XOR_avx2_16x16_16 : public XOR_avx2<uint16_t, uint16_t, BLOCKSIZE>, public AVX2Test {
 
-	virtual ~XOR_avx2_16x16_16()
-	{}
+    XOR_avx2_16x16_16 (const char* const name, AlignedBlock & in, AlignedBlock & out) :
+            XOR_avx2<uint16_t, uint16_t, BLOCKSIZE>(name, in, out) {
+    }
+
+    virtual
+    ~XOR_avx2_16x16_16 () {
+    }
 };

@@ -14,10 +14,9 @@
 
 #include "ErrorInfo.hpp"
 
-ErrorInfo::ErrorInfo(size_t i, size_t iter)
-	: i(i), iter(iter) {
+ErrorInfo::ErrorInfo (size_t i, size_t iter)
+        : i (i), iter (iter) {
 }
 
-
-ErrorInfo::~ErrorInfo() {
+ErrorInfo::~ErrorInfo () {
 }

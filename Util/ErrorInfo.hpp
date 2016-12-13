@@ -16,14 +16,14 @@
 
 #include <cstddef>
 
-class ErrorInfo
-{
+class ErrorInfo {
+
 public:
-	size_t i;
-	size_t iter;
+    size_t i;
+    size_t iter;
 
-	ErrorInfo(size_t i, size_t iter);
+    ErrorInfo (size_t i, size_t iter);
 
-	~ErrorInfo();
+    ~ErrorInfo ();
 };
 

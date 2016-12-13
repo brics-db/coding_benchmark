@@ -24,27 +24,26 @@
 #undef min
 #undef max
 
-const long long g_Frequency = []() -> long long
-{
-	LARGE_INTEGER frequency;
-	QueryPerformanceFrequency(&frequency);
-	return frequency.QuadPart;
+const long long g_Frequency = []() -> long long {
+    LARGE_INTEGER frequency;
+    QueryPerformanceFrequency(&frequency);
+    return frequency.QuadPart;
 }();
 
-struct HighResClock
-{
-	typedef long long                               rep;
-	typedef std::nano                               period;
-	typedef std::chrono::duration<rep, period>      duration;
-	typedef std::chrono::time_point<HighResClock>   time_point;
-	static const bool is_steady = true;
+struct HighResClock {
 
-	static time_point now()
-	{
-		LARGE_INTEGER count;
-		QueryPerformanceCounter(&count);
-		return time_point(duration(count.QuadPart * static_cast<rep>(period::den) / g_Frequency));
-	}
+    typedef long long rep;
+    typedef std::nano period;
+    typedef std::chrono::duration<rep, period> duration;
+    typedef std::chrono::time_point<HighResClock> time_point;
+    static const bool is_steady = true;
+
+    static time_point
+    now () {
+        LARGE_INTEGER count;
+        QueryPerformanceCounter(&count);
+        return time_point(duration(count.QuadPart * static_cast<rep>(period::den) / g_Frequency));
+    }
 };
 
 #else
@@ -54,15 +53,15 @@ typedef std::chrono::high_resolution_clock HighResClock;
 
 #endif
 
-class Stopwatch
-{
-	typedef HighResClock Clock;
-	Clock::time_point start;
+class Stopwatch {
+
+    typedef HighResClock Clock;
+    Clock::time_point start;
 
 public:
-	Stopwatch();
+    Stopwatch ();
 
-	void Reset();
+    void Reset ();
 
-	int64_t Current();
+    int64_t Current ();
 };
