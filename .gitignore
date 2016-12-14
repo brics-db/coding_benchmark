@@ -28,6 +28,7 @@
 *.out
 *.app
 
+/.vs
 /CodingBenchmark.VC.VC.opendb
 /CodingBenchmark.VC.db
 /x64

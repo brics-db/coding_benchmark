@@ -38,7 +38,7 @@ public:
         std::string str = ss.str();
         size_t len = str.size() + 1;
         this->name = new char[len];
-        strncpy(const_cast<char*>(this->name), str.c_str(), len);
+        strncpy_s(const_cast<char*>(this->name), len, str.c_str(), len);
     }
 
     virtual

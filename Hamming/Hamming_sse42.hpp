@@ -68,11 +68,11 @@ struct TypeMapSSE42<uint16_t> {
 
     static uint64_t
     computeHamming (__m128i && data) {
-        static auto pattern1 = _mm_set1_epi16(static_cast<short>(0xAD5B));
-        static auto pattern2 = _mm_set1_epi16(static_cast<short>(0x366D));
-        static auto pattern3 = _mm_set1_epi16(static_cast<short>(0xC78E));
-        static auto pattern4 = _mm_set1_epi16(static_cast<short>(0x07F0));
-        static auto pattern5 = _mm_set1_epi16(static_cast<short>(0xF800));
+        static auto pattern1 = _mm_set1_epi16(0xAD5Bu);
+        static auto pattern2 = _mm_set1_epi16(0x366Du);
+        static auto pattern3 = _mm_set1_epi16(0xC78Eu);
+        static auto pattern4 = _mm_set1_epi16(0x07F0u);
+        static auto pattern5 = _mm_set1_epi16(0xF800u);
         uint64_t hamming = 0;
         uint64_t tmp1(0), tmp2(0);
         tmp2 = hammingWeight16(_mm_and_si128(data, pattern1)) & 0x0101010101010101;

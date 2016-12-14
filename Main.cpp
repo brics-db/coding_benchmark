@@ -131,7 +131,7 @@ printUsage (char* argv[]) {
 }
 
 int
-checkArgs (int argc, char* argv[], size_t & AUser1) {
+checkArgs (int argc, char* argv[], uint32_t & AUser1) {
     if (argc == 1) {
         return 0;
     }
@@ -140,7 +140,7 @@ checkArgs (int argc, char* argv[], size_t & AUser1) {
         return 1;
     }
     char* endPtr = nullptr;
-    AUser1 = strtoull(argv[1], &endPtr, 0);
+    AUser1 = strtoul(argv[1], &endPtr, 0);
     if (endPtr == argv[1] || AUser1 == 0 || (AUser1 & 1) == 0) {
         std::cerr << "Error: A is not a valid positive, non-zero, odd integer!\n";
         printUsage(argv);
@@ -157,14 +157,14 @@ checkArgs (int argc, char* argv[], size_t & AUser1) {
 int
 main (int argc, char* argv[]) {
     const size_t rawDataSize = 1'024 * 1'024; // size in BYTES
-    const size_t iterations = 4'000;
+	const size_t iterations = 4'000;
 
-    size_t AUser1 = 64'311;
+    uint32_t AUser1 = 64'311;
     int result = checkArgs(argc, argv, AUser1);
     if (result != 0) {
         return result;
     }
-    size_t AUser1Inv = ext_euclidean(AUser1, 32);
+    uint32_t AUser1Inv = ext_euclidean(AUser1, 32);
 
     AlignedBlock input(rawDataSize, 64);
     AlignedBlock output(2 * rawDataSize, 64); // AN coding generates twice as much output data as input data

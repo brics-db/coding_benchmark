@@ -26,8 +26,6 @@
 /* Definition of meta-macro for variable-length macros     */
 /***********************************************************/
 // get number of arguments with __NARG__
-#define __NARG__(...)  __NARG_I_(__VA_ARGS__,__RSEQ_N())
-#define __NARG_I_(...) __ARG_N(__VA_ARGS__)
 #define __ARG_N( \
       _1, _2, _3, _4, _5, _6, _7, _8, _9,_10, \
      _11,_12,_13,_14,_15,_16,_17,_18,_19,_20, \
@@ -48,7 +46,16 @@
 // general definition for any function name
 #define _VFUNC_(name, n) name##n
 #define _VFUNC(name, n) _VFUNC_(name, n)
+#ifdef _MSC_VER
+#define EXPAND(x) x
+#define __NARG_I_(...) EXPAND(__ARG_N(__VA_ARGS__))
+#define __NARG__(...)  EXPAND(__NARG_I_(__VA_ARGS__,__RSEQ_N()))
+#define VFUNC(func, ...) EXPAND(_VFUNC(func, EXPAND(__NARG__(__VA_ARGS__)))) (__VA_ARGS__)
+#else
+#define __NARG_I_(...) __ARG_N(__VA_ARGS__)
+#define __NARG__(...)  __NARG_I_(__VA_ARGS__,__RSEQ_N())
 #define VFUNC(func, ...) _VFUNC(func, __NARG__(__VA_ARGS__)) (__VA_ARGS__)
+#endif
 
 // Example definition for FOO
 // #define FOO(...) VFUNC(FOO, __VA_ARGS__)
