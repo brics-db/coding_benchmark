@@ -29,6 +29,7 @@
 #include "Util/ErrorInfo.hpp"
 #include "Util/VFunc.hpp"
 #include "Util/Euclidean.hpp"
+#include "Util/Intrinsics.hpp"
 
 #include "CopyTest.hpp"
 
@@ -159,12 +160,13 @@ main (int argc, char* argv[]) {
     const size_t rawDataSize = 1'024 * 1'024; // size in BYTES
 	const size_t iterations = 4'000;
 
-    uint32_t AUser1 = 64'311;
-    int result = checkArgs(argc, argv, AUser1);
+    uint32_t AUser = 64'311;
+    int result = checkArgs(argc, argv, AUser);
     if (result != 0) {
         return result;
     }
-    uint32_t AUser1Inv = ext_euclidean(AUser1, 32);
+    _ReadWriteBarrier();
+    uint32_t AUserInv = ext_euclidean(AUser, 32);
 
     AlignedBlock input(rawDataSize, 64);
     AlignedBlock output(2 * rawDataSize, 64); // AN coding generates twice as much output data as input data
@@ -174,45 +176,52 @@ main (int argc, char* argv[]) {
 
 #define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
 
-#define TestCase2(type,name) do { std::cout << "# " << std::setw(2) << (vecTestInfos.size() + 1) <<  ": Testing " << #type << " (" << name << ")" << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<1, 1024>()()); ExpandTest< type , 1, 1024>::Execute(vec, name , iterations, input, output); } while (0)
+#define TestCase2(type,name) do { std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<1, 1024>()()); ExpandTest< type , 1, 1024>::Execute(vec, name , iterations, input, output); } while (0)
 
-#define TestCase4(type,name,A,Ainv) do { std::cout << "# " << std::setw(2) << (vecTestInfos.size() + 1) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<1, 1024>()()); ExpandTest< type , 1, 1024>::Execute(vec, name, iterations, input, output, A, Ainv); } while (0)
+#define TestCase4(type,name,A,Ainv) do { std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<1, 1024>()()); ExpandTest< type , 1, 1024>::Execute(vec, name, iterations, input, output, A, Ainv); } while (0)
 
     WarmUp(CopyTest, "Copy");
 
     TestCase(CopyTest, "Copy");
 
+    const uint32_t AFixed = 28'691;
+    const uint32_t AFixedInv = 1'441'585'691;
+
     // 16-bit data sequential tests
+    std::cout << "# 16-bit sequential tests:" << std::endl;
     TestCase(XOR_seq_16_16, "XOR Seq");
-    TestCase(AN_seq_16_32_u_divmod, "AN Seq U", 28'691, 1'441'585'691);
-    TestCase(AN_seq_16_32_s_divmod, "AN Seq S", 28'691, 1'441'585'691);
-    TestCase(AN_seq_16_32_u_divmod, "AN Seq U", AUser1, AUser1Inv);
-    TestCase(AN_seq_16_32_s_divmod, "AN Seq S", AUser1, AUser1Inv);
-    TestCase(AN_seq_16_32_u_inv, "AN Seq U", 28'691, 1'441'585'691);
-    TestCase(AN_seq_16_32_s_inv, "AN Seq S", 28'691, 1'441'585'691);
-    TestCase(AN_seq_16_32_u_inv, "AN Seq U", AUser1, AUser1Inv);
-    TestCase(AN_seq_16_32_s_inv, "AN Seq S", AUser1, AUser1Inv);
+    TestCase(AN_seq_16_32_u_divmod, "AN Seq U", AFixed, AFixedInv);
+    TestCase(AN_seq_16_32_s_divmod, "AN Seq S", AFixed, AFixedInv);
+    TestCase(AN_seq_16_32_u_divmod, "AN Seq U", AUser, AUserInv);
+    TestCase(AN_seq_16_32_s_divmod, "AN Seq S", AUser, AUserInv);
+    TestCase(AN_seq_16_32_u_inv, "AN Seq U", AFixed, AFixedInv);
+    TestCase(AN_seq_16_32_s_inv, "AN Seq S", AFixed, AFixedInv);
+    TestCase(AN_seq_16_32_u_inv, "AN Seq U", AUser, AUserInv);
+    TestCase(AN_seq_16_32_s_inv, "AN Seq S", AUser, AUserInv);
     TestCase(Hamming_seq_16, "Hamming Seq");
 
     // 16-bit data vectorized tests
+    std::cout << "# 16-bit vectorized tests:" << std::endl;
     TestCase(XOR_sse42_8x16_8x16, "XOR SSE4.2");
-    TestCase(AN_sse42_8x16_8x32_divmod, "AN SSE4.2", 28'691, 1'441'585'691);
-    TestCase(AN_sse42_8x16_8x32_divmod, "AN SSE4.2", AUser1, AUser1Inv);
-    TestCase(AN_sse42_8x16_8x32_inv, "AN SSE4.2", 28'691, 1'441'585'691);
-    TestCase(AN_sse42_8x16_8x32_inv, "AN SSE4.2", AUser1, AUser1Inv);
+    TestCase(AN_sse42_8x16_8x32_divmod, "AN SSE4.2", AFixed, AFixedInv);
+    TestCase(AN_sse42_8x16_8x32_divmod, "AN SSE4.2", AUser, AUserInv);
+    TestCase(AN_sse42_8x16_8x32_inv, "AN SSE4.2", AFixed, AFixedInv);
+    TestCase(AN_sse42_8x16_8x32_inv, "AN SSE4.2", AUser, AUserInv);
     TestCase(Hamming_sse42_16, "Hamming SSE4.2");
 #ifdef __AVX2__
     TestCase(XOR_avx2_16x16_16x16, "XOR AVX2");
-    TestCase(AN_avx2_16x16_16x32_divmod, "AN AVX2", 28'691, 1'441'585'691);
-    TestCase(AN_avx2_16x16_16x32_divmod, "AN AVX2", AUser1, AUser1Inv);
-    TestCase(AN_avx2_16x16_16x32_inv, "AN AVX2", 28'691, 1'441'585'691);
-    TestCase(AN_avx2_16x16_16x32_inv, "AN AVX2", AUser1, AUser1Inv);
+    TestCase(AN_avx2_16x16_16x32_divmod, "AN AVX2", AFixed, AFixedInv);
+    TestCase(AN_avx2_16x16_16x32_divmod, "AN AVX2", AUser, AUserInv);
+    TestCase(AN_avx2_16x16_16x32_inv, "AN AVX2", AFixed, AFixedInv);
+    TestCase(AN_avx2_16x16_16x32_inv, "AN AVX2", AUser, AUserInv);
 #endif
 
+    std::cout << "# 32-bit sequential tests:" << std::endl;
     // 32-bit data sequential tests
     TestCase(XOR_seq_32_32, "XOR Seq");
     TestCase(Hamming_seq_32, "Hamming Seq");
 
+    std::cout << "# 32-bit vectorized tests:" << std::endl;
     // 32-bit data vectorized tests
     TestCase(XOR_sse42_4x32_4x32, "XOR SSE4.2");
     TestCase(Hamming_sse42_32, "Hamming SSE4.2");
@@ -251,34 +260,45 @@ printResults (std::vector<std::vector<TestInfos>> &results) {
     // The following does pretty-print everything so that it can be easily used as input for gnuplot & co.
     // print headline
     std::cout << "unroll/block";
-    // first all encode columns, then all check columns etc.
+    // first all encode columns, then all check columns etc.size
+    size_t i = 0;
     for (auto & v : results) {
         TestInfos &ti = v[0];
         if (ti.encode.isExecuted) {
-            std::cout << ',' << ti.name << " enc";
+            std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " enc");
         }
+        ++i;
     }
+    i = 0;
     for (auto & v : results) {
         TestInfos &ti = v[0];
         if (ti.check.isExecuted) {
-            std::cout << ',' << ti.name << " check";
+            std::cout << ',' << (i == 0 ? "memcmp" : ti.name) << (i == 0 ? "" : " check");
         }
+        ++i;
     }
+    i = 0;
     for (auto & v : results) {
         TestInfos &ti = v[0];
         if (ti.arithmetic.isExecuted) {
-            std::cout << ',' << ti.name << " arith";
+            std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " arith");
         }
+        ++i;
     }
+    i = 0;
     for (auto & v : results) {
         TestInfos &ti = v[0];
         if (ti.decode.isExecuted) {
-            std::cout << ',' << ti.name << " dec";
+            std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " dec");
         }
+        ++i;
     }
     std::cout << '\n';
 
     // print values, again first all encode columns, ...
+    if (doRelative) {
+        std::cout << std::fixed << std::setprecision(4);
+    }
     for (size_t pos = 0, blocksize = 1; pos < maxPos; ++pos, blocksize *= 2) {
         std::cout << blocksize;
         for (auto & v : results) {
