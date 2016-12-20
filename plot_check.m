@@ -371,7 +371,7 @@ unset y2tics
 unset y2label
 unset label
 unset arrow
-set key below center width 5
+set key below center width 2
 plot  NaN ls 1 t "memcmp" with linespoints,\
 	NaN ls 2 t "XOR" with linespoints,\
 	NaN ls 3 t "AN" with linespoints,\

@@ -119,17 +119,6 @@ set arrow from screen rm - gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1)+abs(
 set arrow from screen rm - gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1)+abs(y4-y3) ) ) - gap / 4.0  + gap to screen \
 	rm + gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1) + abs(y4-y3) ) ) + gap / 4.0 + gap nohead
 plot 'benchmark.csv' using 1:46 ls 3 with linespoints
-#unset border
-#set tmargin at screen 0.1
-#set bmargin at screen 0
-#unset tics
-#unset xlabel
-#unset ylabel
-#set key below
-#plot 1 ls 1 t "memcpy" with linespoints,\
-#	1 ls 2 t "XOR" with linespoints,\
-#	1 ls 3 t "AN" with linespoints,\
-#	1 ls 4 t "Hamming" with linespoints
 unset multiplot
 
 
@@ -172,18 +161,6 @@ set arrow from screen rm - gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1)+abs(
 set arrow from screen rm - gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1)+abs(y4-y3) ) ) - gap / 4.0  + gap to screen \
 	rm + gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1) + abs(y4-y3) ) ) + gap / 4.0 + gap nohead
 plot 'benchmark.csv' using 1:46 ls 3 with linespoints
-#unset border
-#set tmargin at screen 0.1
-#set bmargin at screen 0
-#unset tics
-#unset xlabel
-#unset ylabel
-#set key below
-#plot 1 ls 1 t "memcpy" with linespoints,\
-#	1 ls 2 t "XOR" with linespoints,\
-#	1 ls 3 t "AN" with linespoints,\
-#	1 ls 5 t "AN$_U^{\\text{inv}}$" with linespoints,\
-#	1 ls 6 t "AN$_S^{\\text{inv}}$" with linespoints
 unset multiplot
 
 set output 'plot_paper_decode_16bit_vec.tex'
@@ -203,7 +180,8 @@ set bmargin at screen bm
 set tmargin at screen bm + size * (abs(y2-y1) / (abs(y2-y1) + abs(y4-y3) ) )
 set yrange [y1:y2]
 plot 'benchmark.csv' using 1:44 ls 1 with linespoints,\
-	'benchmark.csv' using 1:55 ls 2 with linespoints
+	'benchmark.csv' using 1:55 ls 2 with linespoints,\
+	'benchmark.csv' using 1:60 ls 4 with linespoints
 unset xtics
 unset xlabel
 unset ylabel
@@ -222,22 +200,9 @@ set arrow from screen rm - gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1)+abs(
 	rm + gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1) + abs(y4-y3) ) ) + gap / 4.0 nohead
 set arrow from screen rm - gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1)+abs(y4-y3) ) ) - gap / 4.0  + gap to screen \
 	rm + gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1) + abs(y4-y3) ) ) + gap / 4.0 + gap nohead
-plot 'benchmark.csv' using 1:56 ls 3 with linespoints,\
-	'benchmark.csv' using 1:60 ls 4 with linespoints
-#unset border
-#set tmargin at screen 0.1
-#set bmargin at screen 0
-#unset tics
-#unset xlabel
-#unset ylabel
-#set key below
-#plot 1 ls 1 t "memcpy" with linespoints,\
-#	1 ls 2 t "XOR" with linespoints,\
-#	1 ls 3 t "AN" with linespoints,\
-#	1 ls 4 t "Hamming" with linespoints
+plot 'benchmark.csv' using 1:56 ls 3 with linespoints
 unset multiplot
 
-y1 = 0.0; y2 = 11.5; y3 = 28.5; y4 = 50.0
 set output 'plot_paper_decode_16bit_vec_inv.tex'
 set multiplot
 set border 1+2+8
@@ -255,7 +220,7 @@ set bmargin at screen bm
 set tmargin at screen bm + size * (abs(y2-y1) / (abs(y2-y1) + abs(y4-y3) ) )
 set yrange [y1:y2]
 plot 'benchmark.csv' using 1:44 ls 1 with linespoints,\
-	'benchmark.csv' using 1:54 ls 2 with linespoints,\
+	'benchmark.csv' using 1:55 ls 2 with linespoints,\
 	'benchmark.csv' using 1:58 ls 5 with linespoints
 unset xtics
 unset xlabel
@@ -276,17 +241,6 @@ set arrow from screen rm - gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1)+abs(
 set arrow from screen rm - gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1)+abs(y4-y3) ) ) - gap / 4.0  + gap to screen \
 	rm + gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1) + abs(y4-y3) ) ) + gap / 4.0 + gap nohead
 plot 'benchmark.csv' using 1:56 ls 3 with linespoints
-#unset border
-#set tmargin at screen 0.1
-#set bmargin at screen 0
-#unset tics
-#unset xlabel
-#unset ylabel
-#set key below
-#plot 1 ls 1 t "memcpy" with linespoints,\
-#	1 ls 2 t "XOR" with linespoints,\
-#	1 ls 3 t "AN" with linespoints,\
-#	1 ls 4 t "AN$_U^{\\text{inv}}$" with linespoints
 unset multiplot
 
 set output 'plot_paper_decode_16bit_seq_inv_zoom.tex'
@@ -340,7 +294,6 @@ plot NaN ls 1 t "memcpy" with linespoints,\
 	NaN ls 3 t "AN" with linespoints,\
 	NaN ls 4 t "Hamming" with linespoints
 
-set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 6.7in,.2in
 set output 'plot_paper_legend_decode_inv.tex'
 unset border
 unset xtics
@@ -353,7 +306,7 @@ unset y2tics
 unset y2label
 unset label
 unset arrow
-set key below center width 5
+set key below center width 2
 plot NaN ls 1 t "memcpy" with linespoints,\
 	NaN ls 2 t "XOR" with linespoints,\
 	NaN ls 3 t "AN" with linespoints,\
