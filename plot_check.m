@@ -375,6 +375,5 @@ set key below center width 5
 plot  NaN ls 1 t "memcmp" with linespoints,\
 	NaN ls 2 t "XOR" with linespoints,\
 	NaN ls 3 t "AN" with linespoints,\
-	NaN ls 4 t "Hamming" with linespoints,\
 	NaN ls 5 t "AN$_U^{\\text{inv}}$" with linespoints,\
 	NaN ls 6 t "AN$_S^{\\text{inv}}$" with linespoints
