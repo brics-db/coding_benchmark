@@ -158,7 +158,7 @@ set arrow from screen rm - gap / 4.0, bm + size * (abs(y2-y1) / (abs(y2-y1)+abs(
 plot 1
 unset multiplot
 
-set output 'plot_paper_encode_16bit_vec_zoom.tex'
+set output 'plot_paper_encode_16bit_seq_zoom.tex'
 set border 1+2+4+8
 unset key
 unset label
