@@ -61,5 +61,5 @@ MACRO( add_nonvectorized arg_name arg_source_files)
 ENDMACRO( add_nonvectorized )
 
 add_vectorized(benchmark "Main.cpp Test.cpp Util/ErrorInfo.cpp Util/TestInfo.cpp Util/Stopwatch.cpp Util/CPU.cpp")
-add_nonvectorized(benchmark_novec "Main.cpp Test.cpp Util/ErrorInfo.cpp Util/TestInfo.cpp Util/Stopwatch.cpp Util/CPU.cpp")
+#add_nonvectorized(benchmark_novec "Main.cpp Test.cpp Util/ErrorInfo.cpp Util/TestInfo.cpp Util/Stopwatch.cpp Util/CPU.cpp")
 
