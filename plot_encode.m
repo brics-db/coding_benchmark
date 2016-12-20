@@ -171,6 +171,22 @@ set yrange [0.75:2]
 set ytics 0.25
 set xtics nomirror 1,4,1024
 plot 'benchmark.csv' using 1:2 ls 1 with linespoints,\
+	'benchmark.csv' using 1:3 ls 2 with linespoints,\
+	'benchmark.csv' using 1:4 ls 3 with linespoints
+
+set output 'plot_paper_encode_16bit_vec_zoom.tex'
+set border 1+2+4+8
+unset key
+unset label
+unset arrow
+set lmargin at screen lm
+set rmargin at screen rm
+set bmargin at screen bm
+set tmargin at screen bm + size
+set yrange [0.75:2]
+set ytics 0.25
+set xtics nomirror 1,4,1024
+plot 'benchmark.csv' using 1:2 ls 1 with linespoints,\
 	'benchmark.csv' using 1:13 ls 2 with linespoints,\
 	'benchmark.csv' using 1:14 ls 3 with linespoints
 
