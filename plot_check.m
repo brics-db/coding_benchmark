@@ -356,6 +356,25 @@ set key below center width 5
 plot  NaN ls 1 t "memcmp" with linespoints,\
 	NaN ls 2 t "XOR" with linespoints,\
 	NaN ls 3 t "AN" with linespoints,\
+	NaN ls 4 t "Hamming" with linespoints
+
+set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 6.7in,.2in
+set output 'plot_paper_legend_check_inv.tex'
+unset border
+unset xtics
+unset xlabel
+unset x2tics
+unset x2label
+unset ytics
+unset ylabel
+unset y2tics
+unset y2label
+unset label
+unset arrow
+set key below center width 5
+plot  NaN ls 1 t "memcmp" with linespoints,\
+	NaN ls 2 t "XOR" with linespoints,\
+	NaN ls 3 t "AN" with linespoints,\
 	NaN ls 4 t "Hamming" with linespoints,\
 	NaN ls 5 t "AN$_U^{\\text{inv}}$" with linespoints,\
 	NaN ls 6 t "AN$_S^{\\text{inv}}$" with linespoints
