@@ -339,7 +339,9 @@ unset key
 set label 'Relative Slowdown' at screen 0.5, bm + 0.4 * (size + gap) offset 0,-strlen("Relative Slowdown")/4.0 rotate by 90
 plot 1 ls 0 with linespoints
 
-set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 6.7in,.2in
+set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.15in
+set lmargin 0
+set rmargin 0
 set output 'plot_paper_legend_check.tex'
 unset border
 unset xtics
@@ -352,26 +354,14 @@ unset y2tics
 unset y2label
 unset label
 unset arrow
-set key below center width 5
+set key below maxcols 4 maxrows 1 horizontal width 4
 plot  NaN ls 1 t "memcmp" with linespoints,\
 	NaN ls 2 t "XOR" with linespoints,\
 	NaN ls 3 t "AN" with linespoints,\
 	NaN ls 4 t "Hamming" with linespoints
 
-set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 6.7in,.2in
 set output 'plot_paper_legend_check_inv.tex'
-unset border
-unset xtics
-unset xlabel
-unset x2tics
-unset x2label
-unset ytics
-unset ylabel
-unset y2tics
-unset y2label
-unset label
-unset arrow
-set key below center width 2
+set key below maxcols 5 maxrows 1 horizontal width 0.5
 plot  NaN ls 1 t "memcmp" with linespoints,\
 	NaN ls 2 t "XOR" with linespoints,\
 	NaN ls 3 t "AN" with linespoints,\
