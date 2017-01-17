@@ -300,5 +300,4 @@ set output 'plot_paper_legend_decode_inv.tex'
 set key below maxcols 4 maxrows 1 horizontal width 0.5
 plot NaN ls 1 t "memcpy" with linespoints,\
 	NaN ls 2 t "XOR" with linespoints,\
-	NaN ls 3 t "AN" with linespoints,\
 	NaN ls 5 t "AN$^{\\text{inv}}$" with linespoints
