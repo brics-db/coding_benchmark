@@ -158,7 +158,7 @@ checkArgs (int argc, char* argv[], uint32_t & AUser1) {
 int
 main (int argc, char* argv[]) {
     const size_t rawDataSize = 1'024 * 1'024; // size in BYTES
-	const size_t iterations = 4'000;
+    const size_t iterations = 1; //4'000;
 
     uint32_t AUser = 64'311;
     int result = checkArgs(argc, argv, AUser);
@@ -208,6 +208,7 @@ main (int argc, char* argv[]) {
     TestCase(AN_sse42_8x16_8x32_inv, "AN SSE4.2", AFixed, AFixedInv);
     TestCase(AN_sse42_8x16_8x32_inv, "AN SSE4.2", AUser, AUserInv);
     TestCase(Hamming_sse42_16, "Hamming SSE4.2");
+
 #ifdef __AVX2__
     TestCase(XOR_avx2_16x16_16x16, "XOR AVX2");
     TestCase(AN_avx2_16x16_16x32_divmod, "AN AVX2", AFixed, AFixedInv);
@@ -352,3 +353,4 @@ printResults (std::vector<std::vector<TestInfos>> &results) {
         std::cout << std::endl;
     }
 }
+

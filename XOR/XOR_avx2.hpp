@@ -43,7 +43,7 @@ uint8_t computeFinalChecksum<__m256i, uint8_t>(__m256i & checksum) {
 template<>
 bool checksumsDiffer<__m256i>(__m256i checksum1, __m256i checksum2) {
     // check if any of the 16 bytes differ
-    return 0xFFFFFFFF != _mm256_movemask_epi8(_mm256_cmpeq_epi8(checksum1, checksum2));
+    return static_cast<int>(0xFFFFFFFF) != _mm256_movemask_epi8(_mm256_cmpeq_epi8(checksum1, checksum2));
 }
 
 template<typename DATA, typename CS, size_t BLOCKSIZE>
@@ -123,7 +123,7 @@ struct XOR_avx2 : public Test<DATA, CS> {
                 auto dataOut = reinterpret_cast<CS*>(data256);
                 if (checksumsDiffer<CS>(*dataOut, computeFinalChecksum<__m256i, CS>(checksum))) // third, test checksum
                 {
-                    throw ErrorInfo(dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our �-Benchmark
+                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our �-Benchmark
                 }
                 ++dataOut; // fourth, advance after the checksum to the next block of values
                 data256 = reinterpret_cast<__m256i*>(dataOut);
@@ -137,7 +137,7 @@ struct XOR_avx2 : public Test<DATA, CS> {
                 auto dataOut = reinterpret_cast<CS*>(data256);
                 if (checksumsDiffer<CS>(*dataOut, computeFinalChecksum<__m256i, CS>(checksum))) // third, test checksum
                 {
-                    throw ErrorInfo(dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our �-Benchmark
+                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our �-Benchmark
                 }
                 ++dataOut; // fourth, advance after the checksum to the next block of values
                 data256 = reinterpret_cast<__m256i*>(dataOut);
@@ -152,7 +152,7 @@ struct XOR_avx2 : public Test<DATA, CS> {
                 auto dataOut = reinterpret_cast<DATA*>(data);
                 if (checksumsDiffer<DATA>(*dataOut, computeFinalChecksum<DATA, DATA>(checksum))) // third, test checksum
                 {
-                    throw ErrorInfo(dataOut - this->out.template begin<DATA>(), iteration); // this is not completely accurate, but not SO necessary for our �-Benchmark
+                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<DATA>(), iteration); // this is not completely accurate, but not SO necessary for our �-Benchmark
                 }
             }
         }

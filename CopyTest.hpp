@@ -56,7 +56,7 @@ struct CopyTest : public Test<uint16_t, uint16_t>, public SequentialTest {
             _ReadWriteBarrier();
             int ret = memcmp(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
             if (ret != 0) {
-                throw ErrorInfo(ret, numIterations);
+                throw ErrorInfo(__FILE__, __LINE__, ret, numIterations);
             }
         }
     }

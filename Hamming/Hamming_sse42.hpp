@@ -68,11 +68,11 @@ struct TypeMapSSE42<uint16_t> {
 
     static uint64_t
     computeHamming (__m128i && data) {
-        static auto pattern1 = _mm_set1_epi16(0xAD5B);
-        static auto pattern2 = _mm_set1_epi16(0x366D);
-        static auto pattern3 = _mm_set1_epi16(0xC78E);
-        static auto pattern4 = _mm_set1_epi16(0x07F0);
-        static auto pattern5 = _mm_set1_epi16(0xF800);
+        static auto pattern1 = _mm_set1_epi16(static_cast<int16_t>(0xAD5B));
+        static auto pattern2 = _mm_set1_epi16(static_cast<int16_t>(0x366D));
+        static auto pattern3 = _mm_set1_epi16(static_cast<int16_t>(0xC78E));
+        static auto pattern4 = _mm_set1_epi16(static_cast<int16_t>(0x07F0));
+        static auto pattern5 = _mm_set1_epi16(static_cast<int16_t>(0xF800));
         uint64_t hamming = 0;
         uint64_t tmp1(0), tmp2(0);
         tmp2 = hammingWeight16(_mm_and_si128(data, pattern1)) & 0x0101010101010101;
@@ -201,19 +201,19 @@ struct Hamming_sse42 : public Test<DATAIN, typename TypeMapSSE42<DATAIN>::hammin
             while (i <= (numValues - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, i += (sizeof (__m128i) / sizeof (DATAIN)), ++data) {
                     if (data->code != TypeMapSSE42<DATAIN>::computeHamming(std::move(data->data))) {
-                        throw ErrorInfo(data - this->out.template begin<hamming_sse42_t>(), numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_sse42_t>(), numIterations);
                     }
                 }
             }
             for (; i <= (numValues - 1); i += (sizeof (__m128i) / sizeof (DATAIN)), ++data) {
                 if (data->code != TypeMapSSE42<DATAIN>::computeHamming(std::move(data->data))) {
-                    throw ErrorInfo(data - this->out.template begin<hamming_sse42_t>(), numIterations);
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_sse42_t>(), numIterations);
                 }
             }
             if (i < numValues) {
                 for (auto data2 = reinterpret_cast<hamming_seq_t*>(data); i < numValues; ++i, ++data2) {
                     if (data2->code != TypeMapSeq<DATAIN>::computeHamming(std::move(data2->data))) {
-                        throw ErrorInfo(data2 - this->out.template begin<hamming_seq_t>(), numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__,  data2 - this->out.template begin<hamming_seq_t>(), numIterations);
                     }
                 }
             }

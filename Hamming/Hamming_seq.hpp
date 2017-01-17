@@ -123,13 +123,13 @@ struct Hamming_seq : public Test<DATAIN, typename TypeMapSeq<DATAIN>::hamming_se
             while (i <= (numValues - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++i, ++data) {
                     if (data->code != TypeMapSeq<DATAIN>::computeHamming(std::move(data->data))) {
-                        throw ErrorInfo(data - this->out.template begin<hamming_seq_t>(), numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_seq_t>(), numIterations);
                     }
                 }
             }
             for (; i < numValues; ++i, ++data) {
                 if (data->code != TypeMapSeq<DATAIN>::computeHamming(std::move(data->data))) {
-                    throw ErrorInfo(data - this->out.template begin<hamming_seq_t>(), numIterations);
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_seq_t>(), numIterations);
                 }
             }
         }

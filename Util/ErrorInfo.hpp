@@ -19,11 +19,15 @@
 class ErrorInfo {
 
 public:
+    const char* file;
+    size_t line;
     size_t i;
     size_t iter;
 
-    ErrorInfo (size_t i, size_t iter);
+    ErrorInfo (const char* file, size_t line, size_t i, size_t iter);
 
     ~ErrorInfo ();
+
+    const char* what();
 };
 

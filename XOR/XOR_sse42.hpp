@@ -122,7 +122,7 @@ struct XOR_sse42 : public Test<DATA, CS> {
                 auto dataOut = reinterpret_cast<CS*>(data128);
                 if (checksumsDiffer<CS>(*dataOut, computeFinalChecksum<__m128i, CS>(checksum))) // third, test checksum
                 {
-                    throw ErrorInfo(dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
+                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
                 }
                 ++dataOut; // fourth, advance after the checksum to the next block of values
                 data128 = reinterpret_cast<__m128i*>(dataOut);
@@ -138,7 +138,7 @@ struct XOR_sse42 : public Test<DATA, CS> {
                 auto dataOut = reinterpret_cast<CS*>(data128);
                 if (checksumsDiffer<CS>(*dataOut, computeFinalChecksum<__m128i, CS>(checksum))) // third, test checksum
                 {
-                    throw ErrorInfo(dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
+                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
                 }
                 ++dataOut; // fourth, advance after the checksum to the next block of values
                 data128 = reinterpret_cast<__m128i*>(dataOut);
@@ -153,7 +153,7 @@ struct XOR_sse42 : public Test<DATA, CS> {
                 auto dataOut = reinterpret_cast<DATA*>(data);
                 if (checksumsDiffer<DATA>(*dataOut, computeFinalChecksum<DATA, DATA>(checksum))) // third, test checksum
                 {
-                    throw ErrorInfo(dataOut - this->out.template begin<DATA>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
+                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<DATA>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
                 }
             }
         }

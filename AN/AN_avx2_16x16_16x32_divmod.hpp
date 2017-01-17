@@ -41,8 +41,8 @@ struct AN_avx2_16x16_16x32_divmod : public AN_avx2_16x16_16x32<UNROLL> {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
                     auto mmIn = _mm256_lddqu_si256(data);
-                    if ((_mm256_extract_epi32(mmIn, 0) % A != 0) || (_mm256_extract_epi32(mmIn, 1) % A != 0) || (_mm256_extract_epi32(mmIn, 2) % A != 0) || (_mm256_extract_epi32(mmIn, 3) % A != 0) || (_mm256_extract_epi32(mmIn, 4) % A != 0) || (_mm256_extract_epi32(mmIn, 5) % A != 0) || (_mm256_extract_epi32(mmIn, 6) % A != 0) || (_mm256_extract_epi32(mmIn, 7) % A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
-                        throw ErrorInfo(reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                    if ((_mm256_extract_epi32(mmIn, 0) % this->A != 0) || (_mm256_extract_epi32(mmIn, 1) % this->A != 0) || (_mm256_extract_epi32(mmIn, 2) % this->A != 0) || (_mm256_extract_epi32(mmIn, 3) % this->A != 0) || (_mm256_extract_epi32(mmIn, 4) % this->A != 0) || (_mm256_extract_epi32(mmIn, 5) % this->A != 0) || (_mm256_extract_epi32(mmIn, 6) % this->A != 0) || (_mm256_extract_epi32(mmIn, 7) % this->A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
                     }
                     ++data;
                 }
@@ -50,8 +50,8 @@ struct AN_avx2_16x16_16x32_divmod : public AN_avx2_16x16_16x32<UNROLL> {
             // here follows the non-unrolled remainder
             while (data <= (dataEnd - 1)) {
                 auto mmIn = _mm256_lddqu_si256(data);
-                if ((_mm256_extract_epi32(mmIn, 0) % A != 0) || (_mm256_extract_epi32(mmIn, 1) % A != 0) || (_mm256_extract_epi32(mmIn, 2) % A != 0) || (_mm256_extract_epi32(mmIn, 3) % A != 0) || (_mm256_extract_epi32(mmIn, 4) % A != 0) || (_mm256_extract_epi32(mmIn, 5) % A != 0) || (_mm256_extract_epi32(mmIn, 6) % A != 0) || (_mm256_extract_epi32(mmIn, 7) % A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
-                    throw ErrorInfo(reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                if ((_mm256_extract_epi32(mmIn, 0) % this->A != 0) || (_mm256_extract_epi32(mmIn, 1) % this->A != 0) || (_mm256_extract_epi32(mmIn, 2) % this->A != 0) || (_mm256_extract_epi32(mmIn, 3) % this->A != 0) || (_mm256_extract_epi32(mmIn, 4) % this->A != 0) || (_mm256_extract_epi32(mmIn, 5) % this->A != 0) || (_mm256_extract_epi32(mmIn, 6) % this->A != 0) || (_mm256_extract_epi32(mmIn, 7) % this->A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
                 }
                 ++data;
             }
@@ -59,7 +59,7 @@ struct AN_avx2_16x16_16x32_divmod : public AN_avx2_16x16_16x32<UNROLL> {
                 auto dataEnd2 = reinterpret_cast<uint32_t*>(dataEnd);
                 for (auto data2 = reinterpret_cast<uint32_t*>(data); data2 < dataEnd2; ++data2) {
                     if ((*data2 % this->A) != 0) {
-                        throw ErrorInfo(reinterpret_cast<uint32_t*>(data2) - this->out.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data2) - this->out.template begin<uint32_t>(), iteration);
                     }
                 }
             }
@@ -74,46 +74,35 @@ struct AN_avx2_16x16_16x32_divmod : public AN_avx2_16x16_16x32<UNROLL> {
     void
     RunDec (const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            const size_t VALUES_PER_SIMDREG = sizeof (__m256i) / sizeof (uint32_t);
-            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
-            size_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
-            size_t i = 0;
-            auto dataIn = this->out.template begin<__m256i>();
-            auto dataOut = this->in.template begin<__int64>();
-            auto mmAinv = _mm256_set1_epi32(this->A_INV);
-            auto mmPermute = _mm256_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000007, 0x00000006, 0x00000005, 0x00000004);
-            auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0D0C0908, 0x05040100);
+            const ssize_t VALUES_PER_SIMDREG = sizeof (__m256i) / sizeof (uint32_t);
+            const ssize_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
+            ssize_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
+            ssize_t i = 0;
+            auto dataIn = this->out.template begin<__m128i>();
+            auto dataOut = this->in.template begin<int64_t>();
+            auto mmAinv = _mm256_set1_pd(static_cast<double>(this->A_INV));
+            auto mmShuffle = _mm_set_epi32(static_cast<int32_t>(0xFFFFFFFF), static_cast<int32_t>(0xFFFFFFFF), static_cast<int32_t>(0x0D0C0908), static_cast<int32_t>(0x05040100));
             for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                    auto tmp = _mm256_lddqu_si256(dataIn++);
-                    auto tmp1 = _mm256_cvtepi32_pd(tmp);
-                    auto tmp2 = _mm256_cvtepi32_pd(_mm256_permutevar8x32_epi32(tmp, mmPermute));
+                    auto tmp1 = _mm256_cvtepi32_pd(_mm_lddqu_si128(dataIn++));
+                    auto tmp2 = _mm256_cvtepi32_pd(_mm_lddqu_si128(dataIn++));
                     tmp1 = _mm256_div_pd(tmp1, mmAinv);
                     tmp2 = _mm256_div_pd(tmp2, mmAinv);
-                    tmp1 = _mm256_cvtpd_epi32(tmp1);
-                    tmp2 = _mm256_cvtpd_epi32(tmp2);
-                    auto tmp3 = _mm256_extracti128_si256(tmp1, 0);
-                    auto tmp4 = _mm256_extracti128_si256(tmp2, 0);
-                    tmp3 = _mm_shuffle_epi8(tmp3, mmShuffle);
-                    tmp4 = _mm_shuffle_epi8(tmp4, mmShuffle);
+                    auto tmp3 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp1), mmShuffle);
+                    auto tmp4 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp2), mmShuffle);
                     *dataOut++ = _mm_extract_epi64(tmp3, 0);
                     *dataOut++ = _mm_extract_epi64(tmp4, 0);
                 }
             }
             // remaining numbers
             for (; i <= (numValues - VALUES_PER_SIMDREG); i += VALUES_PER_SIMDREG) {
-                auto tmp = _mm256_lddqu_si256(dataIn++);
-                auto tmp1 = _mm256_cvtepi32_pd(tmp);
-                auto tmp2 = _mm256_cvtepi32_pd(_mm256_permutevar8x32_epi32(tmp, mmPermute));
+                auto tmp1 = _mm256_cvtepi32_pd(_mm_lddqu_si128(dataIn++));
+                auto tmp2 = _mm256_cvtepi32_pd(_mm_lddqu_si128(dataIn++));
                 tmp1 = _mm256_div_pd(tmp1, mmAinv);
                 tmp2 = _mm256_div_pd(tmp2, mmAinv);
-                tmp1 = _mm256_cvtpd_epi32(tmp1);
-                tmp2 = _mm256_cvtpd_epi32(tmp2);
-                auto tmp3 = _mm256_extracti128_si256(tmp1, 0);
-                auto tmp4 = _mm256_extracti128_si256(tmp2, 0);
-                tmp3 = _mm_shuffle_epi8(tmp3, mmShuffle);
-                tmp4 = _mm_shuffle_epi8(tmp4, mmShuffle);
+                auto tmp3 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp1), mmShuffle);
+                auto tmp4 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp2), mmShuffle);
                 *dataOut++ = _mm_extract_epi64(tmp3, 0);
                 *dataOut++ = _mm_extract_epi64(tmp4, 0);
             }
@@ -127,3 +116,4 @@ struct AN_avx2_16x16_16x32_divmod : public AN_avx2_16x16_16x32<UNROLL> {
         }
     }
 };
+

@@ -42,7 +42,7 @@ struct AN_seq_16_32_s_divmod : public AN_seq_16_32<int16_t, int32_t, UNROLL> {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
                     if ((*data % this->A) != 0) {
-                        throw ErrorInfo(data - this->out.template begin<int32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<int32_t>(), iteration);
                     }
                     ++data;
                 }
@@ -52,7 +52,7 @@ struct AN_seq_16_32_s_divmod : public AN_seq_16_32<int16_t, int32_t, UNROLL> {
             if (i < numValues) {
                 do {
                     if ((*data % this->A) != 0) {
-                        throw ErrorInfo(data - this->out.template begin<int32_t>(), numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<int32_t>(), numIterations);
                     }
                     ++data;
                     ++i;

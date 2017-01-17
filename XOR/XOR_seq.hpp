@@ -80,7 +80,7 @@ struct XOR_seq : public Test<DATA, CS> {
                 data = reinterpret_cast<CS*>(data2); // second, advance data2 up to the checksum
                 if (*data != computeFinalChecksum<DATA, CS>(checksum)) // third, test checksum
                 {
-                    throw ErrorInfo(data - this->out.template begin<CS>(), iterations);
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<CS>(), iterations);
                 }
                 ++data; // fourth, advance after the checksum to the next block of values
             }
@@ -95,7 +95,7 @@ struct XOR_seq : public Test<DATA, CS> {
                 data = reinterpret_cast<CS*>(data2); // second, advance data2 up to the checksum
                 if (*data != computeFinalChecksum<DATA, CS>(checksum)) // third, test checksum
                 {
-                    throw ErrorInfo(data - this->out.template begin<CS>(), iterations);
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<CS>(), iterations);
                 }
             }
         }

@@ -47,7 +47,7 @@ struct AN_sse42_8x16_8x32_divmod : public AN_sse42_8x16_8x32<UNROLL> {
                     // auto res2 = _mm_div_pd(mm_pd2, mm_A);
                     // auto mm_unenc = 
                     if ((_mm_extract_epi32(mmIn, 0) % this->A != 0) || (_mm_extract_epi32(mmIn, 1) % this->A != 0) || (_mm_extract_epi32(mmIn, 2) % this->A != 0) || (_mm_extract_epi32(mmIn, 3) % this->A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
-                        throw ErrorInfo(reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
                     }
                     ++data;
                 }
@@ -56,7 +56,7 @@ struct AN_sse42_8x16_8x32_divmod : public AN_sse42_8x16_8x32<UNROLL> {
             while (data <= (dataEnd - 1)) {
                 auto mmIn = _mm_lddqu_si128(data);
                 if ((_mm_extract_epi32(mmIn, 0) % this->A != 0) || (_mm_extract_epi32(mmIn, 1) % this->A != 0) || (_mm_extract_epi32(mmIn, 2) % this->A != 0) || (_mm_extract_epi32(mmIn, 3) % this->A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
-                    throw ErrorInfo(reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
                 }
                 ++data;
             }
@@ -64,7 +64,7 @@ struct AN_sse42_8x16_8x32_divmod : public AN_sse42_8x16_8x32<UNROLL> {
                 auto dataEnd2 = reinterpret_cast<uint32_t*>(dataEnd);
                 for (auto data2 = reinterpret_cast<uint32_t*>(data); data2 < dataEnd2; ++data2) {
                     if ((*data2 % this->A) != 0) {
-                        throw ErrorInfo(data2 - this->out.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__,  data2 - this->out.template begin<uint32_t>(), iteration);
                     }
                 }
             }

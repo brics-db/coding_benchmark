@@ -18,6 +18,7 @@
 
 #include "Test.hpp"
 #include "Util/CPU.hpp"
+#include "Util/ErrorInfo.hpp"
 #include "Util/Stopwatch.hpp"
 
 TestBase::TestBase (const char* const name, AlignedBlock & in, AlignedBlock & out) :
@@ -86,34 +87,60 @@ TestBase::Execute (const size_t numIterations) {
     // Start test:
     this->PreEnc(numIterations);
 
+    TestInfo tiEnc, tiCheck, tiArith, tiDec;
+
     sw.Reset();
-    this->RunEnc(numIterations);
-    nanos = sw.Current();
-    TestInfo tiEnc(nanos), tiCheck, tiArith, tiDec;
+    try {
+        this->RunEnc(numIterations);
+        nanos = sw.Current();
+        tiEnc.set(nanos);
+    } catch (ErrorInfo & ei) {
+        auto msg = ei.what();
+        std::cerr << msg << std::endl;
+        tiEnc.set(msg);
+    }
 
     if (this->DoCheck()) {
         this->PreCheck(numIterations);
 
         sw.Reset();
-        this->RunCheck(numIterations);
-        nanos = sw.Current();
-        tiCheck.set(nanos);
+        try {
+            this->RunCheck(numIterations);
+            nanos = sw.Current();
+            tiCheck.set(nanos);
+        } catch (ErrorInfo & ei) {
+            auto msg = ei.what();
+            std::cerr << msg << std::endl;
+            tiCheck.set(msg);
+        }
     }
 
     if (this->DoArith()) {
         this->PreArith(numIterations);
         sw.Reset();
-        this->RunArith(numIterations, 1351);
-        nanos = sw.Current();
-        tiArith.set(nanos);
+        try {
+            this->RunArith(numIterations, 1351);
+            nanos = sw.Current();
+            tiArith.set(nanos);
+        } catch (ErrorInfo & ei) {
+            auto msg = ei.what();
+            std::cerr << msg << std::endl;
+            tiArith.set(msg);
+        }
     }
 
     if (this->DoDec()) {
         this->PreDec(numIterations);
         sw.Reset();
-        this->RunDec(numIterations);
-        nanos = sw.Current();
-        tiDec.set(nanos);
+        try {
+            this->RunDec(numIterations);
+            nanos = sw.Current();
+            tiDec.set(nanos);
+        } catch (ErrorInfo & ei) {
+            auto msg = ei.what();
+            std::cerr << msg << std::endl;
+            tiDec.set(msg);
+        }
     }
 
     return TestInfos(this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiDec);

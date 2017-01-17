@@ -77,7 +77,7 @@ struct AN_sse42_8x16_8x32_inv : public AN_sse42_8x16_8x32<UNROLL> {
                 for (size_t k = 0; k < UNROLL; ++k) {
                     auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mm_ainv);
                     if (0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi32(_mm_min_epu32(mmIn, mm_unencmax), mmIn))) { // we need to do this "hack" because comparison is only on signed integers!
-                        throw ErrorInfo(reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
                     }
                     ++data;
                 }
@@ -86,7 +86,7 @@ struct AN_sse42_8x16_8x32_inv : public AN_sse42_8x16_8x32<UNROLL> {
             while (data <= (dataEnd - 1)) {
                 auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mm_ainv);
                 if (0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi32(_mm_min_epu32(mmIn, mm_unencmax), mmIn))) { // we need to do this "hack" because comparison is only on signed integers!
-                    throw ErrorInfo(reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
                 }
                 ++data;
             }
@@ -94,7 +94,7 @@ struct AN_sse42_8x16_8x32_inv : public AN_sse42_8x16_8x32<UNROLL> {
                 auto dataEnd2 = reinterpret_cast<uint32_t*>(dataEnd);
                 for (auto data2 = reinterpret_cast<uint32_t*>(data); data2 < dataEnd2; ++data2) {
                     if ((*data2 * this->A_INV) > unencMax) {
-                        throw ErrorInfo(data2 - this->out.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, data2 - this->out.template begin<uint32_t>(), iteration);
                     }
                 }
             }

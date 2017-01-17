@@ -12,11 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sstream>
+#include <cstring>
+
 #include "ErrorInfo.hpp"
 
-ErrorInfo::ErrorInfo (size_t i, size_t iter)
-        : i (i), iter (iter) {
+ErrorInfo::ErrorInfo (const char* file, size_t line, size_t i, size_t iter)
+        : file (file), line (line), i (i), iter (iter) {
 }
 
 ErrorInfo::~ErrorInfo () {
 }
+
+const char* ErrorInfo::what() {
+    std::stringstream ss;
+    ss << "[" << file << "@" << line << "]: i=" << i << " iter=" << iter;
+    std::string s = ss.str();
+    char* msg = new char[s.length() + 1];
+    strncpy(msg, s.c_str(), s.length() + 1);
+    return msg;
+}
+

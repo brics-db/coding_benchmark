@@ -13,11 +13,11 @@
 // limitations under the License.
 
 #pragma once
-
+#include <iostream>
 #include "AN_avx2_16x16_16x32.hpp"
 
 template<size_t UNROLL>
-struct AN_avx2_16x16_16x32_inv : public AN_avx2_16x16_16x32<UNROLL>, public AVX2Test {
+struct AN_avx2_16x16_16x32_inv : public AN_avx2_16x16_16x32<UNROLL> {
 
     AN_avx2_16x16_16x32_inv (const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
             AN_avx2_16x16_16x32<UNROLL>(name, in, out, A, Ainv) {
@@ -44,8 +44,8 @@ struct AN_avx2_16x16_16x32_inv : public AN_avx2_16x16_16x32<UNROLL>, public AVX2
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
                     auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(data), mmAinv);
-                    if (_mm256_movemask_epi8(_mm256_cmpeq_epi32(_mm256_min_epu32(mmIn, mmUnencMax), mmIn))) { // we need to do this "hack" because comparison is only on signed integers!
-                        throw ErrorInfo(reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                    if (!_mm256_movemask_epi8(_mm256_cmpeq_epi32(_mm256_min_epu32(mmIn, mmUnencMax), mmIn))) { // we need to do this "hack" because comparison is only on signed integers!
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
                     }
                     ++data;
                 }
@@ -54,7 +54,7 @@ struct AN_avx2_16x16_16x32_inv : public AN_avx2_16x16_16x32<UNROLL>, public AVX2
             while (data <= (dataEnd - 1)) {
                 auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(data), mmAinv);
                 if (!_mm256_movemask_epi8(_mm256_cmpeq_epi32(_mm256_min_epu32(mmIn, mmUnencMax), mmIn))) { // we need to do this "hack" because comparison is only on signed integers!
-                    throw ErrorInfo(reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
                 }
                 ++data;
             }
@@ -62,7 +62,7 @@ struct AN_avx2_16x16_16x32_inv : public AN_avx2_16x16_16x32<UNROLL>, public AVX2
                 auto dataEnd2 = reinterpret_cast<uint32_t*>(dataEnd);
                 for (auto data2 = reinterpret_cast<uint32_t*>(data); data2 < dataEnd2; ++data2) {
                     if ((*data2 * this->A_INV) > unencMax) {
-                        throw ErrorInfo(reinterpret_cast<uint32_t*>(data2) - this->out.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data2) - this->out.template begin<uint32_t>(), iteration);
                     }
                 }
             }
@@ -77,14 +77,14 @@ struct AN_avx2_16x16_16x32_inv : public AN_avx2_16x16_16x32<UNROLL>, public AVX2
     void
     RunDec (const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            const size_t VALUES_PER_SIMDREG = sizeof (__m256i) / sizeof (uint32_t);
-            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
-            size_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
-            size_t i = 0;
+            const ssize_t VALUES_PER_SIMDREG = sizeof (__m256i) / sizeof (uint32_t);
+            const ssize_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
+            ssize_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
+            ssize_t i = 0;
             auto dataIn = this->out.template begin<__m256i>();
             auto dataOut = this->in.template begin<__m128i>();
             auto mmAinv = _mm256_set1_epi32(this->A_INV);
-            auto mmShuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0x1D1C191815141110, 0x0D0C090805040100);
+            auto mmShuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFFll, 0xFFFFFFFFFFFFFFFFll, 0x1D1C191815141110ll, 0x0D0C090805040100ll);
             for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
@@ -110,6 +110,5 @@ struct AN_avx2_16x16_16x32_inv : public AN_avx2_16x16_16x32<UNROLL>, public AVX2
             }
         }
     }
-}
-
 };
+
