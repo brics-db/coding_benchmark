@@ -235,6 +235,8 @@ main (int argc, char* argv[]) {
 #undef TestCase2
 #undef TestCase4
 
+    printResults<false>(vecTestInfos);
+    std::cout << "\n\n";
     printResults<true>(vecTestInfos);
 }
 
