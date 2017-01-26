@@ -1,142 +1,142 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Test.cpp" />
-    <ClCompile Include="Util\CPU.cpp">
+    <ClCompile Include="../src/Main.cpp" />
+    <ClCompile Include="../src/Test.cpp" />
+    <ClCompile Include="../src/Util\CPU.cpp">
       <Filter>Util</Filter>
     </ClCompile>
-    <ClCompile Include="Util\Stopwatch.cpp">
+    <ClCompile Include="../src/Util\Stopwatch.cpp">
       <Filter>Util</Filter>
     </ClCompile>
-    <ClCompile Include="Util\ErrorInfo.cpp">
+    <ClCompile Include="../src/Util\ErrorInfo.cpp">
       <Filter>Util</Filter>
     </ClCompile>
-    <ClCompile Include="Util\TestInfo.cpp">
+    <ClCompile Include="../src/Util\TestInfo.cpp">
       <Filter>Util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Test.hpp" />
-    <ClInclude Include="CopyTest.hpp" />
-    <ClInclude Include="AN\ANTest.hpp">
+    <ClInclude Include="../src/Test.hpp" />
+    <ClInclude Include="../src/CopyTest.hpp" />
+    <ClInclude Include="../src/AN\ANTest.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_avx2_16x16_16x32.hpp">
+    <ClInclude Include="../src/AN\AN_avx2_16x16_16x32.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_avx2_16x16_16x32_divmod.hpp">
+    <ClInclude Include="../src/AN\AN_avx2_16x16_16x32_divmod.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_avx2_16x16_16x32_inv.hpp">
+    <ClInclude Include="../src/AN\AN_avx2_16x16_16x32_inv.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_seq_16_32.hpp">
+    <ClInclude Include="../src/AN\AN_seq_16_32.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_seq_16_32_s_divmod.hpp">
+    <ClInclude Include="../src/AN\AN_seq_16_32_s_divmod.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_seq_16_32_s_inv.hpp">
+    <ClInclude Include="../src/AN\AN_seq_16_32_s_inv.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_seq_16_32_u_divmod.hpp">
+    <ClInclude Include="../src/AN\AN_seq_16_32_u_divmod.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_seq_16_32_u_inv.hpp">
+    <ClInclude Include="../src/AN\AN_seq_16_32_u_inv.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_sse42_8x16_8x32.hpp">
+    <ClInclude Include="../src/AN\AN_sse42_8x16_8x32.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_sse42_8x16_8x32_divmod.hpp">
+    <ClInclude Include="../src/AN\AN_sse42_8x16_8x32_divmod.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="AN\AN_sse42_8x16_8x32_inv.hpp">
+    <ClInclude Include="../src/AN\AN_sse42_8x16_8x32_inv.hpp">
       <Filter>AN</Filter>
     </ClInclude>
-    <ClInclude Include="Hamming\Hamming_seq.hpp">
+    <ClInclude Include="../src/Hamming\Hamming_seq.hpp">
       <Filter>Hamming</Filter>
     </ClInclude>
-    <ClInclude Include="Hamming\Hamming_seq_16.hpp">
+    <ClInclude Include="../src/Hamming\Hamming_seq_16.hpp">
       <Filter>Hamming</Filter>
     </ClInclude>
-    <ClInclude Include="Hamming\Hamming_seq_32.hpp">
+    <ClInclude Include="../src/Hamming\Hamming_seq_32.hpp">
       <Filter>Hamming</Filter>
     </ClInclude>
-    <ClInclude Include="Hamming\Hamming_sse42.hpp">
+    <ClInclude Include="../src/Hamming\Hamming_sse42.hpp">
       <Filter>Hamming</Filter>
     </ClInclude>
-    <ClInclude Include="Hamming\Hamming_sse42_16.hpp">
+    <ClInclude Include="../src/Hamming\Hamming_sse42_16.hpp">
       <Filter>Hamming</Filter>
     </ClInclude>
-    <ClInclude Include="Hamming\Hamming_sse42_32.hpp">
+    <ClInclude Include="../src/Hamming\Hamming_sse42_32.hpp">
       <Filter>Hamming</Filter>
     </ClInclude>
-    <ClInclude Include="Util\AlignedBlock.hpp">
+    <ClInclude Include="../src/Util\AlignedBlock.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="Util\CPU.hpp">
+    <ClInclude Include="../src/Util\CPU.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="Util\ErrorInfo.hpp">
+    <ClInclude Include="../src/Util\ErrorInfo.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="Util\Intrinsics.hpp">
+    <ClInclude Include="../src/Util\Intrinsics.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="Util\Stopwatch.hpp">
+    <ClInclude Include="../src/Util\Stopwatch.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="Util\TestInfo.hpp">
+    <ClInclude Include="../src/Util\TestInfo.hpp">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_avx2.hpp">
+    <ClInclude Include="../src/XOR\XOR_avx2.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_avx2_16x16_16.hpp">
+    <ClInclude Include="../src/XOR\XOR_avx2_16x16_16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_avx2_16x16_16x16.hpp">
+    <ClInclude Include="../src/XOR\XOR_avx2_16x16_16x16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_avx2_8x32_32.hpp">
+    <ClInclude Include="../src/XOR\XOR_avx2_8x32_32.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_avx2_8x32_8x32.hpp">
+    <ClInclude Include="../src/XOR\XOR_avx2_8x32_8x32.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_base.hpp">
+    <ClInclude Include="../src/XOR\XOR_base.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq.hpp">
+    <ClInclude Include="../src/XOR\XOR_seq.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_16_16.hpp">
+    <ClInclude Include="../src/XOR\XOR_seq_16_16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_16_8.hpp">
+    <ClInclude Include="../src/XOR\XOR_seq_16_8.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_32_32.hpp">
+    <ClInclude Include="../src/XOR\XOR_seq_32_32.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_seq_32_8.hpp">
+    <ClInclude Include="../src/XOR\XOR_seq_32_8.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42.hpp">
+    <ClInclude Include="../src/XOR\XOR_sse42.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42_4x32_32.hpp">
+    <ClInclude Include="../src/XOR\XOR_sse42_4x32_32.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42_4x32_4x32.hpp">
+    <ClInclude Include="../src/XOR\XOR_sse42_4x32_4x32.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42_8x16_16.hpp">
+    <ClInclude Include="../src/XOR\XOR_sse42_8x16_16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
-    <ClInclude Include="XOR\XOR_sse42_8x16_8x16.hpp">
+    <ClInclude Include="../src/XOR\XOR_sse42_8x16_8x16.hpp">
       <Filter>XOR</Filter>
     </ClInclude>
   </ItemGroup>

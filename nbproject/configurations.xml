@@ -2,24 +2,19 @@
 <configurationDescriptor version="100">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
-      <df name="AN">
-        <in>AN_avx2_16x16_16x32.hpp</in>
-        <in>AN_seq_16_32.hpp</in>
-        <in>AN_sse42_8x16_8x32.hpp</in>
-      </df>
-      <df name="Util">
-        <in>CPU.cpp</in>
-        <in>ErrorInfo.cpp</in>
-        <in>Euclidean.hpp</in>
-        <in>Stopwatch.cpp</in>
-        <in>TestInfo.cpp</in>
-        <in>VFunc.hpp</in>
-        <in>newfile.hpp</in>
+      <df name="src">
+        <df name="Util">
+          <in>CPU.cpp</in>
+          <in>ErrorInfo.cpp</in>
+          <in>Stopwatch.cpp</in>
+          <in>TestInfo.cpp</in>
+        </df>
+        <in>Main.cpp</in>
+        <in>Test.cpp</in>
       </df>
       <in>Main.cpp</in>
       <in>Test.cpp</in>
       <in>TestOpenMP.cpp</in>
-      <in>TestOpenMP.hpp</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -43,74 +38,170 @@
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <flagsDictionary>
-        <element flagsID="0" commonFlags="-msse4.2 -mavx -mavx2 -O3 -std=gnu++14"/>
+        <element flagsID="0"
+                 commonFlags="-march=ivybridge -msse3 -mssse3 -mcx16 -maes -mpclmul -mpopcnt -mavx -msse4.2 -msse4.1 -mrdrnd -mf16c -mfsgsbase -mxsave -mtune=ivybridge -std=gnu++14 -fopenmp -fstack-protector-strong"/>
+        <element flagsID="1"
+                 commonFlags="-march=ivybridge -msse3 -mssse3 -mcx16 -maes -mpclmul -mpopcnt -mavx -msse4.2 -msse4.1 -mrdrnd -mf16c -mfsgsbase -mxsave -mtune=ivybridge -std=gnu++14 -fstack-protector-strong"/>
+        <element flagsID="2" commonFlags="-msse4.2 -mavx -mavx2 -O3 -std=gnu++14"/>
+        <element flagsID="3" commonFlags="-std=c++14"/>
       </flagsDictionary>
       <codeAssistance>
       </codeAssistance>
       <makefileType>
         <makeTool>
-          <buildCommandWorkingDir>.</buildCommandWorkingDir>
+          <buildCommandWorkingDir>build</buildCommandWorkingDir>
           <buildCommand>${MAKE} -f Makefile</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
-          <executablePath></executablePath>
+          <executablePath>build</executablePath>
           <ccTool>
-            <preprocessorList>
-              <Elem>NDEBUG</Elem>
-            </preprocessorList>
+            <standard>11</standard>
           </ccTool>
         </makeTool>
         <preBuild>
-          <preBuildCommandWorkingDir>.</preBuildCommandWorkingDir>
+          <preBuildCommandWorkingDir>build</preBuildCommandWorkingDir>
           <preBuildCommand>${CMAKE} -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=${IDE_CC} -DCMAKE_CXX_COMPILER=${IDE_CXX} -DCMAKE_C_FLAGS_DEBUG="-g3 -gdwarf-2" -DCMAKE_CXX_FLAGS_DEBUG="-g3 -gdwarf-2" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .</preBuildCommand>
+          <preBuildFirst>true</preBuildFirst>
         </preBuild>
       </makefileType>
-      <item path="AN/AN_avx2_16x16_16x32.hpp" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="AN/AN_seq_16_32.hpp" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="AN/AN_sse42_8x16_8x32.hpp" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="Main.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="0">
+        <ccTool flags="2">
+          <incDir>
+            <pElem>src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>NDEBUG</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="Test.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="0">
+        <ccTool flags="2">
+          <incDir>
+            <pElem>src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>NDEBUG</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
-      <item path="TestOpenMP.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="TestOpenMP.hpp" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="Util/CPU.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="0">
+      <item path="TestOpenMP.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>NDEBUG</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
-      <item path="Util/ErrorInfo.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="Util/Euclidean.hpp" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="Util/Stopwatch.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="Util/TestInfo.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="Util/VFunc.hpp" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="Util/newfile.hpp" ex="false" tool="3" flavor2="0">
-      </item>
-      <folder path="0/Util">
+      <folder path="0/src">
         <ccTool>
           <incDir>
-            <pElem>.</pElem>
+            <pElem>src/Util</pElem>
           </incDir>
+          <preprocessorList>
+            <Elem>__AES__=1</Elem>
+            <Elem>__AVX__=1</Elem>
+            <Elem>__BIGGEST_ALIGNMENT__=32</Elem>
+            <Elem>__F16C__=1</Elem>
+            <Elem>__FSGSBASE__=1</Elem>
+            <Elem>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16=1</Elem>
+            <Elem>__PCLMUL__=1</Elem>
+            <Elem>__POPCNT__=1</Elem>
+            <Elem>__RDRND__=1</Elem>
+            <Elem>__REGISTER_PREFIX__=</Elem>
+            <Elem>__SSE3__=1</Elem>
+            <Elem>__SSE4_1__=1</Elem>
+            <Elem>__SSE4_2__=1</Elem>
+            <Elem>__SSSE3__=1</Elem>
+            <Elem>__USER_LABEL_PREFIX__=</Elem>
+            <Elem>__XSAVE__=1</Elem>
+            <Elem>__corei7_avx=1</Elem>
+            <Elem>__corei7_avx__=1</Elem>
+            <Elem>__sandybridge=1</Elem>
+            <Elem>__sandybridge__=1</Elem>
+            <Elem>__tune_corei7_avx__=1</Elem>
+            <Elem>__tune_sandybridge__=1</Elem>
+          </preprocessorList>
         </ccTool>
       </folder>
+      <item path="src/Main.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src/XOR</pElem>
+            <pElem>src/Hamming</pElem>
+            <pElem>src</pElem>
+            <pElem>src/AN</pElem>
+            <pElem>build</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>OMP=1</Elem>
+            <Elem>OMPNUMTHREADS=2</Elem>
+            <Elem>_OPENMP=201511</Elem>
+            <Elem>_REENTRANT=1</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/Test.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>build</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>OMP=1</Elem>
+            <Elem>OMPNUMTHREADS=2</Elem>
+            <Elem>_OPENMP=201511</Elem>
+            <Elem>_REENTRANT=1</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/Util/CPU.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>build</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>OMP=1</Elem>
+            <Elem>OMPNUMTHREADS=2</Elem>
+            <Elem>_OPENMP=201511</Elem>
+            <Elem>_REENTRANT=1</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/Util/ErrorInfo.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>/usr/include/c++/6/cwchar</pElem>
+            <pElem>build</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/Util/Stopwatch.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>build</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>OMP=1</Elem>
+            <Elem>OMPNUMTHREADS=2</Elem>
+            <Elem>_OPENMP=201511</Elem>
+            <Elem>_REENTRANT=1</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/Util/TestInfo.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>build</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>OMP=1</Elem>
+            <Elem>OMPNUMTHREADS=2</Elem>
+            <Elem>_OPENMP=201511</Elem>
+            <Elem>_REENTRANT=1</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>
