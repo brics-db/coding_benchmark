@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstring>
-#include <cstdint>
+//#include <cstring>
+//#include <cstdint>
 #include <iostream>
+
+#ifdef OMP
+#include <omp.h>
+#endif
 
 #include "Test.hpp"
 #include "Util/CPU.hpp"
@@ -91,7 +95,16 @@ TestBase::Execute (const size_t numIterations) {
 
     sw.Reset();
     try {
-        this->RunEnc(numIterations);
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+#else
+#pragma omp parallel
+#endif
+#endif
+        {
+            this->RunEnc(numIterations);
+        }
         nanos = sw.Current();
         tiEnc.set(nanos);
     } catch (ErrorInfo & ei) {
@@ -105,7 +118,16 @@ TestBase::Execute (const size_t numIterations) {
 
         sw.Reset();
         try {
-            this->RunCheck(numIterations);
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+#else
+#pragma omp parallel
+#endif
+#endif
+            {
+                this->RunCheck(numIterations);
+            }
             nanos = sw.Current();
             tiCheck.set(nanos);
         } catch (ErrorInfo & ei) {
@@ -119,7 +141,16 @@ TestBase::Execute (const size_t numIterations) {
         this->PreArith(numIterations);
         sw.Reset();
         try {
-            this->RunArith(numIterations, 1351);
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+#else
+#pragma omp parallel
+#endif
+#endif
+            {
+                this->RunArith(numIterations, 1351);
+            }
             nanos = sw.Current();
             tiArith.set(nanos);
         } catch (ErrorInfo & ei) {
@@ -133,7 +164,16 @@ TestBase::Execute (const size_t numIterations) {
         this->PreDec(numIterations);
         sw.Reset();
         try {
-            this->RunDec(numIterations);
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+#else
+#pragma omp parallel
+#endif
+#endif
+            {
+                this->RunDec(numIterations);
+            }
             nanos = sw.Current();
             tiDec.set(nanos);
         } catch (ErrorInfo & ei) {

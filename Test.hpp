@@ -1,4 +1,4 @@
-// Copyright 2016 Till Kolditz, Stefan de Bruijn
+// Copyright 2016,2017 Till Kolditz, Stefan de Bruijn
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@
 #include <string>
 #include <cstring>
 #include <cstdint>
+
+#ifdef OMP
+#include <omp.h>
+#endif
 
 #include "Util/AlignedBlock.hpp"
 #include "Util/TestInfo.hpp"
@@ -73,7 +77,7 @@ public:
     virtual void RunDec (const size_t numIterations);
 
     // Execute test:
-    TestInfos Execute (const size_t numIterations);
+    virtual TestInfos Execute (const size_t numIterations);
 };
 
 struct SequentialTest : virtual public TestBase0 {
@@ -131,9 +135,9 @@ struct Test : public TestBase {
     void
     ResetBuffers () override {
         // Reset buffers:
-        // uint16_t* const pInEnd = in.end<uint16_t>();
+        auto pInEnd = this->in.template end<DATA>();
         DATA value = 12783u;
-        for (DATA* pIn = this->in.template begin<DATA>(); pIn < this->in.template end<DATA>(); ++pIn) {
+        for (DATA* pIn = this->in.template begin<DATA>(); pIn < pInEnd; ++pIn) {
             *pIn = value;
             value = value * 7577u + 10467u;
         }
