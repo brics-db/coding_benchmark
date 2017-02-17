@@ -19,8 +19,8 @@
 template<size_t UNROLL>
 struct AN_seq_16_32_u_divmod : public AN_seq_16_32<uint16_t, uint32_t, UNROLL> {
 
-    AN_seq_16_32_u_divmod (const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
-            AN_seq_16_32<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv) {
+    AN_seq_16_32_u_divmod (const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A, uint32_t AInv) :
+            AN_seq_16_32<uint16_t, uint32_t, UNROLL>(name, in, out, A, AInv) {
     }
 
     virtual

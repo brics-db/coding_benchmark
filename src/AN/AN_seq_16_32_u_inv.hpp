@@ -19,8 +19,8 @@
 template<size_t UNROLL>
 struct AN_seq_16_32_u_inv : public AN_seq_16_32<uint16_t, uint32_t, UNROLL> {
 
-    AN_seq_16_32_u_inv (const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
-            AN_seq_16_32<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv) {
+    AN_seq_16_32_u_inv (const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A, uint32_t AInv) :
+            AN_seq_16_32<uint16_t, uint32_t, UNROLL>(name, in, out, A, AInv) {
     }
 
     virtual
@@ -38,11 +38,11 @@ struct AN_seq_16_32_u_inv : public AN_seq_16_32<uint16_t, uint32_t, UNROLL> {
             const size_t numValues = this->in.template end<uint16_t>() - this->in.template begin<uint16_t>();
             size_t i = 0;
             auto data = this->out.template begin<uint32_t>();
-            uint32_t maxUnenc = std::numeric_limits<uint16_t>::max();
+            uint32_t dMax = std::numeric_limits<uint16_t>::max();
             while (i <= (numValues - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
-                    if ((*data * this->A_INV) > maxUnenc) {
+                    if ((*data * this->A_INV) > dMax) {
                         throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<uint32_t>(), iteration);
                     }
                     ++data;
@@ -52,7 +52,7 @@ struct AN_seq_16_32_u_inv : public AN_seq_16_32<uint16_t, uint32_t, UNROLL> {
             // remaining numbers
             if (i < numValues) {
                 do {
-                    if ((*data * this->A_INV) > maxUnenc) {
+                    if ((*data * this->A_INV) > dMax) {
                         throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<uint32_t>(), numIterations);
                     }
                     ++data;

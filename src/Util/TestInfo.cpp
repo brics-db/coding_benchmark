@@ -17,24 +17,24 @@
 TestInfo::TestInfo () :
         isExecuted (false),
         nanos (0),
-        error (nullptr) {
+        error () {
 }
 
 TestInfo::TestInfo (int64_t nanos) :
         TestInfo (true, nanos, nullptr) {
 }
 
-TestInfo::TestInfo (const char* const error) :
+TestInfo::TestInfo (const std::string & error) :
         TestInfo (true, 0, error) {
 }
 
-TestInfo::TestInfo (bool isExecuted, int64_t nanos, const char* const error) :
+TestInfo::TestInfo (bool isExecuted, int64_t nanos, const std::string & error) :
         isExecuted (isExecuted),
         nanos (nanos),
         error (error) {
 }
 
-TestInfo::TestInfo (TestInfo& other) :
+TestInfo::TestInfo (const TestInfo & other) :
         isExecuted (other.isExecuted),
         nanos (other.nanos),
         error (other.error) {
@@ -47,17 +47,23 @@ void
 TestInfo::set (int64_t nanos) {
     this->isExecuted = true;
     this->nanos = nanos;
-    this->error = nullptr;
+    this->error.clear();
 }
 
 void
-TestInfo::set (const char* const error) {
+TestInfo::set (const std::string & error) {
     this->isExecuted = true;
     this->nanos = 0;
     this->error = error;
 }
 
-TestInfos::TestInfos (const char* name, const char* simd) :
+TestInfo & TestInfo::operator= (const TestInfo & other) {
+    this->~TestInfo();
+    new (this) TestInfo(other);
+    return *this;
+}
+
+TestInfos::TestInfos (const std::string & name, const std::string & simd) :
         name (name),
         simd (simd),
         encode (),
@@ -66,7 +72,7 @@ TestInfos::TestInfos (const char* name, const char* simd) :
         decode () {
 }
 
-TestInfos::TestInfos (const char* name, const char* simd, TestInfo& encode, TestInfo& check, TestInfo& arithmetic, TestInfo& decode) :
+TestInfos::TestInfos (const std::string & name, const std::string & simd, TestInfo & encode, TestInfo & check, TestInfo & arithmetic, TestInfo & decode) :
         name (name),
         simd (simd),
         encode (encode),

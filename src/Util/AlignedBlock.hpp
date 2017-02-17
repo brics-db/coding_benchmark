@@ -39,7 +39,8 @@ public:
     AlignedBlock (size_t nBytes, size_t alignment) :
             nBytes (nBytes),
             alignment (alignment),
-            baseptr (new char[nBytes + alignment]) {
+            baseptr (new char[nBytes + alignment]),
+            data (nullptr) {
         size_t tmp = reinterpret_cast<size_t>(baseptr.get());
         data = baseptr.get() + (alignment - (tmp & (alignment - 1)));
     }
@@ -69,6 +70,7 @@ public:
         return reinterpret_cast<T*>(static_cast<char*>(data) + nBytes);
     }
 
+    virtual
     ~AlignedBlock () {
         data = nullptr;
         // baseptr is now a std::shared_ptr and auto-deallocated, which deletes its contents as well

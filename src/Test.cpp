@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//#include <cstring>
-//#include <cstdint>
+#include <cstring>
 #include <iostream>
 
 #ifdef OMP
@@ -25,10 +24,16 @@
 #include "Util/ErrorInfo.hpp"
 #include "Util/Stopwatch.hpp"
 
-TestBase::TestBase (const char* const name, AlignedBlock & in, AlignedBlock & out) :
+TestBase::TestBase (const std::string & name, AlignedBlock & in, AlignedBlock & out) :
         name (name),
         in (in),
         out (out) {
+}
+
+TestBase::TestBase (TestBase & other) :
+        name (other.name),
+        in (other.in),
+        out (other.out) {
 }
 
 TestBase::~TestBase () {
@@ -186,9 +191,12 @@ TestBase::Execute (const size_t numIterations) {
     return TestInfos(this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiDec);
 }
 
-const char*
+SequentialTest::~SequentialTest () {
+}
+
+const std::string &
 SequentialTest::getSIMDtypeName () {
-    static const char* SIMDtypeName = "Seq";
+    static const std::string SIMDtypeName("Seq");
     return SIMDtypeName;
 }
 
@@ -197,9 +205,12 @@ SequentialTest::HasCapabilities () {
     return true;
 }
 
-const char*
+SSE42Test::~SSE42Test () {
+}
+
+const std::string &
 SSE42Test::getSIMDtypeName () {
-    static const char* SIMDtypeName = "SSE4.2";
+    static const std::string SIMDtypeName("SSE4.2");
     return SIMDtypeName;
 }
 
@@ -209,9 +220,12 @@ SSE42Test::HasCapabilities () {
     return cpu.SSE42 && cpu.OS_X64;
 }
 
-const char*
+AVX2Test::~AVX2Test () {
+}
+
+const std::string &
 AVX2Test::getSIMDtypeName () {
-    static const char* SIMDtypeName = "AVX2";
+    static const std::string SIMDtypeName("AVX2");
     return SIMDtypeName;
 }
 

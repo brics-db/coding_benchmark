@@ -1,4 +1,4 @@
-// Copyright 2016 Till Kolditz, Stefan de Bruijn
+// Copyright (c) 2016 Till Kolditz
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+/* 
+ * File:   ComputeNumRuns.hpp
+ * Author: Till Kolditz <till.kolditz@gmail.com>
+ *
+ * Created on 17. Februar 2017, 12:45
+ */
 
-#include <cstddef>
+#ifndef COMPUTENUMRUNS_HPP
+#define COMPUTENUMRUNS_HPP
 
-class ErrorInfo {
+template<size_t start, size_t end>
+struct ComputeNumRuns {
 
-public:
-    std::string file;
-    size_t line;
-    size_t i;
-    size_t iter;
-
-    ErrorInfo (const char* file, size_t line, size_t i, size_t iter);
-
-    ErrorInfo (const ErrorInfo & other);
-
-    virtual ~ErrorInfo ();
-
-    ErrorInfo & operator= (const ErrorInfo & other);
-
-    const char* what ();
+    constexpr size_t operator() () const {
+        return 1 + ComputeNumRuns<start * 2, end>()();
+    }
 };
 
+template<size_t start>
+struct ComputeNumRuns<start, start> {
+
+    constexpr size_t operator() () const {
+        return 1;
+    }
+};
+
+#endif /* COMPUTENUMRUNS_HPP */

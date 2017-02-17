@@ -17,14 +17,14 @@
 #include "AN_sse42_8x16_8x32.hpp"
 
 template<size_t UNROLL>
-struct AN_sse42_8x16_8x32_divmod : public AN_sse42_8x16_8x32<UNROLL> {
+struct AN_sse42_8x16_8x32_s_divmod : public AN_sse42_8x16_8x32<int16_t, int32_t, UNROLL> {
 
-    AN_sse42_8x16_8x32_divmod (const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A = 63'877ul, uint32_t Ainv = 3'510'769'485ul) :
-            AN_sse42_8x16_8x32<UNROLL>(name, in, out, A, Ainv) {
+    AN_sse42_8x16_8x32_s_divmod (const char* const name, AlignedBlock & in, AlignedBlock & out, int32_t A, int32_t AInv) :
+            AN_sse42_8x16_8x32<int16_t, int32_t, UNROLL>(name, in, out, A, AInv) {
     }
 
     virtual
-    ~AN_sse42_8x16_8x32_divmod () {
+    ~AN_sse42_8x16_8x32_s_divmod () {
     }
 
     virtual bool
@@ -34,6 +34,7 @@ struct AN_sse42_8x16_8x32_divmod : public AN_sse42_8x16_8x32<UNROLL> {
 
     virtual void
     RunCheck (const size_t numIterations) override {
+        bool first = true;
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             auto data = this->out.template begin<__m128i>();
             auto dataEnd = this->out.template end<__m128i>();
@@ -41,13 +42,16 @@ struct AN_sse42_8x16_8x32_divmod : public AN_sse42_8x16_8x32<UNROLL> {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
                     auto mmIn = _mm_lddqu_si128(data);
-                    // auto mm_pd1 = _mm_cvtepi32_pd(mmIn); // lower 2 converted
-                    // auto mm_pd2 = _mm_cvtepi32_pd(_mm_shuffle_epi32(mmIn, 0xEE)); // higher 2 converted
-                    // auto res1 = _mm_div_pd(mm_pd1, mm_A);
-                    // auto res2 = _mm_div_pd(mm_pd2, mm_A);
-                    // auto mm_unenc = 
                     if ((_mm_extract_epi32(mmIn, 0) % this->A != 0) || (_mm_extract_epi32(mmIn, 1) % this->A != 0) || (_mm_extract_epi32(mmIn, 2) % this->A != 0) || (_mm_extract_epi32(mmIn, 3) % this->A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                        if (first) {
+                            std::cerr << "[A=" << this->A << "]\n";
+                            first = false;
+                        }
+                        size_t i = reinterpret_cast<int32_t*>(data) - this->out.template begin<int32_t>();
+                        std::cerr << "\tout: [" << i << '=' << _mm_extract_epi32(mmIn, 0) << "] [" << (i + 1) << '=' << _mm_extract_epi32(mmIn, 1) << "] [" << (i + 2) << '=' << _mm_extract_epi32(mmIn, 2) << "] [" << (i + 3) << '=' << _mm_extract_epi32(mmIn, 3) << ']' << std::endl;
+                        auto pIn = this->in.template begin<int16_t>() + i;
+                        std::cerr << "\t in: [" << i << '=' << *pIn << "] [" << (i + 1) << '=' << *(pIn + 1) << "] [" << (i + 2) << '=' << *(pIn + 2) << "] [" << (i + 3) << '=' << *(pIn + 3) << ']' << std::endl;
+                        // throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     ++data;
                 }
@@ -56,15 +60,31 @@ struct AN_sse42_8x16_8x32_divmod : public AN_sse42_8x16_8x32<UNROLL> {
             while (data <= (dataEnd - 1)) {
                 auto mmIn = _mm_lddqu_si128(data);
                 if ((_mm_extract_epi32(mmIn, 0) % this->A != 0) || (_mm_extract_epi32(mmIn, 1) % this->A != 0) || (_mm_extract_epi32(mmIn, 2) % this->A != 0) || (_mm_extract_epi32(mmIn, 3) % this->A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
-                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                    if (first) {
+                        std::cerr << "[A=" << this->A << "]\n";
+                        first = false;
+                    }
+                    size_t i = reinterpret_cast<int32_t*>(data) - this->out.template begin<int32_t>();
+                    std::cerr << "\t[" << i << '=' << _mm_extract_epi32(mmIn, 0) << "] [" << (i + 1) << '=' << _mm_extract_epi32(mmIn, 1) << "] [" << (i + 2) << '=' << _mm_extract_epi32(mmIn, 2) << "] [" << (i + 3) << '=' << _mm_extract_epi32(mmIn, 3) << ']' << std::endl;
+                    auto pIn = this->in.template begin<int16_t>() + i;
+                    std::cerr << "\t in: [" << i << '=' << *pIn << "] [" << (i + 1) << '=' << *(pIn + 1) << "] [" << (i + 2) << '=' << *(pIn + 2) << "] [" << (i + 3) << '=' << *(pIn + 3) << ']' << std::endl;
+                    // throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
                 ++data;
             }
             if (data < dataEnd) {
-                auto dataEnd2 = reinterpret_cast<uint32_t*>(dataEnd);
-                for (auto data2 = reinterpret_cast<uint32_t*>(data); data2 < dataEnd2; ++data2) {
+                auto dataEnd2 = reinterpret_cast<int32_t*>(dataEnd);
+                for (auto data2 = reinterpret_cast<int32_t*>(data); data2 < dataEnd2; ++data2) {
                     if ((*data2 % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__,  data2 - this->out.template begin<uint32_t>(), iteration);
+                        if (first) {
+                            std::cerr << "[A=" << this->A << "]\n";
+                            first = false;
+                        }
+                        size_t i = data2 - this->out.template begin<int32_t>();
+                        std::cerr << "\t[" << i << '=' << *data2 << ']' << std::endl;
+                        auto pIn = this->in.template begin<int16_t>() + i;
+                        std::cerr << "\t in: [" << i << '=' << *pIn << std::endl;
+                        // throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
             }
@@ -79,12 +99,12 @@ struct AN_sse42_8x16_8x32_divmod : public AN_sse42_8x16_8x32<UNROLL> {
     void
     RunDec (const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            const size_t VALUES_PER_SIMDREG = sizeof (__m128i) / sizeof (uint32_t);
+            const size_t VALUES_PER_SIMDREG = sizeof (__m128i) / sizeof (int32_t);
             const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
             size_t i = 0;
             auto dataIn = this->out.template begin<__m128i>();
-            auto dataOut = this->in.template begin<uint64_t>();
+            auto dataOut = this->in.template begin<int64_t>();
             auto mm_A = _mm_set1_pd(static_cast<double>(this->A_INV));
             auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0B0A0908, 0x03020100);
             for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
@@ -116,8 +136,8 @@ struct AN_sse42_8x16_8x32_divmod : public AN_sse42_8x16_8x32<UNROLL> {
                 *dataOut++ = _mm_extract_epi64(tmp, 0);
             }
             if (i < numValues) {
-                auto out16 = reinterpret_cast<uint16_t*>(dataOut);
-                auto in32 = reinterpret_cast<uint32_t*>(dataIn);
+                auto out16 = reinterpret_cast<int16_t*>(dataOut);
+                auto in32 = reinterpret_cast<int32_t*>(dataIn);
                 for (; i < numValues; ++i, ++in32, ++out16) {
                     *out16 = *in32 * this->A_INV;
                 }

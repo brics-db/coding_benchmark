@@ -29,24 +29,16 @@ protected:
 
 public:
 
-    ANTest (const char* const name, AlignedBlock & in, AlignedBlock & out, const DATAOUT A, const DATAOUT A_INV) :
-            Test<DATAIN, DATAOUT>(nullptr, in, out),
+    ANTest (const std::string & name, AlignedBlock & in, AlignedBlock & out, const DATAOUT A, const DATAOUT A_INV) :
+            Test<DATAIN, DATAOUT>(name, in, out),
             A (A),
             A_INV (A_INV) {
         std::stringstream ss;
-        ss << name << " " << A;
-        std::string str = ss.str();
-        size_t len = str.size() + 1;
-        this->name = new char[len];
-#ifdef _MSC_VER
-        strncpy_s(const_cast<char*>(this->name), len, str.c_str(), len);
-#else
-        strncpy(const_cast<char*>(this->name), str.c_str(), len);
-#endif
+        ss << " " << A;
+        this->name += ss.str();
     }
 
     virtual
     ~ANTest () {
-        delete[] this->name;
     }
 };

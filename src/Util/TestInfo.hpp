@@ -14,29 +14,32 @@
 
 #pragma once
 
+#include <string>
 #include "Stopwatch.hpp"
 
 struct TestInfo {
 
     bool isExecuted;
     int64_t nanos;
-    const char* error;
+    std::string error;
 
     TestInfo ();
 
     TestInfo (int64_t nanos);
 
-    TestInfo (const char* const error);
+    TestInfo (const std::string & error);
 
-    TestInfo (bool isExecuted, int64_t nanos, const char* const error);
+    TestInfo (bool isExecuted, int64_t nanos, const std::string & error);
 
-    TestInfo (TestInfo& other);
+    TestInfo (const TestInfo & other);
+
+    virtual ~TestInfo ();
 
     void set (int64_t nanos);
 
-    void set (const char* const error);
+    void set (const std::string & error);
 
-    ~TestInfo ();
+    TestInfo & operator= (const TestInfo &);
 };
 
 struct TestInfos {
@@ -48,11 +51,11 @@ struct TestInfos {
     TestInfo arithmetic;
     TestInfo decode;
 
-    TestInfos (const char* name, const char* simd);
+    TestInfos (const std::string & name, const std::string & simd);
 
-    TestInfos (const char* name, const char* simd, TestInfo& encode, TestInfo& check, TestInfo& arithmetic, TestInfo& decode);
+    TestInfos (const std::string & name, const std::string & simd, TestInfo & encode, TestInfo & check, TestInfo & arithmetic, TestInfo & decode);
 
-    TestInfos (TestInfos&& other);
+    TestInfos (TestInfos && other);
 
-    ~TestInfos ();
+    virtual ~TestInfos ();
 };

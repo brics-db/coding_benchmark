@@ -27,7 +27,11 @@
 
 struct TestBase0 {
 
-    virtual const char* getSIMDtypeName () = 0;
+    virtual
+    ~TestBase0 () {
+    }
+
+    virtual const std::string & getSIMDtypeName () = 0;
 
     virtual bool HasCapabilities () = 0;
 };
@@ -35,12 +39,14 @@ struct TestBase0 {
 struct TestBase : virtual public TestBase0 {
 
 protected:
-    const char* name;
+    std::string name;
     AlignedBlock in;
     AlignedBlock out;
 
 public:
-    TestBase (const char* const name, AlignedBlock & in, AlignedBlock & out);
+    TestBase (const std::string & name, AlignedBlock & in, AlignedBlock & out);
+
+    TestBase (TestBase & other);
 
     virtual ~TestBase ();
 
@@ -82,21 +88,27 @@ public:
 
 struct SequentialTest : virtual public TestBase0 {
 
-    virtual const char* getSIMDtypeName () override;
+    virtual ~SequentialTest ();
+
+    virtual const std::string & getSIMDtypeName () override;
 
     virtual bool HasCapabilities () override;
 };
 
 struct SSE42Test : virtual public TestBase0 {
 
-    virtual const char* getSIMDtypeName () override;
+    virtual ~SSE42Test ();
+
+    virtual const std::string & getSIMDtypeName () override;
 
     virtual bool HasCapabilities () override;
 };
 
 struct AVX2Test : virtual public TestBase0 {
 
-    virtual const char* getSIMDtypeName () override;
+    virtual ~AVX2Test ();
+
+    virtual const std::string & getSIMDtypeName () override;
 
     virtual bool HasCapabilities () override;
 };
@@ -111,10 +123,10 @@ struct AVX2Test : virtual public TestBase0 {
 #endif
 #endif
 
-template<typename DATA, typename CS>
+template<typename DATAIN, typename DATAOUT>
 struct Test : public TestBase {
 
-    Test (const char* const name, AlignedBlock & in, AlignedBlock & out) :
+    Test (const std::string & name, AlignedBlock & in, AlignedBlock & out) :
             TestBase (name, in, out) {
     }
 
@@ -124,22 +136,22 @@ struct Test : public TestBase {
 
     virtual size_t
     getInputTypeSize () override {
-        return sizeof (DATA);
+        return sizeof (DATAIN);
     }
 
     virtual size_t
     getOutputTypeSize () override {
-        return sizeof (CS);
+        return sizeof (DATAOUT);
     }
 
     void
     ResetBuffers () override {
         // Reset buffers:
-        auto pInEnd = this->in.template end<DATA>();
-        DATA value = 12783u;
-        for (DATA* pIn = this->in.template begin<DATA>(); pIn < pInEnd; ++pIn) {
+        auto pInEnd = this->in.template end<DATAIN>();
+        DATAIN value = static_cast<DATAIN>(12783);
+        for (DATAIN* pIn = this->in.template begin<DATAIN>(); pIn < pInEnd; ++pIn) {
             *pIn = value;
-            value = value * 7577u + 10467u;
+            value = value * static_cast<DATAIN>(7577) + static_cast<DATAIN>(10467);
         }
 
         memset(this->out.begin(), 0, this->out.nBytes);

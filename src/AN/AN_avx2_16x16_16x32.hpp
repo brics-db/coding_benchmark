@@ -21,15 +21,13 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "ANTest.hpp"
 
-template<size_t UNROLL>
-struct AN_avx2_16x16_16x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public AVX2Test {
+template<typename DATAIN, typename DATAOUT, size_t UNROLL>
+struct AN_avx2_16x16_16x32 : public ANTest<DATAIN, DATAOUT, UNROLL>, public AVX2Test {
 
-    AN_avx2_16x16_16x32 (const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A, uint32_t Ainv) :
-            ANTest<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv) {
+    AN_avx2_16x16_16x32 (const char* const name, AlignedBlock & in, AlignedBlock & out, DATAOUT A, DATAOUT AInv) :
+            ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, AInv) {
     }
 
     virtual
@@ -39,44 +37,34 @@ struct AN_avx2_16x16_16x32 : public ANTest<uint16_t, uint32_t, UNROLL>, public A
     void
     RunEnc (const size_t numIterations) override {
         for (size_t iter = 0; iter < numIterations; ++iter) {
-            __m256i *dataIn = this->in.template begin<__m256i>();
-            __m256i *dataInEnd = this->in.template end<__m256i>();
-            __m128i *dataOut = this->out.template begin<__m128i>(); // since AVX2 does not shuffle as desired, we need to store 128-bit vectors only
-            __m256i mmA = _mm256_set1_epi32(this->A);
+            auto *dataIn = this->in.template begin<__m128i>();
+            auto *dataInEnd = this->in.template end<__m128i>();
+            auto *dataOut = this->out.template begin<__m256i>();
+            auto mmA = _mm256_set1_epi32(this->A);
 
-            // _mm256_shuffle_epi8 works only on 128-bit lanes, so we have to work on the first 4 16-bit values and the third ones, then on the second and fourth ones
-            __m256i mmShuffle1 = _mm256_set_epi32(0xFFFF0706, 0xFFFF0504, 0xFFFF0302, 0xFFFF0100, 0xFFFF0706, 0xFFFF0504, 0xFFFF0302, 0xFFFF0100);
-            __m256i mmShuffle2 = _mm256_set_epi32(0xFFFF0F0E, 0xFFFF0D0C, 0xFFFF0B0A, 0xFFFF0908, 0xFFFF0F0E, 0xFFFF0D0C, 0xFFFF0B0A, 0xFFFF0908);
+            constexpr const bool isSigned = std::is_signed<DATAIN>::value;
             while (dataIn <= (dataInEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                    __m256i m256 = _mm256_lddqu_si256(dataIn++);
-                    __m256i tmp1 = _mm256_mullo_epi32(_mm256_shuffle_epi8(m256, mmShuffle1), mmA);
-                    __m256i tmp2 = _mm256_mullo_epi32(_mm256_shuffle_epi8(m256, mmShuffle2), mmA);
-                    _mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp1, 0));
-                    _mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp2, 0));
-                    _mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp1, 1));
-                    _mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp2, 1));
+                    auto mm128 = _mm_lddqu_si128(dataIn++);
+                    auto mm256 = isSigned ? _mm256_cvtepi16_epi32(mm128) : _mm256_cvtepu16_epi32(mm128);
+                    _mm256_storeu_si256(dataOut++, _mm256_mullo_epi32(mm256, mmA));
                 }
             }
 
             while (dataIn <= (dataInEnd - 1)) {
-                __m256i m256 = _mm256_lddqu_si256(dataIn++);
-                __m256i tmp1 = _mm256_mullo_epi32(_mm256_shuffle_epi8(m256, mmShuffle1), mmA);
-                __m256i tmp2 = _mm256_mullo_epi32(_mm256_shuffle_epi8(m256, mmShuffle2), mmA);
-                _mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp1, 0));
-                _mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp2, 0));
-                _mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp1, 1));
-                _mm_storeu_si128(dataOut++, _mm256_extractf128_si256(tmp2, 1));
+                auto mm128 = _mm_lddqu_si128(dataIn++);
+                auto mm256 = isSigned ? _mm256_cvtepi16_epi32(mm128) : _mm256_cvtepu16_epi32(mm128);
+                _mm256_storeu_si256(dataOut++, _mm256_mullo_epi32(mm256, mmA));
             }
 
             // multiply remaining numbers sequentially
             if (dataIn < dataInEnd) {
-                auto data16 = reinterpret_cast<uint16_t*>(dataIn);
-                auto data16End = reinterpret_cast<uint16_t*>(dataInEnd);
-                auto out32 = reinterpret_cast<uint32_t*>(dataOut);
+                auto data16 = reinterpret_cast<DATAIN*>(dataIn);
+                auto data16End = reinterpret_cast<DATAIN*>(dataInEnd);
+                auto out32 = reinterpret_cast<DATAOUT*>(dataOut);
                 do {
-                    *out32++ = static_cast<uint32_t>(*data16++) * this->A;
+                    *out32++ = static_cast<DATAOUT>(*data16++) * this->A;
                 } while (data16 < data16End);
             }
         }

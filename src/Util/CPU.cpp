@@ -105,7 +105,8 @@ CPU::xgetbv (unsigned int index) {
 #define _XCR_XFEATURE_ENABLED_MASK 0
 #endif
 
-CPU::CPU () {
+CPU::CPU () :
+        CPUVendor (Other), OS_X64 (false), OS_AVX (false), OS_AVX512 (false), MMX (false), x64 (false), ABM (false), RDRAND (false), BMI1 (false), BMI2 (false), ADX (false), PREFETCHWT1 (false), MPX (false), SSE (false), SSE2 (false), SSE3 (false), SSSE3 (false), SSE41 (false), SSE42 (false), SSE4a (false), AES (false), SHA (false), AVX (false), XOP (false), FMA3 (false), FMA4 (false), AVX2 (false), AVX512_F (false), AVX512_PF (false), AVX512_ER (false), AVX512_CD (false), AVX512_VL (false), AVX512_BW (false), AVX512_DQ (false), AVX512_IFMA (false), AVX512_VBMI (false) {
     // Reset all the flags;
     std::memset(this, 0, sizeof (*this));
 

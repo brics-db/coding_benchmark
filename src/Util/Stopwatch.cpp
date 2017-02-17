@@ -14,8 +14,7 @@
 
 #include "Stopwatch.hpp"
 
-Stopwatch::Stopwatch () {
-    start = Clock::now();
+Stopwatch::Stopwatch () : start (Clock::now ()) {
 }
 
 void

@@ -21,15 +21,13 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "ANTest.hpp"
 
 template<typename DATAIN, typename DATAOUT, size_t UNROLL>
 struct AN_seq_16_32 : public ANTest<DATAIN, DATAOUT, UNROLL>, public SequentialTest {
 
-    AN_seq_16_32 (const char* const name, AlignedBlock & in, AlignedBlock & out, DATAOUT A, DATAOUT Ainv) :
-            ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, Ainv) {
+    AN_seq_16_32 (const char* const name, AlignedBlock & in, AlignedBlock & out, DATAOUT A, DATAOUT AInv) :
+            ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, AInv) {
     }
 
     virtual
