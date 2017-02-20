@@ -59,19 +59,17 @@ main (int argc, char ** argv) {
 #endif
     auto data16 = data.template begin<uint16_t>();
     Stopwatch sw;
-    auto nanoseconds = sw.Current();
-    for (size_t k = 0; k < (TOTALNUM / NUM16); k += NUM16) {
-        sw.Reset();
+    for (size_t k = 0; k < (TOTALNUM / NUM16); k++) {
         for (size_t i = 0; i < NUM16; ++i) {
-            data16[i] = ext_euclidean(A16, 15);
+            data16[0] = ext_euclidean(A16, 15);
         }
-        nanoseconds += sw.Current();
         std::stringstream ss;
         for (size_t i = 0; i < NUM16; ++i) {
-            ss << data16[i];
+            ss << data16[0];
         }
         std::cerr << ss.str();
     }
+    auto nanoseconds = sw.Current();
 #ifdef DEBUG
     std::cout << "Computing " << TOTALNUM << " inverses for 1..15-bit codewords took " << nanoseconds << " ns." << std::endl;
     std::cout << "\t" << (static_cast<double>(nanoseconds) / static_cast<double>(TOTALNUM)) << " ns / inverse." << std::endl;
@@ -85,7 +83,7 @@ main (int argc, char ** argv) {
 #endif
     auto data32 = data.template begin<uint32_t>();
     sw.Reset();
-    for (size_t k = 0; k < (TOTALNUM / NUM32); k += NUM32) {
+    for (size_t k = 0; k < (TOTALNUM / NUM32); k++) {
         for (size_t i = 0; i < NUM32; ++i) {
             data32[i] = ext_euclidean(A32, 31);
         }
@@ -104,7 +102,7 @@ main (int argc, char ** argv) {
 #endif
     auto data64 = data.template begin<uint64_t>();
     sw.Reset();
-    for (size_t k = 0; k < (TOTALNUM / NUM64); k += NUM64) {
+    for (size_t k = 0; k < (TOTALNUM / NUM64); k++) {
         for (size_t i = 0; i < NUM64; ++i) {
             data64[i] = ext_euclidean(A64, 63);
         }
