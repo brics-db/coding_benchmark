@@ -26,7 +26,7 @@ set xlabel "unroll / block size"
 set key outside
 
 # Absolute values
-set ylabel "Runtime [ns]"
+set ylabel "Runtime [s]"
 
 set output 'plot_check_16bit_absolute_seq.pdf'
 plot for [col=21:23] 'benchmark.csv' index 0 using 1:col lw 2 ps 0.5 with linespoints title columnhead,\
@@ -77,8 +77,6 @@ set yrange [*:*]
 unset ylabel
 set border 1+2+4+8
 unset key
-unset label
-unset arrow
 
 set style line 1 lt 1 lw 2 ps 0.5
 set style line 2 lt 2 lw 2 ps 0.5
@@ -126,7 +124,8 @@ plot 'benchmark.csv' index 0 using 1:27 ls 1 with linespoints,\
 	'benchmark.csv' index 0 using 1:36 ls 7 with linespoints,\
 	'benchmark.csv' index 0 using 1:37 ls 8 with linespoints
 
-reset
+unset log x
+unset log x2
 set bmargin 0
 set lmargin 0
 set rmargin 0
@@ -137,32 +136,32 @@ set noytics
 set noxlabel
 set noylabel
 set notitle
-unset label
-unset arrow
 set xrange [-10:0]
 set yrange [-10:0]
 
 set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size .2in,1.25in
 set output 'plot_paper_xlabel.tex'
-set label 'Runtime [ns]' at screen 0.5, 0.5 offset 0,-strlen("Runtime [ns]")/4.0 rotate by 90
+set label 'Runtime [s]' at screen 0.5, 0.5 offset 0,-strlen("Runtime [s]")/4.0 rotate by 90
 plot 20 ls 0 with linespoints
 
-set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.3in
+unset label
+set key below spacing 1.5
+
+set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.5in
 set output 'plot_paper_legend_check.tex'
-set key below maxcols 3 maxrows 2 horizontal width 4
-plot 20 ls 1 t "XOR seq/SSE4.2" with linespoints,\
-	20 ls 6 t "XOR AVX2" with linespoints,\
-	20 ls 4 t "AN$_{U}^{\\text{seq/SSE4.2}}$" with linespoints,\
-	20 ls 5 t "AN$_{S}^{\\text{seq/SSE4.2}}$" with linespoints,\
+plot 20 ls 1 t "XOR$^{\\text{Seq/SSE}}$" with linespoints,\
+	20 ls 6 t "XOR$^{\\text{AVX2}}$" with linespoints,\
+	20 ls 4 t "AN$_{U}^{\\text{seq/SSE}}$" with linespoints,\
+	20 ls 5 t "AN$_{S}^{\\text{seq/SSE}}$" with linespoints,\
 	20 ls 7 t "AN$_{U}^{\\text{AVX2}}$" with linespoints,\
 	20 ls 8 t "AN$_{S}^{\\text{AVX2}}$" with linespoints,\
 	20 ls 3 t "Hamming" with linespoints
 
+set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.4in
 set output 'plot_paper_legend_check_inv.tex'
-set key below maxcols 4 maxrows 2 horizontal width 0.5
-plot 20 ls 1 t "XOR seq/SSE4.2" with linespoints,\
-	20 ls 6 t "XOR AVX2" with linespoints,\
-	20 ls 4 t "AN$_{U}^{\\text{seq/SSE4.2}}$" with linespoints,\
-	20 ls 5 t "AN$_{S}^{\\text{seq/SSE4.2}}$" with linespoints,\
+plot 20 ls 1 t "XOR$^{\\text{Seq/SSE}}$" with linespoints,\
+	20 ls 6 t "XOR$^{\\text{AVX2}}$" with linespoints,\
+	20 ls 4 t "AN$_{U}^{\\text{seq/SSE}}$" with linespoints,\
+	20 ls 5 t "AN$_{S}^{\\text{seq/SSE}}$" with linespoints,\
 	20 ls 7 t "AN$_{U}^{\\text{AVX2}}$" with linespoints,\
 	20 ls 8 t "AN$_{S}^{\\text{AVX2}}$" with linespoints

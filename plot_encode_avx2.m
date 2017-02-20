@@ -26,7 +26,7 @@ set xlabel "unroll / block size"
 set key outside
 
 # Absolute values
-set ylabel "Runtime [ns]"
+set ylabel "Runtime [s]"
 
 set output 'plot_encode_16bit_absolute_seq.pdf'
 plot for [col=3:8] 'benchmark.csv' index 0 using 1:col lw 2 ps 0.5 with linespoints title columnhead
@@ -91,7 +91,8 @@ plot 'benchmark.csv' index 0 using 1:9 ls 1 with linespoints,\
 	'benchmark.csv' index 0 using 1:15 ls 4 with linespoints,\
 	'benchmark.csv' index 0 using 1:16 ls 5 with linespoints
 
-reset
+unset log x
+unset log x2
 set bmargin 0
 set lmargin 0
 set rmargin 0
@@ -107,9 +108,10 @@ unset arrow
 set xrange [-20:-10]
 set yrange [-20:-10]
 
-set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 6.7in,.2in
+set key below spacing 1.5
+
+set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.4in
 set output 'plot_paper_legend_encode.tex'
-set key below center width 5
 plot 20 ls 1 t "XOR$^{\\text{Seq/SSE}}$" with linespoints,\
 	20 ls 4 t "XOR$^{\\text{AVX2}}$" with linespoints,\
 	20 ls 2 t "AN$^{\\text{Seq/SSE}}$" with linespoints,\

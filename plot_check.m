@@ -26,7 +26,7 @@ set xlabel "unroll / block size"
 set key outside
 
 # Absolute values
-set ylabel "Runtime [ns]"
+set ylabel "Runtime [s]"
 
 set output 'plot_check_16bit_absolute_seq.pdf'
 plot for [col=16:18] 'benchmark.csv' index 0 using 1:col lw 2 ps 0.5 with linespoints title columnhead,\
@@ -81,6 +81,7 @@ unset key
 unset label
 unset arrow
 
+set style line 0 lt 1 lw 0 ps 0
 set style line 1 lt 1 lw 2 ps 0.5
 set style line 2 lt 2 lw 2 ps 0.5
 set style line 3 lt 3 lw 2 ps 0.5
@@ -118,7 +119,8 @@ plot 'benchmark.csv' index 0 using 1:22 ls 1 with linespoints,\
 	'benchmark.csv' index 0 using 1:25 ls 4 with linespoints,\
 	'benchmark.csv' index 0 using 1:26 ls 5 with linespoints
 
-reset
+unset log x
+unset log x2
 set bmargin 0
 set lmargin 0
 set rmargin 0
@@ -136,19 +138,21 @@ set yrange [-20:-10]
 
 set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size .2in,1.25in
 set output 'plot_paper_xlabel.tex'
-set label 'Runtime [ns]' at screen 0.5, 0.5 offset 0,-strlen("Runtime [ns]")/4.0 rotate by 90
+set label 'Runtime [s]' at screen 0.5, 0.5 offset 0,-strlen("Runtime [s]")/4.0 rotate by 90
 plot 20 ls 0 with linespoints
 
-set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.15in
+unset label
+set key below spacing 1.5
+
+set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.2in
 set output 'plot_paper_legend_check.tex'
-set key below maxcols 3 maxrows 1 horizontal width 4
 plot 20 ls 1 t "XOR" with linespoints,\
 	20 ls 4 t "AN$_U$" with linespoints,\
 	20 ls 5 t "AN$_S$" with linespoints,\
 	20 ls 3 t "Hamming" with linespoints
 
+set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.2in
 set output 'plot_paper_legend_check_inv.tex'
-set key below maxcols 4 maxrows 1 horizontal width 0.5
 plot 20 ls 1 t "XOR" with linespoints,\
 	20 ls 4 t "AN$_U$" with linespoints,\
 	20 ls 5 t "AN$_S$" with linespoints

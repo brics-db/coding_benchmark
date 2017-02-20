@@ -24,6 +24,12 @@
 
 #include <vector>
 
+/*
+ * This algorithm actually computes the modulo inverse of the given first argument
+ * b0 in the residual class ring modulo <codewidth> (the second argument). One
+ * requirement of this algorithm is, that template type <T> is large enough to
+ * store <codewidth>+1 bits!
+ */
 template<typename T>
 T
 ext_euclidean (T b0, size_t codewidth) {

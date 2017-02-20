@@ -26,7 +26,7 @@ set xlabel "unroll / block size"
 set key outside
 
 #Absolute values
-set ylabel "Runtime [ns]"
+set ylabel "Runtime [s]"
 
 set output 'plot_decode_16bit_absolute_seq.pdf'
 plot for [col=29:31] 'benchmark.csv' index 0 using 1:col lw 2 ps 0.5 with linespoints title columnhead,\
@@ -117,7 +117,8 @@ plot 'benchmark.csv' index 0 using 1:35 ls 1 with linespoints,\
 	'benchmark.csv' index 0 using 1:38 ls 4 with linespoints,\
 	'benchmark.csv' index 0 using 1:39 ls 5 with linespoints
 
-reset
+unset log x
+unset log x2
 set bmargin 0
 set lmargin 0
 set rmargin 0
@@ -132,17 +133,18 @@ unset label
 unset arrow
 set xrange [-20:-10]
 set yrange [-20:-10]
-		
-set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.15in
+
+set key below spacing 1.5
+
+set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.4in
 set output 'plot_paper_legend_decode.tex'
-set key below maxcols 3 maxrows 1 horizontal width 4
 plot 20 ls 1 t "XOR" with linespoints,\
 	20 ls 4 t "AN$_U$" with linespoints,\
 	20 ls 5 t "AN$_S$" with linespoints,\
 	20 ls 3 t "Hamming" with linespoints
 
+set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.3in
 set output 'plot_paper_legend_decode_inv.tex'
-set key below maxcols 2 maxrows 1 horizontal width 0.5
 plot 20 ls 1 t "XOR" with linespoints,\
 	20 ls 4 t "AN$_U$" with linespoints,\
 	20 ls 5 t "AN$_S$" with linespoints

@@ -32,18 +32,11 @@ ADD_DEFINITIONS(-Wno-ignored-attributes)
 ADD_DEFINITIONS(-Weffc++)
 
 MACRO( add_algorithm arg_name arg_source_files)
-    STRING(REPLACE " " ";" TMP_SOURCE_FILES "${arg_source_files}")
-    FOREACH(f ${TMP_SOURCE_FILES})
-        LIST(APPEND SOURCE_FILES "${f}")
-    ENDFOREACH(f TMP_SOURCE_FILES)
-
-    ADD_EXECUTABLE(${arg_name} ${SOURCE_FILES})
-
+	STRING(REPLACE " " ";" src_files "${arg_source_files}")
+    ADD_EXECUTABLE(${arg_name} ${src_files})
     SET_PROPERTY(TARGET ${arg_name} PROPERTY CXX_STANDARD 14)
     SET_PROPERTY(TARGET ${arg_name} PROPERTY CXX_STANDARD_REQUIRED ON)
-#	TARGET_COMPILE_OPTIONS(${arg_name} PRIVATE "-O2")
-
-    MESSAGE(STATUS "Add executable ${arg_name}")
+    MESSAGE("Added executable ${arg_name}")
 ENDMACRO( add_algorithm )
 
 MACRO(append_target_property arg_target arg_property arg_setting)
@@ -76,3 +69,4 @@ IF(OPENMP_FOUND)
 	append_target_property(benchmarkOMP "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
 ENDIF(OPENMP_FOUND)
 
+add_algorithm(TestModuloInverseComputation "src/TestModuloInverseComputation.cpp src/Util/Stopwatch.cpp")
