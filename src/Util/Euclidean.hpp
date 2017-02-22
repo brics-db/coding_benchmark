@@ -22,6 +22,7 @@
 #ifndef EUCLIDEAN_HPP
 #define EUCLIDEAN_HPP
 
+#include <iostream>
 #include <vector>
 
 /*
@@ -35,29 +36,41 @@ T
 ext_euclidean (T b0, size_t codewidth) {
     T a0(1);
     a0 <<= codewidth;
-    std::vector<T> a, b, q, r, s, t;
-    a.push_back(a0), b.push_back(b0), s.push_back(T(0)), t.push_back(T(0));
-    size_t i = 0;
+    // std::vector<T> a, b, q, r, s, t;
+    T a[16], b[16], q[16], r[16], s[16], t[16];
+    // a.push_back(a0), b.push_back(b0), s.push_back(T(0)), t.push_back(T(0));
+    uint8_t aI = 1, bI = 1, qI = 0, rI = 0, sI = 1, tI = 1;
+    a[0] = a0;
+    b[0] = b0;
+    s[0] = t[0] = T(0);
+    ssize_t i = 0;
     do {
-        q.push_back(a[i] / b[i]);
-        r.push_back(a[i] % b[i]);
-        a.push_back(b[i]);
-        b.push_back(r[i]);
-        s.push_back(0);
-        t.push_back(0);
+        // q.push_back(a[i] / b[i]);
+        q[qI++] = a[i] / b[i];
+        // r.push_back(a[i] % b[i]);
+        r[rI++] = a[i] % b[i];
+        // a.push_back(b[i]);
+        a[aI++] = b[i];
+        // b.push_back(r[i]);
+        b[bI++] = r[i];
+        // s.push_back(0);
+        s[sI++] = 0;
+        // t.push_back(0);
+        t[tI++] = 0;
     } while (b[++i] > 0);
     s[i] = 1;
     t[i] = 0;
 
-    for (size_t j = i; j > 0; --j) {
+    for (ssize_t j = i; j > 0; --j) {
         s[j - 1] = t[j];
         t[j - 1] = s[j] - q[j - 1] * t[j];
     }
-
-    T result = ((b0 * t.front()) % a0);
+    // std::cerr << "[ext_eclidean] " << b0 << ": " << std::max(q.size(), std::max(r.size(), std::max(a.size(), std::max(b.size(), std::max(s.size(), t.size()))))) << std::endl;
+    // T result = ((b0 * t.front()) % a0);
+    T result = ((b0 * t[0]) % a0);
     result += result < 0 ? a0 : 0;
     if (result == 1) {
-        return t.front();
+        return t[0];
     } else {
         return 0;
     }
