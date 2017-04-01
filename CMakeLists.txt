@@ -70,3 +70,5 @@ IF(OPENMP_FOUND)
 ENDIF(OPENMP_FOUND)
 
 add_algorithm(TestModuloInverseComputation "src/TestModuloInverseComputation.cpp src/Util/Stopwatch.cpp")
+add_algorithm(TestModuloInverseComputation2 "src/TestModuloInverseComputation2.cpp src/Util/Stopwatch.cpp")
+
