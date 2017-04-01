@@ -30,9 +30,9 @@
 
 using boost::multiprecision::uint128_t;
 
-const size_t wCmin = 16;
+const size_t wCmin = 3;
 const size_t wCmax = 127;
-const size_t wAmin = 3;
+const size_t wAmin = 2;
 //const size_t wAmax = 16;
 
 uint64_t convert(uint128_t & source) {
@@ -45,6 +45,37 @@ uint64_t convert(uint128_t & source) {
     return target;
 }
 
+template<typename T>
+T test(size_t TOTALNUM, size_t wC) {
+    T result(0);
+    std::cout << wC;
+#ifdef DEBUG
+    for (size_t wA = wAmin; wA <= (wC - (wCmin - (wAmin - 1))); ++wA) {
+        std::cout << "\t-";
+    }
+    for (size_t wA = (wC - (wCmin - (wAmin - 1))); wA < wC; ++wA) {
+#else
+    for (size_t wA = wAmin; wA < wC; ++wA) {
+#endif
+        T A(1);
+        A <<= (wA - 1);
+        A += 1;
+        Stopwatch sw;
+        for (size_t i = 0; i < TOTALNUM; ++i) {
+            result = ext_euclidean(A, wC);
+            // result64 = convert(result);
+        }
+        auto nanoseconds = sw.Current();
+#ifdef DEBUG
+        std::cout << '\t' << std::hex << std::showbase << A << ':' << std::dec << std::noshowbase << nanoseconds;
+#else
+        std::cout << '\t' << nanoseconds;
+#endif
+    }
+    std::cout << std::endl;
+    return result;
+}
+
 int main(int argc, char ** argv) {
     if (argc != 2) {
         std::cerr << "Usage: " << argv[0] << " <totalnum [#iterations]>" << std::endl;
@@ -52,8 +83,7 @@ int main(int argc, char ** argv) {
     }
 
     size_t TOTALNUM = strtoll(argv[1], nullptr, 0);
-    uint128_t result;
-    // volatile uint64_t result64;
+// volatile uint64_t result64;
 
     std::cout << TOTALNUM << " iterations per combination of |A| and |C|." << std::endl;
     std::cout << "|C|";
@@ -63,22 +93,18 @@ int main(int argc, char ** argv) {
     std::cout << std::endl;
 
     for (size_t wC = wCmin; wC <= wCmax; ++wC) {
-        std::cout << wC;
-        for (size_t wA = wAmin; wA <= (wC - (wCmin - (wAmin - 1))); ++wA) {
-            std::cout << "\t-";
+        if (wC < 8) {
+            __attribute__((unused))  volatile uint8_t result = test<uint8_t>(TOTALNUM, wC);
+        } else if (wC < 16) {
+            __attribute__((unused))  volatile uint16_t result = test<uint16_t>(TOTALNUM, wC);
+        } else if (wC < 32) {
+            __attribute__((unused))  volatile uint32_t result = test<uint32_t>(TOTALNUM, wC);
+        } else if (wC < 64) {
+            __attribute__((unused))  volatile uint64_t result = test<uint64_t>(TOTALNUM, wC);
+        } else if (wC < 128) {
+            __attribute__((unused))  volatile uint128_t result = test<uint128_t>(TOTALNUM, wC);
+        } else {
+            throw std::runtime_error("unsupported code word widht");
         }
-        for (size_t wA = (wC - (wCmin - (wAmin - 1))); wA < wC; ++wA) {
-            uint128_t A(1);
-            A <<= (wA - 1);
-            A += 1;
-            Stopwatch sw;
-            for (size_t i = 0; i < TOTALNUM; ++i) {
-                result = ext_euclidean(A, wC);
-                // result64 = convert(result);
-            }
-            auto nanoseconds = sw.Current();
-            std::cout << '\t' << std::hex << std::showbase << A << ':' << std::dec << std::noshowbase << nanoseconds;
-        }
-        std::cout << std::endl;
     }
 }
