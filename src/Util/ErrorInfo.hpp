@@ -24,14 +24,20 @@ public:
     size_t i;
     size_t iter;
 
-    ErrorInfo (const char* file, size_t line, size_t i, size_t iter);
+    ErrorInfo(
+            const char* file,
+            size_t line,
+            size_t i,
+            size_t iter);
 
-    ErrorInfo (const ErrorInfo & other);
+    ErrorInfo(
+            const ErrorInfo & other);
 
-    virtual ~ErrorInfo ();
+    virtual ~ErrorInfo();
 
-    ErrorInfo & operator= (const ErrorInfo & other);
+    ErrorInfo & operator=(
+            const ErrorInfo & other);
 
-    const char* what ();
+    const char* what();
 };
 

@@ -23,14 +23,17 @@
 #include "Hamming_sse42.hpp"
 
 template<size_t UNROLL>
-struct Hamming_sse42_16 : public Hamming_sse42<uint16_t, UNROLL> {
+struct Hamming_sse42_16 :
+        public Hamming_sse42<uint16_t, UNROLL> {
 
-    Hamming_sse42_16 (const char* const name, AlignedBlock & in, AlignedBlock & out) :
-            Hamming_sse42<uint16_t, UNROLL>(name, in, out) {
+    Hamming_sse42_16(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out)
+            : Hamming_sse42<uint16_t, UNROLL>(name, in, out) {
     }
 
-    virtual
-    ~Hamming_sse42_16 () {
+    virtual ~Hamming_sse42_16() {
     }
 
 };

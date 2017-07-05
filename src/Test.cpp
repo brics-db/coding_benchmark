@@ -24,66 +24,68 @@
 #include "Util/ErrorInfo.hpp"
 #include "Util/Stopwatch.hpp"
 
-TestBase::TestBase (const std::string & name, AlignedBlock & in, AlignedBlock & out) :
-        name (name),
-        in (in),
-        out (out) {
+TestBase::TestBase(
+        const std::string & name,
+        AlignedBlock & in,
+        AlignedBlock & out)
+        : name(name),
+          in(in),
+          out(out) {
 }
 
-TestBase::TestBase (TestBase & other) :
-        name (other.name),
-        in (other.in),
-        out (other.out) {
+TestBase::TestBase(
+        TestBase & other)
+        : name(other.name),
+          in(other.in),
+          out(other.out) {
 }
 
-TestBase::~TestBase () {
+TestBase::~TestBase() {
 }
 
-void
-TestBase::PreEnc (const size_t numIterations) {
+void TestBase::PreEnc(
+        const size_t numIterations) {
 }
 
-bool
-TestBase::DoCheck () {
+bool TestBase::DoCheck() {
     return false;
 }
 
-void
-TestBase::PreCheck (const size_t numIterations) {
+void TestBase::PreCheck(
+        const size_t numIterations) {
 }
 
-void
-TestBase::RunCheck (const size_t numIterations) {
+void TestBase::RunCheck(
+        const size_t numIterations) {
 }
 
-bool
-TestBase::DoArith () {
+bool TestBase::DoArith() {
     return false;
 }
 
-void
-TestBase::PreArith (const size_t numIterations) {
+void TestBase::PreArith(
+        const size_t numIterations) {
 }
 
-void
-TestBase::RunArith (const size_t numIterations, uint16_t value) {
+void TestBase::RunArith(
+        const size_t numIterations,
+        uint16_t value) {
 }
 
-bool
-TestBase::DoDec () {
+bool TestBase::DoDec() {
     return false;
 }
 
-void
-TestBase::PreDec (const size_t numIterations) {
+void TestBase::PreDec(
+        const size_t numIterations) {
 }
 
-void
-TestBase::RunDec (const size_t numIterations) {
+void TestBase::RunDec(
+        const size_t numIterations) {
 }
 
-TestInfos
-TestBase::Execute (const size_t numIterations) {
+TestInfos TestBase::Execute(
+        const size_t numIterations) {
     if (!this->HasCapabilities()) {
         return TestInfos(this->name, getSIMDtypeName());
     }
@@ -191,46 +193,43 @@ TestBase::Execute (const size_t numIterations) {
     return TestInfos(this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiDec);
 }
 
-SequentialTest::~SequentialTest () {
+SequentialTest::~SequentialTest() {
 }
 
 const std::string &
-SequentialTest::getSIMDtypeName () {
+SequentialTest::getSIMDtypeName() {
     static const std::string SIMDtypeName("Seq");
     return SIMDtypeName;
 }
 
-bool
-SequentialTest::HasCapabilities () {
+bool SequentialTest::HasCapabilities() {
     return true;
 }
 
-SSE42Test::~SSE42Test () {
+SSE42Test::~SSE42Test() {
 }
 
 const std::string &
-SSE42Test::getSIMDtypeName () {
+SSE42Test::getSIMDtypeName() {
     static const std::string SIMDtypeName("SSE4.2");
     return SIMDtypeName;
 }
 
-bool
-SSE42Test::HasCapabilities () {
+bool SSE42Test::HasCapabilities() {
     auto& cpu = CPU::Instance();
     return cpu.SSE42 && cpu.OS_X64;
 }
 
-AVX2Test::~AVX2Test () {
+AVX2Test::~AVX2Test() {
 }
 
 const std::string &
-AVX2Test::getSIMDtypeName () {
+AVX2Test::getSIMDtypeName() {
     static const std::string SIMDtypeName("AVX2");
     return SIMDtypeName;
 }
 
-bool
-AVX2Test::HasCapabilities () {
+bool AVX2Test::HasCapabilities() {
     auto& cpu = CPU::Instance();
     return cpu.AVX2 && cpu.OS_X64;
 }

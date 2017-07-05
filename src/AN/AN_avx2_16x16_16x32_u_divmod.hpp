@@ -17,31 +17,37 @@
 #include "AN_avx2_16x16_16x32.hpp"
 
 template<size_t UNROLL>
-struct AN_avx2_16x16_16x32_u_divmod : public AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL> {
+struct AN_avx2_16x16_16x32_u_divmod :
+        public AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL> {
 
-    AN_avx2_16x16_16x32_u_divmod (const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A, uint32_t AInv) :
-            AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL>(name, in, out, A, AInv) {
+    AN_avx2_16x16_16x32_u_divmod(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out,
+            uint32_t A,
+            uint32_t AInv)
+            : AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL>(name, in, out, A, AInv) {
     }
 
-    virtual
-    ~AN_avx2_16x16_16x32_u_divmod () {
+    virtual ~AN_avx2_16x16_16x32_u_divmod() {
     }
 
-    virtual bool
-    DoCheck () override {
+    virtual bool DoCheck() override {
         return true;
     }
 
-    virtual void
-    RunCheck (const size_t numIterations) override {
+    virtual void RunCheck(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            auto mm_Data = this->out.template begin<__m256i>();
-            auto mm_DataEnd = this->out.template end<__m256i>();
+            auto mm_Data = this->out.template begin<__m256i >();
+            auto mm_DataEnd = this->out.template end<__m256i >();
             while (mm_Data <= (mm_DataEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
                     auto mmIn = _mm256_lddqu_si256(mm_Data);
-                    if ((_mm256_extract_epi32(mmIn, 0) % this->A != 0) || (_mm256_extract_epi32(mmIn, 1) % this->A != 0) || (_mm256_extract_epi32(mmIn, 2) % this->A != 0) || (_mm256_extract_epi32(mmIn, 3) % this->A != 0) || (_mm256_extract_epi32(mmIn, 4) % this->A != 0) || (_mm256_extract_epi32(mmIn, 5) % this->A != 0) || (_mm256_extract_epi32(mmIn, 6) % this->A != 0) || (_mm256_extract_epi32(mmIn, 7) % this->A != 0)) {
+                    if ((_mm256_extract_epi32(mmIn, 0) % this->A != 0) || (_mm256_extract_epi32(mmIn, 1) % this->A != 0) || (_mm256_extract_epi32(mmIn, 2) % this->A != 0)
+                            || (_mm256_extract_epi32(mmIn, 3) % this->A != 0) || (_mm256_extract_epi32(mmIn, 4) % this->A != 0) || (_mm256_extract_epi32(mmIn, 5) % this->A != 0)
+                            || (_mm256_extract_epi32(mmIn, 6) % this->A != 0) || (_mm256_extract_epi32(mmIn, 7) % this->A != 0)) {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mm_Data) - this->out.template begin<uint32_t>(), iteration);
                     }
                     ++mm_Data;
@@ -50,7 +56,9 @@ struct AN_avx2_16x16_16x32_u_divmod : public AN_avx2_16x16_16x32<uint16_t, uint3
             // here follows the non-unrolled remainder
             while (mm_Data <= (mm_DataEnd - 1)) {
                 auto mmIn = _mm256_lddqu_si256(mm_Data);
-                if ((_mm256_extract_epi32(mmIn, 0) % this->A != 0) || (_mm256_extract_epi32(mmIn, 1) % this->A != 0) || (_mm256_extract_epi32(mmIn, 2) % this->A != 0) || (_mm256_extract_epi32(mmIn, 3) % this->A != 0) || (_mm256_extract_epi32(mmIn, 4) % this->A != 0) || (_mm256_extract_epi32(mmIn, 5) % this->A != 0) || (_mm256_extract_epi32(mmIn, 6) % this->A != 0) || (_mm256_extract_epi32(mmIn, 7) % this->A != 0)) {
+                if ((_mm256_extract_epi32(mmIn, 0) % this->A != 0) || (_mm256_extract_epi32(mmIn, 1) % this->A != 0) || (_mm256_extract_epi32(mmIn, 2) % this->A != 0)
+                        || (_mm256_extract_epi32(mmIn, 3) % this->A != 0) || (_mm256_extract_epi32(mmIn, 4) % this->A != 0) || (_mm256_extract_epi32(mmIn, 5) % this->A != 0)
+                        || (_mm256_extract_epi32(mmIn, 6) % this->A != 0) || (_mm256_extract_epi32(mmIn, 7) % this->A != 0)) {
                     throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mm_Data) - this->out.template begin<uint32_t>(), iteration);
                 }
                 ++mm_Data;
@@ -66,15 +74,14 @@ struct AN_avx2_16x16_16x32_u_divmod : public AN_avx2_16x16_16x32<uint16_t, uint3
         }
     }
 
-    bool
-    DoDec () override {
+    bool DoDec() override {
         return true;
     }
 
-    void
-    RunDec (const size_t numIterations) override {
+    void RunDec(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            const ssize_t VALUES_PER_SIMDREG = sizeof (__m256i) / sizeof (uint32_t);
+            const ssize_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (uint32_t);
             const ssize_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             ssize_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
             ssize_t i = 0;

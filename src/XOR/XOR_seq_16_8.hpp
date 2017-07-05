@@ -19,13 +19,17 @@
 #include "XOR_seq.hpp"
 
 template<size_t BLOCKSIZE>
-struct XOR_seq_16_8 : public XOR_seq<uint16_t, uint8_t, BLOCKSIZE>, public SequentialTest {
+struct XOR_seq_16_8 :
+        public XOR_seq<uint16_t, uint8_t, BLOCKSIZE>,
+        public SequentialTest {
 
-    XOR_seq_16_8 (const char* const name, AlignedBlock & in, AlignedBlock & out) :
-            XOR_seq<uint16_t, uint8_t, BLOCKSIZE>(name, in, out) {
+    XOR_seq_16_8(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out)
+            : XOR_seq<uint16_t, uint8_t, BLOCKSIZE>(name, in, out) {
     }
 
-    virtual
-    ~XOR_seq_16_8 () {
+    virtual ~XOR_seq_16_8() {
     }
 };

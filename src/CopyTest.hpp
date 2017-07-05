@@ -27,31 +27,34 @@
 #include "Util/Intrinsics.hpp"
 
 template<size_t UNROLL>
-struct CopyTest : public Test<uint16_t, uint16_t>, public SequentialTest {
+struct CopyTest :
+        public Test<uint16_t, uint16_t>,
+        public SequentialTest {
 
-    CopyTest (const char* const name, AlignedBlock & in, AlignedBlock & out) :
-            Test<uint16_t, uint16_t>(name, in, out) {
+    CopyTest(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out)
+            : Test<uint16_t, uint16_t>(name, in, out) {
     }
 
-    virtual
-    ~CopyTest () {
+    virtual ~CopyTest() {
     }
 
-    void
-    RunEnc (const size_t numIterations) override {
+    void RunEnc(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             _ReadWriteBarrier();
             memcpy(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
         }
     }
 
-    bool
-    DoCheck () override {
+    bool DoCheck() override {
         return true;
     }
 
-    void
-    RunCheck (const size_t numIterations) override {
+    void RunCheck(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             _ReadWriteBarrier();
             int ret = memcmp(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
@@ -61,13 +64,12 @@ struct CopyTest : public Test<uint16_t, uint16_t>, public SequentialTest {
         }
     }
 
-    bool
-    DoDec () override {
+    bool DoDec() override {
         return true;
     }
 
-    void
-    RunDec (const size_t numIterations) override {
+    void RunDec(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             _ReadWriteBarrier();
             memcpy(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());

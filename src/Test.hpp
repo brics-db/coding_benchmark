@@ -27,16 +27,16 @@
 
 struct TestBase0 {
 
-    virtual
-    ~TestBase0 () {
+    virtual ~TestBase0() {
     }
 
-    virtual const std::string & getSIMDtypeName () = 0;
+    virtual const std::string & getSIMDtypeName() = 0;
 
-    virtual bool HasCapabilities () = 0;
+    virtual bool HasCapabilities() = 0;
 };
 
-struct TestBase : virtual public TestBase0 {
+struct TestBase :
+        virtual public TestBase0 {
 
 protected:
     std::string name;
@@ -44,73 +44,90 @@ protected:
     AlignedBlock out;
 
 public:
-    TestBase (const std::string & name, AlignedBlock & in, AlignedBlock & out);
+    TestBase(
+            const std::string & name,
+            AlignedBlock & in,
+            AlignedBlock & out);
 
-    TestBase (TestBase & other);
+    TestBase(
+            TestBase & other);
 
-    virtual ~TestBase ();
+    virtual ~TestBase();
 
-    virtual void ResetBuffers () = 0;
+    virtual void ResetBuffers() = 0;
 
-    virtual size_t getInputTypeSize () = 0;
+    virtual size_t getInputTypeSize() = 0;
 
-    virtual size_t getOutputTypeSize () = 0;
+    virtual size_t getOutputTypeSize() = 0;
 
     // Encoding
-    virtual void PreEnc (const size_t numIterations);
+    virtual void PreEnc(
+            const size_t numIterations);
 
-    virtual void RunEnc (const size_t numIterations) = 0;
+    virtual void RunEnc(
+            const size_t numIterations) = 0;
 
     // Check
-    virtual bool DoCheck ();
+    virtual bool DoCheck();
 
-    virtual void PreCheck (const size_t numIterations);
+    virtual void PreCheck(
+            const size_t numIterations);
 
-    virtual void RunCheck (const size_t numIterations);
+    virtual void RunCheck(
+            const size_t numIterations);
 
     // Arithmetic
-    virtual bool DoArith ();
+    virtual bool DoArith();
 
-    virtual void PreArith (const size_t numIterations);
+    virtual void PreArith(
+            const size_t numIterations);
 
-    virtual void RunArith (const size_t numIterations, uint16_t value);
+    virtual void RunArith(
+            const size_t numIterations,
+            uint16_t value);
 
     // Decoding
-    virtual bool DoDec ();
+    virtual bool DoDec();
 
-    virtual void PreDec (const size_t numIterations);
+    virtual void PreDec(
+            const size_t numIterations);
 
-    virtual void RunDec (const size_t numIterations);
+    virtual void RunDec(
+            const size_t numIterations);
 
     // Execute test:
-    virtual TestInfos Execute (const size_t numIterations);
+    virtual TestInfos Execute(
+            const size_t numIterations);
 };
 
-struct SequentialTest : virtual public TestBase0 {
+struct SequentialTest :
+        virtual public TestBase0 {
 
-    virtual ~SequentialTest ();
+    virtual ~SequentialTest();
 
-    virtual const std::string & getSIMDtypeName () override;
+    virtual const std::string & getSIMDtypeName() override;
 
-    virtual bool HasCapabilities () override;
+    virtual bool HasCapabilities() override;
 };
 
-struct SSE42Test : virtual public TestBase0 {
+struct SSE42Test :
+        virtual public TestBase0 {
 
-    virtual ~SSE42Test ();
+    virtual ~SSE42Test();
 
-    virtual const std::string & getSIMDtypeName () override;
+    virtual const std::string & getSIMDtypeName() override;
 
-    virtual bool HasCapabilities () override;
+    virtual bool HasCapabilities() override;
 };
 
-struct AVX2Test : virtual public TestBase0 {
+struct AVX2Test :
+        virtual public TestBase0 {
 
-    virtual ~AVX2Test ();
+    virtual ~AVX2Test();
 
-    virtual const std::string & getSIMDtypeName () override;
+    virtual const std::string & getSIMDtypeName() override;
 
-    virtual bool HasCapabilities () override;
+    virtual bool HasCapabilities() override;
 };
 
 #ifdef _MSC_VER
@@ -124,28 +141,28 @@ struct AVX2Test : virtual public TestBase0 {
 #endif
 
 template<typename DATAIN, typename DATAOUT>
-struct Test : public TestBase {
+struct Test :
+        public TestBase {
 
-    Test (const std::string & name, AlignedBlock & in, AlignedBlock & out) :
-            TestBase (name, in, out) {
+    Test(
+            const std::string & name,
+            AlignedBlock & in,
+            AlignedBlock & out)
+            : TestBase(name, in, out) {
     }
 
-    virtual
-    ~Test () {
+    virtual ~Test() {
     }
 
-    virtual size_t
-    getInputTypeSize () override {
-        return sizeof (DATAIN);
+    virtual size_t getInputTypeSize() override {
+        return sizeof(DATAIN);
     }
 
-    virtual size_t
-    getOutputTypeSize () override {
-        return sizeof (DATAOUT);
+    virtual size_t getOutputTypeSize() override {
+        return sizeof(DATAOUT);
     }
 
-    void
-    ResetBuffers () override {
+    void ResetBuffers() override {
         // Reset buffers:
         auto pInEnd = this->in.template end<DATAIN>();
         DATAIN value = static_cast<DATAIN>(12783);

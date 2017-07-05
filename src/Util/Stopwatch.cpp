@@ -14,16 +14,15 @@
 
 #include "Stopwatch.hpp"
 
-Stopwatch::Stopwatch () : start (Clock::now ()) {
+Stopwatch::Stopwatch()
+        : start(Clock::now()) {
 }
 
-void
-Stopwatch::Reset () {
+void Stopwatch::Reset() {
     start = Clock::now();
 }
 
-int64_t
-Stopwatch::Current () {
+int64_t Stopwatch::Current() {
     auto end = Clock::now();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 }

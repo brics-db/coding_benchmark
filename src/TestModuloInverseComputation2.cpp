@@ -35,7 +35,8 @@ const size_t wCmax = 127;
 const size_t wAmin = 2;
 //const size_t wAmax = 16;
 
-uint64_t convert(uint128_t & source) {
+uint64_t convert(
+        uint128_t & source) {
     uint64_t target = 0;
     const unsigned limb_num = source.backend().size(); // number of limbs
     const unsigned limb_bits = sizeof(boost::multiprecision::limb_type) * CHAR_BIT; // size of limb in bits
@@ -46,7 +47,9 @@ uint64_t convert(uint128_t & source) {
 }
 
 template<typename T>
-T test(size_t TOTALNUM, size_t wC) {
+T test(
+        size_t TOTALNUM,
+        size_t wC) {
     T result(0);
     std::cout << wC;
 #ifdef DEBUG
@@ -76,7 +79,9 @@ T test(size_t TOTALNUM, size_t wC) {
     return result;
 }
 
-int main(int argc, char ** argv) {
+int main(
+        int argc,
+        char ** argv) {
     if (argc != 2) {
         std::cerr << "Usage: " << argv[0] << " <totalnum [#iterations]>" << std::endl;
         return 1;
@@ -94,15 +99,15 @@ int main(int argc, char ** argv) {
 
     for (size_t wC = wCmin; wC <= wCmax; ++wC) {
         if (wC < 8) {
-            __attribute__((unused))  volatile uint8_t result = test<uint8_t>(TOTALNUM, wC);
+            __attribute__((unused))   volatile uint8_t result = test<uint8_t>(TOTALNUM, wC);
         } else if (wC < 16) {
-            __attribute__((unused))  volatile uint16_t result = test<uint16_t>(TOTALNUM, wC);
+            __attribute__((unused))   volatile uint16_t result = test<uint16_t>(TOTALNUM, wC);
         } else if (wC < 32) {
-            __attribute__((unused))  volatile uint32_t result = test<uint32_t>(TOTALNUM, wC);
+            __attribute__((unused))   volatile uint32_t result = test<uint32_t>(TOTALNUM, wC);
         } else if (wC < 64) {
-            __attribute__((unused))  volatile uint64_t result = test<uint64_t>(TOTALNUM, wC);
+            __attribute__((unused))   volatile uint64_t result = test<uint64_t>(TOTALNUM, wC);
         } else if (wC < 128) {
-            __attribute__((unused))  volatile uint128_t result = test<uint128_t>(TOTALNUM, wC);
+            __attribute__((unused))   volatile uint128_t result = test<uint128_t>(TOTALNUM, wC);
         } else {
             throw std::runtime_error("unsupported code word widht");
         }

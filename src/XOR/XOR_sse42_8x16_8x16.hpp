@@ -17,13 +17,17 @@
 #include "XOR_sse42.hpp"
 
 template<size_t BLOCKSIZE>
-struct XOR_sse42_8x16_8x16 : public XOR_sse42<uint16_t, __m128i, BLOCKSIZE>, public SSE42Test {
+struct XOR_sse42_8x16_8x16 :
+        public XOR_sse42<uint16_t, __m128i, BLOCKSIZE>,
+        public SSE42Test {
 
-    XOR_sse42_8x16_8x16 (const char* const name, AlignedBlock & in, AlignedBlock & out) :
-            XOR_sse42<uint16_t, __m128i, BLOCKSIZE>(name, in, out) {
+    XOR_sse42_8x16_8x16(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out)
+            : XOR_sse42<uint16_t, __m128i, BLOCKSIZE>(name, in, out) {
     }
 
-    virtual
-    ~XOR_sse42_8x16_8x16 () {
+    virtual ~XOR_sse42_8x16_8x16() {
     }
 };

@@ -29,30 +29,34 @@ private:
 
 public:
 
-    AlignedBlock () :
-            nBytes (0),
-            alignment (0),
-            baseptr (nullptr),
-            data (nullptr) {
+    AlignedBlock()
+            : nBytes(0),
+              alignment(0),
+              baseptr(nullptr),
+              data(nullptr) {
     }
 
-    AlignedBlock (size_t nBytes, size_t alignment) :
-            nBytes (nBytes),
-            alignment (alignment),
-            baseptr (new char[nBytes + alignment]),
-            data (nullptr) {
+    AlignedBlock(
+            size_t nBytes,
+            size_t alignment)
+            : nBytes(nBytes),
+              alignment(alignment),
+              baseptr(new char[nBytes + alignment]),
+              data(nullptr) {
         size_t tmp = reinterpret_cast<size_t>(baseptr.get());
         data = baseptr.get() + (alignment - (tmp & (alignment - 1)));
     }
 
-    AlignedBlock (AlignedBlock & other) :
-            nBytes (other.nBytes),
-            alignment (other.alignment),
-            baseptr (other.baseptr),
-            data (other.data) {
+    AlignedBlock(
+            AlignedBlock & other)
+            : nBytes(other.nBytes),
+              alignment(other.alignment),
+              baseptr(other.baseptr),
+              data(other.data) {
     }
 
-    AlignedBlock & operator= (AlignedBlock & other) {
+    AlignedBlock & operator=(
+            AlignedBlock & other) {
         this->~AlignedBlock();
         new (this) AlignedBlock(other);
         return *this;
@@ -60,18 +64,17 @@ public:
 
     template<typename T = void>
     T*
-    begin () {
+    begin() {
         return static_cast<T*>(data);
     }
 
     template<typename T = void>
     constexpr T*
-    end () const {
+    end() const {
         return reinterpret_cast<T*>(static_cast<char*>(data) + nBytes);
     }
 
-    virtual
-    ~AlignedBlock () {
+    virtual ~AlignedBlock() {
         data = nullptr;
         // baseptr is now a std::shared_ptr and auto-deallocated, which deletes its contents as well
     }

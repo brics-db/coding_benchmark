@@ -17,24 +17,37 @@
 
 #include "ErrorInfo.hpp"
 
-ErrorInfo::ErrorInfo (const char* file, size_t line, size_t i, size_t iter)
-        : file (file), line (line), i (i), iter (iter) {
+ErrorInfo::ErrorInfo(
+        const char* file,
+        size_t line,
+        size_t i,
+        size_t iter)
+        : file(file),
+          line(line),
+          i(i),
+          iter(iter) {
 }
 
-ErrorInfo::ErrorInfo (const ErrorInfo & other) : file (other.file), line (other.line), i (other.i), iter (other.iter) {
+ErrorInfo::ErrorInfo(
+        const ErrorInfo & other)
+        : file(other.file),
+          line(other.line),
+          i(other.i),
+          iter(other.iter) {
 }
 
-ErrorInfo::~ErrorInfo () {
+ErrorInfo::~ErrorInfo() {
 }
 
-ErrorInfo & ErrorInfo::operator= (const ErrorInfo & other) {
+ErrorInfo & ErrorInfo::operator=(
+        const ErrorInfo & other) {
     this->~ErrorInfo();
     new (this) ErrorInfo(other);
     return *this;
 }
 
 const char*
-ErrorInfo::what () {
+ErrorInfo::what() {
     std::stringstream ss;
     ss << "[" << file << "@" << line << "]: i=" << i << " iter=" << iter;
     std::string s = ss.str();

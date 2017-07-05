@@ -20,34 +20,40 @@
 
 template<typename DATA, typename CS>
 CS
-computeFinalChecksum (DATA & checksum);
+computeFinalChecksum(
+        DATA & checksum);
 
 template<>
-uint8_t computeFinalChecksum<uint16_t, uint8_t>(uint16_t & checksum) {
+uint8_t computeFinalChecksum<uint16_t, uint8_t>(
+        uint16_t & checksum) {
     auto pChk = reinterpret_cast<uint8_t*>(&checksum);
     return pChk[0] ^ pChk[1];
 }
 
 template<>
-uint16_t computeFinalChecksum<uint16_t, uint16_t>(uint16_t & checksum) {
+uint16_t computeFinalChecksum<uint16_t, uint16_t>(
+        uint16_t & checksum) {
     return checksum;
 }
 
 template<>
-uint8_t computeFinalChecksum<uint32_t, uint8_t>(uint32_t & checksum) {
+uint8_t computeFinalChecksum<uint32_t, uint8_t>(
+        uint32_t & checksum) {
     auto pChk = reinterpret_cast<uint8_t*>(&checksum);
     return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3];
 }
 
 template<>
-uint32_t computeFinalChecksum<uint32_t, uint32_t>(uint32_t & checksum) {
+uint32_t computeFinalChecksum<uint32_t, uint32_t>(
+        uint32_t & checksum) {
     return checksum;
 }
 
 // base implementation for all native data types
 
 template<typename T>
-bool
-checksumsDiffer (T checksum1, T checksum2) {
+bool checksumsDiffer(
+        T checksum1,
+        T checksum2) {
     return checksum1 != checksum2;
 }

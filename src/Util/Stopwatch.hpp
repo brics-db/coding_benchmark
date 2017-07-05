@@ -59,9 +59,9 @@ class Stopwatch {
     Clock::time_point start;
 
 public:
-    Stopwatch ();
+    Stopwatch();
 
-    void Reset ();
+    void Reset();
 
-    int64_t Current ();
+    int64_t Current();
 };

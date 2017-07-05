@@ -26,7 +26,7 @@ struct CPU {
     };
 
     static CPU&
-    Instance () {
+    Instance() {
         static CPU instance;
         return instance;
     }
@@ -80,9 +80,12 @@ struct CPU {
     bool AVX512_VBMI;
 
 private:
-    CPU ();
+    CPU();
 
-    bool x64Supported ();
-    void CPUID (int32_t out[4], int32_t x);
-    uint64_t xgetbv (unsigned int index);
+    bool x64Supported();
+    void CPUID(
+            int32_t out[4],
+            int32_t x);
+    uint64_t xgetbv(
+            unsigned int index);
 };

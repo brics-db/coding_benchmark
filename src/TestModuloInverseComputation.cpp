@@ -27,8 +27,9 @@
 #include "Util/Euclidean.hpp"
 #include "Util/Stopwatch.hpp"
 
-int
-main (int argc, char ** argv) {
+int main(
+        int argc,
+        char ** argv) {
     if (argc != 6) {
         std::cerr << "Usage: " << argv[0] << " <size [Bytes]> <totalnum [#values]> <A16 <= 2^15> <A32 <= 2^31> <A64 <= 2^63>" << std::endl;
         return 1;
@@ -44,9 +45,9 @@ main (int argc, char ** argv) {
     uint32_t A32 = MASK32 & static_cast<uint32_t>(strtol(argv[4], nullptr, 0)); // test for code widths up to 31 bits
     uint64_t A64 = MASK64 & static_cast<uint64_t>(strtoll(argv[5], nullptr, 0)); // test for code widths up to 63 bits
 
-    const size_t NUM16 = SIZE / sizeof (uint16_t);
-    const size_t NUM32 = SIZE / sizeof (uint32_t);
-    const size_t NUM64 = SIZE / sizeof (uint64_t);
+    const size_t NUM16 = SIZE / sizeof(uint16_t);
+    const size_t NUM32 = SIZE / sizeof(uint32_t);
+    const size_t NUM64 = SIZE / sizeof(uint64_t);
     TOTALNUM += (NUM16 - (TOTALNUM & (NUM16 - 1)));
     AlignedBlock data(SIZE, SIZE);
 

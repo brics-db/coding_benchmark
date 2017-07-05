@@ -30,8 +30,7 @@
 
 #include <immintrin.h>
 
-inline void
-_ReadWriteBarrier () // just to make it the same name as in Visual Studio, which we want to support
+inline void _ReadWriteBarrier() // just to make it the same name as in Visual Studio, which we want to support
 {
     asm volatile ("" : : : "memory");
 }

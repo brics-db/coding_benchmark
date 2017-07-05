@@ -52,8 +52,8 @@ struct TypeMapSSE42<uint16_t> {
 
     typedef hamming_sse42_16_t hamming_sse42_t;
 
-    static uint64_t
-    hammingWeight16 (__m128i && data) {
+    static uint64_t hammingWeight16(
+            __m128i && data) {
         static auto pattern1 = _mm_set1_epi16(0x5555);
         static auto pattern2 = _mm_set1_epi16(0x3333);
         static auto pattern3 = _mm_set1_epi16(0x0F0F);
@@ -66,8 +66,8 @@ struct TypeMapSSE42<uint16_t> {
         return static_cast<uint64_t>(_mm_extract_epi64(_mm_shuffle_epi8(temp, shuffle), 0));
     }
 
-    static uint64_t
-    computeHamming (__m128i && data) {
+    static uint64_t computeHamming(
+            __m128i && data) {
         static auto pattern1 = _mm_set1_epi16(static_cast<int16_t>(0xAD5B));
         static auto pattern2 = _mm_set1_epi16(static_cast<int16_t>(0x366D));
         static auto pattern3 = _mm_set1_epi16(static_cast<int16_t>(0xC78E));
@@ -99,8 +99,8 @@ struct TypeMapSSE42<uint32_t> {
 
     typedef hamming_sse42_32_t hamming_sse42_t;
 
-    static uint32_t
-    hammingWeight32 (__m128i && data) {
+    static uint32_t hammingWeight32(
+            __m128i && data) {
         static auto pattern1 = _mm_set1_epi32(0x55555555);
         static auto pattern2 = _mm_set1_epi32(0x33333333);
         static auto pattern3 = _mm_set1_epi32(0x0F0F0F0F);
@@ -113,8 +113,8 @@ struct TypeMapSSE42<uint32_t> {
         return static_cast<uint32_t>(_mm_extract_epi32(_mm_shuffle_epi8(temp, shuffle), 0));
     }
 
-    static uint32_t
-    computeHamming (__m128i && data) {
+    static uint32_t computeHamming(
+            __m128i && data) {
         static auto pattern1 = _mm_set1_epi32(0x56AAAD5B);
         static auto pattern2 = _mm_set1_epi32(0x9B33366D);
         static auto pattern3 = _mm_set1_epi32(0xE3C3C78E);
@@ -146,24 +146,28 @@ struct TypeMapSSE42<uint32_t> {
 };
 
 template<typename DATAIN, size_t UNROLL>
-struct Hamming_sse42 : public Test<DATAIN, typename TypeMapSSE42<DATAIN>::hamming_sse42_t>, public SSE42Test {
+struct Hamming_sse42 :
+        public Test<DATAIN, typename TypeMapSSE42<DATAIN>::hamming_sse42_t>,
+        public SSE42Test {
 
     typedef typename TypeMapSSE42<DATAIN>::hamming_sse42_t hamming_sse42_t;
     typedef typename TypeMapSeq<DATAIN>::hamming_seq_t hamming_seq_t;
 
-    Hamming_sse42 (const char* const name, AlignedBlock & in, AlignedBlock & out) :
-            Test<DATAIN, hamming_sse42_t>(name, in, out) {
+    Hamming_sse42(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out)
+            : Test<DATAIN, hamming_sse42_t>(name, in, out) {
     }
 
-    virtual
-    ~Hamming_sse42 () {
+    virtual ~Hamming_sse42() {
     }
 
-    void
-    RunEnc (const size_t numIterations) override {
+    void RunEnc(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            auto data = this->in.template begin<__m128i>();
-            auto dataEnd = this->in.template end<__m128i>();
+            auto data = this->in.template begin<__m128i >();
+            auto dataEnd = this->in.template end<__m128i >();
             auto dataOut = this->out.template begin<hamming_sse42_t>();
             while (data <= (dataEnd - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
@@ -187,25 +191,24 @@ struct Hamming_sse42 : public Test<DATAIN, typename TypeMapSSE42<DATAIN>::hammin
         }
     }
 
-    bool
-    DoCheck () override {
+    bool DoCheck() override {
         return true;
     }
 
-    void
-    RunCheck (const size_t numIterations) override {
+    void RunCheck(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
             size_t i = 0;
             auto data = this->out.template begin<hamming_sse42_t>();
             while (i <= (numValues - UNROLL)) {
-                for (size_t k = 0; k < UNROLL; ++k, i += (sizeof (__m128i) / sizeof (DATAIN)), ++data) {
+                for (size_t k = 0; k < UNROLL; ++k, i += (sizeof(__m128i) / sizeof (DATAIN)), ++data) {
                     if (data->code != TypeMapSSE42<DATAIN>::computeHamming(std::move(data->data))) {
                         throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_sse42_t>(), numIterations);
                     }
                 }
             }
-            for (; i <= (numValues - 1); i += (sizeof (__m128i) / sizeof (DATAIN)), ++data) {
+            for (; i <= (numValues - 1); i += (sizeof(__m128i) / sizeof (DATAIN)), ++data) {
                 if (data->code != TypeMapSSE42<DATAIN>::computeHamming(std::move(data->data))) {
                     throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_sse42_t>(), numIterations);
                 }
@@ -213,22 +216,21 @@ struct Hamming_sse42 : public Test<DATAIN, typename TypeMapSSE42<DATAIN>::hammin
             if (i < numValues) {
                 for (auto data2 = reinterpret_cast<hamming_seq_t*>(data); i < numValues; ++i, ++data2) {
                     if (data2->code != TypeMapSeq<DATAIN>::computeHamming(std::move(data2->data))) {
-                        throw ErrorInfo(__FILE__, __LINE__,  data2 - this->out.template begin<hamming_seq_t>(), numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, data2 - this->out.template begin<hamming_seq_t>(), numIterations);
                     }
                 }
             }
         }
     }
 
-    bool
-    DoDec () override {
+    bool DoDec() override {
         return true;
     }
 
-    void
-    RunDec (const size_t numIterations) override {
+    void RunDec(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            const size_t VALUES_PER_SIMDREG = sizeof (__m128i) / sizeof (DATAIN);
+            const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (DATAIN);
             const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
             size_t i = 0;

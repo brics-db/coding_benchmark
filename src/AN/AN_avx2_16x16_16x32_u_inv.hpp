@@ -17,26 +17,30 @@
 #include "AN_avx2_16x16_16x32.hpp"
 
 template<size_t UNROLL>
-struct AN_avx2_16x16_16x32_u_inv : public AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL> {
+struct AN_avx2_16x16_16x32_u_inv :
+        public AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL> {
 
-    AN_avx2_16x16_16x32_u_inv (const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A, uint32_t Ainv) :
-            AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv) {
+    AN_avx2_16x16_16x32_u_inv(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out,
+            uint32_t A,
+            uint32_t Ainv)
+            : AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv) {
     }
 
-    virtual
-    ~AN_avx2_16x16_16x32_u_inv () {
+    virtual ~AN_avx2_16x16_16x32_u_inv() {
     }
 
-    virtual bool
-    DoCheck () override {
+    virtual bool DoCheck() override {
         return true;
     }
 
-    virtual void
-    RunCheck (const size_t numIterations) override {
+    virtual void RunCheck(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            auto mm_Data = this->out.template begin<__m256i>();
-            auto mm_DataEnd = this->out.template end<__m256i>();
+            auto mm_Data = this->out.template begin<__m256i >();
+            auto mm_DataEnd = this->out.template end<__m256i >();
             uint32_t dMax = std::numeric_limits<uint16_t>::max();
             __m256i mm_dMax = _mm256_set1_epi32(dMax); // we assume 16-bit input data
             __m256i mm_AInv = _mm256_set1_epi32(this->A_INV);
@@ -69,15 +73,14 @@ struct AN_avx2_16x16_16x32_u_inv : public AN_avx2_16x16_16x32<uint16_t, uint32_t
         }
     }
 
-    bool
-    DoDec () override {
+    bool DoDec() override {
         return true;
     }
 
-    void
-    RunDec (const size_t numIterations) override {
+    void RunDec(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            const ssize_t VALUES_PER_SIMDREG = sizeof (__m256i) / sizeof (uint32_t);
+            const ssize_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (uint32_t);
             const ssize_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             ssize_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
             ssize_t i = 0;

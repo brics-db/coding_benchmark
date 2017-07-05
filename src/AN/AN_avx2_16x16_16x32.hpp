@@ -24,22 +24,28 @@
 #include "ANTest.hpp"
 
 template<typename DATAIN, typename DATAOUT, size_t UNROLL>
-struct AN_avx2_16x16_16x32 : public ANTest<DATAIN, DATAOUT, UNROLL>, public AVX2Test {
+struct AN_avx2_16x16_16x32 :
+        public ANTest<DATAIN, DATAOUT, UNROLL>,
+        public AVX2Test {
 
-    AN_avx2_16x16_16x32 (const char* const name, AlignedBlock & in, AlignedBlock & out, DATAOUT A, DATAOUT AInv) :
-            ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, AInv) {
+    AN_avx2_16x16_16x32(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out,
+            DATAOUT A,
+            DATAOUT AInv)
+            : ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, AInv) {
     }
 
-    virtual
-    ~AN_avx2_16x16_16x32 () {
+    virtual ~AN_avx2_16x16_16x32() {
     }
 
-    void
-    RunEnc (const size_t numIterations) override {
+    void RunEnc(
+            const size_t numIterations) override {
         for (size_t iter = 0; iter < numIterations; ++iter) {
-            auto *dataIn = this->in.template begin<__m128i>();
-            auto *dataInEnd = this->in.template end<__m128i>();
-            auto *dataOut = this->out.template begin<__m256i>();
+            auto *dataIn = this->in.template begin<__m128i >();
+            auto *dataInEnd = this->in.template end<__m128i >();
+            auto *dataOut = this->out.template begin<__m256i >();
             auto mmA = _mm256_set1_epi32(this->A);
 
             constexpr const bool isSigned = std::is_signed<DATAIN>::value;

@@ -17,18 +17,21 @@
 #include "XOR_base.hpp"
 
 template<typename DATA, typename CS, size_t BLOCKSIZE>
-struct XOR_seq : public Test<DATA, CS> {
+struct XOR_seq :
+        public Test<DATA, CS> {
 
-    XOR_seq (const char* const name, AlignedBlock & in, AlignedBlock & out) :
-            Test<DATA, CS>(name, in, out) {
+    XOR_seq(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out)
+            : Test<DATA, CS>(name, in, out) {
     }
 
-    virtual
-    ~XOR_seq () {
+    virtual ~XOR_seq() {
     }
 
-    void
-    RunEnc (const size_t numIterations) override {
+    void RunEnc(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             auto dataIn = this->in.template begin<DATA>();
             auto dataInEnd = this->in.template end<DATA>();
@@ -59,13 +62,12 @@ struct XOR_seq : public Test<DATA, CS> {
         }
     }
 
-    virtual bool
-    DoCheck () override {
+    virtual bool DoCheck() override {
         return true;
     }
 
-    virtual void
-    RunCheck (const size_t numIterations) override {
+    virtual void RunCheck(
+            const size_t numIterations) override {
         for (size_t iterations = 0; iterations < numIterations; ++iterations) {
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
             size_t i = 0;
@@ -79,7 +81,7 @@ struct XOR_seq : public Test<DATA, CS> {
                 i += BLOCKSIZE;
                 data = reinterpret_cast<CS*>(data2); // second, advance data2 up to the checksum
                 if (*data != computeFinalChecksum<DATA, CS>(checksum)) // third, test checksum
-                {
+                        {
                     throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<CS>(), iterations);
                 }
                 ++data; // fourth, advance after the checksum to the next block of values
@@ -94,20 +96,19 @@ struct XOR_seq : public Test<DATA, CS> {
                 } while (i < numValues);
                 data = reinterpret_cast<CS*>(data2); // second, advance data2 up to the checksum
                 if (*data != computeFinalChecksum<DATA, CS>(checksum)) // third, test checksum
-                {
+                        {
                     throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<CS>(), iterations);
                 }
             }
         }
     }
 
-    virtual bool
-    DoDec () override {
+    virtual bool DoDec() override {
         return true;
     }
 
-    void
-    RunDec (const size_t numIterations) override {
+    void RunDec(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
             size_t i = 0;

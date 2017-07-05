@@ -21,7 +21,8 @@
 #include "../Util/Intrinsics.hpp"
 
 template<typename DATAIN, typename DATAOUT, size_t UNROLL>
-class ANTest : public Test<DATAIN, DATAOUT> {
+class ANTest :
+        public Test<DATAIN, DATAOUT> {
 
 protected:
     const DATAOUT A;
@@ -29,16 +30,20 @@ protected:
 
 public:
 
-    ANTest (const std::string & name, AlignedBlock & in, AlignedBlock & out, const DATAOUT A, const DATAOUT A_INV) :
-            Test<DATAIN, DATAOUT>(name, in, out),
-            A (A),
-            A_INV (A_INV) {
+    ANTest(
+            const std::string & name,
+            AlignedBlock & in,
+            AlignedBlock & out,
+            const DATAOUT A,
+            const DATAOUT A_INV)
+            : Test<DATAIN, DATAOUT>(name, in, out),
+              A(A),
+              A_INV(A_INV) {
         std::stringstream ss;
         ss << " " << A;
         this->name += ss.str();
     }
 
-    virtual
-    ~ANTest () {
+    virtual ~ANTest() {
     }
 };

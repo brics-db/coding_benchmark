@@ -24,11 +24,14 @@
 
 #include "AlignedBlock.hpp"
 
-template <template <size_t BlockSize> class TestCollection, size_t start, size_t end>
+template<template<size_t BlockSize> class TestCollection, size_t start, size_t end>
 struct ExpandTest {
 
-    static void
-    WarmUp (const char* const name, const size_t numIterations, AlignedBlock & in, AlignedBlock & out) {
+    static void WarmUp(
+            const char* const name,
+            const size_t numIterations,
+            AlignedBlock & in,
+            AlignedBlock & out) {
         {
             TestCollection<start> test(name, in, out);
             test.Execute(numIterations);
@@ -37,8 +40,13 @@ struct ExpandTest {
     }
 
     template<typename ... ArgTypes>
-    static void
-    Execute (std::vector<TestInfos> & vecTestInfos, const char* const name, const size_t numIterations, AlignedBlock & in, AlignedBlock & out, ArgTypes && ... args) {
+    static void Execute(
+            std::vector<TestInfos> & vecTestInfos,
+            const char* const name,
+            const size_t numIterations,
+            AlignedBlock & in,
+            AlignedBlock & out,
+            ArgTypes && ... args) {
         {
             TestCollection<start> test(name, in, out, std::forward<ArgTypes>(args)...);
             vecTestInfos.push_back(test.Execute(numIterations));
@@ -47,18 +55,26 @@ struct ExpandTest {
     }
 };
 
-template <template <size_t BlockSize> class TestCollection, size_t start>
+template<template<size_t BlockSize> class TestCollection, size_t start>
 struct ExpandTest<TestCollection, start, start> {
 
-    static void
-    WarmUp (const char* const name, const size_t numIterations, AlignedBlock & in, AlignedBlock & out) {
+    static void WarmUp(
+            const char* const name,
+            const size_t numIterations,
+            AlignedBlock & in,
+            AlignedBlock & out) {
         TestCollection<start> test(name, in, out);
         test.Execute(numIterations);
     }
 
     template<typename ... ArgTypes>
-    static void
-    Execute (std::vector<TestInfos> & vecTestInfos, const char* const name, const size_t numIterations, AlignedBlock & in, AlignedBlock & out, ArgTypes && ... args) {
+    static void Execute(
+            std::vector<TestInfos> & vecTestInfos,
+            const char* const name,
+            const size_t numIterations,
+            AlignedBlock & in,
+            AlignedBlock & out,
+            ArgTypes && ... args) {
         // Execute:
         TestCollection<start> test(name, in, out, std::forward<ArgTypes>(args)...);
         vecTestInfos.push_back(test.Execute(numIterations));

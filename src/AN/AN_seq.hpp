@@ -24,18 +24,24 @@
 #include "ANTest.hpp"
 
 template<typename DATAIN, typename DATAOUT, size_t UNROLL>
-struct AN_seq : public ANTest<DATAIN, DATAOUT, UNROLL>, public SequentialTest {
+struct AN_seq :
+        public ANTest<DATAIN, DATAOUT, UNROLL>,
+        public SequentialTest {
 
-    AN_seq (const char* const name, AlignedBlock & in, AlignedBlock & out, DATAOUT A, DATAOUT AInv) :
-            ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, AInv) {
+    AN_seq(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out,
+            DATAOUT A,
+            DATAOUT AInv)
+            : ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, AInv) {
     }
 
-    virtual
-    ~AN_seq () {
+    virtual ~AN_seq() {
     }
 
-    void
-    RunEnc (const size_t numIterations) override {
+    void RunEnc(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             auto dataIn = this->in.template begin<DATAIN>();
             auto dataInEnd = this->in.template end<DATAIN>();

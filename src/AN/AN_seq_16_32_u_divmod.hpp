@@ -17,23 +17,27 @@
 #include <AN/AN_seq.hpp>
 
 template<size_t UNROLL>
-struct AN_seq_16_32_u_divmod : public AN_seq<uint16_t, uint32_t, UNROLL> {
+struct AN_seq_16_32_u_divmod :
+        public AN_seq<uint16_t, uint32_t, UNROLL> {
 
-    AN_seq_16_32_u_divmod (const char* const name, AlignedBlock & in, AlignedBlock & out, uint32_t A, uint32_t AInv) :
-            AN_seq<uint16_t, uint32_t, UNROLL>(name, in, out, A, AInv) {
+    AN_seq_16_32_u_divmod(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out,
+            uint32_t A,
+            uint32_t AInv)
+            : AN_seq<uint16_t, uint32_t, UNROLL>(name, in, out, A, AInv) {
     }
 
-    virtual
-    ~AN_seq_16_32_u_divmod () {
+    virtual ~AN_seq_16_32_u_divmod() {
     }
 
-    virtual bool
-    DoCheck () override {
+    virtual bool DoCheck() override {
         return true;
     }
 
-    virtual void
-    RunCheck (const size_t numIterations) {
+    virtual void RunCheck(
+            const size_t numIterations) {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             const size_t numValues = this->in.template end<uint16_t>() - this->in.template begin<uint16_t>();
             size_t i = 0;
@@ -61,13 +65,12 @@ struct AN_seq_16_32_u_divmod : public AN_seq<uint16_t, uint32_t, UNROLL> {
         }
     }
 
-    bool
-    DoDec () override {
+    bool DoDec() override {
         return true;
     }
 
-    void
-    RunDec (const size_t numIterations) override {
+    void RunDec(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             size_t numValues = this->in.template end<uint16_t>() - this->in.template begin<uint16_t>();
             size_t i = 0;

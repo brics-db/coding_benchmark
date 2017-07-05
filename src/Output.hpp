@@ -28,14 +28,14 @@
 
 #include "Util/TestInfo.hpp"
 
-void
-printUsage (char* argv[]) {
+void printUsage(
+        char* argv[]) {
     std::cerr << "Usage: " << argv[0] << " <A>\n" << std::setw(6) << "A" << ":   AN coding parameter (positive, odd, non-zero integer, 0 < A < 2^16)" << std::endl;
 }
 
 template<bool doRelative>
-void
-printResults (std::vector<std::vector<TestInfos>> &results) {
+void printResults(
+        std::vector<std::vector<TestInfos>> &results) {
     size_t maxPos = 0;
     for (auto & v : results) {
         maxPos = std::max(maxPos, v.size());

@@ -14,81 +14,97 @@
 
 #include "TestInfo.hpp"
 
-TestInfo::TestInfo () :
-        isExecuted (false),
-        nanos (0),
-        error () {
+TestInfo::TestInfo()
+        : isExecuted(false),
+          nanos(0),
+          error() {
 }
 
-TestInfo::TestInfo (int64_t nanos) :
-        TestInfo (true, nanos, nullptr) {
+TestInfo::TestInfo(
+        int64_t nanos)
+        : TestInfo(true, nanos, nullptr) {
 }
 
-TestInfo::TestInfo (const std::string & error) :
-        TestInfo (true, 0, error) {
+TestInfo::TestInfo(
+        const std::string & error)
+        : TestInfo(true, 0, error) {
 }
 
-TestInfo::TestInfo (bool isExecuted, int64_t nanos, const std::string & error) :
-        isExecuted (isExecuted),
-        nanos (nanos),
-        error (error) {
+TestInfo::TestInfo(
+        bool isExecuted,
+        int64_t nanos,
+        const std::string & error)
+        : isExecuted(isExecuted),
+          nanos(nanos),
+          error(error) {
 }
 
-TestInfo::TestInfo (const TestInfo & other) :
-        isExecuted (other.isExecuted),
-        nanos (other.nanos),
-        error (other.error) {
+TestInfo::TestInfo(
+        const TestInfo & other)
+        : isExecuted(other.isExecuted),
+          nanos(other.nanos),
+          error(other.error) {
 }
 
-TestInfo::~TestInfo () {
+TestInfo::~TestInfo() {
 }
 
-void
-TestInfo::set (int64_t nanos) {
+void TestInfo::set(
+        int64_t nanos) {
     this->isExecuted = true;
     this->nanos = nanos;
     this->error.clear();
 }
 
-void
-TestInfo::set (const std::string & error) {
+void TestInfo::set(
+        const std::string & error) {
     this->isExecuted = true;
     this->nanos = 0;
     this->error = error;
 }
 
-TestInfo & TestInfo::operator= (const TestInfo & other) {
+TestInfo & TestInfo::operator=(
+        const TestInfo & other) {
     this->~TestInfo();
     new (this) TestInfo(other);
     return *this;
 }
 
-TestInfos::TestInfos (const std::string & name, const std::string & simd) :
-        name (name),
-        simd (simd),
-        encode (),
-        check (),
-        arithmetic (),
-        decode () {
+TestInfos::TestInfos(
+        const std::string & name,
+        const std::string & simd)
+        : name(name),
+          simd(simd),
+          encode(),
+          check(),
+          arithmetic(),
+          decode() {
 }
 
-TestInfos::TestInfos (const std::string & name, const std::string & simd, TestInfo & encode, TestInfo & check, TestInfo & arithmetic, TestInfo & decode) :
-        name (name),
-        simd (simd),
-        encode (encode),
-        check (check),
-        arithmetic (arithmetic),
-        decode (decode) {
+TestInfos::TestInfos(
+        const std::string & name,
+        const std::string & simd,
+        TestInfo & encode,
+        TestInfo & check,
+        TestInfo & arithmetic,
+        TestInfo & decode)
+        : name(name),
+          simd(simd),
+          encode(encode),
+          check(check),
+          arithmetic(arithmetic),
+          decode(decode) {
 }
 
-TestInfos::TestInfos (TestInfos&& other) :
-        name (other.name),
-        simd (other.simd),
-        encode (other.encode),
-        check (other.check),
-        arithmetic (other.arithmetic),
-        decode (other.decode) {
+TestInfos::TestInfos(
+        TestInfos&& other)
+        : name(other.name),
+          simd(other.simd),
+          encode(other.encode),
+          check(other.check),
+          arithmetic(other.arithmetic),
+          decode(other.decode) {
 }
 
-TestInfos::~TestInfos () {
+TestInfos::~TestInfos() {
 }

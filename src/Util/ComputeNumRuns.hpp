@@ -25,7 +25,7 @@
 template<size_t start, size_t end>
 struct ComputeNumRuns {
 
-    constexpr size_t operator() () const {
+    constexpr size_t operator()() const {
         return 1 + ComputeNumRuns<start * 2, end>()();
     }
 };
@@ -33,7 +33,7 @@ struct ComputeNumRuns {
 template<size_t start>
 struct ComputeNumRuns<start, start> {
 
-    constexpr size_t operator() () const {
+    constexpr size_t operator()() const {
         return 1;
     }
 };

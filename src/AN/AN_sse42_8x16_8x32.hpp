@@ -27,22 +27,28 @@
 #include "ANTest.hpp"
 
 template<typename DATAIN, typename DATAOUT, size_t UNROLL>
-struct AN_sse42_8x16_8x32 : public ANTest<DATAIN, DATAOUT, UNROLL>, public SSE42Test {
+struct AN_sse42_8x16_8x32 :
+        public ANTest<DATAIN, DATAOUT, UNROLL>,
+        public SSE42Test {
 
-    AN_sse42_8x16_8x32 (const char* const name, AlignedBlock & in, AlignedBlock & out, DATAOUT A, DATAOUT AInv) :
-            ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, AInv) {
+    AN_sse42_8x16_8x32(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out,
+            DATAOUT A,
+            DATAOUT AInv)
+            : ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, AInv) {
     }
 
-    virtual
-    ~AN_sse42_8x16_8x32 () {
+    virtual ~AN_sse42_8x16_8x32() {
     }
 
-    void
-    RunEnc (const size_t numIterations) override {
+    void RunEnc(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            auto *mm_Data = this->in.template begin<__m128i>();
-            auto * const mm_DataEnd = this->in.template end<__m128i>();
-            auto *mm_Out = this->out.template begin<__m128i>();
+            auto *mm_Data = this->in.template begin<__m128i >();
+            auto * const mm_DataEnd = this->in.template end<__m128i >();
+            auto *mm_Out = this->out.template begin<__m128i >();
             auto mm_A = _mm_set1_epi32(this->A);
 
             constexpr const bool isSigned = std::is_signed<DATAIN>::value;

@@ -36,7 +36,7 @@ IsWow64 () {
     BOOL bIsWow64 = FALSE;
 
     LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(
-        GetModuleHandle(TEXT("kernel32")), "IsWow64Process");
+            GetModuleHandle(TEXT("kernel32")), "IsWow64Process");
 
     if (NULL != fnIsWow64Process) {
         if (!fnIsWow64Process(GetCurrentProcess(), &bIsWow64)) {
@@ -82,21 +82,21 @@ CPU::xgetbv (unsigned int x) {
 #include <cstdint>
 #include <cpuid.h>
 
-bool
-CPU::x64Supported () {
+bool CPU::x64Supported() {
     return true;
 }
 
-void
-CPU::CPUID (int32_t out[4], int32_t x) {
+void CPU::CPUID(
+        int32_t out[4],
+        int32_t x) {
     __cpuid_count(x, 0, out[0], out[1], out[2], out[3]);
 }
 
-uint64_t
-CPU::xgetbv (unsigned int index) {
+uint64_t CPU::xgetbv(
+        unsigned int index) {
     uint32_t eax, edx;
     __asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
-    return ((uint64_t)edx << 32) | eax;
+    return ((uint64_t) edx << 32) | eax;
 }
 
 #endif
@@ -105,10 +105,45 @@ CPU::xgetbv (unsigned int index) {
 #define _XCR_XFEATURE_ENABLED_MASK 0
 #endif
 
-CPU::CPU () :
-        CPUVendor (Other), OS_X64 (false), OS_AVX (false), OS_AVX512 (false), MMX (false), x64 (false), ABM (false), RDRAND (false), BMI1 (false), BMI2 (false), ADX (false), PREFETCHWT1 (false), MPX (false), SSE (false), SSE2 (false), SSE3 (false), SSSE3 (false), SSE41 (false), SSE42 (false), SSE4a (false), AES (false), SHA (false), AVX (false), XOP (false), FMA3 (false), FMA4 (false), AVX2 (false), AVX512_F (false), AVX512_PF (false), AVX512_ER (false), AVX512_CD (false), AVX512_VL (false), AVX512_BW (false), AVX512_DQ (false), AVX512_IFMA (false), AVX512_VBMI (false) {
+CPU::CPU()
+        : CPUVendor(Other),
+          OS_X64(false),
+          OS_AVX(false),
+          OS_AVX512(false),
+          MMX(false),
+          x64(false),
+          ABM(false),
+          RDRAND(false),
+          BMI1(false),
+          BMI2(false),
+          ADX(false),
+          PREFETCHWT1(false),
+          MPX(false),
+          SSE(false),
+          SSE2(false),
+          SSE3(false),
+          SSSE3(false),
+          SSE41(false),
+          SSE42(false),
+          SSE4a(false),
+          AES(false),
+          SHA(false),
+          AVX(false),
+          XOP(false),
+          FMA3(false),
+          FMA4(false),
+          AVX2(false),
+          AVX512_F(false),
+          AVX512_PF(false),
+          AVX512_ER(false),
+          AVX512_CD(false),
+          AVX512_VL(false),
+          AVX512_BW(false),
+          AVX512_DQ(false),
+          AVX512_IFMA(false),
+          AVX512_VBMI(false) {
     // Reset all the flags;
-    std::memset(this, 0, sizeof (*this));
+    std::memset(this, 0, sizeof(*this));
 
     // Start with the OS support:
 
@@ -173,52 +208,52 @@ CPU::CPU () :
 
     if (nIds >= 0x00000001) {
         CPUID(info, 0x00000001);
-        MMX = (info[3] & ((int)1 << 23)) != 0;
-        SSE = (info[3] & ((int)1 << 25)) != 0;
-        SSE2 = (info[3] & ((int)1 << 26)) != 0;
-        SSE3 = (info[2] & ((int)1 << 0)) != 0;
+        MMX = (info[3] & ((int) 1 << 23)) != 0;
+        SSE = (info[3] & ((int) 1 << 25)) != 0;
+        SSE2 = (info[3] & ((int) 1 << 26)) != 0;
+        SSE3 = (info[2] & ((int) 1 << 0)) != 0;
 
-        SSSE3 = (info[2] & ((int)1 << 9)) != 0;
-        SSE41 = (info[2] & ((int)1 << 19)) != 0;
-        SSE42 = (info[2] & ((int)1 << 20)) != 0;
-        AES = (info[2] & ((int)1 << 25)) != 0;
+        SSSE3 = (info[2] & ((int) 1 << 9)) != 0;
+        SSE41 = (info[2] & ((int) 1 << 19)) != 0;
+        SSE42 = (info[2] & ((int) 1 << 20)) != 0;
+        AES = (info[2] & ((int) 1 << 25)) != 0;
 
-        AVX = (info[2] & ((int)1 << 28)) != 0;
-        FMA3 = (info[2] & ((int)1 << 12)) != 0;
+        AVX = (info[2] & ((int) 1 << 28)) != 0;
+        FMA3 = (info[2] & ((int) 1 << 12)) != 0;
 
-        RDRAND = (info[2] & ((int)1 << 30)) != 0;
+        RDRAND = (info[2] & ((int) 1 << 30)) != 0;
     }
 
     if (nIds >= 0x00000007) {
         CPUID(info, 0x00000007);
 
-        AVX2 = (info[1] & ((int)1 << 5)) != 0;
+        AVX2 = (info[1] & ((int) 1 << 5)) != 0;
 
-        BMI1 = (info[1] & ((int)1 << 3)) != 0;
-        BMI2 = (info[1] & ((int)1 << 8)) != 0;
-        ADX = (info[1] & ((int)1 << 19)) != 0;
-        MPX = (info[1] & ((int)1 << 14)) != 0;
-        SHA = (info[1] & ((int)1 << 29)) != 0;
-        PREFETCHWT1 = (info[2] & ((int)1 << 0)) != 0;
+        BMI1 = (info[1] & ((int) 1 << 3)) != 0;
+        BMI2 = (info[1] & ((int) 1 << 8)) != 0;
+        ADX = (info[1] & ((int) 1 << 19)) != 0;
+        MPX = (info[1] & ((int) 1 << 14)) != 0;
+        SHA = (info[1] & ((int) 1 << 29)) != 0;
+        PREFETCHWT1 = (info[2] & ((int) 1 << 0)) != 0;
 
-        AVX512_F = (info[1] & ((int)1 << 16)) != 0;
-        AVX512_CD = (info[1] & ((int)1 << 28)) != 0;
-        AVX512_PF = (info[1] & ((int)1 << 26)) != 0;
-        AVX512_ER = (info[1] & ((int)1 << 27)) != 0;
-        AVX512_VL = (info[1] & ((int)1 << 31)) != 0;
-        AVX512_BW = (info[1] & ((int)1 << 30)) != 0;
-        AVX512_DQ = (info[1] & ((int)1 << 17)) != 0;
-        AVX512_IFMA = (info[1] & ((int)1 << 21)) != 0;
-        AVX512_VBMI = (info[2] & ((int)1 << 1)) != 0;
+        AVX512_F = (info[1] & ((int) 1 << 16)) != 0;
+        AVX512_CD = (info[1] & ((int) 1 << 28)) != 0;
+        AVX512_PF = (info[1] & ((int) 1 << 26)) != 0;
+        AVX512_ER = (info[1] & ((int) 1 << 27)) != 0;
+        AVX512_VL = (info[1] & ((int) 1 << 31)) != 0;
+        AVX512_BW = (info[1] & ((int) 1 << 30)) != 0;
+        AVX512_DQ = (info[1] & ((int) 1 << 17)) != 0;
+        AVX512_IFMA = (info[1] & ((int) 1 << 21)) != 0;
+        AVX512_VBMI = (info[2] & ((int) 1 << 1)) != 0;
     }
 
     if (nExIds >= 0x80000001) {
         CPUID(info, 0x80000001);
 
-        x64 = (info[3] & ((int)1 << 29)) != 0;
-        ABM = (info[2] & ((int)1 << 5)) != 0;
-        SSE4a = (info[2] & ((int)1 << 6)) != 0;
-        FMA4 = (info[2] & ((int)1 << 16)) != 0;
-        XOP = (info[2] & ((int)1 << 11)) != 0;
+        x64 = (info[3] & ((int) 1 << 29)) != 0;
+        ABM = (info[2] & ((int) 1 << 5)) != 0;
+        SSE4a = (info[2] & ((int) 1 << 6)) != 0;
+        FMA4 = (info[2] & ((int) 1 << 16)) != 0;
+        XOP = (info[2] & ((int) 1 << 11)) != 0;
     }
 }

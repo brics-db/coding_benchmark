@@ -14,8 +14,10 @@
 
 #include "Main.hpp"
 
-int
-checkArgs (int argc, char* argv[], uint32_t & AUser1) {
+int checkArgs(
+        int argc,
+        char* argv[],
+        uint32_t & AUser1) {
     if (argc == 1) {
         return 0;
     }
@@ -38,8 +40,9 @@ checkArgs (int argc, char* argv[], uint32_t & AUser1) {
     return 0;
 }
 
-int
-main (int argc, char* argv[]) {
+int main(
+        int argc,
+        char* argv[]) {
     const size_t rawDataSize = 1'024 * 1'024; // size in BYTES
     const size_t iterations = 1'000;
 
@@ -56,7 +59,7 @@ main (int argc, char* argv[]) {
 
     AlignedBlock input(rawDataSize, 64);
     AlignedBlock output(2 * rawDataSize, 64); // AN coding generates twice as much output data as input data
-    std::vector<std::vector < TestInfos>> vecTestInfos;
+    std::vector<std::vector<TestInfos>> vecTestInfos;
 
 #define WarmUp(type, name) do { std::cout << "# WarmUp " << #type << std::endl; ExpandTest< type , UNROLL_LO, UNROLL_HI>::WarmUp(#name , iterations, input, output); } while (0)
 

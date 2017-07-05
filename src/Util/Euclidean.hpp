@@ -32,8 +32,9 @@
  * store <codewidth>+1 bits!
  */
 template<typename T>
-T
-ext_euclidean (T b0, size_t codewidth) {
+T ext_euclidean(
+        T b0,
+        size_t codewidth) {
     T a0(1);
     a0 <<= codewidth;
     // std::vector<T> a, b, q, r, s, t;

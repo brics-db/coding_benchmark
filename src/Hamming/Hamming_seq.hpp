@@ -45,8 +45,8 @@ struct TypeMapSeq<uint16_t> {
 
     typedef hamming_seq_16_t hamming_seq_t;
 
-    static uint8_t
-    computeHamming (uint16_t && data) {
+    static uint8_t computeHamming(
+            uint16_t && data) {
         uint8_t hamming = 0;
         hamming |= (__builtin_popcount(data & 0xAD5B) & 0x1) << 1;
         hamming |= (__builtin_popcount(data & 0x366D) & 0x1) << 2;
@@ -63,8 +63,8 @@ struct TypeMapSeq<uint32_t> {
 
     typedef hamming_seq_32_t hamming_seq_t;
 
-    static uint8_t
-    computeHamming (uint32_t && data) {
+    static uint8_t computeHamming(
+            uint32_t && data) {
         uint8_t hamming = 0;
         hamming |= (__builtin_popcount(data & 0x56AAAD5B) & 0x1) << 1;
         hamming |= (__builtin_popcount(data & 0x9B33366D) & 0x1) << 2;
@@ -78,20 +78,24 @@ struct TypeMapSeq<uint32_t> {
 };
 
 template<typename DATAIN, size_t UNROLL>
-struct Hamming_seq : public Test<DATAIN, typename TypeMapSeq<DATAIN>::hamming_seq_t>, public SequentialTest {
+struct Hamming_seq :
+        public Test<DATAIN, typename TypeMapSeq<DATAIN>::hamming_seq_t>,
+        public SequentialTest {
 
     typedef typename TypeMapSeq<DATAIN>::hamming_seq_t hamming_seq_t;
 
-    Hamming_seq (const char* const name, AlignedBlock & in, AlignedBlock & out) :
-            Test<DATAIN, hamming_seq_t>(name, in, out) {
+    Hamming_seq(
+            const char* const name,
+            AlignedBlock & in,
+            AlignedBlock & out)
+            : Test<DATAIN, hamming_seq_t>(name, in, out) {
     }
 
-    virtual
-    ~Hamming_seq () {
+    virtual ~Hamming_seq() {
     }
 
-    void
-    RunEnc (const size_t numIterations) override {
+    void RunEnc(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             auto data = this->in.template begin<DATAIN>();
             auto dataEnd = this->in.template end<DATAIN>();
@@ -109,13 +113,12 @@ struct Hamming_seq : public Test<DATAIN, typename TypeMapSeq<DATAIN>::hamming_se
         }
     }
 
-    bool
-    DoCheck () override {
+    bool DoCheck() override {
         return true;
     }
 
-    void
-    RunCheck (const size_t numIterations) override {
+    void RunCheck(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
             size_t i = 0;
@@ -135,13 +138,12 @@ struct Hamming_seq : public Test<DATAIN, typename TypeMapSeq<DATAIN>::hamming_se
         }
     }
 
-    bool
-    DoDec () override {
+    bool DoDec() override {
         return true;
     }
 
-    void
-    RunDec (const size_t numIterations) override {
+    void RunDec(
+            const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
             size_t i = 0;
