@@ -23,8 +23,9 @@
 
 #include <cstring>
 
-#include "Test.hpp"
-#include "Util/Intrinsics.hpp"
+#include <Test.hpp>
+#include <Util/ErrorInfo.hpp>
+#include <Util/Intrinsics.hpp>
 
 template<size_t UNROLL>
 struct CopyTest :

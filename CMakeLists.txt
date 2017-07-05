@@ -50,6 +50,7 @@ MACRO(append_target_property arg_target arg_property arg_setting)
 ENDMACRO(append_target_property)
 
 add_algorithm(benchmark "src/Main.cpp src/Test.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp")
+add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Test.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp")
 
 #add_algorithm(benchmark_novec "Main.cpp Test.cpp Util/ErrorInfo.cpp Util/TestInfo.cpp Util/Stopwatch.cpp Util/CPU.cpp")
 #TARGET_COMPILE_OPTIONS(benchmark_novec PRIVATE "-fno-tree-vectorize")

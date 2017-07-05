@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <AN/AN_seq_u_inv.hpp>
+#include <AN/AN_seq_s_inv.hpp>
 
 template<size_t UNROLL>
 struct AN_seq_8_16_s_inv :
