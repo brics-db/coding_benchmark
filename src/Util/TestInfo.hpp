@@ -59,6 +59,7 @@ struct TestInfos {
     TestInfo check;
     TestInfo arithmetic;
     TestInfo decode;
+    TestInfo checkAndDecode;
 
     TestInfos(
             const std::string & name,
@@ -70,7 +71,8 @@ struct TestInfos {
             TestInfo & encode,
             TestInfo & check,
             TestInfo & arithmetic,
-            TestInfo & decode);
+            TestInfo & decode,
+            TestInfo & checkAndDecode);
 
     TestInfos(
             TestInfos && other);

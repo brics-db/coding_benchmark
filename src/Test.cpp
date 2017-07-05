@@ -84,6 +84,18 @@ void TestBase::RunDec(
         const size_t numIterations) {
 }
 
+bool TestBase::DoCheckDec() {
+    return false;
+}
+
+void TestBase::PreCheckDec(
+        const size_t numIterations) {
+}
+
+void TestBase::RunCheckDec(
+        const size_t numIterations) {
+}
+
 TestInfos TestBase::Execute(
         const size_t numIterations) {
     if (!this->HasCapabilities()) {
@@ -98,7 +110,7 @@ TestInfos TestBase::Execute(
     // Start test:
     this->PreEnc(numIterations);
 
-    TestInfo tiEnc, tiCheck, tiArith, tiDec;
+    TestInfo tiEnc, tiCheck, tiArith, tiDec, tiCheckDec;
 
     sw.Reset();
     try {
@@ -190,7 +202,30 @@ TestInfos TestBase::Execute(
         }
     }
 
-    return TestInfos(this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiDec);
+    if (this->DoCheckDec()) {
+        this->PreCheckDec(numIterations);
+        sw.Reset();
+        try {
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+#else
+#pragma omp parallel
+#endif
+#endif
+            {
+                this->RunCheckDec(numIterations);
+            }
+            nanos = sw.Current();
+            tiCheckDec.set(nanos);
+        } catch (ErrorInfo & ei) {
+            auto msg = ei.what();
+            std::cerr << msg << std::endl;
+            tiCheckDec.set(msg);
+        }
+    }
+
+    return TestInfos(this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiDec, tiCheckDec);
 }
 
 SequentialTest::~SequentialTest() {

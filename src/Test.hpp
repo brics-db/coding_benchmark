@@ -67,7 +67,7 @@ public:
     virtual void RunEnc(
             const size_t numIterations) = 0;
 
-    // Check
+    // Check-Only
     virtual bool DoCheck();
 
     virtual void PreCheck(
@@ -86,13 +86,22 @@ public:
             const size_t numIterations,
             uint16_t value);
 
-    // Decoding
+    // Decoding-Only
     virtual bool DoDec();
 
     virtual void PreDec(
             const size_t numIterations);
 
     virtual void RunDec(
+            const size_t numIterations);
+
+    // Check-And-Dec
+    virtual bool DoCheckDec();
+
+    virtual void PreCheckDec(
+            const size_t numIterations);
+
+    virtual void RunCheckDec(
             const size_t numIterations);
 
     // Execute test:

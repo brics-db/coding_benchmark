@@ -78,7 +78,8 @@ TestInfos::TestInfos(
           encode(),
           check(),
           arithmetic(),
-          decode() {
+          decode(),
+          checkAndDecode() {
 }
 
 TestInfos::TestInfos(
@@ -87,13 +88,15 @@ TestInfos::TestInfos(
         TestInfo & encode,
         TestInfo & check,
         TestInfo & arithmetic,
-        TestInfo & decode)
+        TestInfo & decode,
+        TestInfo & checkAndDecode)
         : name(name),
           simd(simd),
           encode(encode),
           check(check),
           arithmetic(arithmetic),
-          decode(decode) {
+          decode(decode),
+          checkAndDecode(checkAndDecode) {
 }
 
 TestInfos::TestInfos(
@@ -103,7 +106,8 @@ TestInfos::TestInfos(
           encode(other.encode),
           check(other.check),
           arithmetic(other.arithmetic),
-          decode(other.decode) {
+          decode(other.decode),
+          checkAndDecode(other.checkAndDecode) {
 }
 
 TestInfos::~TestInfos() {

@@ -23,18 +23,18 @@
 
 #include "ANTest.hpp"
 
-template<typename DATAIN, typename DATAOUT, size_t UNROLL>
+template<typename DATARAW, typename DATAENC, size_t UNROLL>
 struct AN_seq :
-        public ANTest<DATAIN, DATAOUT, UNROLL>,
+        public ANTest<DATARAW, DATAENC, UNROLL>,
         public SequentialTest {
 
     AN_seq(
             const char* const name,
             AlignedBlock & in,
             AlignedBlock & out,
-            DATAOUT A,
-            DATAOUT AInv)
-            : ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, AInv) {
+            DATAENC A,
+            DATAENC AInv)
+            : ANTest<DATARAW, DATAENC, UNROLL>(name, in, out, A, AInv) {
     }
 
     virtual ~AN_seq() {
@@ -43,18 +43,42 @@ struct AN_seq :
     void RunEnc(
             const size_t numIterations) override {
         for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            auto dataIn = this->in.template begin<DATAIN>();
-            auto dataInEnd = this->in.template end<DATAIN>();
-            auto dataOut = this->out.template begin<DATAOUT>();
+            auto dataIn = this->in.template begin<DATARAW>();
+            auto dataInEnd = this->in.template end<DATARAW>();
+            auto dataOut = this->out.template begin<DATAENC>();
             while (dataIn <= (dataInEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                    *dataOut++ = *dataIn++ * this->A;
+                    *dataOut++ = static_cast<DATAENC>(static_cast<DATAENC>(*dataIn++) * this->A);
                 }
             }
             // remaining numbers
             while (dataIn < dataInEnd) {
                 *dataOut++ = *dataIn++ * this->A;
+            }
+        }
+    }
+
+    bool DoDec() override {
+        return true;
+    }
+
+    void RunDec(
+            const size_t numIterations) override {
+        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            size_t i = 0;
+            auto dataIn = this->out.template begin<DATAENC>();
+            auto dataOut = this->in.template begin<DATARAW>();
+            for (; i <= (numValues - UNROLL); i += UNROLL) {
+                // let the compiler unroll the loop
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
+                    *dataOut = *dataIn * this->A_INV;
+                }
+            }
+            // remaining numbers
+            for (; i < numValues; ++i, ++dataOut, ++dataIn) {
+                *dataOut = *dataIn * this->A_INV;
             }
         }
     }

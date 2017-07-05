@@ -1,4 +1,4 @@
-// Copyright 2016 Till Kolditz, Stefan de Bruijn
+// Copyright 2017 Till Kolditz, Stefan de Bruijn
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,21 +14,21 @@
 
 #pragma once
 
-#include <AN/AN_seq_s_inv.hpp>
+#include <AN/AN_seq_u_inv.hpp>
 
 template<size_t UNROLL>
-struct AN_seq_16_32_s_inv :
-        public AN_seq_u_inv<int16_t, int32_t, UNROLL> {
+struct AN_seq_8_32_s_inv :
+        public AN_seq_s_inv<int8_t, int32_t, UNROLL> {
 
-    AN_seq_16_32_s_inv(
+    AN_seq_8_32_s_inv(
             const char* const name,
             AlignedBlock & in,
             AlignedBlock & out,
             int32_t A,
             int32_t AInv)
-            : AN_seq_u_inv<int16_t, int32_t, UNROLL>(name, in, out, A, AInv) {
+            : AN_seq_s_inv<int8_t, int32_t, UNROLL>(name, in, out, A, AInv) {
     }
 
-    virtual ~AN_seq_16_32_s_inv() {
+    virtual ~AN_seq_8_32_s_inv() {
     }
 };

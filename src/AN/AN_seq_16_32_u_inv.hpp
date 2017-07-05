@@ -14,11 +14,11 @@
 
 #pragma once
 
-#include <AN/AN_seq.hpp>
+#include <AN/AN_seq_u_inv.hpp>
 
 template<size_t UNROLL>
 struct AN_seq_16_32_u_inv :
-        public AN_seq<uint16_t, uint32_t, UNROLL> {
+        public AN_seq_u_inv<uint16_t, uint32_t, UNROLL> {
 
     AN_seq_16_32_u_inv(
             const char* const name,
@@ -26,67 +26,9 @@ struct AN_seq_16_32_u_inv :
             AlignedBlock & out,
             uint32_t A,
             uint32_t AInv)
-            : AN_seq<uint16_t, uint32_t, UNROLL>(name, in, out, A, AInv) {
+            : AN_seq_u_inv<uint16_t, uint32_t, UNROLL>(name, in, out, A, AInv) {
     }
 
     virtual ~AN_seq_16_32_u_inv() {
-    }
-
-    virtual bool DoCheck() override {
-        return true;
-    }
-
-    virtual void RunCheck(
-            const size_t numIterations) {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            const size_t numValues = this->in.template end<uint16_t>() - this->in.template begin<uint16_t>();
-            size_t i = 0;
-            auto data = this->out.template begin<uint32_t>();
-            uint32_t dMax = std::numeric_limits<uint16_t>::max();
-            while (i <= (numValues - UNROLL)) {
-                // let the compiler unroll the loop
-                for (size_t k = 0; k < UNROLL; ++k) {
-                    if ((*data * this->A_INV) > dMax) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<uint32_t>(), iteration);
-                    }
-                    ++data;
-                }
-                i += UNROLL;
-            }
-            // remaining numbers
-            if (i < numValues) {
-                do {
-                    if ((*data * this->A_INV) > dMax) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<uint32_t>(), numIterations);
-                    }
-                    ++data;
-                    ++i;
-                } while (i <= numValues);
-            }
-        }
-    }
-
-    bool DoDec() override {
-        return true;
-    }
-
-    void RunDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            size_t numValues = this->in.template end<uint16_t>() - this->in.template begin<uint16_t>();
-            size_t i = 0;
-            auto dataIn = this->out.template begin<uint32_t>();
-            auto dataOut = this->in.template begin<uint16_t>();
-            for (; i <= (numValues - UNROLL); i += UNROLL) {
-                // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                    *dataOut = *dataIn * this->A_INV;
-                }
-            }
-            // remaining numbers
-            for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                *dataOut = *dataIn * this->A_INV;
-            }
-        }
     }
 };
