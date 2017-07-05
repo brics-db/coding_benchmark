@@ -14,13 +14,13 @@
 
 #pragma once
 
-#include "AN_seq_16_32.hpp"
+#include <AN/AN_seq.hpp>
 
 template<size_t UNROLL>
-struct AN_seq_16_32_s_divmod : public AN_seq_16_32<int16_t, int32_t, UNROLL> {
+struct AN_seq_16_32_s_divmod : public AN_seq<int16_t, int32_t, UNROLL> {
 
     AN_seq_16_32_s_divmod (const char* const name, AlignedBlock & in, AlignedBlock & out, int32_t A, int32_t AInv) :
-            AN_seq_16_32<int16_t, int32_t, UNROLL>(name, in, out, A, AInv) {
+            AN_seq<int16_t, int32_t, UNROLL>(name, in, out, A, AInv) {
     }
 
     virtual

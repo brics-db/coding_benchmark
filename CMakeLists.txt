@@ -14,9 +14,6 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1 FATAL_ERROR)
 
-SET(CMAKE_C_COMPILER_INIT gcc-6)
-SET(CMAKE_CXX_COMPILER_INIT g++-6)
-
 IF(POLICY CMP0048)
     CMAKE_POLICY(SET CMP0048 NEW)
     PROJECT(CodingBenchmark VERSION 0.6 LANGUAGES CXX)
@@ -36,6 +33,7 @@ MACRO( add_algorithm arg_name arg_source_files)
     ADD_EXECUTABLE(${arg_name} ${src_files})
     SET_PROPERTY(TARGET ${arg_name} PROPERTY CXX_STANDARD 14)
     SET_PROPERTY(TARGET ${arg_name} PROPERTY CXX_STANDARD_REQUIRED ON)
+    TARGET_INCLUDE_DIRECTORIES(${arg_name} PUBLIC src)
     MESSAGE("Added executable ${arg_name}")
 ENDMACRO( add_algorithm )
 
