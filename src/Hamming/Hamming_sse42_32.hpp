@@ -26,12 +26,7 @@ template<size_t UNROLL>
 struct Hamming_sse42_32 :
         public Hamming_sse42<uint32_t, UNROLL> {
 
-    Hamming_sse42_32(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out)
-            : Hamming_sse42<uint32_t, UNROLL>(name, in, out) {
-    }
+    using Hamming_sse42<uint32_t, UNROLL>::Hamming_sse42;
 
     virtual ~Hamming_sse42_32() {
     }

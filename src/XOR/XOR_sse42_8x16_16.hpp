@@ -21,12 +21,7 @@ struct XOR_sse42_8x16_16 :
         public XOR_sse42<uint16_t, uint16_t, BLOCKSIZE>,
         public SSE42Test {
 
-    XOR_sse42_8x16_16(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out)
-            : XOR_sse42<uint16_t, uint16_t, BLOCKSIZE>(name, in, out) {
-    }
+    using XOR_sse42<uint16_t, uint16_t, BLOCKSIZE>::XOR_sse42;
 
     virtual ~XOR_sse42_8x16_16() {
     }

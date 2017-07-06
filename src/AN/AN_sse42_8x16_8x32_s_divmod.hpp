@@ -20,14 +20,7 @@ template<size_t UNROLL>
 struct AN_sse42_8x16_8x32_s_divmod :
         public AN_sse42_8x16_8x32<int16_t, int32_t, UNROLL> {
 
-    AN_sse42_8x16_8x32_s_divmod(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out,
-            int32_t A,
-            int32_t AInv)
-            : AN_sse42_8x16_8x32<int16_t, int32_t, UNROLL>(name, in, out, A, AInv) {
-    }
+    using AN_sse42_8x16_8x32<int16_t, int32_t, UNROLL>::AN_sse42_8x16_8x32;
 
     virtual ~AN_sse42_8x16_8x32_s_divmod() {
     }
@@ -37,9 +30,9 @@ struct AN_sse42_8x16_8x32_s_divmod :
     }
 
     virtual void RunCheck(
-            const size_t numIterations) override {
+            const CheckConfiguration & config) override {
         bool first = true;
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             auto data = this->out.template begin<__m128i >();
             auto dataEnd = this->out.template end<__m128i >();
             while (data <= (dataEnd - UNROLL)) {
@@ -106,8 +99,8 @@ struct AN_sse42_8x16_8x32_s_divmod :
     }
 
     void RunDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (int32_t);
             const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();

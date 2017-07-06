@@ -16,7 +16,7 @@
 
 #include <cstdint>
 
-#include "../Test.hpp"
+#include <Test.hpp>
 
 template<typename DATA, typename CS>
 CS

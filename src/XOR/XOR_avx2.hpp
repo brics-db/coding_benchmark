@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "XOR_base.hpp"
-#include "../Util/Intrinsics.hpp"
+#include <XOR/XOR_base.hpp>
+#include <Util/Intrinsics.hpp>
 
 template<>
 __m256i computeFinalChecksum<__m256i, __m256i >(
@@ -57,19 +57,14 @@ template<typename DATA, typename CS, size_t BLOCKSIZE>
 struct XOR_avx2 :
         public Test<DATA, CS> {
 
-    XOR_avx2(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out)
-            : Test<DATA, CS>(name, in, out) {
-    }
+    using Test<DATA, CS>::Test;
 
     virtual ~XOR_avx2() {
     }
 
     void RunEnc(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const EncodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             auto dataIn = this->in.template begin<__m256i >();
             auto dataInEnd = this->in.template end<__m256i >();
             auto dataOut = this->out.template begin<CS>();
@@ -116,8 +111,8 @@ struct XOR_avx2 :
     }
 
     virtual void RunCheck(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const CheckConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (DATA);
             const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
@@ -173,8 +168,8 @@ struct XOR_avx2 :
     }
 
     void
-    RunDec (const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+    RunDec (const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t VALUES_PER_SIMDREG = sizeof (__m256i) / sizeof (DATA);
             const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();

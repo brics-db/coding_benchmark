@@ -20,14 +20,7 @@ template<size_t UNROLL>
 struct AN_seq_8_16_u_inv :
         public AN_seq_u_inv<uint8_t, uint16_t, UNROLL> {
 
-    AN_seq_8_16_u_inv(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out,
-            uint16_t A,
-            uint16_t AInv)
-            : AN_seq_u_inv<uint8_t, uint16_t, UNROLL>(name, in, out, A, AInv) {
-    }
+    using AN_seq_u_inv<uint8_t, uint16_t, UNROLL>::AN_seq_u_inv;
 
     virtual ~AN_seq_8_16_u_inv() {
     }

@@ -17,6 +17,7 @@
 #include <string>
 #include <cstring>
 #include <cstdint>
+#include <optional>
 
 #ifdef OMP
 #include <omp.h>
@@ -33,6 +34,82 @@ struct TestBase0 {
     virtual const std::string & getSIMDtypeName() = 0;
 
     virtual bool HasCapabilities() = 0;
+};
+
+struct TestConfiguration {
+    const size_t numIterations;
+
+    TestConfiguration(
+            const size_t numIterations)
+            : numIterations(numIterations) {
+    }
+};
+
+struct EncodeConfiguration :
+        public TestConfiguration {
+    EncodeConfiguration(
+            const TestConfiguration & config)
+            : TestConfiguration(config) {
+    }
+};
+
+struct CheckConfiguration :
+        public TestConfiguration {
+    CheckConfiguration(
+            const TestConfiguration & config)
+            : TestConfiguration(config) {
+    }
+};
+
+struct ArithmeticConfiguration :
+        public TestConfiguration {
+    size_t operand;
+    ArithmeticConfiguration(
+            const TestConfiguration & config,
+            const size_t operand)
+            : TestConfiguration(config),
+              operand(operand) {
+    }
+};
+
+struct ReencodeConfiguration :
+        public TestConfiguration {
+    size_t newA;
+    ReencodeConfiguration(
+            const TestConfiguration & config,
+            const size_t newA)
+            : TestConfiguration(config),
+              newA(newA) {
+    }
+};
+
+struct DecodeConfiguration :
+        public TestConfiguration {
+    DecodeConfiguration(
+            const TestConfiguration & config)
+            : TestConfiguration(config) {
+    }
+};
+
+struct CheckAndDecodeConfiguration :
+        public TestConfiguration {
+    CheckAndDecodeConfiguration(
+            const TestConfiguration & config)
+            : TestConfiguration(config) {
+    }
+};
+
+struct DataGenerationConfiguration {
+    const std::optional<size_t> numEffectiveLSBs;
+
+    DataGenerationConfiguration()
+            : numEffectiveLSBs(std::nullopt) {
+    }
+
+    DataGenerationConfiguration(
+            const size_t numEffectiveLSBs)
+            : numEffectiveLSBs(numEffectiveLSBs) {
+    }
 };
 
 struct TestBase :
@@ -54,7 +131,8 @@ public:
 
     virtual ~TestBase();
 
-    virtual void ResetBuffers() = 0;
+    virtual void ResetBuffers(
+            const DataGenerationConfiguration & config) = 0;
 
     virtual size_t getInputTypeSize() = 0;
 
@@ -62,51 +140,60 @@ public:
 
     // Encoding
     virtual void PreEnc(
-            const size_t numIterations);
+            const EncodeConfiguration & config);
 
     virtual void RunEnc(
-            const size_t numIterations) = 0;
+            const EncodeConfiguration & config) = 0;
 
     // Check-Only
     virtual bool DoCheck();
 
     virtual void PreCheck(
-            const size_t numIterations);
+            const CheckConfiguration & config);
 
     virtual void RunCheck(
-            const size_t numIterations);
+            const CheckConfiguration & config);
 
     // Arithmetic
     virtual bool DoArith();
 
     virtual void PreArith(
-            const size_t numIterations);
+            const ArithmeticConfiguration & config);
 
     virtual void RunArith(
-            const size_t numIterations,
-            uint16_t value);
+            const ArithmeticConfiguration & config);
+
+    // Reencode
+    virtual bool DoReenc();
+
+    virtual void PreReenc(
+            const ReencodeConfiguration & config);
+
+    virtual void RunReenc(
+            const ReencodeConfiguration & config);
 
     // Decoding-Only
     virtual bool DoDec();
 
     virtual void PreDec(
-            const size_t numIterations);
+            const DecodeConfiguration & config);
 
     virtual void RunDec(
-            const size_t numIterations);
+            const DecodeConfiguration & config);
 
     // Check-And-Dec
     virtual bool DoCheckDec();
 
     virtual void PreCheckDec(
-            const size_t numIterations);
+            const CheckAndDecodeConfiguration & config);
 
     virtual void RunCheckDec(
-            const size_t numIterations);
+            const CheckAndDecodeConfiguration & config);
 
     // Execute test:
     virtual TestInfos Execute(
-            const size_t numIterations);
+            const TestConfiguration & config,
+            const DataGenerationConfiguration & configDataGen);
 };
 
 struct SequentialTest :
@@ -171,12 +258,16 @@ struct Test :
         return sizeof(DATAOUT);
     }
 
-    void ResetBuffers() override {
-        // Reset buffers:
+    void ResetBuffers(
+            const DataGenerationConfiguration & config) override {
+        DATAIN mask = static_cast<DATAIN>(-1);
+        if (config.numEffectiveLSBs) {
+            mask = static_cast<DATAIN>((1ull << *config.numEffectiveLSBs) - 1ull);
+        }
         auto pInEnd = this->in.template end<DATAIN>();
         DATAIN value = static_cast<DATAIN>(12783);
         for (DATAIN* pIn = this->in.template begin<DATAIN>(); pIn < pInEnd; ++pIn) {
-            *pIn = value;
+            *pIn = mask & value;
             value = value * static_cast<DATAIN>(7577) + static_cast<DATAIN>(10467);
         }
 

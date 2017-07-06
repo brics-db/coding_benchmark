@@ -22,62 +22,63 @@
 #ifndef EXPANDTEST_HPP
 #define EXPANDTEST_HPP
 
-#include "AlignedBlock.hpp"
+#include <Test.hpp>
+#include <Util/AlignedBlock.hpp>
 
-template<template<size_t BlockSize> class TestCollection, size_t start, size_t end>
+template<template<size_t BlockSize> class TestType, size_t start, size_t end>
 struct ExpandTest {
 
     static void WarmUp(
             const char* const name,
-            const size_t numIterations,
+            const TestConfiguration & testConfig,
+            const DataGenerationConfiguration & dataGenConfig,
             AlignedBlock & in,
             AlignedBlock & out) {
         {
-            TestCollection<start> test(name, in, out);
-            test.Execute(numIterations);
+            TestType<start> test(name, in, out);
+            test.Execute(testConfig, dataGenConfig);
         }
-        ExpandTest<TestCollection, start * 2, end>::WarmUp(name, numIterations, in, out);
+        ExpandTest<TestType, start * 2, end>::WarmUp(name, testConfig, dataGenConfig, in, out);
     }
 
     template<typename ... ArgTypes>
     static void Execute(
             std::vector<TestInfos> & vecTestInfos,
             const char* const name,
-            const size_t numIterations,
+            const TestConfiguration & testConfig,
+            const DataGenerationConfiguration & dataGenConfig,
             AlignedBlock & in,
             AlignedBlock & out,
             ArgTypes && ... args) {
-        {
-            TestCollection<start> test(name, in, out, std::forward<ArgTypes>(args)...);
-            vecTestInfos.push_back(test.Execute(numIterations));
-        }
-        ExpandTest<TestCollection, start * 2, end>::Execute(vecTestInfos, name, numIterations, in, out, std::forward<ArgTypes>(args)...);
+        vecTestInfos.push_back(TestType<start>(name, in, out, std::forward<ArgTypes>(args)...).Execute(testConfig, dataGenConfig));
+        ExpandTest<TestType, start * 2, end>::Execute(vecTestInfos, name, testConfig, dataGenConfig, in, out, std::forward<ArgTypes>(args)...);
     }
 };
 
-template<template<size_t BlockSize> class TestCollection, size_t start>
-struct ExpandTest<TestCollection, start, start> {
+template<template<size_t BlockSize> class TestType, size_t start>
+struct ExpandTest<TestType, start, start> {
 
     static void WarmUp(
             const char* const name,
-            const size_t numIterations,
+            const TestConfiguration & testConfig,
+            const DataGenerationConfiguration & dataGenConfig,
             AlignedBlock & in,
             AlignedBlock & out) {
-        TestCollection<start> test(name, in, out);
-        test.Execute(numIterations);
+        TestType<start> test(name, in, out);
+        test.Execute(testConfig, dataGenConfig);
     }
 
     template<typename ... ArgTypes>
     static void Execute(
             std::vector<TestInfos> & vecTestInfos,
             const char* const name,
-            const size_t numIterations,
+            const TestConfiguration & testConfig,
+            const DataGenerationConfiguration & dataGenConfig,
             AlignedBlock & in,
             AlignedBlock & out,
             ArgTypes && ... args) {
-        // Execute:
-        TestCollection<start> test(name, in, out, std::forward<ArgTypes>(args)...);
-        vecTestInfos.push_back(test.Execute(numIterations));
+        TestType<start> test(name, in, out, std::forward<ArgTypes>(args)...);
+        vecTestInfos.push_back(test.Execute(testConfig, dataGenConfig));
     }
 };
 

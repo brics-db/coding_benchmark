@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 
 class ErrorInfo {
 
@@ -23,12 +24,20 @@ public:
     size_t line;
     size_t i;
     size_t iter;
+    std::optional<std::string> message;
 
     ErrorInfo(
             const char* file,
             size_t line,
             size_t i,
             size_t iter);
+
+    ErrorInfo(
+            const char* file,
+            size_t line,
+            size_t i,
+            size_t iter,
+            const char* message);
 
     ErrorInfo(
             const ErrorInfo & other);

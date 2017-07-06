@@ -14,78 +14,14 @@
 
 #pragma once
 
-#include <AN/AN_seq.hpp>
+#include <AN/AN_seq_divmod.hpp>
 
 template<size_t UNROLL>
 struct AN_seq_16_32_s_divmod :
-        public AN_seq<int16_t, int32_t, UNROLL> {
+        public AN_seq_divmod<int16_t, int32_t, UNROLL> {
 
-    AN_seq_16_32_s_divmod(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out,
-            int32_t A,
-            int32_t AInv)
-            : AN_seq<int16_t, int32_t, UNROLL>(name, in, out, A, AInv) {
-    }
+    using AN_seq_divmod<int16_t, int32_t, UNROLL>::AN_seq_divmod;
 
     virtual ~AN_seq_16_32_s_divmod() {
-    }
-
-    virtual bool DoCheck() override {
-        return true;
-    }
-
-    virtual void RunCheck(
-            const size_t numIterations) {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            const size_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
-            size_t i = 0;
-            auto data = this->out.template begin<int32_t>();
-            while (i <= (numValues - UNROLL)) {
-                // let the compiler unroll the loop
-                for (size_t k = 0; k < UNROLL; ++k) {
-                    if ((*data % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<int32_t>(), iteration);
-                    }
-                    ++data;
-                }
-                i += UNROLL;
-            }
-            // remaining numbers
-            if (i < numValues) {
-                do {
-                    if ((*data % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<int32_t>(), numIterations);
-                    }
-                    ++data;
-                    ++i;
-                } while (i <= numValues);
-            }
-        }
-    }
-
-    bool DoDec() override {
-        return true;
-    }
-
-    void RunDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
-            size_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
-            size_t i = 0;
-            auto dataIn = this->out.template begin<int32_t>();
-            auto dataOut = this->in.template begin<int16_t>();
-            for (; i <= (numValues - UNROLL); i += UNROLL) {
-                // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                    *dataOut = *dataIn / this->A;
-                }
-            }
-            // remaining numbers
-            for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                *dataOut = *dataIn / this->A;
-            }
-        }
     }
 };

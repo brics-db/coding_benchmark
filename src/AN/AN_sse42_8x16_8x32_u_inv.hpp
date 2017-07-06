@@ -20,14 +20,7 @@ template<size_t UNROLL>
 struct AN_sse42_8x16_8x32_u_inv :
         public AN_sse42_8x16_8x32<uint16_t, uint32_t, UNROLL> {
 
-    AN_sse42_8x16_8x32_u_inv(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out,
-            uint32_t A,
-            uint32_t Ainv)
-            : AN_sse42_8x16_8x32<uint16_t, uint32_t, UNROLL>(name, in, out, A, Ainv) {
-    }
+    using AN_sse42_8x16_8x32<uint16_t, uint32_t, UNROLL>::AN_sse42_8x16_8x32;
 
     virtual ~AN_sse42_8x16_8x32_u_inv() {
     }
@@ -37,8 +30,8 @@ struct AN_sse42_8x16_8x32_u_inv :
     }
 
     virtual void RunCheck(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const CheckConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             auto mm_Data = this->out.template begin<__m128i >();
             auto mm_DataEnd = this->out.template end<__m128i >();
             uint32_t dMax = std::numeric_limits<uint16_t>::max();
@@ -78,8 +71,8 @@ struct AN_sse42_8x16_8x32_u_inv :
     }
 
     void RunDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (uint32_t);
             const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<uint16_t>() - this->in.template begin<uint16_t>();

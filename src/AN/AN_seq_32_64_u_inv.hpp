@@ -17,18 +17,11 @@
 #include <AN/AN_seq_u_inv.hpp>
 
 template<size_t UNROLL>
-struct AN_seq_8_32_s_inv :
-        public AN_seq_s_inv<int8_t, int32_t, UNROLL> {
+struct AN_seq_32_64_u_inv :
+        public AN_seq_u_inv<uint32_t, uint64_t, UNROLL> {
 
-    AN_seq_8_32_s_inv(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out,
-            int32_t A,
-            int32_t AInv)
-            : AN_seq_s_inv<int8_t, int32_t, UNROLL>(name, in, out, A, AInv) {
-    }
+    using AN_seq_u_inv<uint32_t, uint64_t, UNROLL>::AN_seq_u_inv;
 
-    virtual ~AN_seq_8_32_s_inv() {
+    virtual ~AN_seq_32_64_u_inv() {
     }
 };

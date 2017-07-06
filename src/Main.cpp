@@ -43,13 +43,13 @@ int checkArgs(
 int main(
         int argc,
         char* argv[]) {
-    const size_t rawDataSize = 1'024 * 1'024; // size in BYTES
-    const size_t iterations = 1'000;
+    const size_t rawDataSize = 1024 * 1024; // size in BYTES
+    const size_t iterations = 1000;
 
     const size_t UNROLL_LO = 1;
-    const size_t UNROLL_HI = 1'024;
+    const size_t UNROLL_HI = 1024;
 
-    uint32_t AUser = 64'311ul;
+    uint32_t AUser = 64311ul;
     int result = checkArgs(argc, argv, AUser);
     if (result != 0) {
         return result;
@@ -61,13 +61,34 @@ int main(
     AlignedBlock output(2 * rawDataSize, 64); // AN coding generates twice as much output data as input data
     std::vector<std::vector<TestInfos>> vecTestInfos;
 
-#define WarmUp(type, name) do { std::cout << "# WarmUp " << #type << std::endl; ExpandTest< type , UNROLL_LO, UNROLL_HI>::WarmUp(#name , iterations, input, output); } while (0)
+#define WarmUp(type, name) \
+    do { \
+        std::cout << "# WarmUp " << #type << std::endl; \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, input, output); \
+    } while (0)
 
 #define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
 
-#define TestCase2(type,name) do { std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>()()); ExpandTest< type , UNROLL_LO, UNROLL_HI>::Execute(vec, name , iterations, input, output); } while (0)
+#define TestCase2(type,name) \
+    do { \
+        std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
+        vecTestInfos.emplace_back(); \
+        auto & vec = *vecTestInfos.rbegin(); \
+        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>()()); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output); \
+    } while (0)
 
-#define TestCase4(type,name,A,AInv) do { std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; vecTestInfos.emplace_back(); auto & vec = *vecTestInfos.rbegin(); vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>()()); ExpandTest<type , UNROLL_LO, UNROLL_HI>::Execute(vec, name, iterations, input, output, A, AInv); } while (0)
+#define TestCase4(type,name,A,AInv) \
+    do { \
+        std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
+        vecTestInfos.emplace_back(); \
+        auto & vec = *vecTestInfos.rbegin(); \
+        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>()()); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output, A, AInv); \
+    } while (0)
+
+    TestConfiguration testConfig(iterations);
+    DataGenerationConfiguration dataGenConfig;
 
     WarmUp(CopyTest, "Copy");
 

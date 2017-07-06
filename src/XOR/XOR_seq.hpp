@@ -31,8 +31,8 @@ struct XOR_seq :
     }
 
     void RunEnc(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const EncodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             auto dataIn = this->in.template begin<DATA>();
             auto dataInEnd = this->in.template end<DATA>();
             auto dataOut = this->out.template begin<CS>();
@@ -67,8 +67,8 @@ struct XOR_seq :
     }
 
     virtual void RunCheck(
-            const size_t numIterations) override {
-        for (size_t iterations = 0; iterations < numIterations; ++iterations) {
+            const CheckConfiguration & config) override {
+        for (size_t iterations = 0; iterations < config.numIterations; ++iterations) {
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
             size_t i = 0;
             auto data = this->out.template begin<CS>();
@@ -108,8 +108,8 @@ struct XOR_seq :
     }
 
     void RunDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
             size_t i = 0;
             auto dataIn = this->out.template begin<CS>();

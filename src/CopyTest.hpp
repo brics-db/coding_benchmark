@@ -43,8 +43,8 @@ struct CopyTest :
     }
 
     void RunEnc(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const EncodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
             memcpy(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
         }
@@ -55,12 +55,12 @@ struct CopyTest :
     }
 
     void RunCheck(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const CheckConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
             int ret = memcmp(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
             if (ret != 0) {
-                throw ErrorInfo(__FILE__, __LINE__, ret, numIterations);
+                throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
             }
         }
     }
@@ -70,8 +70,8 @@ struct CopyTest :
     }
 
     void RunDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
             memcpy(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
         }

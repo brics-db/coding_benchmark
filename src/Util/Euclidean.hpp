@@ -24,6 +24,32 @@
 
 #include <iostream>
 #include <vector>
+#include <cinttypes>
+
+#include <boost/multiprecision/cpp_int.hpp>
+
+using boost::multiprecision::uint128_t;
+
+namespace Private {
+    template<typename T, typename S>
+    struct extractor {
+    };
+
+    template<typename T>
+    struct extractor<T, uint128_t> {
+        static T doIt(
+                const uint128_t source) {
+            constexpr const unsigned nBitsLimb = sizeof(boost::multiprecision::limb_type) * CHAR_BIT; // size of limb in bits
+            boost::multiprecision::limb_type target = 0;
+            const unsigned nLimbs = source.backend().size(); // number of limbs
+            auto pLimbs = source.backend().limbs();
+            for (unsigned i = 0; i < nLimbs && ((i * nBitsLimb) < (sizeof(T) * CHAR_BIT)); ++i) {
+                target |= (pLimbs[i]) << (i * nBitsLimb);
+            }
+            return static_cast<T>(target);
+        }
+    };
+}
 
 /*
  * This algorithm actually computes the modulo inverse of the given first argument
@@ -35,10 +61,10 @@ template<typename T>
 T ext_euclidean(
         T b0,
         size_t codewidth) {
-    T a0(1);
+    uint128_t a0(1);
     a0 <<= codewidth;
-    T a[32], b[32], q[32], r[32], s[32], t[32];
-    uint8_t aI = 1, bI = 1, qI = 0, rI = 0, sI = 1, tI = 1;
+    uint128_t a[16], b[16], q[16], r[16], s[16], t[16];
+    int aI = 1, bI = 1, qI = 0, rI = 0, sI = 1, tI = 1;
     a[0] = a0;
     b[0] = b0;
     s[0] = t[0] = T(0);
@@ -58,10 +84,10 @@ T ext_euclidean(
         s[j - 1] = t[j];
         t[j - 1] = s[j] - q[j - 1] * t[j];
     }
-    T result = ((b0 * t[0]) % a0);
+    uint128_t result = ((b0 * t[0]) % a0);
     result += result < 0 ? a0 : 0;
     if (result == 1) {
-        return t[0];
+        return Private::extractor<T, uint128_t>::doIt(t[0]);
     } else {
         return 0;
     }

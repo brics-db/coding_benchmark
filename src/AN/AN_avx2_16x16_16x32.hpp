@@ -28,21 +28,14 @@ struct AN_avx2_16x16_16x32 :
         public ANTest<DATAIN, DATAOUT, UNROLL>,
         public AVX2Test {
 
-    AN_avx2_16x16_16x32(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out,
-            DATAOUT A,
-            DATAOUT AInv)
-            : ANTest<DATAIN, DATAOUT, UNROLL>(name, in, out, A, AInv) {
-    }
+    using ANTest<DATAIN, DATAOUT, UNROLL>::ANTest;
 
     virtual ~AN_avx2_16x16_16x32() {
     }
 
     void RunEnc(
-            const size_t numIterations) override {
-        for (size_t iter = 0; iter < numIterations; ++iter) {
+            const EncodeConfiguration & config) override {
+        for (size_t iter = 0; iter < config.numIterations; ++iter) {
             auto *dataIn = this->in.template begin<__m128i >();
             auto *dataInEnd = this->in.template end<__m128i >();
             auto *dataOut = this->out.template begin<__m256i >();

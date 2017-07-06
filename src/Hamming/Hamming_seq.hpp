@@ -95,8 +95,8 @@ struct Hamming_seq :
     }
 
     void RunEnc(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const EncodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             auto data = this->in.template begin<DATAIN>();
             auto dataEnd = this->in.template end<DATAIN>();
             auto dataOut = this->out.template begin<hamming_seq_t>();
@@ -118,21 +118,21 @@ struct Hamming_seq :
     }
 
     void RunCheck(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const CheckConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
             size_t i = 0;
             auto data = this->out.template begin<hamming_seq_t>();
             while (i <= (numValues - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++i, ++data) {
                     if (data->code != TypeMapSeq<DATAIN>::computeHamming(std::move(data->data))) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_seq_t>(), numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_seq_t>(), config.numIterations);
                     }
                 }
             }
             for (; i < numValues; ++i, ++data) {
                 if (data->code != TypeMapSeq<DATAIN>::computeHamming(std::move(data->data))) {
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_seq_t>(), numIterations);
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_seq_t>(), config.numIterations);
                 }
             }
         }
@@ -143,8 +143,8 @@ struct Hamming_seq :
     }
 
     void RunDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
             size_t i = 0;
             auto data = this->out.template begin<hamming_seq_t>();

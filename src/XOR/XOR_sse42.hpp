@@ -67,8 +67,8 @@ struct XOR_sse42 :
     }
 
     void RunEnc(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const EncodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             auto dataIn = this->in.template begin<__m128i >();
             auto dataInEnd = this->in.template end<__m128i >();
             auto dataOut = this->out.template begin<CS>();
@@ -115,10 +115,10 @@ struct XOR_sse42 :
     }
 
     virtual void RunCheck(
-            const size_t numIterations) override {
+            const CheckConfiguration & config) override {
         const size_t NUM_VALUES_PER_M128 = sizeof(__m128i) / sizeof (DATA);
         const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_M128 * BLOCKSIZE;
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
             size_t i = 0;
             auto data128 = this->out.template begin<__m128i>();
@@ -172,9 +172,9 @@ struct XOR_sse42 :
         return true;
     }
 
-    void
-    RunDec (const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+    virtual void RunDec (
+            const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t VALUES_PER_SIMDREG = sizeof (__m128i) / sizeof (DATA);
             const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();

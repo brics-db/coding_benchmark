@@ -49,7 +49,8 @@ uint64_t convert(
 template<typename T>
 T test(
         size_t TOTALNUM,
-        size_t wC) {
+        size_t wC,
+        size_t wAmin) {
     T result(0);
     std::cout << wC;
 #ifdef DEBUG

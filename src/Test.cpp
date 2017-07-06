@@ -14,6 +14,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <random>
 
 #ifdef OMP
 #include <omp.h>
@@ -44,7 +45,7 @@ TestBase::~TestBase() {
 }
 
 void TestBase::PreEnc(
-        const size_t numIterations) {
+        const EncodeConfiguration & config) {
 }
 
 bool TestBase::DoCheck() {
@@ -52,11 +53,11 @@ bool TestBase::DoCheck() {
 }
 
 void TestBase::PreCheck(
-        const size_t numIterations) {
+        const CheckConfiguration & config) {
 }
 
 void TestBase::RunCheck(
-        const size_t numIterations) {
+        const CheckConfiguration & config) {
 }
 
 bool TestBase::DoArith() {
@@ -64,12 +65,23 @@ bool TestBase::DoArith() {
 }
 
 void TestBase::PreArith(
-        const size_t numIterations) {
+        const ArithmeticConfiguration & config) {
 }
 
 void TestBase::RunArith(
-        const size_t numIterations,
-        uint16_t value) {
+        const ArithmeticConfiguration & config) {
+}
+
+bool TestBase::DoReenc() {
+    return false;
+}
+
+void TestBase::PreReenc(
+        const ReencodeConfiguration & config) {
+}
+
+void TestBase::RunReenc(
+        const ReencodeConfiguration & config) {
 }
 
 bool TestBase::DoDec() {
@@ -77,11 +89,11 @@ bool TestBase::DoDec() {
 }
 
 void TestBase::PreDec(
-        const size_t numIterations) {
+        const DecodeConfiguration & config) {
 }
 
 void TestBase::RunDec(
-        const size_t numIterations) {
+        const DecodeConfiguration & config) {
 }
 
 bool TestBase::DoCheckDec() {
@@ -89,26 +101,42 @@ bool TestBase::DoCheckDec() {
 }
 
 void TestBase::PreCheckDec(
-        const size_t numIterations) {
+        const CheckAndDecodeConfiguration & config) {
 }
 
 void TestBase::RunCheckDec(
-        const size_t numIterations) {
+        const CheckAndDecodeConfiguration & config) {
 }
 
 TestInfos TestBase::Execute(
-        const size_t numIterations) {
+        const TestConfiguration & configTest,
+        const DataGenerationConfiguration & configDataGen) {
     if (!this->HasCapabilities()) {
         return TestInfos(this->name, getSIMDtypeName());
     }
 
-    ResetBuffers();
+    ResetBuffers(configDataGen);
 
+    std::random_device rDev;
+    std::default_random_engine rEng(rDev());
+    std::uniform_int_distribution<uint16_t> rDist;
+
+    EncodeConfiguration encConf(configTest);
+    CheckConfiguration chkConf(configTest);
+    ArithmeticConfiguration arithConf(configTest, rDist(rEng));
+    // Following: use an odd A. As the actual A is not important we can choose an arbitrary one here and simply cast it later to the desired width (i.e. select the appropriate LSBs).
+    std::size_t newA = rDist(rEng) | 0x1;
+#ifdef DEBUG
+    std::cerr << "# Reencode uses A=" << newA << " (cast down to the appropriate data length as needed (LSBs extracted)" << std::endl;
+#endif
+    ReencodeConfiguration reencConf(configTest, newA);
+    DecodeConfiguration decConf(configTest);
+    CheckAndDecodeConfiguration cadConf(configTest);
     int64_t nanos;
     Stopwatch sw;
 
     // Start test:
-    this->PreEnc(numIterations);
+    this->PreEnc(encConf);
 
     TestInfo tiEnc, tiCheck, tiArith, tiDec, tiCheckDec;
 
@@ -122,7 +150,7 @@ TestInfos TestBase::Execute(
 #endif
 #endif
         {
-            this->RunEnc(numIterations);
+            this->RunEnc(encConf);
         }
         nanos = sw.Current();
         tiEnc.set(nanos);
@@ -133,7 +161,7 @@ TestInfos TestBase::Execute(
     }
 
     if (this->DoCheck()) {
-        this->PreCheck(numIterations);
+        this->PreCheck(chkConf);
 
         sw.Reset();
         try {
@@ -145,7 +173,7 @@ TestInfos TestBase::Execute(
 #endif
 #endif
             {
-                this->RunCheck(numIterations);
+                this->RunCheck(chkConf);
             }
             nanos = sw.Current();
             tiCheck.set(nanos);
@@ -157,7 +185,7 @@ TestInfos TestBase::Execute(
     }
 
     if (this->DoArith()) {
-        this->PreArith(numIterations);
+        this->PreArith(arithConf);
         sw.Reset();
         try {
 #ifdef OMP
@@ -168,7 +196,7 @@ TestInfos TestBase::Execute(
 #endif
 #endif
             {
-                this->RunArith(numIterations, 1351);
+                this->RunArith(arithConf);
             }
             nanos = sw.Current();
             tiArith.set(nanos);
@@ -179,8 +207,8 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoDec()) {
-        this->PreDec(numIterations);
+    if (this->DoReenc()) {
+        this->PreReenc(reencConf);
         sw.Reset();
         try {
 #ifdef OMP
@@ -191,7 +219,30 @@ TestInfos TestBase::Execute(
 #endif
 #endif
             {
-                this->RunDec(numIterations);
+                this->RunReenc(reencConf);
+            }
+            nanos = sw.Current();
+            tiDec.set(nanos);
+        } catch (ErrorInfo & ei) {
+            auto msg = ei.what();
+            std::cerr << msg << std::endl;
+            tiDec.set(msg);
+        }
+    }
+
+    if (this->DoDec()) {
+        this->PreDec(decConf);
+        sw.Reset();
+        try {
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+#else
+#pragma omp parallel
+#endif
+#endif
+            {
+                this->RunDec(decConf);
             }
             nanos = sw.Current();
             tiDec.set(nanos);
@@ -203,7 +254,7 @@ TestInfos TestBase::Execute(
     }
 
     if (this->DoCheckDec()) {
-        this->PreCheckDec(numIterations);
+        this->PreCheckDec(cadConf);
         sw.Reset();
         try {
 #ifdef OMP
@@ -214,7 +265,7 @@ TestInfos TestBase::Execute(
 #endif
 #endif
             {
-                this->RunCheckDec(numIterations);
+                this->RunCheckDec(cadConf);
             }
             nanos = sw.Current();
             tiCheckDec.set(nanos);

@@ -24,12 +24,7 @@ struct XOR_seq_32_32 :
         public XOR_seq<uint32_t, uint32_t, BLOCKSIZE>,
         public SequentialTest {
 
-    XOR_seq_32_32(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out)
-            : XOR_seq<uint32_t, uint32_t, BLOCKSIZE>(name, in, out) {
-    }
+    using XOR_seq<uint32_t, uint32_t, BLOCKSIZE>::XOR_seq;
 
     virtual ~XOR_seq_32_32() {
     }

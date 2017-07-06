@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <sstream>
+
 #include <AN/AN_seq.hpp>
 
 template<typename DATARAW, typename DATAENC, size_t UNROLL>
@@ -44,8 +46,8 @@ struct AN_seq_s_inv :
     }
 
     virtual void RunCheck(
-            const size_t numIterations) {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const CheckConfiguration & config) {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
             auto data = this->out.template begin<DATAENC>();
@@ -56,7 +58,9 @@ struct AN_seq_s_inv :
                 for (size_t k = 0; k < UNROLL; ++k) {
                     DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
                     if (dec < dMin || dec > dMax) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration);
+                        std::stringstream ss;
+                        ss << "A=" << this->A << ", A^-1=" << this->A_INV;
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
                     }
                     ++data;
                 }
@@ -67,7 +71,9 @@ struct AN_seq_s_inv :
                 do {
                     DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
                     if (dec < dMin || dec > dMax) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), numIterations);
+                        std::stringstream ss;
+                        ss << "A=" << this->A << ", A^-1=" << this->A_INV;
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
                     }
                     ++data;
                     ++i;
@@ -81,8 +87,8 @@ struct AN_seq_s_inv :
     }
 
     virtual void RunCheckDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const CheckAndDecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
             auto dataIn = this->out.template begin<DATAENC>();
@@ -94,7 +100,9 @@ struct AN_seq_s_inv :
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
                     DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
                     if (dec < dMin || dec > dMax) {
-                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->out.template begin<DATAENC>(), iteration);
+                        std::stringstream ss;
+                        ss << "A=" << this->A << ", A^-1=" << this->A_INV;
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
                     } else {
                         *dataOut = static_cast<DATARAW>(dec);
                     }
@@ -104,7 +112,9 @@ struct AN_seq_s_inv :
             for (; i < numValues; ++i, ++dataOut, ++dataIn) {
                 DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
                 if (dec < dMin || dec > dMax) {
-                    throw ErrorInfo(__FILE__, __LINE__, dataIn - this->out.template begin<DATAENC>(), iteration);
+                    std::stringstream ss;
+                    ss << "A=" << this->A << ", A^-1=" << this->A_INV;
+                    throw ErrorInfo(__FILE__, __LINE__, dataIn - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
                 } else {
                     *dataOut = static_cast<DATARAW>(dec);
                 }

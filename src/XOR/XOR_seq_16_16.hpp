@@ -24,12 +24,7 @@ struct XOR_seq_16_16 :
         public XOR_seq<uint16_t, uint16_t, BLOCKSIZE>,
         public SequentialTest {
 
-    XOR_seq_16_16(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out)
-            : XOR_seq<uint16_t, uint16_t, BLOCKSIZE>(name, in, out) {
-    }
+    using XOR_seq<uint16_t, uint16_t, BLOCKSIZE>::XOR_seq;
 
     virtual ~XOR_seq_16_16() {
     }

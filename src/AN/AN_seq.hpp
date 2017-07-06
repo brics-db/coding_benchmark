@@ -21,28 +21,21 @@
 
 #pragma once
 
-#include "ANTest.hpp"
+#include <AN/ANTest.hpp>
 
 template<typename DATARAW, typename DATAENC, size_t UNROLL>
 struct AN_seq :
         public ANTest<DATARAW, DATAENC, UNROLL>,
         public SequentialTest {
 
-    AN_seq(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out,
-            DATAENC A,
-            DATAENC AInv)
-            : ANTest<DATARAW, DATAENC, UNROLL>(name, in, out, A, AInv) {
-    }
+    using ANTest<DATARAW, DATAENC, UNROLL>::ANTest;
 
     virtual ~AN_seq() {
     }
 
     void RunEnc(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const EncodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             auto dataIn = this->in.template begin<DATARAW>();
             auto dataInEnd = this->in.template end<DATARAW>();
             auto dataOut = this->out.template begin<DATAENC>();
@@ -64,8 +57,8 @@ struct AN_seq :
     }
 
     void RunDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
             auto dataIn = this->out.template begin<DATAENC>();

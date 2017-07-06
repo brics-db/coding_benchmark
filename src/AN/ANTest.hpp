@@ -17,8 +17,8 @@
 #include <cstdint>
 #include <sstream>
 
-#include "../Test.hpp"
-#include "../Util/Intrinsics.hpp"
+#include <Test.hpp>
+#include <Util/Intrinsics.hpp>
 
 template<typename DATAIN, typename DATAOUT, size_t UNROLL>
 class ANTest :

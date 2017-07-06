@@ -164,8 +164,8 @@ struct Hamming_sse42 :
     }
 
     void RunEnc(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const EncodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             auto data = this->in.template begin<__m128i >();
             auto dataEnd = this->in.template end<__m128i >();
             auto dataOut = this->out.template begin<hamming_sse42_t>();
@@ -196,27 +196,27 @@ struct Hamming_sse42 :
     }
 
     void RunCheck(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const CheckConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
             size_t i = 0;
             auto data = this->out.template begin<hamming_sse42_t>();
             while (i <= (numValues - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, i += (sizeof(__m128i) / sizeof (DATAIN)), ++data) {
                     if (data->code != TypeMapSSE42<DATAIN>::computeHamming(std::move(data->data))) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_sse42_t>(), numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_sse42_t>(), config.numIterations);
                     }
                 }
             }
             for (; i <= (numValues - 1); i += (sizeof(__m128i) / sizeof (DATAIN)), ++data) {
                 if (data->code != TypeMapSSE42<DATAIN>::computeHamming(std::move(data->data))) {
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_sse42_t>(), numIterations);
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_sse42_t>(), config.numIterations);
                 }
             }
             if (i < numValues) {
                 for (auto data2 = reinterpret_cast<hamming_seq_t*>(data); i < numValues; ++i, ++data2) {
                     if (data2->code != TypeMapSeq<DATAIN>::computeHamming(std::move(data2->data))) {
-                        throw ErrorInfo(__FILE__, __LINE__, data2 - this->out.template begin<hamming_seq_t>(), numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, data2 - this->out.template begin<hamming_seq_t>(), config.numIterations);
                     }
                 }
             }
@@ -228,8 +228,8 @@ struct Hamming_sse42 :
     }
 
     void RunDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (DATAIN);
             const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();

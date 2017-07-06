@@ -25,7 +25,21 @@ ErrorInfo::ErrorInfo(
         : file(file),
           line(line),
           i(i),
-          iter(iter) {
+          iter(iter),
+          message(std::nullopt) {
+}
+
+ErrorInfo::ErrorInfo(
+        const char* file,
+        size_t line,
+        size_t i,
+        size_t iter,
+        const char* message)
+        : file(file),
+          line(line),
+          i(i),
+          iter(iter),
+          message(message) {
 }
 
 ErrorInfo::ErrorInfo(
@@ -33,7 +47,8 @@ ErrorInfo::ErrorInfo(
         : file(other.file),
           line(other.line),
           i(other.i),
-          iter(other.iter) {
+          iter(other.iter),
+          message(other.message) {
 }
 
 ErrorInfo::~ErrorInfo() {
@@ -50,6 +65,9 @@ const char*
 ErrorInfo::what() {
     std::stringstream ss;
     ss << "[" << file << "@" << line << "]: i=" << i << " iter=" << iter;
+    if (message) {
+        ss << "\n\tmessage: " << *message;
+    }
     std::string s = ss.str();
     char* msg = new char[s.length() + 1];
     strncpy(msg, s.c_str(), s.length() + 1);

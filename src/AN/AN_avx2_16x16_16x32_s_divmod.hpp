@@ -20,14 +20,7 @@ template<size_t UNROLL>
 struct AN_avx2_16x16_16x32_s_divmod :
         public AN_avx2_16x16_16x32<int16_t, int32_t, UNROLL> {
 
-    AN_avx2_16x16_16x32_s_divmod(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out,
-            int32_t A,
-            int32_t Ainv)
-            : AN_avx2_16x16_16x32<int16_t, int32_t, UNROLL>(name, in, out, A, Ainv) {
-    }
+    using AN_avx2_16x16_16x32<int16_t, int32_t, UNROLL>::AN_avx2_16x16_16x32;
 
     virtual ~AN_avx2_16x16_16x32_s_divmod() {
     }
@@ -37,8 +30,8 @@ struct AN_avx2_16x16_16x32_s_divmod :
     }
 
     virtual void RunCheck(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const CheckConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             auto mm_Data = this->out.template begin<__m256i >();
             auto mm_DataEnd = this->out.template end<__m256i >();
             while (mm_Data <= (mm_DataEnd - UNROLL)) {
@@ -79,8 +72,8 @@ struct AN_avx2_16x16_16x32_s_divmod :
     }
 
     void RunDec(
-            const size_t numIterations) override {
-        for (size_t iteration = 0; iteration < numIterations; ++iteration) {
+            const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const ssize_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (uint32_t);
             const ssize_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             ssize_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
