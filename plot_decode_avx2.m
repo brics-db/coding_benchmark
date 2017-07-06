@@ -63,7 +63,7 @@ plot for [col=45:55] 'benchmark.csv' index 1 using 1:col lw 2 ps 0.5 with linesp
 # Paper-plots #
 ###############
 reset
-set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 1.625in,1.25in
+set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 1.5in,1.25in
 set datafile separator ','
 set log x 2
 set xrange [1:1024]
@@ -126,6 +126,25 @@ plot 'benchmark.csv' index 0 using 1:45 ls 1 with linespoints,\
 	'benchmark.csv' index 0 using 1:54 ls 7 with linespoints,\
 	'benchmark.csv' index 0 using 1:55 ls 8 with linespoints
 
+set style line 3 lt 3 lw 8 ps 1
+set style line 4 lt 4 lw 8 ps 1
+set style line 5 lt 5 lw 8 ps 1
+
+set terminal cairolatex pdf input blacktext color fontscale 1 transparent size 3in,2in
+#set key below
+set xlabel "loop unroll factor" offset 0,1
+#set ylabel "Decoding" offset 1.5,0
+set output 'plot_talk_decode_16bit_seq.tex'
+set xtics offset 0,graph 0.05 out
+set ytics out 10
+plot 'benchmark.csv' index 1 using 1:44 ls 3 with linespoints t "Hamming",\
+	'benchmark.csv' index 1 using 1:40 ls 4 with linespoints t "AN original",\
+	'benchmark.csv' index 1 using 1:42 ls 5 with linespoints t "AN improved"
+
+set style line 3 lt 3 lw 2 ps 0.5
+set style line 4 lt 4 lw 2 ps 0.5
+set style line 5 lt 5 lw 2 ps 0.5
+
 unset log x
 unset log x2
 set bmargin 0
@@ -147,19 +166,19 @@ set key below spacing 1.5
 
 set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.5in
 set output 'plot_paper_legend_decode.tex'
-plot 20 ls 1 t "XOR$^{\\text{Seq/SSE}}$" with linespoints,\
+plot 20 ls 1 t "XOR$^{\\text{scalar/SSE}}$" with linespoints,\
 	20 ls 6 t "XOR$^{\\text{AVX2}}$" with linespoints,\
-	20 ls 4 t "AN$_{U}^{\\text{seq/SSE}}$" with linespoints,\
-	20 ls 5 t "AN$_{S}^{\\text{seq/SSE}}$" with linespoints,\
+	20 ls 4 t "AN$_{U}^{\\text{scalar/SSE}}$" with linespoints,\
+	20 ls 5 t "AN$_{S}^{\\text{scalar/SSE}}$" with linespoints,\
 	20 ls 7 t "AN$_{U}^{\\text{AVX2}}$" with linespoints,\
 	20 ls 8 t "AN$_{S}^{\\text{AVX2}}$" with linespoints,\
 	20 ls 3 t "Hamming" with linespoints
 
 set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.4in
 set output 'plot_paper_legend_decode_inv.tex'
-plot 20 ls 1 t "XOR$^{\\text{Seq/SSE}}$" with linespoints,\
+plot 20 ls 1 t "XOR$^{\\text{scalar/SSE}}$" with linespoints,\
 	20 ls 6 t "XOR$^{\\text{AVX2}}$" with linespoints,\
-	20 ls 4 t "AN$_{U}^{\\text{seq/SSE}}$" with linespoints,\
-	20 ls 5 t "AN$_{S}^{\\text{seq/SSE}}$" with linespoints,\
+	20 ls 4 t "AN$_{U}^{\\text{scalar/SSE}}$" with linespoints,\
+	20 ls 5 t "AN$_{S}^{\\text{scalar/SSE}}$" with linespoints,\
 	20 ls 7 t "AN$_{U}^{\\text{AVX2}}$" with linespoints,\
 	20 ls 8 t "AN$_{S}^{\\text{AVX2}}$" with linespoints

@@ -82,13 +82,17 @@ T test(
 int main(
         int argc,
         char ** argv) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <totalnum [#iterations]>" << std::endl;
+    if (argc != 4) {
+        std::cerr << "Usage: " << argv[0] << " <totalnum [#iterations]> <|A| min> <|C| max>" << std::endl;
         return 1;
     }
 
     size_t TOTALNUM = strtoll(argv[1], nullptr, 0);
-// volatile uint64_t result64;
+
+    const size_t wAmin = strtoll(argv[2], nullptr, 0); // 2
+    //const size_t wAmax = 16;
+    const size_t wCmin = wAmin + 1; // 3
+    const size_t wCmax = strtoll(argv[3], nullptr, 0); // 127
 
     std::cout << TOTALNUM << " iterations per combination of |A| and |C|." << std::endl;
     std::cout << "|C|";
@@ -99,17 +103,22 @@ int main(
 
     for (size_t wC = wCmin; wC <= wCmax; ++wC) {
         if (wC < 8) {
-            __attribute__((unused))   volatile uint8_t result = test<uint8_t>(TOTALNUM, wC);
+            volatile uint8_t result = test<uint8_t>(TOTALNUM, wC, wAmin);
+            (void) result;
         } else if (wC < 16) {
-            __attribute__((unused))   volatile uint16_t result = test<uint16_t>(TOTALNUM, wC);
+            volatile uint16_t result = test<uint16_t>(TOTALNUM, wC, wAmin);
+            (void) result;
         } else if (wC < 32) {
-            __attribute__((unused))   volatile uint32_t result = test<uint32_t>(TOTALNUM, wC);
+            volatile uint32_t result = test<uint32_t>(TOTALNUM, wC, wAmin);
+            (void) result;
         } else if (wC < 64) {
-            __attribute__((unused))   volatile uint64_t result = test<uint64_t>(TOTALNUM, wC);
+            volatile uint64_t result = test<uint64_t>(TOTALNUM, wC, wAmin);
+            (void) result;
         } else if (wC < 128) {
-            __attribute__((unused))   volatile uint128_t result = test<uint128_t>(TOTALNUM, wC);
+            volatile uint128_t result = test<uint128_t>(TOTALNUM, wC, wAmin);
+            (void) result;
         } else {
-            throw std::runtime_error("unsupported code word widht");
+            throw std::runtime_error("unsupported code word width");
         }
     }
 }

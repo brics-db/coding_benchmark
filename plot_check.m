@@ -64,7 +64,7 @@ plot for [col=22:27] 'benchmark.csv' index 1 using 1:col lw 2 ps 0.5 with linesp
 # Paper-plots #
 ###############
 reset
-set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 1.625in,1.25in
+set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 1.5in,1.25in
 set datafile separator ','
 set log x 2
 set xrange [1:1024]
@@ -81,7 +81,6 @@ unset key
 unset label
 unset arrow
 
-set style line 0 lt 1 lw 0 ps 0
 set style line 1 lt 1 lw 2 ps 0.5
 set style line 2 lt 2 lw 2 ps 0.5
 set style line 3 lt 3 lw 2 ps 0.5

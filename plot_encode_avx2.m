@@ -46,7 +46,7 @@ plot for [col=9:19] 'benchmark.csv' index 1 using 1:col lw 2 ps 0.5 with linespo
 # Paper-plots #
 ###############
 reset
-set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 1.625in,1.25in
+set terminal cairolatex pdf input blacktext color fontscale 0.44 transparent size 1.5in,1.25in
 set datafile separator ','
 set log x 2
 set xrange [1:1024]
@@ -112,8 +112,8 @@ set key below spacing 1.5
 
 set term cairolatex pdf input blacktext color fontscale 0.44 transparent size 3.2in,.4in
 set output 'plot_paper_legend_encode.tex'
-plot 20 ls 1 t "XOR$^{\\text{Seq/SSE}}$" with linespoints,\
+plot 20 ls 1 t "XOR$^{\\text{scalar/SSE}}$" with linespoints,\
 	20 ls 4 t "XOR$^{\\text{AVX2}}$" with linespoints,\
-	20 ls 2 t "AN$^{\\text{Seq/SSE}}$" with linespoints,\
+	20 ls 2 t "AN$^{\\text{scalar/SSE}}$" with linespoints,\
 	20 ls 5 t "AN$^{\\text{AVX2}}$" with linespoints,\
 	20 ls 3 t "Hamming" with linespoints
