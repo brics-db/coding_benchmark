@@ -64,7 +64,7 @@ int main(
         int argc,
         char* argv[]) {
     const size_t rawDataSize = 1024 * 1024; // size in BYTES
-    const size_t iterations = 1000;
+    const size_t iterations = 100;
 
     const size_t UNROLL_LO = 1;
     const size_t UNROLL_HI = 1024;

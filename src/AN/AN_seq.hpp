@@ -36,6 +36,7 @@ struct AN_seq :
     void RunEnc(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             auto dataIn = this->in.template begin<DATARAW>();
             auto dataInEnd = this->in.template end<DATARAW>();
             auto dataOut = this->out.template begin<DATAENC>();
@@ -59,6 +60,7 @@ struct AN_seq :
     void RunDec(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
             auto dataIn = this->out.template begin<DATAENC>();

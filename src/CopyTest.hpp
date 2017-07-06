@@ -65,6 +65,18 @@ struct CopyTest :
         }
     }
 
+    bool DoReenc() override {
+        return true;
+    }
+
+    void RunReenc(
+            const ReencodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            memcpy(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+        }
+    }
+
     bool DoDec() override {
         return true;
     }

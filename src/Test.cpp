@@ -138,7 +138,7 @@ TestInfos TestBase::Execute(
     // Start test:
     this->PreEnc(encConf);
 
-    TestInfo tiEnc, tiCheck, tiArith, tiDec, tiCheckDec;
+    TestInfo tiEnc, tiCheck, tiArith, tiReenc, tiDec, tiCheckDec;
 
     sw.Reset();
     try {
@@ -222,11 +222,11 @@ TestInfos TestBase::Execute(
                 this->RunReenc(reencConf);
             }
             nanos = sw.Current();
-            tiDec.set(nanos);
+            tiReenc.set(nanos);
         } catch (ErrorInfo & ei) {
             auto msg = ei.what();
             std::cerr << msg << std::endl;
-            tiDec.set(msg);
+            tiReenc.set(msg);
         }
     }
 
@@ -276,7 +276,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    return TestInfos(this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiDec, tiCheckDec);
+    return TestInfos(this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiReenc, tiDec, tiCheckDec);
 }
 
 SequentialTest::~SequentialTest() {

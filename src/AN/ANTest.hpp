@@ -25,8 +25,8 @@ class ANTest :
         public Test<DATAIN, DATAOUT> {
 
 protected:
-    const DATAOUT A;
-    const DATAOUT A_INV;
+    DATAOUT A;
+    DATAOUT A_INV;
 
 public:
 

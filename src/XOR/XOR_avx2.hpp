@@ -65,6 +65,7 @@ struct XOR_avx2 :
     void RunEnc(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             auto dataIn = this->in.template begin<__m256i >();
             auto dataInEnd = this->in.template end<__m256i >();
             auto dataOut = this->out.template begin<CS>();
@@ -113,6 +114,7 @@ struct XOR_avx2 :
     virtual void RunCheck(
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             const size_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (DATA);
             const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
@@ -170,6 +172,7 @@ struct XOR_avx2 :
     void
     RunDec (const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             const size_t VALUES_PER_SIMDREG = sizeof (__m256i) / sizeof (DATA);
             const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();

@@ -36,6 +36,7 @@ struct AN_avx2_16x16_16x32 :
     void RunEnc(
             const EncodeConfiguration & config) override {
         for (size_t iter = 0; iter < config.numIterations; ++iter) {
+            _ReadWriteBarrier();
             auto *dataIn = this->in.template begin<__m128i >();
             auto *dataInEnd = this->in.template end<__m128i >();
             auto *dataOut = this->out.template begin<__m256i >();

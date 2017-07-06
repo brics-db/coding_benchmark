@@ -58,6 +58,7 @@ struct TestInfos {
     TestInfo encode;
     TestInfo check;
     TestInfo arithmetic;
+    TestInfo reencode;
     TestInfo decode;
     TestInfo checkAndDecode;
 
@@ -71,6 +72,7 @@ struct TestInfos {
             TestInfo & encode,
             TestInfo & check,
             TestInfo & arithmetic,
+            TestInfo & reencode,
             TestInfo & decode,
             TestInfo & checkAndDecode);
 

@@ -32,6 +32,7 @@ struct AN_avx2_16x16_16x32_s_inv :
     virtual void RunCheck(
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             auto mm_Data = this->out.template begin<__m256i >();
             auto mm_DataEnd = this->out.template end<__m256i >();
             int32_t dMin = std::numeric_limits<int16_t>::min();
@@ -76,6 +77,7 @@ struct AN_avx2_16x16_16x32_s_inv :
     void RunDec(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             const ssize_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (int32_t);
             const ssize_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             ssize_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();

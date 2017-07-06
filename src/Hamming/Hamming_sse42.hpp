@@ -166,6 +166,7 @@ struct Hamming_sse42 :
     void RunEnc(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             auto data = this->in.template begin<__m128i >();
             auto dataEnd = this->in.template end<__m128i >();
             auto dataOut = this->out.template begin<hamming_sse42_t>();
@@ -198,6 +199,7 @@ struct Hamming_sse42 :
     void RunCheck(
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
             size_t i = 0;
             auto data = this->out.template begin<hamming_sse42_t>();
@@ -230,6 +232,7 @@ struct Hamming_sse42 :
     void RunDec(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (DATAIN);
             const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();

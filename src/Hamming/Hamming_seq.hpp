@@ -97,6 +97,7 @@ struct Hamming_seq :
     void RunEnc(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             auto data = this->in.template begin<DATAIN>();
             auto dataEnd = this->in.template end<DATAIN>();
             auto dataOut = this->out.template begin<hamming_seq_t>();
@@ -120,6 +121,7 @@ struct Hamming_seq :
     void RunCheck(
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
             size_t i = 0;
             auto data = this->out.template begin<hamming_seq_t>();
@@ -145,6 +147,7 @@ struct Hamming_seq :
     void RunDec(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
             size_t i = 0;
             auto data = this->out.template begin<hamming_seq_t>();

@@ -33,6 +33,7 @@ struct XOR_seq :
     void RunEnc(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             auto dataIn = this->in.template begin<DATA>();
             auto dataInEnd = this->in.template end<DATA>();
             auto dataOut = this->out.template begin<CS>();
@@ -69,6 +70,7 @@ struct XOR_seq :
     virtual void RunCheck(
             const CheckConfiguration & config) override {
         for (size_t iterations = 0; iterations < config.numIterations; ++iterations) {
+            _ReadWriteBarrier();
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
             size_t i = 0;
             auto data = this->out.template begin<CS>();
@@ -110,6 +112,7 @@ struct XOR_seq :
     void RunDec(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
             size_t i = 0;
             auto dataIn = this->out.template begin<CS>();

@@ -48,6 +48,7 @@ struct AN_seq_s_inv :
     virtual void RunCheck(
             const CheckConfiguration & config) {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
             auto data = this->out.template begin<DATAENC>();
@@ -82,6 +83,49 @@ struct AN_seq_s_inv :
         }
     }
 
+    bool DoReenc() override {
+        return true;
+    }
+
+    void RunReenc(
+            const ReencodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            size_t i = 0;
+            auto data = this->out.template begin<DATAENC>();
+            DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+            DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
+            const DATAENC reenc = this->A_INV * config.newA;
+            for (; i <= (numValues - UNROLL); i += UNROLL) {
+                // let the compiler unroll the loop
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++data) {
+                    DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
+                    if (dec < dMin || dec > dMax) {
+                        std::stringstream ss;
+                        ss << "A=" << this->A << ", A^-1=" << this->A_INV;
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
+                    } else {
+                        *data = static_cast<DATAENC>(*data * reenc);
+                    }
+                }
+            }
+            // remaining numbers
+            for (; i < numValues; ++i, ++data) {
+                DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
+                if (dec < dMin || dec > dMax) {
+                    std::stringstream ss;
+                    ss << "A=" << this->A << ", A^-1=" << this->A_INV;
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
+                } else {
+                    *data = static_cast<DATAENC>(*data * reenc);
+                }
+            }
+            this->A = static_cast<DATAENC>(config.newA);
+            this->A_INV = ext_euclidean(this->A, sizeof(DATAENC) * CHAR_BIT);
+        }
+    }
+
     virtual bool DoCheckDec() override {
         return true;
     }
@@ -89,6 +133,7 @@ struct AN_seq_s_inv :
     virtual void RunCheckDec(
             const CheckAndDecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
             auto dataIn = this->out.template begin<DATAENC>();

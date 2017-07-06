@@ -29,13 +29,11 @@
 #include "Util/TestInfo.hpp"
 
 void printUsage(
-        char* argv[]) {
-    std::cerr << "Usage: " << argv[0] << " <A>\n" << std::setw(6) << "A" << ":   AN coding parameter (positive, odd, non-zero integer, 0 < A < 2^16)" << std::endl;
-}
+        char* argv[]);
 
 template<bool doRelative>
 void printResults(
-        std::vector<std::vector<TestInfos>> &results) {
+        std::vector<std::vector<TestInfos>> & results) {
     size_t maxPos = 0;
     for (auto & v : results) {
         maxPos = std::max(maxPos, v.size());
@@ -43,19 +41,25 @@ void printResults(
     std::vector<double> baseEncode(maxPos);
     std::vector<double> baseCheck(maxPos);
     std::vector<double> baseArith(maxPos);
+    std::vector<double> baseReencode(maxPos);
     std::vector<double> baseDecode(maxPos);
+    std::vector<double> baseCheckAndDecode(maxPos);
 
     if (doRelative) {
+        // copy results
         for (size_t i = 0; i < maxPos; ++i) {
-            auto & r = results[0][i]; // copy results
+            auto & r = results[0][i];
             baseEncode[i] = static_cast<double>(r.encode.nanos);
             baseCheck[i] = static_cast<double>(r.check.nanos);
             baseArith[i] = static_cast<double>(r.arithmetic.nanos);
+            baseReencode[i] = static_cast<double>(r.reencode.nanos);
             baseDecode[i] = static_cast<double>(r.decode.nanos);
+            baseCheckAndDecode[i] = static_cast<double>(r.checkAndDecode.nanos);
         }
     }
 
     // The following does pretty-print everything so that it can be easily used as input for gnuplot & co.
+
     // print headline
     std::cout << "unroll/block";
     // first all encode columns, then all check columns etc.size
@@ -86,8 +90,24 @@ void printResults(
     i = 0;
     for (auto & v : results) {
         TestInfos &ti = v[0];
+        if (ti.reencode.isExecuted) {
+            std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " reenc");
+        }
+        ++i;
+    }
+    i = 0;
+    for (auto & v : results) {
+        TestInfos &ti = v[0];
         if (ti.decode.isExecuted) {
             std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " dec");
+        }
+        ++i;
+    }
+    i = 0;
+    for (auto & v : results) {
+        TestInfos &ti = v[0];
+        if (ti.checkAndDecode.isExecuted) {
+            std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " chkDec");
         }
         ++i;
     }
@@ -137,6 +157,18 @@ void printResults(
         }
         for (auto & v : results) {
             TestInfos &ti = v[0];
+            if (ti.reencode.isExecuted) {
+                std::cout << ',';
+                if (pos < v.size() && v[pos].reencode.error.empty()) {
+                    if (doRelative)
+                        std::cout << (static_cast<double>(v[pos].reencode.nanos) / baseArith[pos]);
+                    else
+                        std::cout << v[pos].reencode.nanos;
+                }
+            }
+        }
+        for (auto & v : results) {
+            TestInfos &ti = v[0];
             if (ti.decode.isExecuted) {
                 std::cout << ',';
                 if (pos < v.size() && v[pos].decode.error.empty()) {
@@ -147,8 +179,25 @@ void printResults(
                 }
             }
         }
+        for (auto & v : results) {
+            TestInfos &ti = v[0];
+            if (ti.checkAndDecode.isExecuted) {
+                std::cout << ',';
+                if (pos < v.size() && v[pos].checkAndDecode.error.empty()) {
+                    if (doRelative)
+                        std::cout << (static_cast<double>(v[pos].checkAndDecode.nanos) / baseDecode[pos]);
+                    else
+                        std::cout << v[pos].checkAndDecode.nanos;
+                }
+            }
+        }
         std::cout << std::endl;
     }
 }
+
+extern template void printResults<true>(
+        std::vector<std::vector<TestInfos>> & results);
+extern template void printResults<false>(
+        std::vector<std::vector<TestInfos>> & results);
 
 #endif /* OUTPUT_HPP */

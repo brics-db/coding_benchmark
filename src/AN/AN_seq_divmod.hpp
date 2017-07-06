@@ -32,6 +32,7 @@ struct AN_seq_divmod :
     virtual void RunCheck(
             const CheckConfiguration & config) {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
             auto data = this->out.template begin<DATAENC>();
@@ -65,6 +66,7 @@ struct AN_seq_divmod :
     void RunDec(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
             auto dataIn = this->out.template begin<DATAENC>();
@@ -89,6 +91,7 @@ struct AN_seq_divmod :
     void RunCheckDec(
             const CheckAndDecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
             auto dataIn = this->out.template begin<DATAENC>();

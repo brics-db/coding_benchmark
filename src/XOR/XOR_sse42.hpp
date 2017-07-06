@@ -69,6 +69,7 @@ struct XOR_sse42 :
     void RunEnc(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             auto dataIn = this->in.template begin<__m128i >();
             auto dataInEnd = this->in.template end<__m128i >();
             auto dataOut = this->out.template begin<CS>();
@@ -119,6 +120,7 @@ struct XOR_sse42 :
         const size_t NUM_VALUES_PER_M128 = sizeof(__m128i) / sizeof (DATA);
         const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_M128 * BLOCKSIZE;
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
             size_t i = 0;
             auto data128 = this->out.template begin<__m128i>();
@@ -175,6 +177,7 @@ struct XOR_sse42 :
     virtual void RunDec (
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
             const size_t VALUES_PER_SIMDREG = sizeof (__m128i) / sizeof (DATA);
             const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
