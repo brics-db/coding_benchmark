@@ -13,23 +13,22 @@
 // limitations under the License.
 
 /* 
- * File:   AN_seq_s_inv.hpp
+ * File:   AN_scalar_u_inv.tcc
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
- * Created on 05. July 2017, 23:45
+ * Created on 05. July 2017, 23:43
  */
 
 #pragma once
 
+#include <AN/AN_scalar.tcc>
 #include <sstream>
 
-#include <AN/AN_seq.hpp>
-
 template<typename DATARAW, typename DATAENC, size_t UNROLL>
-struct AN_seq_s_inv :
+struct AN_seq_u_inv :
         public AN_seq<DATARAW, DATAENC, UNROLL> {
 
-    AN_seq_s_inv(
+    AN_seq_u_inv(
             const char* const name,
             AlignedBlock & in,
             AlignedBlock & out,
@@ -38,7 +37,7 @@ struct AN_seq_s_inv :
             : AN_seq<DATARAW, DATAENC, UNROLL>(name, in, out, A, AInv) {
     }
 
-    virtual ~AN_seq_s_inv() {
+    virtual ~AN_seq_u_inv() {
     }
 
     virtual bool DoCheck() override {
@@ -53,25 +52,21 @@ struct AN_seq_s_inv :
             size_t i = 0;
             auto data = this->out.template begin<DATAENC>();
             DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-            DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
-            while (i <= (numValues - UNROLL)) {
+            for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
-                    DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
-                    if (dec < dMin || dec > dMax) {
+                    if (static_cast<DATAENC>(*data * this->A_INV) > dMax) {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                         throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
                     }
                     ++data;
                 }
-                i += UNROLL;
             }
             // remaining numbers
             if (i < numValues) {
                 do {
-                    DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
-                    if (dec < dMin || dec > dMax) {
+                    if (static_cast<DATAENC>(*data * this->A_INV) > dMax) {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                         throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
@@ -95,13 +90,11 @@ struct AN_seq_s_inv :
             size_t i = 0;
             auto data = this->out.template begin<DATAENC>();
             DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-            DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
             const DATAENC reenc = this->A_INV * config.newA;
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++data) {
-                    DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
-                    if (dec < dMin || dec > dMax) {
+                    if (static_cast<DATAENC>(*data * this->A_INV) > dMax) {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                         throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
@@ -112,8 +105,7 @@ struct AN_seq_s_inv :
             }
             // remaining numbers
             for (; i < numValues; ++i, ++data) {
-                DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
-                if (dec < dMin || dec > dMax) {
+                if (static_cast<DATAENC>(*data * this->A_INV) > dMax) {
                     std::stringstream ss;
                     ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                     throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
@@ -139,12 +131,11 @@ struct AN_seq_s_inv :
             auto dataIn = this->out.template begin<DATAENC>();
             auto dataOut = this->in.template begin<DATARAW>();
             DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-            DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
                     DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
-                    if (dec < dMin || dec > dMax) {
+                    if (dec > dMax) {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                         throw ErrorInfo(__FILE__, __LINE__, dataIn - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
@@ -156,7 +147,7 @@ struct AN_seq_s_inv :
             // remaining numbers
             for (; i < numValues; ++i, ++dataOut, ++dataIn) {
                 DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
-                if (dec < dMin || dec > dMax) {
+                if (dec > dMax) {
                     std::stringstream ss;
                     ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                     throw ErrorInfo(__FILE__, __LINE__, dataIn - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());

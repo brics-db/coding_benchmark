@@ -60,10 +60,7 @@
 #include "XOR/XOR_avx2_8x32_8x32.hpp"
 #endif
 
-#include "AN/AN_seq_16_32_u_inv.hpp"
-#include "AN/AN_seq_16_32_u_divmod.hpp"
-#include "AN/AN_seq_16_32_s_inv.hpp"
-#include "AN/AN_seq_16_32_s_divmod.hpp"
+#include "AN/AN_scalar.hpp"
 #include "AN/AN_sse42_8x16_8x32_u_inv.hpp"
 #include "AN/AN_sse42_8x16_8x32_u_divmod.hpp"
 #include "AN/AN_sse42_8x16_8x32_s_inv.hpp"

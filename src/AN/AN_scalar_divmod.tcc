@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <AN/AN_seq.hpp>
+#include <AN/AN_scalar.tcc>
 
 template<typename DATARAW, typename DATAENC, size_t UNROLL>
 struct AN_seq_divmod :

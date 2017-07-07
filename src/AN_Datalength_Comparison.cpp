@@ -29,10 +29,7 @@
 #include <CopyTest.hpp>
 #include <Output.hpp>
 
-#include <AN/AN_seq_8_16_s_inv.hpp>
-#include <AN/AN_seq_8_16_u_inv.hpp>
-#include <AN/AN_seq_32_64_s_inv.hpp>
-#include <AN/AN_seq_32_64_u_inv.hpp>
+#include <AN/AN_scalar.hpp>
 
 int checkArgs(
         int argc,
@@ -117,12 +114,12 @@ int main(
     WarmUp(CopyTest, "Copy 32>64", input32, output64);
 
     TestCase(CopyTest, "Copy 8>16", input8, output16);
-    TestCase(AN_seq_8_16_u_inv, "AN Seq U Inv 8>16", input8, output16, AUser, AUserInv16);
-    TestCase(AN_seq_8_16_s_inv, "AN Seq S Inv 8>16", input8, output16, static_cast<int16_t>(AUser), static_cast<int16_t>(AUserInv16));
+    TestCase(AN_seq_8_16_u_inv, "AN U 8>16", input8, output16, AUser, AUserInv16);
+    TestCase(AN_seq_8_16_s_inv, "AN S 8>16", input8, output16, static_cast<int16_t>(AUser), static_cast<int16_t>(AUserInv16));
 
     TestCase(CopyTest, "Copy 32>64", input32, output64);
-    TestCase(AN_seq_32_64_u_inv, "AN Seq U Inv 32>64", input32, output64, AUser, AUserInv64);
-    TestCase(AN_seq_32_64_s_inv, "AN Seq S Inv 32>64", input32, output64, static_cast<int64_t>(AUser), static_cast<int64_t>(AUserInv64));
+    TestCase(AN_seq_32_64_u_inv, "AN U 32>64", input32, output64, AUser, AUserInv64);
+    TestCase(AN_seq_32_64_s_inv, "AN S 32>64", input32, output64, static_cast<int64_t>(AUser), static_cast<int64_t>(AUserInv64));
 
 #undef WarmUp
 #undef TestCase
