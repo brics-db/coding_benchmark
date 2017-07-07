@@ -47,14 +47,10 @@ struct AN_seq_divmod :
                 i += UNROLL;
             }
             // remaining numbers
-            if (i < numValues) {
-                do {
-                    if ((*data % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration);
-                    }
-                    ++data;
-                    ++i;
-                } while (i <= numValues);
+            for (; i < numValues; ++i, ++data) {
+                if ((*data % this->A) != 0) {
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration);
+                }
             }
         }
     }

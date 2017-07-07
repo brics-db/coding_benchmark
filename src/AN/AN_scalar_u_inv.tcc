@@ -64,16 +64,12 @@ struct AN_seq_u_inv :
                 }
             }
             // remaining numbers
-            if (i < numValues) {
-                do {
-                    if (static_cast<DATAENC>(*data * this->A_INV) > dMax) {
-                        std::stringstream ss;
-                        ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
-                    }
-                    ++data;
-                    ++i;
-                } while (i <= numValues);
+            for (; i < numValues; ++i, ++data) {
+                if (static_cast<DATAENC>(*data * this->A_INV) > dMax) {
+                    std::stringstream ss;
+                    ss << "A=" << this->A << ", A^-1=" << this->A_INV;
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
+                }
             }
         }
     }

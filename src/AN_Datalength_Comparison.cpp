@@ -60,7 +60,7 @@ int checkArgs(
 int main(
         int argc,
         char* argv[]) {
-    const size_t numElements = 1024 * 1024;
+    const size_t numElements = 1000000;
     const size_t iterations = 100;
 
     const size_t UNROLL_LO = 1;

@@ -24,7 +24,6 @@
 #include <AN/AN_scalar.tcc>
 #include <sstream>
 
-
 template<typename DATARAW, typename DATAENC, size_t UNROLL>
 struct AN_seq_s_inv :
         public AN_seq<DATARAW, DATAENC, UNROLL> {
@@ -68,17 +67,13 @@ struct AN_seq_s_inv :
                 i += UNROLL;
             }
             // remaining numbers
-            if (i < numValues) {
-                do {
-                    DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
-                    if (dec < dMin || dec > dMax) {
-                        std::stringstream ss;
-                        ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
-                    }
-                    ++data;
-                    ++i;
-                } while (i <= numValues);
+            for (; i < numValues; ++i, ++data) {
+                DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
+                if (dec < dMin || dec > dMax) {
+                    std::stringstream ss;
+                    ss << "A=" << this->A << ", A^-1=" << this->A_INV;
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
+                }
             }
         }
     }

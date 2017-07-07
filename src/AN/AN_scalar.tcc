@@ -47,8 +47,8 @@ struct AN_seq :
                 }
             }
             // remaining numbers
-            while (dataIn < dataInEnd) {
-                *dataOut++ = *dataIn++ * this->A;
+            for (; dataIn < dataInEnd; ++dataIn, ++dataOut) {
+                *dataOut = *dataIn * this->A;
             }
         }
     }
