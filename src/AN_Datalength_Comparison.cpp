@@ -131,7 +131,7 @@ int main(
 #undef TestCase2
 #undef TestCase4
 
-    printResults<false>(vecTestInfos);
+    printResults<false>(vecTestInfos, false);
     std::cout << "\n\n";
-    printResults<true>(vecTestInfos);
+    printResults<true>(vecTestInfos, false);
 }

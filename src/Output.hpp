@@ -33,7 +33,8 @@ void printUsage(
 
 template<bool doRelative>
 void printResults(
-        std::vector<std::vector<TestInfos>> & results) {
+        std::vector<std::vector<TestInfos>> & results,
+        bool renameFirst = true) {
     size_t maxPos = 0;
     for (auto & v : results) {
         maxPos = std::max(maxPos, v.size());
@@ -67,7 +68,7 @@ void printResults(
     for (auto & v : results) {
         TestInfos &ti = v[0];
         if (ti.encode.isExecuted) {
-            std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " enc");
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " enc");
         }
         ++i;
     }
@@ -75,7 +76,7 @@ void printResults(
     for (auto & v : results) {
         TestInfos &ti = v[0];
         if (ti.check.isExecuted) {
-            std::cout << ',' << (i == 0 ? "memcmp" : ti.name) << (i == 0 ? "" : " check");
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp" : ti.name) << (((i == 0) && renameFirst) ? "" : " check");
         }
         ++i;
     }
@@ -83,7 +84,7 @@ void printResults(
     for (auto & v : results) {
         TestInfos &ti = v[0];
         if (ti.arithmetic.isExecuted) {
-            std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " arith");
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " arith");
         }
         ++i;
     }
@@ -91,7 +92,7 @@ void printResults(
     for (auto & v : results) {
         TestInfos &ti = v[0];
         if (ti.reencode.isExecuted) {
-            std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " reenc");
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " reenc");
         }
         ++i;
     }
@@ -99,7 +100,7 @@ void printResults(
     for (auto & v : results) {
         TestInfos &ti = v[0];
         if (ti.decode.isExecuted) {
-            std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " dec");
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " dec");
         }
         ++i;
     }
@@ -107,7 +108,7 @@ void printResults(
     for (auto & v : results) {
         TestInfos &ti = v[0];
         if (ti.checkAndDecode.isExecuted) {
-            std::cout << ',' << (i == 0 ? "memcpy" : ti.name) << (i == 0 ? "" : " chkDec");
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " chkDec");
         }
         ++i;
     }
@@ -196,8 +197,10 @@ void printResults(
 }
 
 extern template void printResults<true>(
-        std::vector<std::vector<TestInfos>> & results);
+        std::vector<std::vector<TestInfos>> & results,
+        bool renameFirst);
 extern template void printResults<false>(
-        std::vector<std::vector<TestInfos>> & results);
+        std::vector<std::vector<TestInfos>> & results,
+        bool renameFirst);
 
 #endif /* OUTPUT_HPP */

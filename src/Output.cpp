@@ -27,7 +27,9 @@ void printUsage(
 }
 
 template void printResults<true>(
-        std::vector<std::vector<TestInfos>> & results);
+        std::vector<std::vector<TestInfos>> & results,
+        bool renameFirst);
 
 template void printResults<false>(
-        std::vector<std::vector<TestInfos>> & results);
+        std::vector<std::vector<TestInfos>> & results,
+        bool renameFirst);
