@@ -18,6 +18,7 @@
 #include <cstring>
 #include <cstdint>
 #include <optional>
+#include <variant>
 
 #ifdef OMP
 #include <omp.h>
@@ -69,6 +70,27 @@ struct ArithmeticConfiguration :
             const size_t operand)
             : TestConfiguration(config),
               operand(operand) {
+    }
+};
+
+struct AggregateConfiguration :
+        public TestConfiguration {
+    struct Sum {
+    };
+    struct Min {
+    };
+    struct Max {
+    };
+    struct Avg {
+    };
+    typedef std::variant<Sum, Min, Max, Avg> Mode;
+    Mode mode;
+
+    AggregateConfiguration(
+            const TestConfiguration & config,
+            Mode mode)
+            : TestConfiguration(config),
+              mode(mode) {
     }
 };
 
@@ -139,10 +161,10 @@ public:
     virtual size_t getOutputTypeSize() = 0;
 
     // Encoding
-    virtual void PreEnc(
+    virtual void PreEncode(
             const EncodeConfiguration & config);
 
-    virtual void RunEnc(
+    virtual void RunEncode(
             const EncodeConfiguration & config) = 0;
 
     // Check-Only
@@ -155,48 +177,68 @@ public:
             const CheckConfiguration & config);
 
     // Arithmetic
-    virtual bool DoArith();
+    virtual bool DoArithmetic();
 
-    virtual void PreArith(
+    virtual void PreArithmetic(
             const ArithmeticConfiguration & config);
 
-    virtual void RunArith(
+    virtual void RunArithmetic(
             const ArithmeticConfiguration & config);
 
-    // Arithmetic
-    virtual bool DoArithChecked();
+    // Arithmetic Checked
+    virtual bool DoArithmeticChecked();
 
-    virtual void PreArithChecked(
+    virtual void PreArithmeticChecked(
             const ArithmeticConfiguration & config);
 
-    virtual void RunArithChecked(
+    virtual void RunArithmeticChecked(
             const ArithmeticConfiguration & config);
 
-    // Reencode
-    virtual bool DoReenc();
+    // Aggregate
+    virtual bool DoAggregate(
+            AggregateConfiguration::Mode mode);
 
-    virtual void PreReenc(
+    virtual void PreAggregate(
+            const AggregateConfiguration & config);
+
+    virtual void RunAggregate(
+            const AggregateConfiguration & config);
+
+    // Aggregate Checked
+    virtual bool DoAggregateChecked(
+            AggregateConfiguration::Mode mode);
+
+    virtual void PreAggregateChecked(
+            const AggregateConfiguration & config);
+
+    virtual void RunAggregateChecked(
+            const AggregateConfiguration & config);
+
+    // Reencode (Checked)
+    virtual bool DoReencode();
+
+    virtual void PreReencode(
             const ReencodeConfiguration & config);
 
-    virtual void RunReenc(
+    virtual void RunReencode(
             const ReencodeConfiguration & config);
 
     // Decoding-Only
-    virtual bool DoDec();
+    virtual bool DoDecode();
 
-    virtual void PreDec(
+    virtual void PreDecode(
             const DecodeConfiguration & config);
 
-    virtual void RunDec(
+    virtual void RunDecode(
             const DecodeConfiguration & config);
 
-    // Check-And-Dec
-    virtual bool DoCheckDec();
+    // Check-And-Decode
+    virtual bool DoCheckAndDecode();
 
-    virtual void PreCheckDec(
+    virtual void PreCheckAndDecode(
             const CheckAndDecodeConfiguration & config);
 
-    virtual void RunCheckDec(
+    virtual void RunCheckAndDecode(
             const CheckAndDecodeConfiguration & config);
 
     // Execute test:

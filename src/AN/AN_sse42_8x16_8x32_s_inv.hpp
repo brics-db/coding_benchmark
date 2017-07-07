@@ -69,11 +69,11 @@ struct AN_sse42_8x16_8x32_s_inv :
         }
     }
 
-    bool DoDec() override {
+    bool DoDecode() override {
         return true;
     }
 
-    void RunDec(
+    void RunDecode(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (int32_t);

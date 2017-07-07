@@ -36,7 +36,7 @@ struct AN_sse42_8x16_8x32 :
     virtual ~AN_sse42_8x16_8x32() {
     }
 
-    void RunEnc(
+    void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             auto *mm_Data = this->in.template begin<__m128i >();

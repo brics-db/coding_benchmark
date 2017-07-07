@@ -30,7 +30,7 @@ struct XOR_seq :
     virtual ~XOR_seq() {
     }
 
-    void RunEnc(
+    void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
@@ -105,11 +105,11 @@ struct XOR_seq :
         }
     }
 
-    virtual bool DoDec() override {
+    virtual bool DoDecode() override {
         return true;
     }
 
-    void RunDec(
+    void RunDecode(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();

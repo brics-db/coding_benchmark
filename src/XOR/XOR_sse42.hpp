@@ -66,7 +66,7 @@ struct XOR_sse42 :
     virtual ~XOR_sse42() {
     }
 
-    void RunEnc(
+    void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
@@ -170,11 +170,11 @@ struct XOR_sse42 :
     }
 
     bool
-    DoDec () override {
+    DoDecode () override {
         return true;
     }
 
-    virtual void RunDec (
+    virtual void RunDecode (
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();

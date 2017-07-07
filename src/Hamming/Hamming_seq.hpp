@@ -94,7 +94,7 @@ struct Hamming_seq :
     virtual ~Hamming_seq() {
     }
 
-    void RunEnc(
+    void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
@@ -140,11 +140,11 @@ struct Hamming_seq :
         }
     }
 
-    bool DoDec() override {
+    bool DoDecode() override {
         return true;
     }
 
-    void RunDec(
+    void RunDecode(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();

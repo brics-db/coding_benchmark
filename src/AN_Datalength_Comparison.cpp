@@ -27,6 +27,7 @@
 
 #include <Test.hpp>
 #include <CopyTest.hpp>
+#include <CopyTest2.hpp>
 #include <Output.hpp>
 
 #include <AN/AN_scalar.hpp>
@@ -61,7 +62,7 @@ int main(
         int argc,
         char* argv[]) {
     const size_t numElements = 1000000;
-    const size_t iterations = 100;
+    const size_t iterations = 1;
 
     const size_t UNROLL_LO = 1;
     const size_t UNROLL_HI = 1024;
@@ -112,12 +113,16 @@ int main(
 
     WarmUp(CopyTest, "Copy 8>16", input8, output16);
     WarmUp(CopyTest, "Copy 32>64", input32, output64);
+    WarmUp(CopyTest2_8_16, "Copy2 8>16", input8, output16);
+    WarmUp(CopyTest2_32_64, "Copy2 32>64", input32, output64);
 
     TestCase(CopyTest, "Copy 8>16", input8, output16);
+    TestCase(CopyTest2_8_16, "Copy2 8>16", input8, output16);
     TestCase(AN_seq_8_16_u_inv, "AN U 8>16", input8, output16, AUser, AUserInv16);
     TestCase(AN_seq_8_16_s_inv, "AN S 8>16", input8, output16, static_cast<int16_t>(AUser), static_cast<int16_t>(AUserInv16));
 
     TestCase(CopyTest, "Copy 32>64", input32, output64);
+    TestCase(CopyTest2_32_64, "Copy2 32>64", input32, output64);
     TestCase(AN_seq_32_64_u_inv, "AN U 32>64", input32, output64, AUser, AUserInv64);
     TestCase(AN_seq_32_64_s_inv, "AN S 32>64", input32, output64, static_cast<int64_t>(AUser), static_cast<int64_t>(AUserInv64));
 

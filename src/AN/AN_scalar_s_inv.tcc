@@ -78,11 +78,11 @@ struct AN_seq_s_inv :
         }
     }
 
-    bool DoReenc() override {
+    bool DoReencode() override {
         return true;
     }
 
-    void RunReenc(
+    void RunReencode(
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
@@ -121,11 +121,11 @@ struct AN_seq_s_inv :
         }
     }
 
-    virtual bool DoCheckDec() override {
+    virtual bool DoCheckAndDecode() override {
         return true;
     }
 
-    virtual void RunCheckDec(
+    virtual void RunCheckAndDecode(
             const CheckAndDecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();

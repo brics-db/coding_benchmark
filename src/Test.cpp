@@ -44,10 +44,12 @@ TestBase::TestBase(
 TestBase::~TestBase() {
 }
 
-void TestBase::PreEnc(
+// Encoding
+void TestBase::PreEncode(
         const EncodeConfiguration & config) {
 }
 
+// Check-Only
 bool TestBase::DoCheck() {
     return false;
 }
@@ -60,66 +62,100 @@ void TestBase::RunCheck(
         const CheckConfiguration & config) {
 }
 
-bool TestBase::DoArith() {
+// Arithmetic
+bool TestBase::DoArithmetic() {
     return false;
 }
 
-void TestBase::PreArith(
+void TestBase::PreArithmetic(
         const ArithmeticConfiguration & config) {
 }
 
-void TestBase::RunArith(
+void TestBase::RunArithmetic(
         const ArithmeticConfiguration & config) {
 }
 
-bool TestBase::DoArithChecked() {
+// Arithmetic Checked
+bool TestBase::DoArithmeticChecked() {
     return false;
 }
 
-void TestBase::PreArithChecked(
+void TestBase::PreArithmeticChecked(
         const ArithmeticConfiguration & config) {
 }
 
-void TestBase::RunArithChecked(
+void TestBase::RunArithmeticChecked(
         const ArithmeticConfiguration & config) {
 }
 
-bool TestBase::DoReenc() {
+// Aggregate
+bool TestBase::DoAggregate(
+        AggregateConfiguration::Mode mode) {
     return false;
 }
 
-void TestBase::PreReenc(
+void TestBase::PreAggregate(
+        const AggregateConfiguration & config) {
+}
+
+void TestBase::RunAggregate(
+        const AggregateConfiguration & config) {
+}
+
+// Aggregate Checked
+bool TestBase::DoAggregateChecked(
+        AggregateConfiguration::Mode mode) {
+    return false;
+}
+
+void TestBase::PreAggregateChecked(
+        const AggregateConfiguration & config) {
+}
+
+void TestBase::RunAggregateChecked(
+        const AggregateConfiguration & config) {
+}
+
+// Reencode (Checked)
+bool TestBase::DoReencode() {
+    return false;
+}
+
+void TestBase::PreReencode(
         const ReencodeConfiguration & config) {
 }
 
-void TestBase::RunReenc(
+void TestBase::RunReencode(
         const ReencodeConfiguration & config) {
 }
 
-bool TestBase::DoDec() {
+// Decoding-Only
+bool TestBase::DoDecode() {
     return false;
 }
 
-void TestBase::PreDec(
+void TestBase::PreDecode(
         const DecodeConfiguration & config) {
 }
 
-void TestBase::RunDec(
+void TestBase::RunDecode(
         const DecodeConfiguration & config) {
 }
 
-bool TestBase::DoCheckDec() {
+// Check-And-Decode
+bool TestBase::DoCheckAndDecode() {
     return false;
 }
 
-void TestBase::PreCheckDec(
+void TestBase::PreCheckAndDecode(
         const CheckAndDecodeConfiguration & config) {
 }
 
-void TestBase::RunCheckDec(
+void TestBase::RunCheckAndDecode(
         const CheckAndDecodeConfiguration & config) {
 }
 
+// Execute test:
 TestInfos TestBase::Execute(
         const TestConfiguration & configTest,
         const DataGenerationConfiguration & configDataGen) {
@@ -148,7 +184,7 @@ TestInfos TestBase::Execute(
     Stopwatch sw;
 
     // Start test:
-    this->PreEnc(encConf);
+    this->PreEncode(encConf);
 
     TestInfo tiEnc, tiCheck, tiArith, tiReenc, tiDec, tiCheckDec;
 
@@ -162,7 +198,7 @@ TestInfos TestBase::Execute(
 #endif
 #endif
         {
-            this->RunEnc(encConf);
+            this->RunEncode(encConf);
         }
         nanos = sw.Current();
         tiEnc.set(nanos);
@@ -196,8 +232,8 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoArith()) {
-        this->PreArith(arithConf);
+    if (this->DoArithmetic()) {
+        this->PreArithmetic(arithConf);
         sw.Reset();
         try {
 #ifdef OMP
@@ -208,7 +244,7 @@ TestInfos TestBase::Execute(
 #endif
 #endif
             {
-                this->RunArith(arithConf);
+                this->RunArithmetic(arithConf);
             }
             nanos = sw.Current();
             tiArith.set(nanos);
@@ -219,8 +255,8 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoReenc()) {
-        this->PreReenc(reencConf);
+    if (this->DoReencode()) {
+        this->PreReencode(reencConf);
         sw.Reset();
         try {
 #ifdef OMP
@@ -231,7 +267,7 @@ TestInfos TestBase::Execute(
 #endif
 #endif
             {
-                this->RunReenc(reencConf);
+                this->RunReencode(reencConf);
             }
             nanos = sw.Current();
             tiReenc.set(nanos);
@@ -242,8 +278,8 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoDec()) {
-        this->PreDec(decConf);
+    if (this->DoDecode()) {
+        this->PreDecode(decConf);
         sw.Reset();
         try {
 #ifdef OMP
@@ -254,7 +290,7 @@ TestInfos TestBase::Execute(
 #endif
 #endif
             {
-                this->RunDec(decConf);
+                this->RunDecode(decConf);
             }
             nanos = sw.Current();
             tiDec.set(nanos);
@@ -265,8 +301,8 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoCheckDec()) {
-        this->PreCheckDec(cadConf);
+    if (this->DoCheckAndDecode()) {
+        this->PreCheckAndDecode(cadConf);
         sw.Reset();
         try {
 #ifdef OMP
@@ -277,7 +313,7 @@ TestInfos TestBase::Execute(
 #endif
 #endif
             {
-                this->RunCheckDec(cadConf);
+                this->RunCheckAndDecode(cadConf);
             }
             nanos = sw.Current();
             tiCheckDec.set(nanos);

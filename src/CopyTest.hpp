@@ -42,11 +42,12 @@ struct CopyTest :
     virtual ~CopyTest() {
     }
 
-    void RunEnc(
+    void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            memmove(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+            size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
+            memmove(this->out.begin(), this->in.begin(), numBytes);
         }
     }
 
@@ -58,50 +59,58 @@ struct CopyTest :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            int ret = memcmp(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+            size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
+            int ret = memcmp(this->out.begin(), this->in.begin(), numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
             }
         }
     }
 
-    bool DoReenc() override {
+    bool DoReencode() override {
         return true;
     }
 
-    void RunReenc(
+    void RunReencode(
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            memmove(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
-        }
-    }
-
-    bool DoDec() override {
-        return true;
-    }
-
-    void RunDec(
-            const DecodeConfiguration & config) override {
-        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            _ReadWriteBarrier();
-            memmove(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
-        }
-    }
-
-    bool DoCheckDec() override {
-        return true;
-    }
-
-    void RunCheckDec(
-            const CheckAndDecodeConfiguration & config) override {
-        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            _ReadWriteBarrier();
-            int ret = memcmp(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+            size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
+            int ret = memcmp(this->out.begin(), this->out.begin(), numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
             }
-            memmove(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+            memmove(this->out.begin(), this->out.begin(), numBytes);
+        }
+    }
+
+    bool DoDecode() override {
+        return true;
+    }
+
+    void RunDecode(
+            const DecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
+            memmove(this->in.begin(), this->out.begin(), numBytes);
+        }
+    }
+
+    bool DoCheckAndDecode() override {
+        return true;
+    }
+
+    void RunCheckAndDecode(
+            const CheckAndDecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
+            int ret = memcmp(this->out.begin(), this->out.begin(), numBytes);
+            if (ret != 0) {
+                throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
+            }
+            memmove(this->in.begin(), this->out.begin(), numBytes);
         }
     }
 };
