@@ -37,18 +37,19 @@ struct AN_seq :
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
+            const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            size_t i = 0;
             auto dataIn = this->in.template begin<DATARAW>();
-            auto dataInEnd = this->in.template end<DATARAW>();
             auto dataOut = this->out.template begin<DATAENC>();
-            while (dataIn <= (dataInEnd - UNROLL)) {
+            for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                    *dataOut++ = static_cast<DATAENC>(static_cast<DATAENC>(*dataIn++) * this->A);
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
+                    *dataOut = static_cast<DATAENC>(static_cast<DATAENC>(*dataIn) * this->A);
                 }
             }
             // remaining numbers
-            for (; dataIn < dataInEnd; ++dataIn, ++dataOut) {
-                *dataOut = *dataIn * this->A;
+            for (; i < numValues; ++i, ++dataOut, ++dataIn) {
+                *dataOut = static_cast<DATAENC>(static_cast<DATAENC>(*dataIn) * this->A);
             }
         }
     }
@@ -68,12 +69,12 @@ struct AN_seq :
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                    *dataOut = *dataIn * this->A_INV;
+                    *dataOut = static_cast<DATARAW>(*dataIn * this->A_INV);
                 }
             }
             // remaining numbers
             for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                *dataOut = *dataIn * this->A_INV;
+                *dataOut = static_cast<DATARAW>(*dataIn * this->A_INV);
             }
         }
     }

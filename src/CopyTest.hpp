@@ -29,14 +29,14 @@
 
 template<size_t UNROLL>
 struct CopyTest :
-        public Test<uint16_t, uint16_t>,
+        public Test<uint8_t, uint8_t>,
         public SequentialTest {
 
     CopyTest(
             const char* const name,
             AlignedBlock & in,
             AlignedBlock & out)
-            : Test<uint16_t, uint16_t>(name, in, out) {
+            : Test<uint8_t, uint8_t>(name, in, out) {
     }
 
     virtual ~CopyTest() {
@@ -46,7 +46,7 @@ struct CopyTest :
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            memcpy(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+            memmove(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
         }
     }
 
@@ -73,7 +73,7 @@ struct CopyTest :
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            memcpy(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+            memmove(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
         }
     }
 
@@ -85,7 +85,7 @@ struct CopyTest :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            memcpy(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+            memmove(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
         }
     }
 
@@ -101,7 +101,7 @@ struct CopyTest :
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
             }
-            memcpy(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+            memmove(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
         }
     }
 };
