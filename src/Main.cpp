@@ -74,7 +74,7 @@ int main(
         std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
         vecTestInfos.emplace_back(); \
         auto & vec = *vecTestInfos.rbegin(); \
-        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>()()); \
+        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output); \
     } while (0)
 
@@ -83,7 +83,7 @@ int main(
         std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
         vecTestInfos.emplace_back(); \
         auto & vec = *vecTestInfos.rbegin(); \
-        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>()()); \
+        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output, A, AInv); \
     } while (0)
 

@@ -88,4 +88,20 @@ struct CopyTest :
             memcpy(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
         }
     }
+
+    bool DoCheckDec() override {
+        return true;
+    }
+
+    void RunCheckDec(
+            const CheckAndDecodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            int ret = memcmp(this->out.begin(), this->in.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+            if (ret != 0) {
+                throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
+            }
+            memcpy(this->in.begin(), this->out.begin(), this->in.template end<uint8_t>() - this->in.template begin<uint8_t>());
+        }
+    }
 };

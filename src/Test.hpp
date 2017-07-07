@@ -163,6 +163,15 @@ public:
     virtual void RunArith(
             const ArithmeticConfiguration & config);
 
+    // Arithmetic
+    virtual bool DoArithChecked();
+
+    virtual void PreArithChecked(
+            const ArithmeticConfiguration & config);
+
+    virtual void RunArithChecked(
+            const ArithmeticConfiguration & config);
+
     // Reencode
     virtual bool DoReenc();
 

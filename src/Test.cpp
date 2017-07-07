@@ -72,6 +72,18 @@ void TestBase::RunArith(
         const ArithmeticConfiguration & config) {
 }
 
+bool TestBase::DoArithChecked() {
+    return false;
+}
+
+void TestBase::PreArithChecked(
+        const ArithmeticConfiguration & config) {
+}
+
+void TestBase::RunArithChecked(
+        const ArithmeticConfiguration & config) {
+}
+
 bool TestBase::DoReenc() {
     return false;
 }

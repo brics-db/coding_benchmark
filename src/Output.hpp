@@ -161,7 +161,7 @@ void printResults(
                 std::cout << ',';
                 if (pos < v.size() && v[pos].reencode.error.empty()) {
                     if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].reencode.nanos) / baseArith[pos]);
+                        std::cout << (static_cast<double>(v[pos].reencode.nanos) / baseReencode[pos]);
                     else
                         std::cout << v[pos].reencode.nanos;
                 }
@@ -185,7 +185,7 @@ void printResults(
                 std::cout << ',';
                 if (pos < v.size() && v[pos].checkAndDecode.error.empty()) {
                     if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].checkAndDecode.nanos) / baseDecode[pos]);
+                        std::cout << (static_cast<double>(v[pos].checkAndDecode.nanos) / baseCheckAndDecode[pos]);
                     else
                         std::cout << v[pos].checkAndDecode.nanos;
                 }
