@@ -45,19 +45,10 @@
 
 #include "CopyTest.hpp"
 
-#include "XOR/XOR_seq_16_8.hpp"
-#include "XOR/XOR_seq_16_16.hpp"
-#include "XOR/XOR_seq_32_8.hpp"
-#include "XOR/XOR_seq_32_32.hpp"
-#include "XOR/XOR_sse42_8x16_16.hpp"
-#include "XOR/XOR_sse42_8x16_8x16.hpp"
-#include "XOR/XOR_sse42_4x32_32.hpp"
-#include "XOR/XOR_sse42_4x32_4x32.hpp"
+#include <XOR/XOR_scalar.hpp>
+#include <XOR/XOR_sse42.hpp>
 #ifdef __AVX2__
-#include "XOR/XOR_avx2_16x16_16.hpp"
-#include "XOR/XOR_avx2_16x16_16x16.hpp"
-#include "XOR/XOR_avx2_8x32_32.hpp"
-#include "XOR/XOR_avx2_8x32_8x32.hpp"
+#include <XOR/XOR_avx2.hpp>
 #endif
 
 #include "AN/AN_scalar.hpp"
@@ -72,10 +63,8 @@
 #include "AN/AN_avx2_16x16_16x32_s_divmod.hpp"
 #endif
 
-#include "Hamming/Hamming_seq_16.hpp"
-#include "Hamming/Hamming_seq_32.hpp"
-#include "Hamming/Hamming_sse42_16.hpp"
-#include "Hamming/Hamming_sse42_32.hpp"
+#include <Hamming/Hamming_scalar.hpp>
+#include <Hamming/Hamming_sse42.hpp>
 
 #include "Output.hpp"
 

@@ -1,4 +1,4 @@
-// Copyright 2016 Till Kolditz, Stefan de Bruijn
+// Copyright (c) 2017 Till Kolditz
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,24 +11,38 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 /* 
- * File:   Hamming_sse42_32.hpp
+ * File:   Hamming_seq.hpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
- * Created on 07. December 2016, 22:10
+ * Created on 07-07-2017 17:22
  */
+#ifndef HAMMING_HAMMING_SCALAR_HPP_
+#define HAMMING_HAMMING_SCALAR_HPP_
 
-#pragma once
-
-#include "Hamming_sse42.hpp"
+#include <Hamming/Hamming_scalar.tcc>
 
 template<size_t UNROLL>
-struct Hamming_sse42_32 :
-        public Hamming_sse42<uint32_t, UNROLL> {
+struct Hamming_seq_16 :
+        public Hamming_seq<uint16_t, UNROLL> {
 
-    using Hamming_sse42<uint32_t, UNROLL>::Hamming_sse42;
+    using Hamming_seq<uint16_t, UNROLL>::Hamming_seq;
 
-    virtual ~Hamming_sse42_32() {
+    virtual ~Hamming_seq_16() {
     }
 
 };
+
+template<size_t UNROLL>
+struct Hamming_seq_32 :
+        public Hamming_seq<uint32_t, UNROLL> {
+
+    using Hamming_seq<uint32_t, UNROLL>::Hamming_seq;
+
+    virtual ~Hamming_seq_32() {
+    }
+
+};
+
+#endif /* HAMMING_HAMMING_SCALAR_HPP_ */
