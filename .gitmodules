@@ -1,0 +1,3 @@
+[submodule "segvcatch"]
+	path = segvcatch
+	url = https://github.com/tuddbresilience/segvcatch.git
