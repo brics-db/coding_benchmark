@@ -55,7 +55,8 @@ struct AN_seq_u_inv :
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
-                    if (static_cast<DATAENC>(*data * this->A_INV) > dMax) {
+                    DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
+                    if (dec > dMax) {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                         throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
@@ -65,7 +66,8 @@ struct AN_seq_u_inv :
             }
             // remaining numbers
             for (; i < numValues; ++i, ++data) {
-                if (static_cast<DATAENC>(*data * this->A_INV) > dMax) {
+                DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
+                if (dec > dMax) {
                     std::stringstream ss;
                     ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                     throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
@@ -90,7 +92,8 @@ struct AN_seq_u_inv :
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++data) {
-                    if (static_cast<DATAENC>(*data * this->A_INV) > dMax) {
+                    DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
+                    if (dec > dMax) {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                         throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
@@ -101,7 +104,8 @@ struct AN_seq_u_inv :
             }
             // remaining numbers
             for (; i < numValues; ++i, ++data) {
-                if (static_cast<DATAENC>(*data * this->A_INV) > dMax) {
+                DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
+                if (dec > dMax) {
                     std::stringstream ss;
                     ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                     throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());

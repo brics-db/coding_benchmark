@@ -40,11 +40,11 @@ struct AN_seq_s_inv :
     virtual ~AN_seq_s_inv() {
     }
 
-    virtual bool DoCheck() override {
+    bool DoCheck() override {
         return true;
     }
 
-    virtual void RunCheck(
+    void RunCheck(
             const CheckConfiguration & config) {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
@@ -53,7 +53,7 @@ struct AN_seq_s_inv :
             auto data = this->out.template begin<DATAENC>();
             DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
             DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
-            while (i <= (numValues - UNROLL)) {
+            for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
                     DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
@@ -64,7 +64,6 @@ struct AN_seq_s_inv :
                     }
                     ++data;
                 }
-                i += UNROLL;
             }
             // remaining numbers
             for (; i < numValues; ++i, ++data) {
@@ -121,11 +120,11 @@ struct AN_seq_s_inv :
         }
     }
 
-    virtual bool DoDecodeChecked() override {
+    bool DoDecodeChecked() override {
         return true;
     }
 
-    virtual void RunDecodeChecked(
+    void RunDecodeChecked(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
