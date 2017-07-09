@@ -22,6 +22,8 @@
 #ifndef EXPANDTEST_HPP
 #define EXPANDTEST_HPP
 
+#include <iostream>
+
 #include <Test.hpp>
 #include <Util/AlignedBlock.hpp>
 
@@ -34,10 +36,9 @@ struct ExpandTest {
             const DataGenerationConfiguration & dataGenConfig,
             AlignedBlock & in,
             AlignedBlock & out) {
-        {
-            TestType<start> test(name, in, out);
-            test.Execute(testConfig, dataGenConfig);
-        }
+        std::cout << "#  * " << start << ": " << std::flush;
+        TestType<start>(name, in, out).Execute(testConfig, dataGenConfig);
+        std::cout << std::endl;
         ExpandTest<TestType, start * 2, end>::WarmUp(name, testConfig, dataGenConfig, in, out);
     }
 
@@ -50,7 +51,9 @@ struct ExpandTest {
             AlignedBlock & in,
             AlignedBlock & out,
             ArgTypes && ... args) {
+        std::cout << "#      * " << start << ": " << std::flush;
         vecTestInfos.push_back(TestType<start>(name, in, out, std::forward<ArgTypes>(args)...).Execute(testConfig, dataGenConfig));
+        std::cout << std::endl;
         ExpandTest<TestType, start * 2, end>::Execute(vecTestInfos, name, testConfig, dataGenConfig, in, out, std::forward<ArgTypes>(args)...);
     }
 };
@@ -64,8 +67,9 @@ struct ExpandTest<TestType, start, start> {
             const DataGenerationConfiguration & dataGenConfig,
             AlignedBlock & in,
             AlignedBlock & out) {
-        TestType<start> test(name, in, out);
-        test.Execute(testConfig, dataGenConfig);
+        std::cout << "#  * " << start << ": " << std::flush;
+        TestType<start>(name, in, out).Execute(testConfig, dataGenConfig);
+        std::cout << std::endl;
     }
 
     template<typename ... ArgTypes>
@@ -77,8 +81,9 @@ struct ExpandTest<TestType, start, start> {
             AlignedBlock & in,
             AlignedBlock & out,
             ArgTypes && ... args) {
-        TestType<start> test(name, in, out, std::forward<ArgTypes>(args)...);
-        vecTestInfos.push_back(test.Execute(testConfig, dataGenConfig));
+        std::cout << "#      * " << start << ": " << std::flush;
+        vecTestInfos.push_back(TestType<start>(name, in, out, std::forward<ArgTypes>(args)...).Execute(testConfig, dataGenConfig));
+        std::cout << std::endl;
     }
 };
 

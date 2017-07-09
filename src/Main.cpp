@@ -65,6 +65,7 @@ int main(
     do { \
         std::cout << "# WarmUp " << #type << std::endl; \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, input, output); \
+        std::cout << std::endl; \
     } while (0)
 
 #define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
@@ -76,6 +77,7 @@ int main(
         auto & vec = *vecTestInfos.rbegin(); \
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output); \
+        std::cout << std::endl; \
     } while (0)
 
 #define TestCase4(type,name,A,AInv) \
@@ -85,6 +87,7 @@ int main(
         auto & vec = *vecTestInfos.rbegin(); \
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output, A, AInv); \
+        std::cout << std::endl; \
     } while (0)
 
     TestConfiguration testConfig(iterations);
