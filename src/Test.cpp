@@ -188,6 +188,7 @@ TestInfos TestBase::Execute(
 
     TestInfo tiEnc, tiCheck, tiArith, tiArithChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk;
 
+    std::cout << "encode" << std::flush;
     sw.Reset();
     try {
 #ifdef OMP
@@ -210,7 +211,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoCheck()) {
         this->PreCheck(chkConf);
-
+        std::cout << ", check" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -234,6 +235,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoArithmetic()) {
         this->PreArithmetic(arithConf);
+        std::cout << ", arithmetic" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -257,6 +259,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoArithmeticChecked()) {
         this->PreArithmeticChecked(arithConf);
+        std::cout << ", arithmetic checked" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -280,6 +283,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoAggregate(aggrSumConf)) {
         this->PreAggregate(aggrSumConf);
+        std::cout << ", aggregate" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -303,6 +307,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoAggregateChecked(aggrSumConf)) {
         this->PreAggregateChecked(aggrSumConf);
+        std::cout << ", aggregate checked" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -326,6 +331,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoReencodeChecked()) {
         this->PreReencodeChecked(reencConf);
+        std::cout << ", reencode checked" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -349,6 +355,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoDecode()) {
         this->PreDecode(decConf);
+        std::cout << ", decode" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -372,6 +379,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoDecodeChecked()) {
         this->PreDecodeChecked(decConf);
+        std::cout << ", decode checked" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP

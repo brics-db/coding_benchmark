@@ -84,28 +84,31 @@ int main(
 
 #define WarmUp(type, name, input, output) \
     do { \
-        std::cout << "# WarmUp " << name << std::endl; \
+        std::cout << "# WarmUp " << name << std::flush; \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, input, output); \
+        std::cout << std::endl; \
     } while (0)
 
 #define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
 
 #define TestCase4(type, name, input, output) \
     do { \
-        std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
+        std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::flush; \
         vecTestInfos.emplace_back(); \
         auto & vec = *vecTestInfos.rbegin(); \
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output); \
+        std::cout << std::endl; \
     } while (0)
 
 #define TestCase6(type, name, input, output, A, AInv) \
     do { \
-        std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
+        std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::flush; \
         vecTestInfos.emplace_back(); \
         auto & vec = *vecTestInfos.rbegin(); \
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output, A, AInv); \
+        std::cout << std::endl; \
     } while (0)
 
     TestConfiguration testConfig(iterations);
