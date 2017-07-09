@@ -76,11 +76,11 @@ struct CopyTest :
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
             size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
-            int ret = memcmp(this->out.begin(), this->out.begin(), numBytes);
+            int ret = memcmp(this->in.begin(), this->out.begin(), numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
             }
-            memmove(this->out.begin(), this->out.begin(), numBytes);
+            memmove(this->in.begin(), this->out.begin(), numBytes);
         }
     }
 
