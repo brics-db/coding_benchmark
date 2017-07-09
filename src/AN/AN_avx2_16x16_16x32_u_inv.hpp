@@ -67,11 +67,11 @@ struct AN_avx2_16x16_16x32_u_inv :
         }
     }
 
-    bool DoDec() override {
+    bool DoDecode() override {
         return true;
     }
 
-    void RunDec(
+    void RunDecode(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();

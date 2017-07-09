@@ -78,9 +78,12 @@ TestInfos::TestInfos(
           encode(),
           check(),
           arithmetic(),
-          reencode(),
+          arithmeticChecked(),
+          aggregate(),
+          aggregateChecked(),
+          reencodeChecked(),
           decode(),
-          checkAndDecode() {
+          decodeChecked() {
 }
 
 TestInfos::TestInfos(
@@ -89,7 +92,10 @@ TestInfos::TestInfos(
         TestInfo & encode,
         TestInfo & check,
         TestInfo & arithmetic,
-        TestInfo & reencode,
+        TestInfo & arithmeticChecked,
+        TestInfo & aggregate,
+        TestInfo & aggregateChecked,
+        TestInfo & reencodeChecked,
         TestInfo & decode,
         TestInfo & checkAndDecode)
         : name(name),
@@ -97,9 +103,12 @@ TestInfos::TestInfos(
           encode(encode),
           check(check),
           arithmetic(arithmetic),
-          reencode(reencode),
+          arithmeticChecked(arithmeticChecked),
+          aggregate(aggregate),
+          aggregateChecked(aggregateChecked),
+          reencodeChecked(reencodeChecked),
           decode(decode),
-          checkAndDecode(checkAndDecode) {
+          decodeChecked(checkAndDecode) {
 }
 
 TestInfos::TestInfos(
@@ -109,9 +118,12 @@ TestInfos::TestInfos(
           encode(other.encode),
           check(other.check),
           arithmetic(other.arithmetic),
-          reencode(other.reencode),
+          arithmeticChecked(other.arithmeticChecked),
+          aggregate(other.aggregate),
+          aggregateChecked(other.aggregateChecked),
+          reencodeChecked(other.reencodeChecked),
           decode(other.decode),
-          checkAndDecode(other.checkAndDecode) {
+          decodeChecked(other.decodeChecked) {
 }
 
 TestInfos::~TestInfos() {

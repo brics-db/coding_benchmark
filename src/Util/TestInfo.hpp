@@ -58,9 +58,12 @@ struct TestInfos {
     TestInfo encode;
     TestInfo check;
     TestInfo arithmetic;
-    TestInfo reencode;
+    TestInfo arithmeticChecked;
+    TestInfo aggregate;
+    TestInfo aggregateChecked;
+    TestInfo reencodeChecked;
     TestInfo decode;
-    TestInfo checkAndDecode;
+    TestInfo decodeChecked;
 
     TestInfos(
             const std::string & name,
@@ -72,7 +75,10 @@ struct TestInfos {
             TestInfo & encode,
             TestInfo & check,
             TestInfo & arithmetic,
-            TestInfo & reencode,
+            TestInfo & arithmeticChecked,
+            TestInfo & aggregate,
+            TestInfo & aggregateChecked,
+            TestInfo & reencodeChecked,
             TestInfo & decode,
             TestInfo & checkAndDecode);
 

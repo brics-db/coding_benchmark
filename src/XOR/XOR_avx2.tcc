@@ -62,7 +62,7 @@ struct XOR_avx2 :
     virtual ~XOR_avx2() {
     }
 
-    void RunEnc(
+    void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
@@ -119,7 +119,7 @@ struct XOR_avx2 :
             const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
             size_t i = 0;
-            auto data256 = this->out.template begin<__m256i>();
+            auto data256 = this->out.template begin<__m256i >();
             while (i <= (numValues - VALUES_PER_BLOCK)) {
                 __m256i checksum = _mm256_setzero_si256();
                 for (size_t k = 0; k < BLOCKSIZE; ++k) {
@@ -128,11 +128,11 @@ struct XOR_avx2 :
                 i += VALUES_PER_BLOCK;
                 auto dataOut = reinterpret_cast<CS*>(data256);
                 if (checksumsDiffer<CS>(*dataOut, computeFinalChecksum<__m256i, CS>(checksum))) // third, test checksum
-                {
+                        {
                     throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our �-Benchmark
                 }
                 ++dataOut; // fourth, advance after the checksum to the next block of values
-                data256 = reinterpret_cast<__m256i*>(dataOut);
+                data256 = reinterpret_cast<__m256i *>(dataOut);
             }
             // checksum remaining values which do not fit in the block size
             if (i <= (numValues - VALUES_PER_SIMDREG)) {
@@ -142,11 +142,11 @@ struct XOR_avx2 :
                 }
                 auto dataOut = reinterpret_cast<CS*>(data256);
                 if (checksumsDiffer<CS>(*dataOut, computeFinalChecksum<__m256i, CS>(checksum))) // third, test checksum
-                {
+                        {
                     throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our �-Benchmark
                 }
                 ++dataOut; // fourth, advance after the checksum to the next block of values
-                data256 = reinterpret_cast<__m256i*>(dataOut);
+                data256 = reinterpret_cast<__m256i *>(dataOut);
             }
             // checksum remaining integers which do not fit in the SIMD register, so we do it on the actual data width denoted by template parameter IN
             if (i < numValues) {
@@ -157,30 +157,29 @@ struct XOR_avx2 :
                 }
                 auto dataOut = reinterpret_cast<DATA*>(data);
                 if (checksumsDiffer<DATA>(*dataOut, computeFinalChecksum<DATA, DATA>(checksum))) // third, test checksum
-                {
+                        {
                     throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<DATA>(), iteration); // this is not completely accurate, but not SO necessary for our �-Benchmark
                 }
             }
         }
     }
 
-    bool
-    DoDec () override {
+    bool DoDecode() override {
         return true;
     }
 
-    void
-    RunDec (const DecodeConfiguration & config) override {
+    void RunDecode(
+            const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t VALUES_PER_SIMDREG = sizeof (__m256i) / sizeof (DATA);
+            const size_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (DATA);
             const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
             size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
             size_t i = 0;
             auto dataIn = this->out.template begin<CS>();
-            auto dataOut = this->in.template begin<__m256i>();
+            auto dataOut = this->in.template begin<__m256i >();
             while (i <= (numValues - VALUES_PER_BLOCK)) {
-                auto dataIn2 = reinterpret_cast<__m256i*>(dataIn);
+                auto dataIn2 = reinterpret_cast<__m256i *>(dataIn);
                 for (size_t k = 0; k < BLOCKSIZE; ++k) {
                     auto tmp = _mm256_lddqu_si256(dataIn2++);
                     _mm256_storeu_si256(dataOut++, tmp);
@@ -191,7 +190,7 @@ struct XOR_avx2 :
             }
             // checksum remaining values which do not fit in the block size
             if (i <= (numValues - VALUES_PER_SIMDREG)) {
-                auto dataIn2 = reinterpret_cast<__m256i*>(dataIn);
+                auto dataIn2 = reinterpret_cast<__m256i *>(dataIn);
                 for (size_t k = 0; k < BLOCKSIZE; ++k) {
                     auto tmp = _mm256_lddqu_si256(dataIn2++);
                     _mm256_storeu_si256(dataOut++, tmp);
@@ -209,3 +208,4 @@ struct XOR_avx2 :
         }
     }
 };
+

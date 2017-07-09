@@ -21,6 +21,8 @@
 #ifndef XOR_XOR_AVX2_HPP_
 #define XOR_XOR_AVX2_HPP_
 
+#ifdef __AVX2__
+
 #include <XOR/XOR_avx2.tcc>
 
 template<size_t BLOCKSIZE>
@@ -66,5 +68,7 @@ struct XOR_avx2_8x32_8x32 :
     virtual ~XOR_avx2_8x32_8x32() {
     }
 };
+
+#endif
 
 #endif /* XOR_XOR_AVX2_HPP_ */

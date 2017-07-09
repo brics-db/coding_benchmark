@@ -90,7 +90,7 @@ void TestBase::RunArithmeticChecked(
 
 // Aggregate
 bool TestBase::DoAggregate(
-        AggregateConfiguration::Mode mode) {
+        const AggregateConfiguration & config) {
     return false;
 }
 
@@ -104,7 +104,7 @@ void TestBase::RunAggregate(
 
 // Aggregate Checked
 bool TestBase::DoAggregateChecked(
-        AggregateConfiguration::Mode mode) {
+        const AggregateConfiguration & config) {
     return false;
 }
 
@@ -117,15 +117,15 @@ void TestBase::RunAggregateChecked(
 }
 
 // Reencode (Checked)
-bool TestBase::DoReencode() {
+bool TestBase::DoReencodeChecked() {
     return false;
 }
 
-void TestBase::PreReencode(
+void TestBase::PreReencodeChecked(
         const ReencodeConfiguration & config) {
 }
 
-void TestBase::RunReencode(
+void TestBase::RunReencodeChecked(
         const ReencodeConfiguration & config) {
 }
 
@@ -143,16 +143,16 @@ void TestBase::RunDecode(
 }
 
 // Check-And-Decode
-bool TestBase::DoCheckAndDecode() {
+bool TestBase::DoDecodeChecked() {
     return false;
 }
 
-void TestBase::PreCheckAndDecode(
-        const CheckAndDecodeConfiguration & config) {
+void TestBase::PreDecodeChecked(
+        const DecodeConfiguration & config) {
 }
 
-void TestBase::RunCheckAndDecode(
-        const CheckAndDecodeConfiguration & config) {
+void TestBase::RunDecodeChecked(
+        const DecodeConfiguration & config) {
 }
 
 // Execute test:
@@ -179,14 +179,14 @@ TestInfos TestBase::Execute(
 #endif
     ReencodeConfiguration reencConf(configTest, newA);
     DecodeConfiguration decConf(configTest);
-    CheckAndDecodeConfiguration cadConf(configTest);
+    AggregateConfiguration aggrSumConf(configTest, AggregateConfiguration::Mode(AggregateConfiguration::Sum()));
     int64_t nanos;
     Stopwatch sw;
 
     // Start test:
     this->PreEncode(encConf);
 
-    TestInfo tiEnc, tiCheck, tiArith, tiReenc, tiDec, tiCheckDec;
+    TestInfo tiEnc, tiCheck, tiArith, tiArithChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk;
 
     sw.Reset();
     try {
@@ -255,8 +255,8 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoReencode()) {
-        this->PreReencode(reencConf);
+    if (this->DoArithmeticChecked()) {
+        this->PreArithmeticChecked(arithConf);
         sw.Reset();
         try {
 #ifdef OMP
@@ -267,14 +267,83 @@ TestInfos TestBase::Execute(
 #endif
 #endif
             {
-                this->RunReencode(reencConf);
+                this->RunArithmeticChecked(arithConf);
             }
             nanos = sw.Current();
-            tiReenc.set(nanos);
+            tiArithChk.set(nanos);
         } catch (ErrorInfo & ei) {
             auto msg = ei.what();
             std::cerr << msg << std::endl;
-            tiReenc.set(msg);
+            tiArithChk.set(msg);
+        }
+    }
+
+    if (this->DoAggregate(aggrSumConf)) {
+        this->PreAggregate(aggrSumConf);
+        sw.Reset();
+        try {
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+#else
+#pragma omp parallel
+#endif
+#endif
+            {
+                this->RunAggregate(aggrSumConf);
+            }
+            nanos = sw.Current();
+            tiAggr.set(nanos);
+        } catch (ErrorInfo & ei) {
+            auto msg = ei.what();
+            std::cerr << msg << std::endl;
+            tiAggr.set(msg);
+        }
+    }
+
+    if (this->DoAggregateChecked(aggrSumConf)) {
+        this->PreAggregateChecked(aggrSumConf);
+        sw.Reset();
+        try {
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+#else
+#pragma omp parallel
+#endif
+#endif
+            {
+                this->RunAggregateChecked(aggrSumConf);
+            }
+            nanos = sw.Current();
+            tiAggrChk.set(nanos);
+        } catch (ErrorInfo & ei) {
+            auto msg = ei.what();
+            std::cerr << msg << std::endl;
+            tiAggrChk.set(msg);
+        }
+    }
+
+    if (this->DoReencodeChecked()) {
+        this->PreReencodeChecked(reencConf);
+        sw.Reset();
+        try {
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+#else
+#pragma omp parallel
+#endif
+#endif
+            {
+                this->RunReencodeChecked(reencConf);
+            }
+            nanos = sw.Current();
+            tiReencChk.set(nanos);
+        } catch (ErrorInfo & ei) {
+            auto msg = ei.what();
+            std::cerr << msg << std::endl;
+            tiReencChk.set(msg);
         }
     }
 
@@ -301,8 +370,8 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoCheckAndDecode()) {
-        this->PreCheckAndDecode(cadConf);
+    if (this->DoDecodeChecked()) {
+        this->PreDecodeChecked(decConf);
         sw.Reset();
         try {
 #ifdef OMP
@@ -313,18 +382,18 @@ TestInfos TestBase::Execute(
 #endif
 #endif
             {
-                this->RunCheckAndDecode(cadConf);
+                this->RunDecodeChecked(decConf);
             }
             nanos = sw.Current();
-            tiCheckDec.set(nanos);
+            tiDecChk.set(nanos);
         } catch (ErrorInfo & ei) {
             auto msg = ei.what();
             std::cerr << msg << std::endl;
-            tiCheckDec.set(msg);
+            tiDecChk.set(msg);
         }
     }
 
-    return TestInfos(this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiReenc, tiDec, tiCheckDec);
+    return TestInfos(this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiArithChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk);
 }
 
 SequentialTest::~SequentialTest() {

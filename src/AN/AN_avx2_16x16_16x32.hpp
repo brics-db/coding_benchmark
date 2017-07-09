@@ -33,13 +33,13 @@ struct AN_avx2_16x16_16x32 :
     virtual ~AN_avx2_16x16_16x32() {
     }
 
-    void RunEnc(
+    void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iter = 0; iter < config.numIterations; ++iter) {
             _ReadWriteBarrier();
-            auto *dataIn = this->in.template begin<__m128i >();
-            auto *dataInEnd = this->in.template end<__m128i >();
-            auto *dataOut = this->out.template begin<__m256i >();
+            auto *dataIn = this->in.template begin<__m128i>();
+            auto *dataInEnd = this->in.template end<__m128i>();
+            auto *dataOut = this->out.template begin<__m256i>();
             auto mmA = _mm256_set1_epi32(this->A);
 
             constexpr const bool isSigned = std::is_signed<DATAIN>::value;

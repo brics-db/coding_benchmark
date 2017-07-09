@@ -32,8 +32,8 @@ struct AN_sse42_8x16_8x32_u_inv :
     virtual void RunCheck(
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            auto mm_Data = this->out.template begin<__m128i >();
-            auto mm_DataEnd = this->out.template end<__m128i >();
+            auto mm_Data = this->out.template begin<__m128i>();
+            auto mm_DataEnd = this->out.template end<__m128i>();
             uint32_t dMax = std::numeric_limits<uint16_t>::max();
             __m128i mm_dMax = _mm_set1_epi32(dMax); // we assume 16-bit input data
             __m128i mm_ainv = _mm_set1_epi32(this->A_INV);

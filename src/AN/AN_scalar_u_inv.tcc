@@ -40,11 +40,11 @@ struct AN_seq_u_inv :
     virtual ~AN_seq_u_inv() {
     }
 
-    virtual bool DoCheck() override {
+    bool DoCheck() override {
         return true;
     }
 
-    virtual void RunCheck(
+    void RunCheck(
             const CheckConfiguration & config) {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
@@ -74,11 +74,11 @@ struct AN_seq_u_inv :
         }
     }
 
-    bool DoReencode() override {
+    bool DoReencodeChecked() override {
         return true;
     }
 
-    void RunReencode(
+    void RunReencodeChecked(
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
@@ -114,12 +114,12 @@ struct AN_seq_u_inv :
         }
     }
 
-    virtual bool DoCheckAndDecode() override {
+    bool DoDecodeChecked() override {
         return true;
     }
 
-    virtual void RunCheckAndDecode(
-            const CheckAndDecodeConfiguration & config) override {
+    void RunDecodeChecked(
+            const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();

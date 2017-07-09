@@ -33,8 +33,8 @@ struct AN_avx2_16x16_16x32_s_inv :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            auto mm_Data = this->out.template begin<__m256i >();
-            auto mm_DataEnd = this->out.template end<__m256i >();
+            auto mm_Data = this->out.template begin<__m256i>();
+            auto mm_DataEnd = this->out.template end<__m256i>();
             int32_t dMin = std::numeric_limits<int16_t>::min();
             int32_t dMax = std::numeric_limits<int16_t>::max();
             __m256i mm_dMin = _mm256_set1_epi32(dMin); // we assume 16-bit input data
@@ -70,11 +70,11 @@ struct AN_avx2_16x16_16x32_s_inv :
         }
     }
 
-    bool DoDec() override {
+    bool DoDecode() override {
         return true;
     }
 
-    void RunDec(
+    void RunDecode(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();

@@ -92,11 +92,11 @@ struct CopyTest2 :
         }
     }
 
-    bool DoReencode() override {
+    bool DoReencodeChecked() override {
         return true;
     }
 
-    void RunReencode(
+    void RunReencodeChecked(
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
@@ -148,12 +148,12 @@ struct CopyTest2 :
         }
     }
 
-    bool DoCheckAndDecode() override {
+    bool DoDecodeChecked() override {
         return true;
     }
 
-    void RunCheckAndDecode(
-            const CheckAndDecodeConfiguration & config) override {
+    void RunDecodeChecked(
+            const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();

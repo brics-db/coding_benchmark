@@ -33,8 +33,8 @@ struct AN_sse42_8x16_8x32_s_divmod :
             const CheckConfiguration & config) override {
         bool first = true;
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            auto data = this->out.template begin<__m128i >();
-            auto dataEnd = this->out.template end<__m128i >();
+            auto data = this->out.template begin<__m128i>();
+            auto dataEnd = this->out.template end<__m128i>();
             while (data <= (dataEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {

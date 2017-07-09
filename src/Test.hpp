@@ -113,14 +113,6 @@ struct DecodeConfiguration :
     }
 };
 
-struct CheckAndDecodeConfiguration :
-        public TestConfiguration {
-    CheckAndDecodeConfiguration(
-            const TestConfiguration & config)
-            : TestConfiguration(config) {
-    }
-};
-
 struct DataGenerationConfiguration {
     const std::optional<size_t> numEffectiveLSBs;
 
@@ -196,7 +188,7 @@ public:
 
     // Aggregate
     virtual bool DoAggregate(
-            AggregateConfiguration::Mode mode);
+            const AggregateConfiguration & config);
 
     virtual void PreAggregate(
             const AggregateConfiguration & config);
@@ -206,7 +198,7 @@ public:
 
     // Aggregate Checked
     virtual bool DoAggregateChecked(
-            AggregateConfiguration::Mode mode);
+            const AggregateConfiguration & config);
 
     virtual void PreAggregateChecked(
             const AggregateConfiguration & config);
@@ -215,12 +207,12 @@ public:
             const AggregateConfiguration & config);
 
     // Reencode (Checked)
-    virtual bool DoReencode();
+    virtual bool DoReencodeChecked();
 
-    virtual void PreReencode(
+    virtual void PreReencodeChecked(
             const ReencodeConfiguration & config);
 
-    virtual void RunReencode(
+    virtual void RunReencodeChecked(
             const ReencodeConfiguration & config);
 
     // Decoding-Only
@@ -233,13 +225,13 @@ public:
             const DecodeConfiguration & config);
 
     // Check-And-Decode
-    virtual bool DoCheckAndDecode();
+    virtual bool DoDecodeChecked();
 
-    virtual void PreCheckAndDecode(
-            const CheckAndDecodeConfiguration & config);
+    virtual void PreDecodeChecked(
+            const DecodeConfiguration & config);
 
-    virtual void RunCheckAndDecode(
-            const CheckAndDecodeConfiguration & config);
+    virtual void RunDecodeChecked(
+            const DecodeConfiguration & config);
 
     // Execute test:
     virtual TestInfos Execute(

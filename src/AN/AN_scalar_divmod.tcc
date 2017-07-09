@@ -80,12 +80,12 @@ struct AN_seq_divmod :
         }
     }
 
-    bool DoCheckAndDecode() override {
+    bool DoDecodeChecked() override {
         return true;
     }
 
-    void RunCheckAndDecode(
-            const CheckAndDecodeConfiguration & config) override {
+    void RunDecodeChecked(
+            const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
             size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();

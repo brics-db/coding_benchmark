@@ -33,8 +33,8 @@ struct AN_avx2_16x16_16x32_s_divmod :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            auto mm_Data = this->out.template begin<__m256i >();
-            auto mm_DataEnd = this->out.template end<__m256i >();
+            auto mm_Data = this->out.template begin<__m256i>();
+            auto mm_DataEnd = this->out.template end<__m256i>();
             while (mm_Data <= (mm_DataEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
@@ -68,11 +68,11 @@ struct AN_avx2_16x16_16x32_s_divmod :
         }
     }
 
-    bool DoDec() override {
+    bool DoDecode() override {
         return true;
     }
 
-    void RunDec(
+    void RunDecode(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
