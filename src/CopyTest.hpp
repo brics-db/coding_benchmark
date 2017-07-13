@@ -68,7 +68,7 @@ struct CopyTest :
     }
 
     bool DoReencodeChecked() override {
-        return true;
+        return false;
     }
 
     void RunReencodeChecked(

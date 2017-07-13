@@ -14,10 +14,11 @@
 
 #pragma once
 
+#include <exception>
 #include <cstddef>
 #include <optional>
 
-class ErrorInfo {
+class ErrorInfo : public std::exception {
 
 public:
     std::string file;

@@ -73,27 +73,24 @@ struct CopyTest2 :
             _ReadWriteBarrier();
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
-            auto dataIn = this->in.template begin<DATARAW>();
             auto dataOut = this->out.template begin<DATAENC>();
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                    if (*dataIn != *dataOut) {
-                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->in.template begin<DATARAW>(), config.numIterations);
-                    }
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut) {
+                    volatile DATAENC value = *dataOut;
+                    (void) value;
                 }
             }
             // remaining numbers
-            for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                if (*dataIn != *dataOut) {
-                    throw ErrorInfo(__FILE__, __LINE__, dataIn - this->in.template begin<DATARAW>(), config.numIterations);
-                }
+            for (; i < numValues; ++i, ++dataOut) {
+                volatile DATAENC value = *dataOut;
+                (void) value;
             }
         }
     }
 
     bool DoReencodeChecked() override {
-        return true;
+        return false;
     }
 
     void RunReencodeChecked(
@@ -102,23 +99,18 @@ struct CopyTest2 :
             _ReadWriteBarrier();
             const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
             size_t i = 0;
-            auto dataIn = this->in.template begin<DATARAW>();
             auto dataOut = this->out.template begin<DATAENC>();
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                    if (*dataIn != *dataOut) {
-                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->in.template begin<DATARAW>(), config.numIterations);
-                    }
-                    *dataOut = static_cast<DATAENC>(*dataIn);
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut) {
+                    volatile DATAENC value = *dataOut;
+                    *dataOut = static_cast<DATAENC>(value);
                 }
             }
             // remaining numbers
-            for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                if (*dataIn != *dataOut) {
-                    throw ErrorInfo(__FILE__, __LINE__, dataIn - this->in.template begin<DATARAW>(), config.numIterations);
-                }
-                *dataOut = static_cast<DATAENC>(*dataIn);
+            for (; i < numValues; ++i, ++dataOut) {
+                volatile DATAENC value = *dataOut;
+                *dataOut = static_cast<DATAENC>(value);
             }
         }
     }

@@ -77,7 +77,7 @@ struct AN_seq_u_inv :
     }
 
     bool DoReencodeChecked() override {
-        return true;
+        return false;
     }
 
     void RunReencodeChecked(
@@ -97,9 +97,8 @@ struct AN_seq_u_inv :
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                         throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
-                    } else {
-                        *data = static_cast<DATAENC>(*data * reenc);
                     }
+                    *data = static_cast<DATAENC>(*data * reenc);
                 }
             }
             // remaining numbers
@@ -109,9 +108,8 @@ struct AN_seq_u_inv :
                     std::stringstream ss;
                     ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                     throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
-                } else {
-                    *data = static_cast<DATAENC>(*data * reenc);
                 }
+                *data = static_cast<DATAENC>(*data * reenc);
             }
             this->A = static_cast<DATAENC>(config.newA);
             this->A_INV = ext_euclidean(this->A, sizeof(DATAENC) * CHAR_BIT);

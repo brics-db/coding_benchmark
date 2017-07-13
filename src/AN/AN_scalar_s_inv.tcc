@@ -78,7 +78,7 @@ struct AN_seq_s_inv :
     }
 
     bool DoReencodeChecked() override {
-        return true;
+        return false;
     }
 
     void RunReencodeChecked(

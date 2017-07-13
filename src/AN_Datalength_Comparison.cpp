@@ -62,7 +62,7 @@ int main(
         int argc,
         char* argv[]) {
     const size_t numElements = 1000000;
-    const size_t iterations = 1;
+    const size_t iterations = 1000;
 
     const size_t UNROLL_LO = 1;
     const size_t UNROLL_HI = 1024;
