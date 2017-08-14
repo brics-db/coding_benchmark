@@ -121,6 +121,7 @@ int main(
     TestCase(AN_avx2_16x16_16x32_s_divmod, "AN AVX2 S DivMod", static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
     TestCase(AN_avx2_16x16_16x32_u_inv, "AN AVX2 U Inv", AUser, AUserInv);
     TestCase(AN_avx2_16x16_16x32_s_inv, "AN AVX2 S Inv", static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(Hamming_avx2_16, "Hamming AVX2");
 #endif
 
 #ifdef TEST32
@@ -135,6 +136,7 @@ int main(
     TestCase(Hamming_sse42_32, "Hamming SSE4.2");
 #ifdef __AVX2__
     TestCase(XOR_avx2_8x32_8x32, "XOR AVX2");
+    TestCase(Hamming_avx2_32, "Hamming AVX2");
 #endif
 #endif
 

@@ -46,7 +46,7 @@ struct TypeMapSeq<uint16_t> {
     typedef hamming_seq_16_t hamming_seq_t;
 
     static uint8_t computeHamming(
-            uint16_t && data) {
+            uint16_t data) {
         uint8_t hamming = 0;
         hamming |= (__builtin_popcount(data & 0xAD5B) & 0x1) << 1;
         hamming |= (__builtin_popcount(data & 0x366D) & 0x1) << 2;
@@ -64,7 +64,7 @@ struct TypeMapSeq<uint32_t> {
     typedef hamming_seq_32_t hamming_seq_t;
 
     static uint8_t computeHamming(
-            uint32_t && data) {
+            uint32_t data) {
         uint8_t hamming = 0;
         hamming |= (__builtin_popcount(data & 0x56AAAD5B) & 0x1) << 1;
         hamming |= (__builtin_popcount(data & 0x9B33366D) & 0x1) << 2;
@@ -104,12 +104,12 @@ struct Hamming_seq :
             while (data <= (dataEnd - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                     dataOut->data = *data;
-                    dataOut->code = TypeMapSeq<DATAIN>::computeHamming(std::move(*data));
+                    dataOut->code = TypeMapSeq<DATAIN>::computeHamming(*data);
                 }
             }
             for (; data < dataEnd; ++data, ++dataOut) {
                 dataOut->data = *data;
-                dataOut->code = TypeMapSeq<DATAIN>::computeHamming(std::move(*data));
+                dataOut->code = TypeMapSeq<DATAIN>::computeHamming(*data);
             }
         }
     }
@@ -127,13 +127,13 @@ struct Hamming_seq :
             auto data = this->out.template begin<hamming_seq_t>();
             while (i <= (numValues - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++i, ++data) {
-                    if (data->code != TypeMapSeq<DATAIN>::computeHamming(std::move(data->data))) {
+                    if (data->code != TypeMapSeq<DATAIN>::computeHamming(data->data)) {
                         throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_seq_t>(), config.numIterations);
                     }
                 }
             }
             for (; i < numValues; ++i, ++data) {
-                if (data->code != TypeMapSeq<DATAIN>::computeHamming(std::move(data->data))) {
+                if (data->code != TypeMapSeq<DATAIN>::computeHamming(data->data)) {
                     throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_seq_t>(), config.numIterations);
                 }
             }
