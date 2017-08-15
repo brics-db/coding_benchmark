@@ -84,7 +84,7 @@ int main(
 
 #define WarmUp(type, name, input, output) \
     do { \
-        std::cout << "# WarmUp " << name << std::endl; \
+        std::clog << "# WarmUp " << name << std::endl; \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, input, output); \
     } while (0)
 
@@ -92,7 +92,7 @@ int main(
 
 #define TestCase4(type, name, input, output) \
     do { \
-        std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
+        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
         vecTestInfos.emplace_back(); \
         auto & vec = *vecTestInfos.rbegin(); \
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
@@ -101,7 +101,7 @@ int main(
 
 #define TestCase6(type, name, input, output, A, AInv) \
     do { \
-        std::cout << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
+        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
         vecTestInfos.emplace_back(); \
         auto & vec = *vecTestInfos.rbegin(); \
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \

@@ -66,7 +66,7 @@ int main(
     do { \
         std::clog << "# WarmUp " << #type << std::endl; \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, input, output); \
-        std::clog << std::endl; \
+        std::clog << '#' << std::endl; \
     } while (0)
 
 #define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
@@ -96,10 +96,10 @@ int main(
 
     WarmUp(CopyTest, "Copy");
 
+    std::clog << "# Baseline (memcpy / memcmp) test:" << std::endl;
     TestCase(CopyTest, "Copy");
 
     // 16-bit data sequential tests
-    std::cout << "# 16-bit scalar tests:" << std::endl;
     std::clog << "# 16-bit scalar tests:" << std::endl;
     TestCase(XOR_seq_16_16, "XOR Seq");
     TestCase(AN_seq_16_32_u_divmod, "AN Seq U DivMod", AUser, AUserInv);
@@ -109,7 +109,6 @@ int main(
     TestCase(Hamming_seq_16, "Hamming Seq");
 
     // 16-bit data vectorized tests
-    std::cout << "# 16-bit SSE4.2 tests:" << std::endl;
     std::clog << "# 16-bit SSE4.2 tests:" << std::endl;
     TestCase(XOR_sse42_8x16_8x16, "XOR SSE4.2");
     TestCase(AN_sse42_8x16_8x32_u_divmod, "AN SSE4.2 U DivMod", AUser, AUserInv);
@@ -119,7 +118,6 @@ int main(
     TestCase(Hamming_sse42_16, "Hamming SSE4.2");
 
 #ifdef __AVX2__
-    std::cout << "# 16-bit AVX2 tests:" << std::endl;
     std::clog << "# 16-bit AVX2 tests:" << std::endl;
     TestCase(XOR_avx2_16x16_16x16, "XOR AVX2");
     TestCase(AN_avx2_16x16_16x32_u_divmod, "AN AVX2 U DivMod", AUser, AUserInv);
@@ -130,20 +128,17 @@ int main(
 #endif
 
 #ifdef TEST32
-    std::cout << "# 32-bit scalar tests:" << std::endl;
     std::clog << "# 32-bit scalar tests:" << std::endl;
     // 32-bit data sequential tests
     TestCase(XOR_seq_32_32, "XOR Seq");
     TestCase(Hamming_seq_32, "Hamming Seq");
 
-    std::cout << "# 32-bit SSE4.2 tests:" << std::endl;
     std::clog << "# 32-bit SSE4.2 tests:" << std::endl;
     // 32-bit data vectorized tests
     TestCase(XOR_sse42_4x32_4x32, "XOR SSE4.2");
     TestCase(Hamming_sse42_32, "Hamming SSE4.2");
 
 #ifdef __AVX2__
-    std::cout << "# 32-bit AVX2 tests:" << std::endl;
     std::clog << "# 32-bit AVX2 tests:" << std::endl;
     TestCase(XOR_avx2_8x32_8x32, "XOR AVX2");
     TestCase(Hamming_avx2_32, "Hamming AVX2");

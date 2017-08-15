@@ -178,7 +178,7 @@ TestInfos TestBase::Execute(
     // Following: use an odd A. As the actual A is not important we can choose an arbitrary one here and simply cast it later to the desired width (i.e. select the appropriate LSBs).
     std::size_t newA = rDist(rEng) | 0x1;
 #ifdef DEBUG
-    std::cerr << "# Reencode uses A=" << newA << " (cast down to the appropriate data length as needed (LSBs extracted)" << std::endl;
+    std::clog << "# Reencode uses A=" << newA << " (cast down to the appropriate data length as needed (LSBs extracted)" << std::endl;
 #endif
     ReencodeConfiguration reencConf(configTest, newA);
     DecodeConfiguration decConf(configTest);
@@ -191,7 +191,7 @@ TestInfos TestBase::Execute(
 
     TestInfo tiEnc, tiCheck, tiArith, tiArithChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk;
 
-    std::cout << "encode" << std::flush;
+    std::clog << "encode" << std::flush;
     sw.Reset();
     try {
 #ifdef OMP
@@ -214,7 +214,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoCheck()) {
         this->PreCheck(chkConf);
-        std::cout << ", check" << std::flush;
+        std::clog << ", check" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -238,7 +238,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoArithmetic()) {
         this->PreArithmetic(arithConf);
-        std::cout << ", arithmetic" << std::flush;
+        std::clog << ", arithmetic" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -262,7 +262,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoArithmeticChecked()) {
         this->PreArithmeticChecked(arithConf);
-        std::cout << ", arithmetic checked" << std::flush;
+        std::clog << ", arithmetic checked" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -286,7 +286,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoAggregate(aggrSumConf)) {
         this->PreAggregate(aggrSumConf);
-        std::cout << ", aggregate" << std::flush;
+        std::clog << ", aggregate" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -310,7 +310,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoAggregateChecked(aggrSumConf)) {
         this->PreAggregateChecked(aggrSumConf);
-        std::cout << ", aggregate checked" << std::flush;
+        std::clog << ", aggregate checked" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -334,7 +334,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoReencodeChecked()) {
         this->PreReencodeChecked(reencConf);
-        std::cout << ", reencode checked" << std::flush;
+        std::clog << ", reencode checked" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -358,7 +358,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoDecode()) {
         this->PreDecode(decConf);
-        std::cout << ", decode" << std::flush;
+        std::clog << ", decode" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP
@@ -382,7 +382,7 @@ TestInfos TestBase::Execute(
 
     if (this->DoDecodeChecked()) {
         this->PreDecodeChecked(decConf);
-        std::cout << ", decode checked" << std::flush;
+        std::clog << ", decode checked" << std::flush;
         sw.Reset();
         try {
 #ifdef OMP

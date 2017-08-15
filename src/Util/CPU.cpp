@@ -40,7 +40,7 @@ IsWow64 () {
 
     if (NULL != fnIsWow64Process) {
         if (!fnIsWow64Process(GetCurrentProcess(), &bIsWow64)) {
-            std::cout << "Error Detecting Operating System. Defaulting to 32-bit OS." << std::endl;
+            std::cerr << "Error Detecting Operating System. Defaulting to 32-bit OS." << std::endl;
             bIsWow64 = FALSE;
         }
     }

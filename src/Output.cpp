@@ -30,6 +30,7 @@ template<bool doRelative>
 void printResults(
         std::vector<std::vector<TestInfos>> & results,
         bool renameFirst) {
+    size_t numResults = results.size();
     size_t maxPos = 0;
     for (auto & v : results) {
         maxPos = std::max(maxPos, v.size());
@@ -64,14 +65,12 @@ void printResults(
 
     // print names and IDs of tests for easier gnuplot script changes
     size_t log10NumTests = 0;
-    for (size_t x = results.size(); x; ++log10NumTests) {
+    for (size_t x = numResults; x; ++log10NumTests) {
         x /= 10;
     }
-    if (log10NumTests < 2) {
+    if (log10NumTests < 3) {
         log10NumTests = 3;
     }
-    size_t id = 2;
-    size_t datawidth = 0;
     std::string simd = results[0][0].simd;
     bool isEnc = results[0][0].encode.isExecuted;
     bool isCheck = results[0][0].check.isExecuted;
@@ -82,121 +81,156 @@ void printResults(
     bool isReencChk = results[0][0].reencodeChecked.isExecuted;
     bool isDec = results[0][0].decode.isExecuted;
     bool isDecChk = results[0][0].decodeChecked.isExecuted;
-    for (size_t i = 1; i < results.size(); ++i) {
+    size_t numEnc = isEnc, numCheck = isCheck, numArith = isArith, numArithChk = isArithChk, numAggr = isAggr, numAggrChk = isAggrChk, numReencChk = isReencChk, numDec = isDec, numDecChk = isDecChk;
+    for (size_t i = 1; i < numResults; ++i) {
         auto & ti = results[i][0];
         isEnc |= ti.encode.isExecuted;
+        numEnc += ti.encode.isExecuted;
         isCheck |= ti.check.isExecuted;
+        numCheck += ti.check.isExecuted;
         isArith |= ti.arithmetic.isExecuted;
+        numArith += ti.arithmetic.isExecuted;
         isArithChk |= ti.arithmeticChecked.isExecuted;
+        numArithChk += ti.arithmeticChecked.isExecuted;
         isAggr |= ti.aggregate.isExecuted;
+        numAggr += ti.aggregate.isExecuted;
         isAggrChk |= ti.aggregateChecked.isExecuted;
+        numAggrChk += ti.aggregateChecked.isExecuted;
         isReencChk |= ti.reencodeChecked.isExecuted;
+        numReencChk += ti.reencodeChecked.isExecuted;
         isDec |= ti.decode.isExecuted;
+        numDec += ti.decode.isExecuted;
         isDecChk |= ti.decodeChecked.isExecuted;
+        numDecChk += ti.decodeChecked.isExecuted;
     }
     // headline
     std::cout << "#   ";
+    size_t num = 0;
     if (isEnc) {
+        ++num;
         std::cout << '|' << std::setw(log10NumTests) << "enc";
     }
     if (isCheck) {
+        ++num;
         std::cout << '|' << std::setw(log10NumTests) << "chk";
     }
     if (isArith) {
+        ++num;
         std::cout << '|' << std::setw(log10NumTests) << "ari";
     }
     if (isArithChk) {
+        ++num;
         std::cout << '|' << std::setw(log10NumTests) << "arC";
     }
     if (isAggr) {
+        ++num;
         std::cout << '|' << std::setw(log10NumTests) << "agg";
     }
     if (isAggrChk) {
+        ++num;
         std::cout << '|' << std::setw(log10NumTests) << "agC";
     }
     if (isReencChk) {
+        ++num;
         std::cout << '|' << std::setw(log10NumTests) << "reC";
     }
     if (isDec) {
+        ++num;
         std::cout << '|' << std::setw(log10NumTests) << "dec";
     }
     if (isDecChk) {
+        ++num;
         std::cout << '|' << std::setw(log10NumTests) << "deC";
     }
-    std::cout << '\n';
+    std::cout << "|\n#   " << std::setfill('-');
+    for (size_t i = 0; i < num; ++i) {
+        std::cout << ((i == 0) ? '|' : '+') << std::setw(log10NumTests) << '-';
+    }
+    std::cout << "|\n" << std::setfill(' ');
+    size_t id = 1;
+    size_t datawidth = 0;
+    size_t incCheck = isEnc ? numResults : 0;
+    size_t incArith = incCheck + (isCheck ? numResults : 0);
+    size_t incArithChk = incArith + (isArithChk ? numResults : 0);
+    size_t incAggr = incArithChk + (isAggr ? numResults : 0);
+    size_t incAggrChk = incAggr + (isAggrChk ? numResults : 0);
+    size_t incReencChk = incAggrChk + (isReencChk ? numResults : 0);
+    size_t incDec = incReencChk + (isDec ? numResults : 0);
+    size_t incDecChk = incDec + (isDecChk ? numResults : 0);
     for (auto & v : results) {
+        ++id;
         auto & ti = v[0];
         bool isDifferentDWorSIMD = (datawidth != ti.datawidth) || (simd != ti.simd);
         if (isDifferentDWorSIMD) {
             datawidth = ti.datawidth;
             simd = v[0].simd;
-            std::cout << "# " << v[0].datawidth << "-bit " << simd << ":\n";
+            std::cout << "# " << (v[0].datawidth * 8) << "-bit " << simd << ":\n";
         }
         std::cout << "#   ";
         if (isEnc) {
             if (ti.encode.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << id++;
+                std::cout << '|' << std::setw(log10NumTests) << id;
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
         if (isCheck) {
             if (ti.check.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << id++;
+                std::cout << '|' << std::setw(log10NumTests) << (id + incCheck);
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
         if (isArith) {
             if (ti.arithmetic.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << id++;
+                std::cout << '|' << std::setw(log10NumTests) << (id + incArith);
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
         if (isArithChk) {
             if (ti.arithmeticChecked.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << id++;
+                std::cout << '|' << std::setw(log10NumTests) << (id + incArithChk);
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
         if (isAggr) {
             if (ti.aggregate.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << id++;
+                std::cout << '|' << std::setw(log10NumTests) << (id + incAggr);
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
         if (isAggrChk) {
             if (ti.aggregateChecked.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << id++;
+                std::cout << '|' << std::setw(log10NumTests) << (id + incAggrChk);
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
         if (isReencChk) {
             if (ti.reencodeChecked.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << id++;
+                std::cout << '|' << std::setw(log10NumTests) << (id + incReencChk);
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
         if (isDec) {
             if (ti.decode.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << id++;
+                std::cout << '|' << std::setw(log10NumTests) << (id + incDec);
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
         if (isDecChk) {
             if (ti.decodeChecked.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << id++;
+                std::cout << '|' << std::setw(log10NumTests) << (id + incDecChk);
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
-        std::cout << v[0].name << '\n';
+        std::cout << "|   " << v[0].name << '\n';
     }
 
     // print headline
@@ -320,7 +354,7 @@ void printResults(
                 std::cout << ',';
                 if (pos < v.size() && v[pos].arithmeticChecked.isExecuted && v[pos].arithmeticChecked.error.empty()) {
                     if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].arithmetic.nanos) / baseArithmetic[pos]);
+                        std::cout << (static_cast<double>(v[pos].arithmeticChecked.nanos) / baseArithmeticChecked[pos]);
                     else
                         std::cout << v[pos].arithmeticChecked.nanos;
                 }
@@ -331,9 +365,9 @@ void printResults(
                 std::cout << ',';
                 if (pos < v.size() && v[pos].aggregate.isExecuted && v[pos].aggregate.error.empty()) {
                     if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].aggregate.nanos) / baseArithmetic[pos]);
+                        std::cout << (static_cast<double>(v[pos].aggregate.nanos) / baseAggregate[pos]);
                     else
-                        std::cout << v[pos].arithmetic.nanos;
+                        std::cout << v[pos].aggregate.nanos;
                 }
             }
         }
@@ -342,7 +376,7 @@ void printResults(
                 std::cout << ',';
                 if (pos < v.size() && v[pos].aggregateChecked.isExecuted && v[pos].aggregateChecked.error.empty()) {
                     if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].arithmetic.nanos) / baseArithmetic[pos]);
+                        std::cout << (static_cast<double>(v[pos].aggregateChecked.nanos) / baseAggregateChecked[pos]);
                     else
                         std::cout << v[pos].aggregateChecked.nanos;
                 }
