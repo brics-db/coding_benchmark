@@ -71,9 +71,11 @@ TestInfo & TestInfo::operator=(
 }
 
 TestInfos::TestInfos(
+        const size_t datawidth,
         const std::string & name,
         const std::string & simd)
-        : name(name),
+        : datawidth(datawidth),
+          name(name),
           simd(simd),
           encode(),
           check(),
@@ -87,6 +89,7 @@ TestInfos::TestInfos(
 }
 
 TestInfos::TestInfos(
+        const size_t datawidth,
         const std::string & name,
         const std::string & simd,
         TestInfo & encode,
@@ -98,7 +101,8 @@ TestInfos::TestInfos(
         TestInfo & reencodeChecked,
         TestInfo & decode,
         TestInfo & checkAndDecode)
-        : name(name),
+        : datawidth(datawidth),
+          name(name),
           simd(simd),
           encode(encode),
           check(check),
@@ -113,7 +117,8 @@ TestInfos::TestInfos(
 
 TestInfos::TestInfos(
         TestInfos && other)
-        : name(other.name),
+        : datawidth(other.datawidth),
+          name(other.name),
           simd(other.simd),
           encode(other.encode),
           check(other.check),

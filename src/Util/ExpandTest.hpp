@@ -36,9 +36,9 @@ struct ExpandTest {
             const DataGenerationConfiguration & dataGenConfig,
             AlignedBlock & in,
             AlignedBlock & out) {
-        std::cout << "#  * " << start << ": " << std::flush;
+        std::clog << "#  * " << start << ": " << std::flush;
         TestType<start>(name, in, out).Execute(testConfig, dataGenConfig);
-        std::cout << std::endl;
+        std::clog << std::endl;
         ExpandTest<TestType, start * 2, end>::WarmUp(name, testConfig, dataGenConfig, in, out);
     }
 
@@ -51,9 +51,9 @@ struct ExpandTest {
             AlignedBlock & in,
             AlignedBlock & out,
             ArgTypes && ... args) {
-        std::cout << "#      * " << start << ": " << std::flush;
+        std::clog << "#      * " << start << ": " << std::flush;
         vecTestInfos.push_back(TestType<start>(name, in, out, std::forward<ArgTypes>(args)...).Execute(testConfig, dataGenConfig));
-        std::cout << std::endl;
+        std::clog << std::endl;
         ExpandTest<TestType, start * 2, end>::Execute(vecTestInfos, name, testConfig, dataGenConfig, in, out, std::forward<ArgTypes>(args)...);
     }
 };
@@ -67,9 +67,9 @@ struct ExpandTest<TestType, start, start> {
             const DataGenerationConfiguration & dataGenConfig,
             AlignedBlock & in,
             AlignedBlock & out) {
-        std::cout << "#  * " << start << ": " << std::flush;
+        std::clog << "#  * " << start << ": " << std::flush;
         TestType<start>(name, in, out).Execute(testConfig, dataGenConfig);
-        std::cout << std::endl;
+        std::clog << std::endl;
     }
 
     template<typename ... ArgTypes>
@@ -81,9 +81,9 @@ struct ExpandTest<TestType, start, start> {
             AlignedBlock & in,
             AlignedBlock & out,
             ArgTypes && ... args) {
-        std::cout << "#      * " << start << ": " << std::flush;
+        std::clog << "#      * " << start << ": " << std::flush;
         vecTestInfos.push_back(TestType<start>(name, in, out, std::forward<ArgTypes>(args)...).Execute(testConfig, dataGenConfig));
-        std::cout << std::endl;
+        std::clog << std::endl;
     }
 };
 

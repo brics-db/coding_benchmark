@@ -38,9 +38,9 @@ void printResults(
 
 extern template void printResults<true>(
         std::vector<std::vector<TestInfos>> & results,
-        bool renameFirst);
+        bool renameFirst = true);
 extern template void printResults<false>(
         std::vector<std::vector<TestInfos>> & results,
-        bool renameFirst);
+        bool renameFirst = true);
 
 #endif /* OUTPUT_HPP */

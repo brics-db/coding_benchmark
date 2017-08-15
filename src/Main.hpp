@@ -69,6 +69,4 @@
 #include <Hamming/Hamming_avx2.hpp>
 #endif
 
-#include "Output.hpp"
-
 #endif /* MAIN_HPP */

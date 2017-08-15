@@ -62,78 +62,215 @@ void printResults(
 
     // The following does pretty-print everything so that it can be easily used as input for gnuplot & co.
 
+    // print names and IDs of tests for easier gnuplot script changes
+    size_t log10NumTests = 0;
+    for (size_t x = results.size(); x; ++log10NumTests) {
+        x /= 10;
+    }
+    if (log10NumTests < 2) {
+        log10NumTests = 3;
+    }
+    size_t id = 2;
+    size_t datawidth = 0;
+    std::string simd = results[0][0].simd;
+    bool isEnc = results[0][0].encode.isExecuted;
+    bool isCheck = results[0][0].check.isExecuted;
+    bool isArith = results[0][0].arithmetic.isExecuted;
+    bool isArithChk = results[0][0].arithmeticChecked.isExecuted;
+    bool isAggr = results[0][0].aggregate.isExecuted;
+    bool isAggrChk = results[0][0].aggregateChecked.isExecuted;
+    bool isReencChk = results[0][0].reencodeChecked.isExecuted;
+    bool isDec = results[0][0].decode.isExecuted;
+    bool isDecChk = results[0][0].decodeChecked.isExecuted;
+    for (size_t i = 1; i < results.size(); ++i) {
+        auto & ti = results[i][0];
+        isEnc |= ti.encode.isExecuted;
+        isCheck |= ti.check.isExecuted;
+        isArith |= ti.arithmetic.isExecuted;
+        isArithChk |= ti.arithmeticChecked.isExecuted;
+        isAggr |= ti.aggregate.isExecuted;
+        isAggrChk |= ti.aggregateChecked.isExecuted;
+        isReencChk |= ti.reencodeChecked.isExecuted;
+        isDec |= ti.decode.isExecuted;
+        isDecChk |= ti.decodeChecked.isExecuted;
+    }
+    // headline
+    std::cout << "#   ";
+    if (isEnc) {
+        std::cout << '|' << std::setw(log10NumTests) << "enc";
+    }
+    if (isCheck) {
+        std::cout << '|' << std::setw(log10NumTests) << "chk";
+    }
+    if (isArith) {
+        std::cout << '|' << std::setw(log10NumTests) << "ari";
+    }
+    if (isArithChk) {
+        std::cout << '|' << std::setw(log10NumTests) << "arC";
+    }
+    if (isAggr) {
+        std::cout << '|' << std::setw(log10NumTests) << "agg";
+    }
+    if (isAggrChk) {
+        std::cout << '|' << std::setw(log10NumTests) << "agC";
+    }
+    if (isReencChk) {
+        std::cout << '|' << std::setw(log10NumTests) << "reC";
+    }
+    if (isDec) {
+        std::cout << '|' << std::setw(log10NumTests) << "dec";
+    }
+    if (isDecChk) {
+        std::cout << '|' << std::setw(log10NumTests) << "deC";
+    }
+    std::cout << '\n';
+    for (auto & v : results) {
+        auto & ti = v[0];
+        bool isDifferentDWorSIMD = (datawidth != ti.datawidth) || (simd != ti.simd);
+        if (isDifferentDWorSIMD) {
+            datawidth = ti.datawidth;
+            simd = v[0].simd;
+            std::cout << "# " << v[0].datawidth << "-bit " << simd << ":\n";
+        }
+        std::cout << "#   ";
+        if (isEnc) {
+            if (ti.encode.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << id++;
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isCheck) {
+            if (ti.check.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << id++;
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isArith) {
+            if (ti.arithmetic.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << id++;
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isArithChk) {
+            if (ti.arithmeticChecked.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << id++;
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isAggr) {
+            if (ti.aggregate.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << id++;
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isAggrChk) {
+            if (ti.aggregateChecked.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << id++;
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isReencChk) {
+            if (ti.reencodeChecked.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << id++;
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isDec) {
+            if (ti.decode.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << id++;
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isDecChk) {
+            if (ti.decodeChecked.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << id++;
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        std::cout << v[0].name << '\n';
+    }
+
     // print headline
     std::cout << "unroll/block";
     // first all encode columns, then all check columns etc.size
     size_t i = 0;
     for (auto & v : results) {
-        TestInfos &ti = v[0];
-        if (ti.encode.isExecuted) {
+        auto & ti = v[0];
+        if (isEnc) {
             std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " enc");
         }
         ++i;
     }
     i = 0;
     for (auto & v : results) {
-        TestInfos &ti = v[0];
-        if (ti.check.isExecuted) {
+        auto & ti = v[0];
+        if (isCheck) {
             std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp" : ti.name) << (((i == 0) && renameFirst) ? "" : " check");
         }
         ++i;
     }
     i = 0;
     for (auto & v : results) {
-        TestInfos &ti = v[0];
-        if (ti.arithmetic.isExecuted) {
+        auto & ti = v[0];
+        if (isArith) {
             std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " arith");
         }
         ++i;
     }
     i = 0;
     for (auto & v : results) {
-        TestInfos &ti = v[0];
-        if (ti.arithmeticChecked.isExecuted) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp+memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " arith");
+        auto & ti = v[0];
+        if (isArithChk) {
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp+memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " arithChk");
         }
         ++i;
     }
     i = 0;
     for (auto & v : results) {
-        TestInfos &ti = v[0];
-        if (ti.aggregate.isExecuted) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " arith");
+        auto & ti = v[0];
+        if (isAggr) {
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " aggr");
         }
         ++i;
     }
     i = 0;
     for (auto & v : results) {
-        TestInfos &ti = v[0];
-        if (ti.aggregateChecked.isExecuted) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp+memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " arith");
+        auto & ti = v[0];
+        if (isAggrChk) {
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp+memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " aggrChk");
         }
         ++i;
     }
     i = 0;
     for (auto & v : results) {
-        TestInfos &ti = v[0];
-        if (ti.reencodeChecked.isExecuted) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp+memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " reenc");
+        auto & ti = v[0];
+        if (isReencChk) {
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp+memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " reencChk");
         }
         ++i;
     }
     i = 0;
     for (auto & v : results) {
-        TestInfos &ti = v[0];
-        if (ti.decode.isExecuted) {
+        auto & ti = v[0];
+        if (isDec) {
             std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " dec");
         }
         ++i;
     }
     i = 0;
     for (auto & v : results) {
-        TestInfos &ti = v[0];
-        if (ti.decodeChecked.isExecuted) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " chkDec");
+        auto & ti = v[0];
+        if (isDecChk) {
+            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " decChk");
         }
         ++i;
     }
@@ -146,10 +283,9 @@ void printResults(
     for (size_t pos = 0, blocksize = 1; pos < maxPos; ++pos, blocksize *= 2) {
         std::cout << blocksize;
         for (auto & v : results) {
-            TestInfos &ti = v[0];
-            if (ti.encode.isExecuted) {
+            if (isEnc) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].encode.error.empty()) {
+                if (pos < v.size() && v[pos].encode.isExecuted && v[pos].encode.error.empty()) {
                     if (doRelative)
                         std::cout << (static_cast<double>(v[pos].encode.nanos) / baseEncode[pos]);
                     else
@@ -158,10 +294,9 @@ void printResults(
             }
         }
         for (auto & v : results) {
-            TestInfos &ti = v[0];
-            if (ti.check.isExecuted) {
+            if (isCheck) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].check.error.empty()) {
+                if (pos < v.size() && v[pos].check.isExecuted && v[pos].check.error.empty()) {
                     if (doRelative)
                         std::cout << (static_cast<double>(v[pos].check.nanos) / baseCheck[pos]);
                     else
@@ -170,10 +305,9 @@ void printResults(
             }
         }
         for (auto & v : results) {
-            TestInfos &ti = v[0];
-            if (ti.arithmetic.isExecuted) {
+            if (isArith) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].arithmetic.error.empty()) {
+                if (pos < v.size() && v[pos].arithmetic.isExecuted && v[pos].arithmetic.error.empty()) {
                     if (doRelative)
                         std::cout << (static_cast<double>(v[pos].arithmetic.nanos) / baseArithmetic[pos]);
                     else
@@ -182,10 +316,9 @@ void printResults(
             }
         }
         for (auto & v : results) {
-            TestInfos &ti = v[0];
-            if (ti.arithmeticChecked.isExecuted) {
+            if (isArithChk) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].arithmeticChecked.error.empty()) {
+                if (pos < v.size() && v[pos].arithmeticChecked.isExecuted && v[pos].arithmeticChecked.error.empty()) {
                     if (doRelative)
                         std::cout << (static_cast<double>(v[pos].arithmetic.nanos) / baseArithmetic[pos]);
                     else
@@ -194,10 +327,9 @@ void printResults(
             }
         }
         for (auto & v : results) {
-            TestInfos &ti = v[0];
-            if (ti.aggregate.isExecuted) {
+            if (isAggr) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].aggregate.error.empty()) {
+                if (pos < v.size() && v[pos].aggregate.isExecuted && v[pos].aggregate.error.empty()) {
                     if (doRelative)
                         std::cout << (static_cast<double>(v[pos].aggregate.nanos) / baseArithmetic[pos]);
                     else
@@ -206,10 +338,9 @@ void printResults(
             }
         }
         for (auto & v : results) {
-            TestInfos &ti = v[0];
-            if (ti.aggregateChecked.isExecuted) {
+            if (isAggrChk) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].aggregateChecked.error.empty()) {
+                if (pos < v.size() && v[pos].aggregateChecked.isExecuted && v[pos].aggregateChecked.error.empty()) {
                     if (doRelative)
                         std::cout << (static_cast<double>(v[pos].arithmetic.nanos) / baseArithmetic[pos]);
                     else
@@ -218,10 +349,9 @@ void printResults(
             }
         }
         for (auto & v : results) {
-            TestInfos &ti = v[0];
-            if (ti.reencodeChecked.isExecuted) {
+            if (isReencChk) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].reencodeChecked.error.empty()) {
+                if (pos < v.size() && v[pos].reencodeChecked.isExecuted && v[pos].reencodeChecked.error.empty()) {
                     if (doRelative)
                         std::cout << (static_cast<double>(v[pos].reencodeChecked.nanos) / baseReencodeChecked[pos]);
                     else
@@ -230,10 +360,9 @@ void printResults(
             }
         }
         for (auto & v : results) {
-            TestInfos &ti = v[0];
-            if (ti.decode.isExecuted) {
+            if (isDec) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].decode.error.empty()) {
+                if (pos < v.size() && v[pos].decode.isExecuted && v[pos].decode.error.empty()) {
                     if (doRelative)
                         std::cout << (static_cast<double>(v[pos].decode.nanos) / baseDecode[pos]);
                     else
@@ -242,10 +371,9 @@ void printResults(
             }
         }
         for (auto & v : results) {
-            TestInfos &ti = v[0];
-            if (ti.decodeChecked.isExecuted) {
+            if (isDecChk) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].decodeChecked.error.empty()) {
+                if (pos < v.size() && v[pos].decodeChecked.isExecuted && v[pos].decodeChecked.error.empty()) {
                     if (doRelative)
                         std::cout << (static_cast<double>(v[pos].decodeChecked.nanos) / baseDecodeChecked[pos]);
                     else

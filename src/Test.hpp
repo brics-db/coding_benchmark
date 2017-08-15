@@ -130,12 +130,14 @@ struct TestBase :
         virtual public TestBase0 {
 
 protected:
+    size_t datawidth;
     std::string name;
     AlignedBlock in;
     AlignedBlock out;
 
 public:
     TestBase(
+            size_t datawidth,
             const std::string & name,
             AlignedBlock & in,
             AlignedBlock & out);
@@ -269,16 +271,6 @@ struct AVX2Test :
     virtual bool HasCapabilities() override;
 };
 
-#ifdef _MSC_VER
-#ifdef DATA
-#undef DATA
-#endif
-
-#ifdef CS
-#undef CS
-#endif
-#endif
-
 template<typename DATAIN, typename DATAOUT>
 struct Test :
         public TestBase {
@@ -287,7 +279,7 @@ struct Test :
             const std::string & name,
             AlignedBlock & in,
             AlignedBlock & out)
-            : TestBase(name, in, out) {
+            : TestBase(sizeof(DATAIN), name, in, out) {
     }
 
     virtual ~Test() {

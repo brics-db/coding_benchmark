@@ -53,6 +53,7 @@ struct TestInfo {
 
 struct TestInfos {
 
+    size_t datawidth;
     std::string name;
     std::string simd;
     TestInfo encode;
@@ -66,10 +67,12 @@ struct TestInfos {
     TestInfo decodeChecked;
 
     TestInfos(
+            const size_t datawidth,
             const std::string & name,
             const std::string & simd);
 
     TestInfos(
+            const size_t datawidth,
             const std::string & name,
             const std::string & simd,
             TestInfo & encode,

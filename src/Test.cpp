@@ -26,17 +26,20 @@
 #include "Util/Stopwatch.hpp"
 
 TestBase::TestBase(
+        size_t datawidth,
         const std::string & name,
         AlignedBlock & in,
         AlignedBlock & out)
-        : name(name),
+        : datawidth(datawidth),
+          name(name),
           in(in),
           out(out) {
 }
 
 TestBase::TestBase(
         TestBase & other)
-        : name(other.name),
+        : datawidth(other.datawidth),
+          name(other.name),
           in(other.in),
           out(other.out) {
 }
@@ -160,7 +163,7 @@ TestInfos TestBase::Execute(
         const TestConfiguration & configTest,
         const DataGenerationConfiguration & configDataGen) {
     if (!this->HasCapabilities()) {
-        return TestInfos(this->name, getSIMDtypeName());
+        return TestInfos(datawidth, this->name, getSIMDtypeName());
     }
 
     ResetBuffers(configDataGen);
@@ -401,7 +404,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    return TestInfos(this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiArithChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk);
+    return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiArithChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk);
 }
 
 SequentialTest::~SequentialTest() {
