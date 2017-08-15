@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "AN_avx2_16x16_16x32.hpp"
+#include <AN/AN_avx2_16x16_16x32.hpp>
 
 template<size_t UNROLL>
 struct AN_avx2_16x16_16x32_s_inv :
@@ -33,8 +33,8 @@ struct AN_avx2_16x16_16x32_s_inv :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            auto mm_Data = this->out.template begin<__m256i>();
-            auto mm_DataEnd = this->out.template end<__m256i>();
+            auto mm_Data = this->bufEncoded.template begin<__m256i >();
+            auto mm_DataEnd = this->bufEncoded.template end<__m256i >();
             int32_t dMin = std::numeric_limits<int16_t>::min();
             int32_t dMax = std::numeric_limits<int16_t>::max();
             __m256i mm_dMin = _mm256_set1_epi32(dMin); // we assume 16-bit input data
@@ -45,7 +45,7 @@ struct AN_avx2_16x16_16x32_s_inv :
                 for (size_t k = 0; k < UNROLL; ++k) {
                     auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(mm_Data), mmAinv);
                     if (_mm256_movemask_epi8(_mm256_cmpgt_epi32(mmIn, mm_dMax)) | _mm256_movemask_epi8(_mm256_cmpgt_epi32(mm_dMin, mmIn))) {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mm_Data) - this->out.template begin<int32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mm_Data) - this->bufEncoded.template begin<int32_t>(), iteration);
                     }
                     ++mm_Data;
                 }
@@ -54,7 +54,7 @@ struct AN_avx2_16x16_16x32_s_inv :
             while (mm_Data <= (mm_DataEnd - 1)) {
                 auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(mm_Data), mmAinv);
                 if (_mm256_movemask_epi8(_mm256_cmpgt_epi32(mmIn, mm_dMax)) | _mm256_movemask_epi8(_mm256_cmpgt_epi32(mm_dMin, mmIn))) {
-                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mm_Data) - this->out.template begin<int32_t>(), iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mm_Data) - this->bufEncoded.template begin<int32_t>(), iteration);
                 }
                 ++mm_Data;
             }
@@ -63,7 +63,7 @@ struct AN_avx2_16x16_16x32_s_inv :
                 for (auto data2 = reinterpret_cast<int32_t*>(mm_Data); data2 < dataEnd2; ++data2) {
                     auto data = *data2 * this->A_INV;
                     if (data < dMin || data > dMax) {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data2) - this->out.template begin<int32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data2) - this->bufEncoded.template begin<int32_t>(), iteration);
                     }
                 }
             }
@@ -80,10 +80,10 @@ struct AN_avx2_16x16_16x32_s_inv :
             _ReadWriteBarrier();
             const ssize_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (int32_t);
             const ssize_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
-            ssize_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
+            ssize_t numValues = this->bufRaw.template end<int16_t>() - this->bufRaw.template begin<int16_t>();
             ssize_t i = 0;
-            auto mm_In = this->out.template begin<__m256i>();
-            auto mm_Out = this->in.template begin<__m128i>();
+            auto mm_In = this->bufEncoded.template begin<__m256i >();
+            auto mm_Out = this->bufResult.template begin<__m128i >();
             auto mmAinv = _mm256_set1_epi32(this->A_INV);
             auto mmShuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFFll, 0xFFFFFFFFFFFFFFFFll, 0x1D1C191815141110ll, 0x0D0C090805040100ll);
             for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {

@@ -24,25 +24,71 @@
 #include <Hamming/Hamming_scalar.tcc>
 
 template<size_t UNROLL>
-struct Hamming_seq_16 :
-        public Hamming_seq<uint16_t, UNROLL> {
+struct Hamming_scalar_16 :
+        public Hamming_scalar<uint16_t, UNROLL> {
 
-    using Hamming_seq<uint16_t, UNROLL>::Hamming_seq;
+    using Hamming_scalar<uint16_t, UNROLL>::Hamming_scalar;
 
-    virtual ~Hamming_seq_16() {
+    virtual ~Hamming_scalar_16() {
     }
 
 };
 
 template<size_t UNROLL>
-struct Hamming_seq_32 :
-        public Hamming_seq<uint32_t, UNROLL> {
+struct Hamming_scalar_32 :
+        public Hamming_scalar<uint32_t, UNROLL> {
 
-    using Hamming_seq<uint32_t, UNROLL>::Hamming_seq;
+    using Hamming_scalar<uint32_t, UNROLL>::Hamming_scalar;
 
-    virtual ~Hamming_seq_32() {
+    virtual ~Hamming_scalar_32() {
     }
 
 };
+
+extern template
+struct Hamming_scalar_16<1>;
+extern template
+struct Hamming_scalar_16<2>;
+extern template
+struct Hamming_scalar_16<4>;
+extern template
+struct Hamming_scalar_16<8>;
+extern template
+struct Hamming_scalar_16<16>;
+extern template
+struct Hamming_scalar_16<32>;
+extern template
+struct Hamming_scalar_16<64>;
+extern template
+struct Hamming_scalar_16<128>;
+extern template
+struct Hamming_scalar_16<256>;
+extern template
+struct Hamming_scalar_16<512>;
+extern template
+struct Hamming_scalar_16<1024>;
+
+extern template
+struct Hamming_scalar_32<1>;
+extern template
+struct Hamming_scalar_32<2>;
+extern template
+struct Hamming_scalar_32<4>;
+extern template
+struct Hamming_scalar_32<8>;
+extern template
+struct Hamming_scalar_32<16>;
+extern template
+struct Hamming_scalar_32<32>;
+extern template
+struct Hamming_scalar_32<64>;
+extern template
+struct Hamming_scalar_32<128>;
+extern template
+struct Hamming_scalar_32<256>;
+extern template
+struct Hamming_scalar_32<512>;
+extern template
+struct Hamming_scalar_32<1024>;
 
 #endif /* HAMMING_HAMMING_SCALAR_HPP_ */

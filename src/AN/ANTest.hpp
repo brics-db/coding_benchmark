@@ -14,11 +14,7 @@
 
 #pragma once
 
-#include <cstdint>
-#include <sstream>
-
 #include <Test.hpp>
-#include <Util/Intrinsics.hpp>
 
 template<typename DATAIN, typename DATAOUT, size_t UNROLL>
 class ANTest :
@@ -32,11 +28,12 @@ public:
 
     ANTest(
             const std::string & name,
-            AlignedBlock & in,
-            AlignedBlock & out,
+            AlignedBlock & bufRaw,
+            AlignedBlock & bufEncoded,
+            AlignedBlock & bufResult,
             const DATAOUT A,
             const DATAOUT A_INV)
-            : Test<DATAIN, DATAOUT>(name, in, out),
+            : Test<DATAIN, DATAOUT>(name, bufRaw, bufEncoded, bufResult),
               A(A),
               A_INV(A_INV) {
         std::stringstream ss;

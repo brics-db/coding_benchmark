@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "ANTest.hpp"
+#include <AN/ANTest.hpp>
 
 template<typename DATAIN, typename DATAOUT, size_t UNROLL>
 struct AN_avx2_16x16_16x32 :
@@ -37,12 +37,12 @@ struct AN_avx2_16x16_16x32 :
             const EncodeConfiguration & config) override {
         for (size_t iter = 0; iter < config.numIterations; ++iter) {
             _ReadWriteBarrier();
-            auto *dataIn = this->in.template begin<__m128i>();
-            auto *dataInEnd = this->in.template end<__m128i>();
-            auto *dataOut = this->out.template begin<__m256i>();
+            auto *dataIn = this->bufRaw.template begin<__m128i >();
+            auto *dataInEnd = this->bufRaw.template end<__m128i >();
+            auto *dataOut = this->bufEncoded.template begin<__m256i >();
             auto mmA = _mm256_set1_epi32(this->A);
 
-            constexpr const bool isSigned = std::is_signed<DATAIN>::value;
+            constexpr const bool isSigned = std::is_signed < DATAIN > ::value;
             while (dataIn <= (dataInEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll) {

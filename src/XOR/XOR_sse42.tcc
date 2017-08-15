@@ -14,54 +14,52 @@
 
 #pragma once
 
-#include "XOR_base.hpp"
-#include "../Util/Intrinsics.hpp"
+#include <XOR/XOR_base.hpp>
+#include <Test.hpp>
+#include <Util/Intrinsics.hpp>
+#include <Util/ErrorInfo.hpp>
 
 template<>
-__m128i computeFinalChecksum<__m128i, __m128i >(
-        __m128i & checksum) {
-    return checksum;
-}
+struct XOR<__m128i, __m128i > {
+    static __m128i
+    computeFinalChecksum(
+            __m128i & checksum);
+};
 
 template<>
-uint32_t computeFinalChecksum<__m128i, uint32_t>(
-        __m128i & checksum) {
-    auto pChk = reinterpret_cast<uint32_t*>(&checksum);
-    return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3];
-}
+struct XOR<__m128i, uint32_t> {
+    static uint32_t
+    computeFinalChecksum(
+            __m128i & checksum);
+};
 
 template<>
-uint16_t computeFinalChecksum<__m128i, uint16_t>(
-        __m128i & checksum) {
-    auto pChk = reinterpret_cast<uint16_t*>(&checksum);
-    return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3] ^ pChk[4] ^ pChk[5] ^ pChk[6] ^ pChk[7];
-}
+struct XOR<__m128i, uint16_t> {
+    static uint16_t
+    computeFinalChecksum(
+            __m128i & checksum);
+};
 
 template<>
-uint8_t computeFinalChecksum<__m128i, uint8_t>(
-        __m128i & checksum) {
-    auto pChk = reinterpret_cast<uint8_t*>(&checksum);
-    return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3] ^ pChk[4] ^ pChk[5] ^ pChk[6] ^ pChk[7] ^ pChk[8] ^ pChk[9] ^ pChk[10] ^ pChk[11] ^ pChk[12] ^ pChk[13] ^ pChk[14] ^ pChk[15];
-}
+struct XOR<__m128i, uint8_t> {
+    static uint8_t
+    computeFinalChecksum(
+            __m128i & checksum);
+};
 
 template<>
-bool checksumsDiffer<__m128i >(
-        __m128i checksum1,
-        __m128i checksum2) {
-    // check if any of the 16 bytes differ
-    return 0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8(checksum1, checksum2));
-}
+struct XORdiff<__m128i> {
+    static bool
+    checksumsDiffer(
+            __m128i checksum1,
+            __m128i checksum2);
+};
 
 template<typename DATA, typename CS, size_t BLOCKSIZE>
 struct XOR_sse42 :
         public Test<DATA, CS> {
 
-    XOR_sse42(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out)
-            : Test<DATA, CS>(name, in, out) {
-    }
+    using Test<DATA, CS>::Test;
 
     virtual ~XOR_sse42() {
     }
@@ -70,9 +68,9 @@ struct XOR_sse42 :
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            auto dataIn = this->in.template begin<__m128i >();
-            auto dataInEnd = this->in.template end<__m128i >();
-            auto dataOut = this->out.template begin<CS>();
+            auto dataIn = this->bufRaw.template begin<__m128i >();
+            auto dataInEnd = this->bufRaw.template end<__m128i >();
+            auto dataOut = this->bufEncoded.template begin<CS>();
             while (dataIn <= (dataInEnd - BLOCKSIZE)) {
                 __m128i checksum = _mm_setzero_si128();
                 auto dataOut2 = reinterpret_cast<__m128i *>(dataOut);
@@ -82,7 +80,7 @@ struct XOR_sse42 :
                     checksum = _mm_xor_si128(checksum, tmp);
                 }
                 dataOut = reinterpret_cast<CS*>(dataOut2);
-                *dataOut++ = computeFinalChecksum<__m128i, CS>(checksum);
+                *dataOut++ = XOR<__m128i, CS>::computeFinalChecksum(checksum);
             }
             // checksum remaining values which do not fit in the block size
             if (dataIn <= (dataInEnd - 1)) {
@@ -94,7 +92,7 @@ struct XOR_sse42 :
                     checksum = _mm_xor_si128(checksum, tmp);
                 } while (dataIn <= (dataInEnd - 1));
                 dataOut = reinterpret_cast<CS*>(dataOut2);
-                *dataOut++ = computeFinalChecksum<__m128i, CS>(checksum);
+                *dataOut++ = XOR<__m128i, CS>::computeFinalChecksum(checksum);
             }
             // checksum remaining integers which do not fit in the SIMD register
             if (dataIn < dataInEnd) {
@@ -106,7 +104,7 @@ struct XOR_sse42 :
                     *dataOut2++ = tmp;
                     checksum ^= tmp;
                 }
-                *dataOut2 = computeFinalChecksum<DATA, DATA>(checksum);
+                *dataOut2 = XOR<DATA, DATA>::computeFinalChecksum(checksum);
             }
         }
     }
@@ -121,18 +119,18 @@ struct XOR_sse42 :
         const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_M128 * BLOCKSIZE;
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
+            size_t numValues = this->bufRaw.template end<DATA>() - this->bufRaw.template begin<DATA>();
             size_t i = 0;
-            auto data128 = this->out.template begin<__m128i>();
+            auto data128 = this->bufEncoded.template begin<__m128i>();
             while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
                 __m128i checksum = _mm_setzero_si128();
                 for (size_t k = 0; k < BLOCKSIZE; ++k) {
                     checksum = _mm_xor_si128(checksum, _mm_lddqu_si128(data128++));
                 }
                 auto dataOut = reinterpret_cast<CS*>(data128);
-                if (checksumsDiffer<CS>(*dataOut, computeFinalChecksum<__m128i, CS>(checksum))) // third, test checksum
+                if (XORdiff<CS>::checksumsDiffer(*dataOut, XOR<__m128i, CS>::computeFinalChecksum(checksum))) // third, test checksum
                 {
-                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
+                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->bufEncoded.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
                 }
                 ++dataOut; // fourth, advance after the checksum to the next block of values
                 data128 = reinterpret_cast<__m128i*>(dataOut);
@@ -146,9 +144,9 @@ struct XOR_sse42 :
                     i += NUM_VALUES_PER_M128;
                 }while (i <= (numValues - NUM_VALUES_PER_M128));
                 auto dataOut = reinterpret_cast<CS*>(data128);
-                if (checksumsDiffer<CS>(*dataOut, computeFinalChecksum<__m128i, CS>(checksum))) // third, test checksum
+                if (XORdiff<CS>::checksumsDiffer(*dataOut, XOR<__m128i, CS>::computeFinalChecksum(checksum))) // third, test checksum
                 {
-                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
+                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->bufEncoded.template begin<CS>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
                 }
                 ++dataOut; // fourth, advance after the checksum to the next block of values
                 data128 = reinterpret_cast<__m128i*>(dataOut);
@@ -161,9 +159,9 @@ struct XOR_sse42 :
                     checksum ^= *data++;
                 }
                 auto dataOut = reinterpret_cast<DATA*>(data);
-                if (checksumsDiffer<DATA>(*dataOut, computeFinalChecksum<DATA, DATA>(checksum))) // third, test checksum
+                if (XORdiff<DATA>::checksumsDiffer(*dataOut, XOR<DATA, DATA>::computeFinalChecksum(checksum))) // third, test checksum
                 {
-                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->out.template begin<DATA>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
+                    throw ErrorInfo(__FILE__, __LINE__, dataOut - this->bufEncoded.template begin<DATA>(), iteration); // this is not completely accurate, but not SO necessary for our µ-Benchmark
                 }
             }
         }
@@ -180,10 +178,10 @@ struct XOR_sse42 :
             _ReadWriteBarrier();
             const size_t VALUES_PER_SIMDREG = sizeof (__m128i) / sizeof (DATA);
             const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
-            size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
+            size_t numValues = this->bufRaw.template end<DATA>() - this->bufRaw.template begin<DATA>();
             size_t i = 0;
-            auto dataIn = this->out.template begin<CS>();
-            auto dataOut = this->in.template begin<__m128i>();
+            auto dataIn = this->bufEncoded.template begin<CS>();
+            auto dataOut = this->bufResult.template begin<__m128i>();
             for (; i <= (numValues - VALUES_PER_BLOCK); i += VALUES_PER_BLOCK, dataIn++) {
                 auto dataIn2 = reinterpret_cast<__m128i*>(dataIn);
                 for (size_t k = 0; k < BLOCKSIZE; ++k) {

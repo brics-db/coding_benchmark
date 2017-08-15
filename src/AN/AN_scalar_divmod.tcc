@@ -33,14 +33,14 @@ struct AN_seq_divmod :
             const CheckConfiguration & config) {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
             size_t i = 0;
-            auto data = this->out.template begin<DATAENC>();
+            auto data = this->bufEncoded.template begin<DATAENC>();
             while (i <= (numValues - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
                     if ((*data % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration);
                     }
                     ++data;
                 }
@@ -49,7 +49,7 @@ struct AN_seq_divmod :
             // remaining numbers
             for (; i < numValues; ++i, ++data) {
                 if ((*data % this->A) != 0) {
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration);
                 }
             }
         }
@@ -63,10 +63,10 @@ struct AN_seq_divmod :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
             size_t i = 0;
-            auto dataIn = this->out.template begin<DATAENC>();
-            auto dataOut = this->in.template begin<DATARAW>();
+            auto dataIn = this->bufEncoded.template begin<DATAENC>();
+            auto dataOut = this->bufResult.template begin<DATARAW>();
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
@@ -88,15 +88,15 @@ struct AN_seq_divmod :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
             size_t i = 0;
-            auto dataIn = this->out.template begin<DATAENC>();
-            auto dataOut = this->in.template begin<DATARAW>();
+            auto dataIn = this->bufEncoded.template begin<DATAENC>();
+            auto dataOut = this->bufResult.template begin<DATARAW>();
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
                     if ((*dataIn % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->out.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration);
                     }
                     *dataOut = *dataIn / this->A;
                 }
@@ -104,7 +104,7 @@ struct AN_seq_divmod :
             // remaining numbers
             for (; i < numValues; ++i, ++dataOut, ++dataIn) {
                 if ((*dataIn % this->A) != 0) {
-                    throw ErrorInfo(__FILE__, __LINE__, dataIn - this->out.template begin<DATAENC>(), iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration);
                 }
                 *dataOut = *dataIn / this->A;
             }

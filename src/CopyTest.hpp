@@ -27,27 +27,25 @@
 #include <Util/ErrorInfo.hpp>
 #include <Util/Intrinsics.hpp>
 
-template<size_t UNROLL>
+template<typename DATA, size_t UNROLL>
 struct CopyTest :
-        public Test<uint8_t, uint8_t>,
-        public SequentialTest {
+        public Test<DATA, DATA>,
+        public ScalarTest {
 
-    CopyTest(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out)
-            : Test<uint8_t, uint8_t>(name, in, out) {
-    }
+    using Test<DATA, DATA>::Test;
 
     virtual ~CopyTest() {
+    }
+
+    size_t getNumBytes() {
+        return sizeof(DATA) * (this->bufRaw.template end<DATA>() - this->bufRaw.template begin<DATA>());
     }
 
     void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
-            memmove(this->out.begin(), this->in.begin(), numBytes);
+            memmove(this->bufEncoded.begin(), this->bufRaw.begin(), getNumBytes());
         }
     }
 
@@ -59,28 +57,64 @@ struct CopyTest :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
-            int ret = memcmp(this->out.begin(), this->in.begin(), numBytes);
+            int ret = memcmp(this->bufEncoded.begin(), this->bufRaw.begin(), getNumBytes());
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
             }
         }
     }
 
-    bool DoReencodeChecked() override {
+    bool DoArithmetic() override {
+        return true;
+    }
+
+    void RunArithmetic(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+        }
+    }
+
+    bool DoArithmeticChecked() override {
         return false;
+    }
+
+    void RunArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+    }
+
+    bool DoAggregate(
+            const AggregateConfiguration & config) override {
+        return false;
+    }
+
+    void RunAggregate(
+            const AggregateConfiguration & config) override {
+    }
+
+    bool DoAggregateChecked(
+            const AggregateConfiguration & config) override {
+        return false;
+    }
+
+    void RunAggregateChecked(
+            const AggregateConfiguration & config) override {
+    }
+
+    bool DoReencodeChecked() override {
+        return true;
     }
 
     void RunReencodeChecked(
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
-            int ret = memcmp(this->in.begin(), this->out.begin(), numBytes);
+            size_t numBytes = getNumBytes();
+            int ret = memcmp(this->bufRaw.begin(), this->bufEncoded.begin(), numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
             }
-            memmove(this->in.begin(), this->out.begin(), numBytes);
+            memmove(this->bufResult.begin(), this->bufEncoded.begin(), numBytes);
         }
     }
 
@@ -92,8 +126,7 @@ struct CopyTest :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
-            memmove(this->in.begin(), this->out.begin(), numBytes);
+            memmove(this->bufResult.begin(), this->bufEncoded.begin(), getNumBytes());
         }
     }
 
@@ -105,12 +138,30 @@ struct CopyTest :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numBytes = this->in.template end<uint8_t>() - this->in.template begin<uint8_t>();
-            int ret = memcmp(this->out.begin(), this->out.begin(), numBytes);
+            size_t numBytes = getNumBytes();
+            int ret = memcmp(this->bufEncoded.begin(), this->bufRaw.begin(), numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
             }
-            memmove(this->in.begin(), this->out.begin(), numBytes);
+            memmove(this->bufResult.begin(), this->bufEncoded.begin(), numBytes);
         }
     }
+};
+
+template<size_t UNROLL>
+struct CopyTest8 :
+        public CopyTest<uint8_t, UNROLL> {
+    using CopyTest<uint8_t, UNROLL>::CopyTest;
+};
+
+template<size_t UNROLL>
+struct CopyTest16 :
+        public CopyTest<uint16_t, UNROLL> {
+    using CopyTest<uint16_t, UNROLL>::CopyTest;
+};
+
+template<size_t UNROLL>
+struct CopyTest32 :
+        public CopyTest<uint32_t, UNROLL> {
+    using CopyTest<uint32_t, UNROLL>::CopyTest;
 };

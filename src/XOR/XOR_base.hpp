@@ -16,44 +16,68 @@
 
 #include <cstdint>
 
-#include <Test.hpp>
-
 template<typename DATA, typename CS>
-CS
-computeFinalChecksum(
-        DATA & checksum);
+struct XOR;
 
 template<>
-uint8_t computeFinalChecksum<uint16_t, uint8_t>(
-        uint16_t & checksum) {
-    auto pChk = reinterpret_cast<uint8_t*>(&checksum);
-    return pChk[0] ^ pChk[1];
-}
+struct XOR<uint16_t, uint8_t> {
+    static uint8_t
+    computeFinalChecksum(
+            uint16_t & checksum);
+};
 
 template<>
-uint16_t computeFinalChecksum<uint16_t, uint16_t>(
-        uint16_t & checksum) {
-    return checksum;
-}
+struct XOR<uint16_t, uint16_t> {
+    static uint16_t
+    computeFinalChecksum(
+            uint16_t & checksum);
+};
 
 template<>
-uint8_t computeFinalChecksum<uint32_t, uint8_t>(
-        uint32_t & checksum) {
-    auto pChk = reinterpret_cast<uint8_t*>(&checksum);
-    return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3];
-}
+struct XOR<uint32_t, uint8_t> {
+    static uint8_t
+    computeFinalChecksum(
+            uint32_t & checksum);
+};
 
 template<>
-uint32_t computeFinalChecksum<uint32_t, uint32_t>(
-        uint32_t & checksum) {
-    return checksum;
-}
+struct XOR<uint32_t, uint32_t> {
+    static uint32_t
+    computeFinalChecksum(
+            uint32_t & checksum);
+};
 
-// base implementation for all native data types
+template<typename CS>
+struct XORdiff;
 
-template<typename T>
-bool checksumsDiffer(
-        T checksum1,
-        T checksum2) {
-    return checksum1 != checksum2;
-}
+template<>
+struct XORdiff<uint8_t> {
+    static bool
+    checksumsDiffer(
+            uint8_t cs1,
+            uint8_t cs2);
+};
+
+template<>
+struct XORdiff<uint16_t> {
+    static bool
+    checksumsDiffer(
+            uint16_t cs1,
+            uint16_t cs2);
+};
+
+template<>
+struct XORdiff<uint32_t> {
+    static bool
+    checksumsDiffer(
+            uint32_t cs1,
+            uint32_t cs2);
+};
+
+template<>
+struct XORdiff<uint64_t> {
+    static bool
+    checksumsDiffer(
+            uint64_t cs1,
+            uint64_t cs2);
+};

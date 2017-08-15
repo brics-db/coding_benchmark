@@ -28,20 +28,23 @@
 TestBase::TestBase(
         size_t datawidth,
         const std::string & name,
-        AlignedBlock & in,
-        AlignedBlock & out)
+        AlignedBlock & bufRaw,
+        AlignedBlock & bufEncoded,
+        AlignedBlock & bufResult)
         : datawidth(datawidth),
           name(name),
-          in(in),
-          out(out) {
+          bufRaw(bufRaw),
+          bufEncoded(bufEncoded),
+          bufResult(bufResult) {
 }
 
 TestBase::TestBase(
         TestBase & other)
         : datawidth(other.datawidth),
           name(other.name),
-          in(other.in),
-          out(other.out) {
+          bufRaw(other.bufRaw),
+          bufEncoded(other.bufEncoded),
+          bufResult(other.bufResult) {
 }
 
 TestBase::~TestBase() {
@@ -407,16 +410,16 @@ TestInfos TestBase::Execute(
     return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiArithChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk);
 }
 
-SequentialTest::~SequentialTest() {
+ScalarTest::~ScalarTest() {
 }
 
 const std::string &
-SequentialTest::getSIMDtypeName() {
-    static const std::string SIMDtypeName("Seq");
+ScalarTest::getSIMDtypeName() {
+    static const std::string SIMDtypeName("Scalar");
     return SIMDtypeName;
 }
 
-bool SequentialTest::HasCapabilities() {
+bool ScalarTest::HasCapabilities() {
     return true;
 }
 

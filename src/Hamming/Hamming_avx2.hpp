@@ -45,4 +45,50 @@ struct Hamming_avx2_32 :
 
 };
 
+extern template
+struct Hamming_avx2_16<1>;
+extern template
+struct Hamming_avx2_16<2>;
+extern template
+struct Hamming_avx2_16<4>;
+extern template
+struct Hamming_avx2_16<8>;
+extern template
+struct Hamming_avx2_16<16>;
+extern template
+struct Hamming_avx2_16<32>;
+extern template
+struct Hamming_avx2_16<64>;
+extern template
+struct Hamming_avx2_16<128>;
+extern template
+struct Hamming_avx2_16<256>;
+extern template
+struct Hamming_avx2_16<512>;
+extern template
+struct Hamming_avx2_16<1024>;
+
+extern template
+struct Hamming_avx2_32<1>;
+extern template
+struct Hamming_avx2_32<2>;
+extern template
+struct Hamming_avx2_32<4>;
+extern template
+struct Hamming_avx2_32<8>;
+extern template
+struct Hamming_avx2_32<16>;
+extern template
+struct Hamming_avx2_32<32>;
+extern template
+struct Hamming_avx2_32<64>;
+extern template
+struct Hamming_avx2_32<128>;
+extern template
+struct Hamming_avx2_32<256>;
+extern template
+struct Hamming_avx2_32<512>;
+extern template
+struct Hamming_avx2_32<1024>;
+
 #endif /* HAMMING_HAMMING_AVX2_HPP_ */

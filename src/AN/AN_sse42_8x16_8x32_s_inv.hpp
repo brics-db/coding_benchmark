@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "AN_sse42_8x16_8x32.hpp"
+#include <AN/AN_sse42_8x16_8x32.hpp>
 
 template<size_t UNROLL>
 struct AN_sse42_8x16_8x32_s_inv :
@@ -32,8 +32,8 @@ struct AN_sse42_8x16_8x32_s_inv :
     virtual void RunCheck(
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            auto data = this->out.template begin<__m128i>();
-            auto dataEnd = this->out.template end<__m128i>();
+            auto data = this->bufEncoded.template begin<__m128i >();
+            auto dataEnd = this->bufEncoded.template end<__m128i >();
             int32_t dMin = std::numeric_limits<int16_t>::min();
             int32_t dMax = std::numeric_limits<int16_t>::max();
             __m128i mm_dMin = _mm_set1_epi32(dMin); // we assume 16-bit input data
@@ -44,7 +44,7 @@ struct AN_sse42_8x16_8x32_s_inv :
                 for (size_t k = 0; k < UNROLL; ++k) {
                     auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mm_ainv);
                     if (_mm_movemask_epi8(_mm_cmplt_epi32(mmIn, mm_dMin)) | _mm_movemask_epi8(_mm_cmpgt_epi32(mmIn, mm_dMax))) {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data) - this->out.template begin<int32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data) - this->bufEncoded.template begin<int32_t>(), iteration);
                     }
                     ++data;
                 }
@@ -53,7 +53,7 @@ struct AN_sse42_8x16_8x32_s_inv :
             while (data <= (dataEnd - 1)) {
                 auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mm_ainv);
                 if (_mm_movemask_epi8(_mm_cmplt_epi32(mmIn, mm_dMin)) | _mm_movemask_epi8(_mm_cmpgt_epi32(mmIn, mm_dMax))) {
-                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data) - this->out.template begin<int32_t>(), iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data) - this->bufEncoded.template begin<int32_t>(), iteration);
                 }
                 ++data;
             }
@@ -62,7 +62,7 @@ struct AN_sse42_8x16_8x32_s_inv :
                 for (auto data2 = reinterpret_cast<int32_t*>(data); data2 < dataEnd2; ++data2) {
                     auto data = *data2 * this->A_INV;
                     if (data < dMin || data > dMax) {
-                        throw ErrorInfo(__FILE__, __LINE__, data2 - this->out.template begin<int32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, data2 - this->bufEncoded.template begin<int32_t>(), iteration);
                     }
                 }
             }
@@ -78,10 +78,10 @@ struct AN_sse42_8x16_8x32_s_inv :
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (int32_t);
             const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
-            size_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
+            size_t numValues = this->bufRaw.template end<int16_t>() - this->bufRaw.template begin<int16_t>();
             size_t i = 0;
-            auto dataIn = this->out.template begin<__m128i>();
-            auto dataOut = this->in.template begin<int64_t>();
+            auto dataIn = this->bufEncoded.template begin<__m128i>();
+            auto dataOut = this->bufResult.template begin<int64_t>();
             auto mm_Ainv = _mm_set1_epi32(this->A_INV);
             auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0D0C0908, 0x05040100);
             for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {

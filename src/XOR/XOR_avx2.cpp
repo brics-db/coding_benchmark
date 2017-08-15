@@ -13,150 +13,137 @@
 // limitations under the License.
 
 /* 
- * File:   XOR_avx2.hpp
+ * File:   XOR_avx2.cpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
- * Created on 07-07-2017 17:14
+ * Created on 15-08-2017 16:47
  */
-#ifndef XOR_XOR_AVX2_HPP_
-#define XOR_XOR_AVX2_HPP_
 
-#include <XOR/XOR_avx2.tcc>
+#ifdef __AVX2__
 
-template<size_t BLOCKSIZE>
-struct XOR_avx2_16x16_16 :
-        public XOR_avx2<uint16_t, uint16_t, BLOCKSIZE>,
-        public AVX2Test {
+#include <XOR/XOR_avx2.hpp>
 
-    using XOR_avx2<uint16_t, uint16_t, BLOCKSIZE>::XOR_avx2;
+__m256i XOR<__m256i, __m256i>::computeFinalChecksum(
+        __m256i & checksum) {
+    return checksum;
+}
 
-    virtual ~XOR_avx2_16x16_16() {
-    }
-};
+uint32_t XOR<__m256i, uint32_t>::computeFinalChecksum(
+        __m256i & checksum) {
+    auto pChk = reinterpret_cast<uint32_t*>(&checksum);
+    return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3] ^ pChk[4] ^ pChk[5] ^ pChk[6] ^ pChk[7];
+}
 
-template<size_t BLOCKSIZE>
-struct XOR_avx2_16x16_16x16 :
-        public XOR_avx2<uint16_t, __m256i, BLOCKSIZE>,
-        public AVX2Test {
+uint16_t XOR<__m256i, uint16_t>::computeFinalChecksum(
+        __m256i & checksum) {
+    auto pChk = reinterpret_cast<uint16_t*>(&checksum);
+    return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3] ^ pChk[4] ^ pChk[5] ^ pChk[6] ^ pChk[7] ^ pChk[8] ^ pChk[9] ^ pChk[10] ^ pChk[11] ^ pChk[12] ^ pChk[13] ^ pChk[14] ^ pChk[15];
+}
 
-    using XOR_avx2<uint16_t, __m256i, BLOCKSIZE>::XOR_avx2;
+uint8_t XOR<__m256i, uint8_t>::computeFinalChecksum(
+        __m256i & checksum) {
+    auto pChk = reinterpret_cast<uint16_t*>(&checksum);
+    return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3] ^ pChk[4] ^ pChk[5] ^ pChk[6] ^ pChk[7] ^ pChk[8] ^ pChk[9] ^ pChk[10] ^ pChk[11] ^ pChk[12] ^ pChk[13] ^ pChk[14] ^ pChk[15] ^ pChk[16] ^ pChk[17]
+            ^ pChk[18] ^ pChk[19] ^ pChk[20] ^ pChk[21] ^ pChk[22] ^ pChk[23] ^ pChk[24] ^ pChk[25] ^ pChk[26] ^ pChk[27] ^ pChk[28] ^ pChk[29] ^ pChk[30] ^ pChk[31];
+}
 
-    virtual ~XOR_avx2_16x16_16x16() {
-    }
-};
+bool XORdiff<__m256i>::checksumsDiffer(
+        __m256i checksum1,
+        __m256i checksum2) {
+    // check if any of the 16 bytes differ
+    return static_cast<int>(0xFFFFFFFF) != _mm256_movemask_epi8(_mm256_cmpeq_epi8(checksum1, checksum2));
+}
 
-template<size_t BLOCKSIZE>
-struct XOR_avx2_8x32_32 :
-        public XOR_avx2<uint32_t, uint32_t, BLOCKSIZE>,
-        public AVX2Test {
-
-    using XOR_avx2<uint32_t, uint32_t, BLOCKSIZE>::XOR_avx2;
-
-    virtual ~XOR_avx2_8x32_32() {
-    }
-};
-
-template<size_t BLOCKSIZE>
-struct XOR_avx2_8x32_8x32 :
-        public XOR_avx2<uint32_t, __m256i, BLOCKSIZE>,
-        public AVX2Test {
-
-    using XOR_avx2<uint32_t, __m256i, BLOCKSIZE>::XOR_avx2;
-
-    virtual ~XOR_avx2_8x32_8x32() {
-    }
-};
-
-extern template
+template
 struct XOR_avx2_16x16_16<1>;
-extern template
+template
 struct XOR_avx2_16x16_16<2>;
-extern template
+template
 struct XOR_avx2_16x16_16<4>;
-extern template
+template
 struct XOR_avx2_16x16_16<8>;
-extern template
+template
 struct XOR_avx2_16x16_16<16>;
-extern template
+template
 struct XOR_avx2_16x16_16<32>;
-extern template
+template
 struct XOR_avx2_16x16_16<64>;
-extern template
+template
 struct XOR_avx2_16x16_16<128>;
-extern template
+template
 struct XOR_avx2_16x16_16<256>;
-extern template
+template
 struct XOR_avx2_16x16_16<512>;
-extern template
+template
 struct XOR_avx2_16x16_16<1024>;
 
-extern template
+template
 struct XOR_avx2_16x16_16x16<1>;
-extern template
+template
 struct XOR_avx2_16x16_16x16<2>;
-extern template
+template
 struct XOR_avx2_16x16_16x16<4>;
-extern template
+template
 struct XOR_avx2_16x16_16x16<8>;
-extern template
+template
 struct XOR_avx2_16x16_16x16<16>;
-extern template
+template
 struct XOR_avx2_16x16_16x16<32>;
-extern template
+template
 struct XOR_avx2_16x16_16x16<64>;
-extern template
+template
 struct XOR_avx2_16x16_16x16<128>;
-extern template
+template
 struct XOR_avx2_16x16_16x16<256>;
-extern template
+template
 struct XOR_avx2_16x16_16x16<512>;
-extern template
+template
 struct XOR_avx2_16x16_16x16<1024>;
 
-extern template
+template
 struct XOR_avx2_8x32_32<1>;
-extern template
+template
 struct XOR_avx2_8x32_32<2>;
-extern template
+template
 struct XOR_avx2_8x32_32<4>;
-extern template
+template
 struct XOR_avx2_8x32_32<8>;
-extern template
+template
 struct XOR_avx2_8x32_32<16>;
-extern template
+template
 struct XOR_avx2_8x32_32<32>;
-extern template
+template
 struct XOR_avx2_8x32_32<64>;
-extern template
+template
 struct XOR_avx2_8x32_32<128>;
-extern template
+template
 struct XOR_avx2_8x32_32<256>;
-extern template
+template
 struct XOR_avx2_8x32_32<512>;
-extern template
+template
 struct XOR_avx2_8x32_32<1024>;
 
-extern template
+template
 struct XOR_avx2_8x32_8x32<1>;
-extern template
+template
 struct XOR_avx2_8x32_8x32<2>;
-extern template
+template
 struct XOR_avx2_8x32_8x32<4>;
-extern template
+template
 struct XOR_avx2_8x32_8x32<8>;
-extern template
+template
 struct XOR_avx2_8x32_8x32<16>;
-extern template
+template
 struct XOR_avx2_8x32_8x32<32>;
-extern template
+template
 struct XOR_avx2_8x32_8x32<64>;
-extern template
+template
 struct XOR_avx2_8x32_8x32<128>;
-extern template
+template
 struct XOR_avx2_8x32_8x32<256>;
-extern template
+template
 struct XOR_avx2_8x32_8x32<512>;
-extern template
+template
 struct XOR_avx2_8x32_8x32<1024>;
 
 #endif

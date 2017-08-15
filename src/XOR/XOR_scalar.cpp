@@ -13,150 +13,102 @@
 // limitations under the License.
 
 /* 
- * File:   XOR_seq.hpp
+ * File:   XOR_scalar.cpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
- * Created on 07-07-2017 17:16
+ * Created on 15-08-2017 17:04
  */
-#ifndef XOR_XOR_SCALAR_HPP_
-#define XOR_XOR_SCALAR_HPP_
 
-#include <XOR/XOR_scalar.tcc>
+#include <XOR/XOR_scalar.hpp>
 
-template<size_t BLOCKSIZE>
-struct XOR_scalar_32_8 :
-        public XOR_scalar<uint32_t, uint8_t, BLOCKSIZE>,
-        public ScalarTest {
-
-    using XOR_scalar<uint32_t, uint8_t, BLOCKSIZE>::XOR_scalar;
-
-    virtual ~XOR_scalar_32_8() {
-    }
-};
-
-template<size_t BLOCKSIZE>
-struct XOR_scalar_32_32 :
-        public XOR_scalar<uint32_t, uint32_t, BLOCKSIZE>,
-        public ScalarTest {
-
-    using XOR_scalar<uint32_t, uint32_t, BLOCKSIZE>::XOR_scalar;
-
-    virtual ~XOR_scalar_32_32() {
-    }
-};
-
-template<size_t BLOCKSIZE>
-struct XOR_scalar_16_8 :
-        public XOR_scalar<uint16_t, uint8_t, BLOCKSIZE>,
-        public ScalarTest {
-
-    using XOR_scalar<uint16_t, uint8_t, BLOCKSIZE>::XOR_scalar;
-
-    virtual ~XOR_scalar_16_8() {
-    }
-};
-
-template<size_t BLOCKSIZE>
-struct XOR_scalar_16_16 :
-        public XOR_scalar<uint16_t, uint16_t, BLOCKSIZE>,
-        public ScalarTest {
-
-    using XOR_scalar<uint16_t, uint16_t, BLOCKSIZE>::XOR_scalar;
-
-    virtual ~XOR_scalar_16_16() {
-    }
-};
-
-extern template
+template
 struct XOR_scalar_32_8<1>;
-extern template
+template
 struct XOR_scalar_32_8<2>;
-extern template
+template
 struct XOR_scalar_32_8<4>;
-extern template
+template
 struct XOR_scalar_32_8<8>;
-extern template
+template
 struct XOR_scalar_32_8<16>;
-extern template
+template
 struct XOR_scalar_32_8<32>;
-extern template
+template
 struct XOR_scalar_32_8<64>;
-extern template
+template
 struct XOR_scalar_32_8<128>;
-extern template
+template
 struct XOR_scalar_32_8<256>;
-extern template
+template
 struct XOR_scalar_32_8<512>;
-extern template
+template
 struct XOR_scalar_32_8<1024>;
 
-extern template
+template
 struct XOR_scalar_32_32<1>;
-extern template
+template
 struct XOR_scalar_32_32<2>;
-extern template
+template
 struct XOR_scalar_32_32<4>;
-extern template
+template
 struct XOR_scalar_32_32<8>;
-extern template
+template
 struct XOR_scalar_32_32<16>;
-extern template
+template
 struct XOR_scalar_32_32<32>;
-extern template
+template
 struct XOR_scalar_32_32<64>;
-extern template
+template
 struct XOR_scalar_32_32<128>;
-extern template
+template
 struct XOR_scalar_32_32<256>;
-extern template
+template
 struct XOR_scalar_32_32<512>;
-extern template
+template
 struct XOR_scalar_32_32<1024>;
 
-extern template
+template
 struct XOR_scalar_16_8<1>;
-extern template
+template
 struct XOR_scalar_16_8<2>;
-extern template
+template
 struct XOR_scalar_16_8<4>;
-extern template
+template
 struct XOR_scalar_16_8<8>;
-extern template
+template
 struct XOR_scalar_16_8<16>;
-extern template
+template
 struct XOR_scalar_16_8<32>;
-extern template
+template
 struct XOR_scalar_16_8<64>;
-extern template
+template
 struct XOR_scalar_16_8<128>;
-extern template
+template
 struct XOR_scalar_16_8<256>;
-extern template
+template
 struct XOR_scalar_16_8<512>;
-extern template
+template
 struct XOR_scalar_16_8<1024>;
 
-extern template
+template
 struct XOR_scalar_16_16<1>;
-extern template
+template
 struct XOR_scalar_16_16<2>;
-extern template
+template
 struct XOR_scalar_16_16<4>;
-extern template
+template
 struct XOR_scalar_16_16<8>;
-extern template
+template
 struct XOR_scalar_16_16<16>;
-extern template
+template
 struct XOR_scalar_16_16<32>;
-extern template
+template
 struct XOR_scalar_16_16<64>;
-extern template
+template
 struct XOR_scalar_16_16<128>;
-extern template
+template
 struct XOR_scalar_16_16<256>;
-extern template
+template
 struct XOR_scalar_16_16<512>;
-extern template
+template
 struct XOR_scalar_16_16<1024>;
-
-#endif /* XOR_XOR_SCALAR_HPP_ */

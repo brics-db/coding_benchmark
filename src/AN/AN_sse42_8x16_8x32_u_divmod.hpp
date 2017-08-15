@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "AN_sse42_8x16_8x32.hpp"
+#include <AN/AN_sse42_8x16_8x32.hpp>
 
 template<size_t UNROLL>
 struct AN_sse42_8x16_8x32_u_divmod :
@@ -32,8 +32,8 @@ struct AN_sse42_8x16_8x32_u_divmod :
     virtual void RunCheck(
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            auto data = this->out.template begin<__m128i>();
-            auto dataEnd = this->out.template end<__m128i>();
+            auto data = this->bufEncoded.template begin<__m128i >();
+            auto dataEnd = this->bufEncoded.template end<__m128i >();
             while (data <= (dataEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
@@ -42,10 +42,10 @@ struct AN_sse42_8x16_8x32_u_divmod :
                     // auto mm_pd2 = _mm_cvtepi32_pd(_mm_shuffle_epi32(mmIn, 0xEE)); // higher 2 converted
                     // auto res1 = _mm_div_pd(mm_pd1, mm_A);
                     // auto res2 = _mm_div_pd(mm_pd2, mm_A);
-                    // auto mm_unenc = 
+                    // auto mm_unenc =
                     if ((_mm_extract_epi32(mmIn, 0) % this->A != 0) || (_mm_extract_epi32(mmIn, 1) % this->A != 0) || (_mm_extract_epi32(mmIn, 2) % this->A != 0)
                             || (_mm_extract_epi32(mmIn, 3) % this->A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->bufEncoded.template begin<uint32_t>(), iteration);
                     }
                     ++data;
                 }
@@ -55,7 +55,7 @@ struct AN_sse42_8x16_8x32_u_divmod :
                 auto mmIn = _mm_lddqu_si128(data);
                 if ((_mm_extract_epi32(mmIn, 0) % this->A != 0) || (_mm_extract_epi32(mmIn, 1) % this->A != 0) || (_mm_extract_epi32(mmIn, 2) % this->A != 0)
                         || (_mm_extract_epi32(mmIn, 3) % this->A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
-                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->out.template begin<uint32_t>(), iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data) - this->bufEncoded.template begin<uint32_t>(), iteration);
                 }
                 ++data;
             }
@@ -63,7 +63,7 @@ struct AN_sse42_8x16_8x32_u_divmod :
                 auto dataEnd2 = reinterpret_cast<uint32_t*>(dataEnd);
                 for (auto data2 = reinterpret_cast<uint32_t*>(data); data2 < dataEnd2; ++data2) {
                     if ((*data2 % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, data2 - this->out.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, data2 - this->bufEncoded.template begin<uint32_t>(), iteration);
                     }
                 }
             }
@@ -79,10 +79,10 @@ struct AN_sse42_8x16_8x32_u_divmod :
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (uint32_t);
             const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
-            size_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
+            size_t numValues = this->bufRaw.template end<int16_t>() - this->bufRaw.template begin<int16_t>();
             size_t i = 0;
-            auto dataIn = this->out.template begin<__m128i>();
-            auto dataOut = this->in.template begin<uint64_t>();
+            auto dataIn = this->bufEncoded.template begin<__m128i>();
+            auto dataOut = this->bufResult.template begin<uint64_t>();
             auto mm_A = _mm_set1_pd(static_cast<double>(this->A_INV));
             auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0B0A0908, 0x03020100);
             for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {

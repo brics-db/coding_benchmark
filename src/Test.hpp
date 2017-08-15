@@ -14,28 +14,25 @@
 
 #pragma once
 
+#include <cstdint>
+#include <limits>
+#include <climits>
 #include <string>
 #include <cstring>
 #include <cstdint>
 #include <optional>
 #include <variant>
+#include <type_traits>
+#include <sstream>
 
 #ifdef OMP
 #include <omp.h>
 #endif
 
-#include "Util/AlignedBlock.hpp"
-#include "Util/TestInfo.hpp"
-
-struct TestBase0 {
-
-    virtual ~TestBase0() {
-    }
-
-    virtual const std::string & getSIMDtypeName() = 0;
-
-    virtual bool HasCapabilities() = 0;
-};
+#include <Util/AlignedBlock.hpp>
+#include <Util/TestInfo.hpp>
+#include <Util/ErrorInfo.hpp>
+#include <Util/Intrinsics.hpp>
 
 struct TestConfiguration {
     const size_t numIterations;
@@ -126,21 +123,33 @@ struct DataGenerationConfiguration {
     }
 };
 
+struct TestBase0 {
+
+    virtual ~TestBase0() {
+    }
+
+    virtual const std::string & getSIMDtypeName() = 0;
+
+    virtual bool HasCapabilities() = 0;
+};
+
 struct TestBase :
         virtual public TestBase0 {
 
 protected:
     size_t datawidth;
     std::string name;
-    AlignedBlock in;
-    AlignedBlock out;
+    AlignedBlock bufRaw;
+    AlignedBlock bufEncoded;
+    AlignedBlock bufResult;
 
 public:
     TestBase(
             size_t datawidth,
             const std::string & name,
-            AlignedBlock & in,
-            AlignedBlock & out);
+            AlignedBlock & bufRaw,
+            AlignedBlock & bufEncoded,
+            AlignedBlock & bufResult);
 
     TestBase(
             TestBase & other);
@@ -241,10 +250,10 @@ public:
             const DataGenerationConfiguration & configDataGen);
 };
 
-struct SequentialTest :
+struct ScalarTest :
         virtual public TestBase0 {
 
-    virtual ~SequentialTest();
+    virtual ~ScalarTest();
 
     virtual const std::string & getSIMDtypeName() override;
 
@@ -277,9 +286,10 @@ struct Test :
 
     Test(
             const std::string & name,
-            AlignedBlock & in,
-            AlignedBlock & out)
-            : TestBase(sizeof(DATAIN), name, in, out) {
+            AlignedBlock & bufRaw,
+            AlignedBlock & bufEncoded,
+            AlignedBlock & bufResult)
+            : TestBase(sizeof(DATAIN), name, bufRaw, bufEncoded, bufResult) {
     }
 
     virtual ~Test() {
@@ -294,18 +304,18 @@ struct Test :
     }
 
     void ResetBuffers(
-            const DataGenerationConfiguration & config) override {
+            const DataGenerationConfiguration & dataGenConfig) override {
         DATAIN mask = static_cast<DATAIN>(-1);
-        if (config.numEffectiveLSBs) {
-            mask = static_cast<DATAIN>((1ull << *config.numEffectiveLSBs) - 1ull);
+        if (dataGenConfig.numEffectiveLSBs) {
+            mask = static_cast<DATAIN>((1ull << *dataGenConfig.numEffectiveLSBs) - 1ull);
         }
-        auto pInEnd = this->in.template end<DATAIN>();
+        auto pInEnd = bufRaw.template end<DATAIN>();
         DATAIN value = static_cast<DATAIN>(12783);
-        for (DATAIN* pIn = this->in.template begin<DATAIN>(); pIn < pInEnd; ++pIn) {
+        for (DATAIN* pIn = bufRaw.template begin<DATAIN>(); pIn < pInEnd; ++pIn) {
             *pIn = mask & value;
             value = value * static_cast<DATAIN>(7577) + static_cast<DATAIN>(10467);
         }
-
-        memset(this->out.begin(), 0, this->out.nBytes);
+        memset(bufEncoded.begin(), 0, bufEncoded.nBytes);
+        memset(bufResult.begin(), 0, bufResult.nBytes);
     }
 };

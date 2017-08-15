@@ -77,54 +77,61 @@ int main(
     uint16_t AUserInv16 = ext_euclidean(AUser, 16);
 
     AlignedBlock input8(numElements * sizeof(uint8_t), 64);
-    AlignedBlock output16(numElements * sizeof(uint16_t), 64);
+    AlignedBlock encoded16(numElements * sizeof(uint16_t), 64);
+    AlignedBlock result16(numElements * sizeof(uint16_t), 64);
+
+    AlignedBlock input16(numElements * sizeof(uint16_t), 64);
+
     AlignedBlock input32(numElements * sizeof(uint32_t), 64);
-    AlignedBlock output64(numElements * sizeof(uint64_t), 64);
+    AlignedBlock encoded64(numElements * sizeof(uint64_t), 64);
+    AlignedBlock result64(numElements * sizeof(uint64_t), 64);
+
     std::vector<std::vector<TestInfos>> vecTestInfos;
 
-#define WarmUp(type, name, input, output) \
+#define WarmUp(type, name, input, encoded, result) \
     do { \
         std::clog << "# WarmUp " << name << std::endl; \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, input, output); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, input, encoded, result); \
     } while (0)
 
 #define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
 
-#define TestCase4(type, name, input, output) \
+#define TestCase5(type, name, input, encoded, result) \
     do { \
         std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
         vecTestInfos.emplace_back(); \
         auto & vec = *vecTestInfos.rbegin(); \
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, encoded, result); \
     } while (0)
 
-#define TestCase6(type, name, input, output, A, AInv) \
+#define TestCase7(type, name, input, encoded, result, A, AInv) \
     do { \
         std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
         vecTestInfos.emplace_back(); \
         auto & vec = *vecTestInfos.rbegin(); \
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output, A, AInv); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, encoded, result, A, AInv); \
     } while (0)
 
     TestConfiguration testConfig(iterations);
     DataGenerationConfiguration dataGenConfig(8);
 
-    WarmUp(CopyTest, "Copy 8>16", input8, output16);
-    WarmUp(CopyTest, "Copy 32>64", input32, output64);
-    WarmUp(CopyTest2_8_16, "Copy2 8>16", input8, output16);
-    WarmUp(CopyTest2_32_64, "Copy2 32>64", input32, output64);
+    WarmUp(CopyTest8, "Copy 8>8", input8, encoded16, result16);
+    WarmUp(CopyTest16, "Copy 16>16", input16, encoded16, result16);
+    WarmUp(CopyTest32, "Copy 32>32", input32, encoded64, result64);
+    WarmUp(CopyTest2_8_16, "Copy2 8>16", input8, encoded16, result16);
+    WarmUp(CopyTest2_32_64, "Copy2 32>64", input32, encoded64, result64);
 
-    TestCase(CopyTest, "Copy 8>16", input8, output16);
-    TestCase(CopyTest2_8_16, "Copy2 8>16", input8, output16);
-    TestCase(AN_seq_8_16_u_inv, "AN U 8>16", input8, output16, AUser, AUserInv16);
-    TestCase(AN_seq_8_16_s_inv, "AN S 8>16", input8, output16, static_cast<int16_t>(AUser), static_cast<int16_t>(AUserInv16));
+    TestCase(CopyTest8, "Copy 8>8", input8, encoded16, result16);
+    TestCase(CopyTest2_8_16, "Copy2 8>16", input8, encoded16, result16);
+    TestCase(AN_seq_8_16_u_inv, "AN U 8>16", input8, encoded16, result16, AUser, AUserInv16);
+    TestCase(AN_seq_8_16_s_inv, "AN S 8>16", input8, encoded16, result16, static_cast<int16_t>(AUser), static_cast<int16_t>(AUserInv16));
 
-    TestCase(CopyTest, "Copy 32>64", input32, output64);
-    TestCase(CopyTest2_32_64, "Copy2 32>64", input32, output64);
-    TestCase(AN_seq_32_64_u_inv, "AN U 32>64", input32, output64, AUser, AUserInv64);
-    TestCase(AN_seq_32_64_s_inv, "AN S 32>64", input32, output64, static_cast<int64_t>(AUser), static_cast<int64_t>(AUserInv64));
+    TestCase(CopyTest32, "Copy 32>32", input32, encoded64, result64);
+    TestCase(CopyTest2_32_64, "Copy2 32>64", input32, encoded64, result64);
+    TestCase(AN_seq_32_64_u_inv, "AN U 32>64", input32, encoded64, result64, AUser, AUserInv64);
+    TestCase(AN_seq_32_64_s_inv, "AN S 32>64", input32, encoded64, result64, static_cast<int64_t>(AUser), static_cast<int64_t>(AUserInv64));
 
 #undef WarmUp
 #undef TestCase

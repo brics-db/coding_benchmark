@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "AN_sse42_8x16_8x32.hpp"
+#include <AN/AN_sse42_8x16_8x32.hpp>
 
 template<size_t UNROLL>
 struct AN_sse42_8x16_8x32_s_divmod :
@@ -33,8 +33,8 @@ struct AN_sse42_8x16_8x32_s_divmod :
             const CheckConfiguration & config) override {
         bool first = true;
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            auto data = this->out.template begin<__m128i>();
-            auto dataEnd = this->out.template end<__m128i>();
+            auto data = this->bufEncoded.template begin<__m128i >();
+            auto dataEnd = this->bufEncoded.template end<__m128i >();
             while (data <= (dataEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
@@ -45,10 +45,10 @@ struct AN_sse42_8x16_8x32_s_divmod :
                             std::cerr << "[A=" << this->A << "]\n";
                             first = false;
                         }
-                        size_t i = reinterpret_cast<int32_t*>(data) - this->out.template begin<int32_t>();
+                        size_t i = reinterpret_cast<int32_t*>(data) - this->bufEncoded.template begin<int32_t>();
                         std::cerr << "\tout: [" << i << '=' << _mm_extract_epi32(mmIn, 0) << "] [" << (i + 1) << '=' << _mm_extract_epi32(mmIn, 1) << "] [" << (i + 2) << '='
                                 << _mm_extract_epi32(mmIn, 2) << "] [" << (i + 3) << '=' << _mm_extract_epi32(mmIn, 3) << ']' << std::endl;
-                        auto pIn = this->in.template begin<int16_t>() + i;
+                        auto pIn = this->bufEncoded.template begin<int16_t>() + i;
                         std::cerr << "\t in: [" << i << '=' << *pIn << "] [" << (i + 1) << '=' << *(pIn + 1) << "] [" << (i + 2) << '=' << *(pIn + 2) << "] [" << (i + 3) << '=' << *(pIn + 3) << ']'
                                 << std::endl;
                         // throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -65,10 +65,10 @@ struct AN_sse42_8x16_8x32_s_divmod :
                         std::cerr << "[A=" << this->A << "]\n";
                         first = false;
                     }
-                    size_t i = reinterpret_cast<int32_t*>(data) - this->out.template begin<int32_t>();
+                    size_t i = reinterpret_cast<int32_t*>(data) - this->bufEncoded.template begin<int32_t>();
                     std::cerr << "\t[" << i << '=' << _mm_extract_epi32(mmIn, 0) << "] [" << (i + 1) << '=' << _mm_extract_epi32(mmIn, 1) << "] [" << (i + 2) << '=' << _mm_extract_epi32(mmIn, 2)
                             << "] [" << (i + 3) << '=' << _mm_extract_epi32(mmIn, 3) << ']' << std::endl;
-                    auto pIn = this->in.template begin<int16_t>() + i;
+                    auto pIn = this->bufEncoded.template begin<int16_t>() + i;
                     std::cerr << "\t in: [" << i << '=' << *pIn << "] [" << (i + 1) << '=' << *(pIn + 1) << "] [" << (i + 2) << '=' << *(pIn + 2) << "] [" << (i + 3) << '=' << *(pIn + 3) << ']'
                             << std::endl;
                     // throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -83,9 +83,9 @@ struct AN_sse42_8x16_8x32_s_divmod :
                             std::cerr << "[A=" << this->A << "]\n";
                             first = false;
                         }
-                        size_t i = data2 - this->out.template begin<int32_t>();
+                        size_t i = data2 - this->bufEncoded.template begin<int32_t>();
                         std::cerr << "\t[" << i << '=' << *data2 << ']' << std::endl;
-                        auto pIn = this->in.template begin<int16_t>() + i;
+                        auto pIn = this->bufEncoded.template begin<int16_t>() + i;
                         std::cerr << "\t in: [" << i << '=' << *pIn << std::endl;
                         // throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
@@ -103,10 +103,10 @@ struct AN_sse42_8x16_8x32_s_divmod :
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (int32_t);
             const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
-            size_t numValues = this->in.template end<int16_t>() - this->in.template begin<int16_t>();
+            size_t numValues = this->bufRaw.template end<int16_t>() - this->bufRaw.template begin<int16_t>();
             size_t i = 0;
-            auto dataIn = this->out.template begin<__m128i>();
-            auto dataOut = this->in.template begin<int64_t>();
+            auto dataIn = this->bufEncoded.template begin<__m128i>();
+            auto dataOut = this->bufResult.template begin<int64_t>();
             auto mm_A = _mm_set1_pd(static_cast<double>(this->A_INV));
             auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0B0A0908, 0x03020100);
             for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {

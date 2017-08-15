@@ -13,150 +13,132 @@
 // limitations under the License.
 
 /* 
- * File:   XOR_sse42.hpp
+ * File:   XOR_sse42.cpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
- * Created on 07-07-2017 17:18
+ * Created on 15-08-2017 17:40
  */
-#ifndef XOR_XOR_SSE42_HPP_
-#define XOR_XOR_SSE42_HPP_
 
-#include <XOR/XOR_sse42.tcc>
+#include <XOR/XOR_sse42.hpp>
 
-template<size_t BLOCKSIZE>
-struct XOR_sse42_4x32_32 :
-        public XOR_sse42<uint32_t, uint32_t, BLOCKSIZE>,
-        public SSE42Test {
+__m128i XOR<__m128i, __m128i>::computeFinalChecksum(
+        __m128i & checksum) {
+    return checksum;
+}
 
-    using XOR_sse42<uint32_t, uint32_t, BLOCKSIZE>::XOR_sse42;
+uint32_t XOR<__m128i, uint32_t>::computeFinalChecksum(
+        __m128i & checksum) {
+    auto pChk = reinterpret_cast<uint32_t*>(&checksum);
+    return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3];
+}
 
-    virtual ~XOR_sse42_4x32_32() {
-    }
-};
+uint16_t XOR<__m128i, uint16_t>::computeFinalChecksum(
+        __m128i & checksum) {
+    auto pChk = reinterpret_cast<uint16_t*>(&checksum);
+    return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3] ^ pChk[4] ^ pChk[5] ^ pChk[6] ^ pChk[7];
+}
 
-template<size_t BLOCKSIZE>
-struct XOR_sse42_4x32_4x32 :
-        public XOR_sse42<uint32_t, uint32_t, BLOCKSIZE>,
-        public SSE42Test {
+uint8_t XOR<__m128i, uint8_t>::computeFinalChecksum(
+        __m128i & checksum) {
+    auto pChk = reinterpret_cast<uint16_t*>(&checksum);
+    return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3] ^ pChk[4] ^ pChk[5] ^ pChk[6] ^ pChk[7] ^ pChk[8] ^ pChk[9] ^ pChk[10] ^ pChk[11] ^ pChk[12] ^ pChk[13] ^ pChk[14] ^ pChk[15];
+}
 
-    using XOR_sse42<uint32_t, uint32_t, BLOCKSIZE>::XOR_sse42;
+bool XORdiff<__m128i >::checksumsDiffer(
+        __m128i checksum1,
+        __m128i checksum2) {
+    // check if any of the 16 bytes differ
+    return 0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8(checksum1, checksum2));
+}
 
-    virtual ~XOR_sse42_4x32_4x32() {
-    }
-};
-
-template<size_t BLOCKSIZE>
-struct XOR_sse42_8x16_16 :
-        public XOR_sse42<uint16_t, uint16_t, BLOCKSIZE>,
-        public SSE42Test {
-
-    using XOR_sse42<uint16_t, uint16_t, BLOCKSIZE>::XOR_sse42;
-
-    virtual ~XOR_sse42_8x16_16() {
-    }
-};
-
-template<size_t BLOCKSIZE>
-struct XOR_sse42_8x16_8x16 :
-        public XOR_sse42<uint16_t, __m128i, BLOCKSIZE>,
-        public SSE42Test {
-
-    using XOR_sse42<uint16_t, __m128i, BLOCKSIZE>::XOR_sse42;
-
-    virtual ~XOR_sse42_8x16_8x16() {
-    }
-};
-
-extern template
+template
 struct XOR_sse42_4x32_32<1>;
-extern template
+template
 struct XOR_sse42_4x32_32<2>;
-extern template
+template
 struct XOR_sse42_4x32_32<4>;
-extern template
+template
 struct XOR_sse42_4x32_32<8>;
-extern template
+template
 struct XOR_sse42_4x32_32<16>;
-extern template
+template
 struct XOR_sse42_4x32_32<32>;
-extern template
+template
 struct XOR_sse42_4x32_32<64>;
-extern template
+template
 struct XOR_sse42_4x32_32<128>;
-extern template
+template
 struct XOR_sse42_4x32_32<256>;
-extern template
+template
 struct XOR_sse42_4x32_32<512>;
-extern template
+template
 struct XOR_sse42_4x32_32<1024>;
 
-extern template
+template
 struct XOR_sse42_4x32_4x32<1>;
-extern template
+template
 struct XOR_sse42_4x32_4x32<2>;
-extern template
+template
 struct XOR_sse42_4x32_4x32<4>;
-extern template
+template
 struct XOR_sse42_4x32_4x32<8>;
-extern template
+template
 struct XOR_sse42_4x32_4x32<16>;
-extern template
+template
 struct XOR_sse42_4x32_4x32<32>;
-extern template
+template
 struct XOR_sse42_4x32_4x32<64>;
-extern template
+template
 struct XOR_sse42_4x32_4x32<128>;
-extern template
+template
 struct XOR_sse42_4x32_4x32<256>;
-extern template
+template
 struct XOR_sse42_4x32_4x32<512>;
-extern template
+template
 struct XOR_sse42_4x32_4x32<1024>;
 
-extern template
+template
 struct XOR_sse42_8x16_16<1>;
-extern template
+template
 struct XOR_sse42_8x16_16<2>;
-extern template
+template
 struct XOR_sse42_8x16_16<4>;
-extern template
+template
 struct XOR_sse42_8x16_16<8>;
-extern template
+template
 struct XOR_sse42_8x16_16<16>;
-extern template
+template
 struct XOR_sse42_8x16_16<32>;
-extern template
+template
 struct XOR_sse42_8x16_16<64>;
-extern template
+template
 struct XOR_sse42_8x16_16<128>;
-extern template
+template
 struct XOR_sse42_8x16_16<256>;
-extern template
+template
 struct XOR_sse42_8x16_16<512>;
-extern template
+template
 struct XOR_sse42_8x16_16<1024>;
 
-extern template
+template
 struct XOR_sse42_8x16_8x16<1>;
-extern template
+template
 struct XOR_sse42_8x16_8x16<2>;
-extern template
+template
 struct XOR_sse42_8x16_8x16<4>;
-extern template
+template
 struct XOR_sse42_8x16_8x16<8>;
-extern template
+template
 struct XOR_sse42_8x16_8x16<16>;
-extern template
+template
 struct XOR_sse42_8x16_8x16<32>;
-extern template
+template
 struct XOR_sse42_8x16_8x16<64>;
-extern template
+template
 struct XOR_sse42_8x16_8x16<128>;
-extern template
+template
 struct XOR_sse42_8x16_8x16<256>;
-extern template
+template
 struct XOR_sse42_8x16_8x16<512>;
-extern template
+template
 struct XOR_sse42_8x16_8x16<1024>;
-
-#endif /* XOR_XOR_SSE42_HPP_ */

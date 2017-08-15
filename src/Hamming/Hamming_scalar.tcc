@@ -22,94 +22,71 @@
 
 #include <cstdint>
 
-#include "../Test.hpp"
-#include "../Util/Intrinsics.hpp"
+#include <Test.hpp>
+#include <Util/Intrinsics.hpp>
+#include <Util/ErrorInfo.hpp>
 
-struct hamming_seq_16_t {
+struct hamming_scalar_16_t {
 
     uint16_t data;
     uint8_t code;
 };
 
-struct hamming_seq_32_t {
+struct hamming_scalar_32_t {
 
     uint32_t data;
     uint8_t code;
 };
 
 template<typename OrigType>
-struct TypeMapSeq;
+struct HammingScalar;
 
 template<>
-struct TypeMapSeq<uint16_t> {
+struct HammingScalar<uint16_t> {
 
-    typedef hamming_seq_16_t hamming_seq_t;
+    typedef hamming_scalar_16_t hamming_scalar_t;
 
     static uint8_t computeHamming(
-            uint16_t data) {
-        uint8_t hamming = 0;
-        hamming |= (__builtin_popcount(data & 0xAD5B) & 0x1) << 1;
-        hamming |= (__builtin_popcount(data & 0x366D) & 0x1) << 2;
-        hamming |= (__builtin_popcount(data & 0xC78E) & 0x1) << 3;
-        hamming |= (__builtin_popcount(data & 0x07F0) & 0x1) << 4;
-        hamming |= (__builtin_popcount(data & 0xF800) & 0x1) << 5;
-        hamming |= (__builtin_popcount(data) + __builtin_popcount(hamming)) & 0x1;
-        return hamming;
-    }
+            uint16_t data);
 };
 
 template<>
-struct TypeMapSeq<uint32_t> {
+struct HammingScalar<uint32_t> {
 
-    typedef hamming_seq_32_t hamming_seq_t;
+    typedef hamming_scalar_32_t hamming_scalar_t;
 
     static uint8_t computeHamming(
-            uint32_t data) {
-        uint8_t hamming = 0;
-        hamming |= (__builtin_popcount(data & 0x56AAAD5B) & 0x1) << 1;
-        hamming |= (__builtin_popcount(data & 0x9B33366D) & 0x1) << 2;
-        hamming |= (__builtin_popcount(data & 0xE3C3C78E) & 0x1) << 3;
-        hamming |= (__builtin_popcount(data & 0x03FC07F0) & 0x1) << 4;
-        hamming |= (__builtin_popcount(data & 0x03FFF800) & 0x1) << 5;
-        hamming |= (__builtin_popcount(data & 0xFC000000) & 0x1) << 6;
-        hamming |= (__builtin_popcount(data) + __builtin_popcount(hamming)) & 0x1;
-        return hamming;
-    }
+            uint32_t data);
 };
 
 template<typename DATAIN, size_t UNROLL>
-struct Hamming_seq :
-        public Test<DATAIN, typename TypeMapSeq<DATAIN>::hamming_seq_t>,
-        public SequentialTest {
+struct Hamming_scalar :
+        public Test<DATAIN, typename HammingScalar<DATAIN>::hamming_scalar_t>,
+        public ScalarTest {
 
-    typedef typename TypeMapSeq<DATAIN>::hamming_seq_t hamming_seq_t;
+    typedef typename HammingScalar<DATAIN>::hamming_scalar_t hamming_scalar_t;
 
-    Hamming_seq(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out)
-            : Test<DATAIN, hamming_seq_t>(name, in, out) {
-    }
+    using Test<DATAIN, hamming_scalar_t>::Test;
 
-    virtual ~Hamming_seq() {
+    virtual ~Hamming_scalar() {
     }
 
     void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            auto data = this->in.template begin<DATAIN>();
-            auto dataEnd = this->in.template end<DATAIN>();
-            auto dataOut = this->out.template begin<hamming_seq_t>();
+            auto data = this->bufRaw.template begin<DATAIN>();
+            auto dataEnd = this->bufRaw.template end<DATAIN>();
+            auto dataOut = this->bufEncoded.template begin<hamming_scalar_t>();
             while (data <= (dataEnd - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                     dataOut->data = *data;
-                    dataOut->code = TypeMapSeq<DATAIN>::computeHamming(*data);
+                    dataOut->code = HammingScalar<DATAIN>::computeHamming(*data);
                 }
             }
             for (; data < dataEnd; ++data, ++dataOut) {
                 dataOut->data = *data;
-                dataOut->code = TypeMapSeq<DATAIN>::computeHamming(*data);
+                dataOut->code = HammingScalar<DATAIN>::computeHamming(*data);
             }
         }
     }
@@ -122,19 +99,19 @@ struct Hamming_seq :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
+            size_t numValues = this->bufRaw.template end<DATAIN>() - this->bufRaw.template begin<DATAIN>();
             size_t i = 0;
-            auto data = this->out.template begin<hamming_seq_t>();
+            auto data = this->bufEncoded.template begin<hamming_scalar_t>();
             while (i <= (numValues - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++i, ++data) {
-                    if (data->code != TypeMapSeq<DATAIN>::computeHamming(data->data)) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_seq_t>(), config.numIterations);
+                    if (data->code != HammingScalar<DATAIN>::computeHamming(data->data)) {
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), config.numIterations);
                     }
                 }
             }
             for (; i < numValues; ++i, ++data) {
-                if (data->code != TypeMapSeq<DATAIN>::computeHamming(data->data)) {
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<hamming_seq_t>(), config.numIterations);
+                if (data->code != HammingScalar<DATAIN>::computeHamming(data->data)) {
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), config.numIterations);
                 }
             }
         }
@@ -148,10 +125,10 @@ struct Hamming_seq :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->in.template end<DATAIN>() - this->in.template begin<DATAIN>();
+            size_t numValues = this->bufRaw.template end<DATAIN>() - this->bufRaw.template begin<DATAIN>();
             size_t i = 0;
-            auto data = this->out.template begin<hamming_seq_t>();
-            auto dataOut = this->in.template begin<DATAIN>();
+            auto data = this->bufEncoded.template begin<hamming_scalar_t>();
+            auto dataOut = this->bufResult.template begin<DATAIN>();
             while (i <= (numValues - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                     *dataOut = data->data;

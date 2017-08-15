@@ -14,29 +14,27 @@
 
 #pragma once
 
-#include "XOR_base.hpp"
+#include <XOR/XOR_base.hpp>
+#include <Test.hpp>
+#include <Util/Intrinsics.hpp>
+#include <Util/ErrorInfo.hpp>
 
 template<typename DATA, typename CS, size_t BLOCKSIZE>
-struct XOR_seq :
+struct XOR_scalar :
         public Test<DATA, CS> {
 
-    XOR_seq(
-            const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out)
-            : Test<DATA, CS>(name, in, out) {
-    }
+    using Test<DATA, CS>::Test;
 
-    virtual ~XOR_seq() {
+    virtual ~XOR_scalar() {
     }
 
     void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            auto dataIn = this->in.template begin<DATA>();
-            auto dataInEnd = this->in.template end<DATA>();
-            auto dataOut = this->out.template begin<CS>();
+            auto dataIn = this->bufRaw.template begin<DATA>();
+            auto dataInEnd = this->bufRaw.template end<DATA>();
+            auto dataOut = this->bufEncoded.template begin<CS>();
             while (dataIn <= (dataInEnd - BLOCKSIZE)) {
                 DATA checksum = 0;
                 auto dataOut2 = reinterpret_cast<DATA*>(dataOut);
@@ -46,7 +44,7 @@ struct XOR_seq :
                     checksum ^= tmp;
                 }
                 dataOut = reinterpret_cast<CS*>(dataOut2);
-                *dataOut++ = computeFinalChecksum<DATA, CS>(checksum);
+                *dataOut++ = XOR<DATA, CS>::computeFinalChecksum(checksum);
             }
             // checksum remaining values which do not fit in the block size
             if (dataIn < dataInEnd) {
@@ -58,7 +56,7 @@ struct XOR_seq :
                     checksum ^= tmp;
                 } while (dataIn < dataInEnd);
                 dataOut = reinterpret_cast<CS*>(dataOut2);
-                *dataOut++ = computeFinalChecksum<DATA, CS>(checksum);
+                *dataOut++ = XOR<DATA, CS>::computeFinalChecksum(checksum);
             }
         }
     }
@@ -71,9 +69,9 @@ struct XOR_seq :
             const CheckConfiguration & config) override {
         for (size_t iterations = 0; iterations < config.numIterations; ++iterations) {
             _ReadWriteBarrier();
-            size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
+            size_t numValues = this->bufRaw.template end<DATA>() - this->bufRaw.template begin<DATA>();
             size_t i = 0;
-            auto data = this->out.template begin<CS>();
+            auto data = this->bufEncoded.template begin<CS>();
             while (i <= (numValues - BLOCKSIZE)) {
                 auto data2 = reinterpret_cast<DATA*>(data); // first, iterate over sizeof(IN)-bit values
                 DATA checksum = 0;
@@ -82,9 +80,9 @@ struct XOR_seq :
                 }
                 i += BLOCKSIZE;
                 data = reinterpret_cast<CS*>(data2); // second, advance data2 up to the checksum
-                if (*data != computeFinalChecksum<DATA, CS>(checksum)) // third, test checksum
+                if (XORdiff<CS>::checksumsDiffer(*data, XOR<DATA, CS>::computeFinalChecksum(checksum))) // third, test checksum
                         {
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<CS>(), iterations);
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<CS>(), iterations);
                 }
                 ++data; // fourth, advance after the checksum to the next block of values
             }
@@ -97,9 +95,9 @@ struct XOR_seq :
                     checksum ^= *data2++;
                 } while (i < numValues);
                 data = reinterpret_cast<CS*>(data2); // second, advance data2 up to the checksum
-                if (*data != computeFinalChecksum<DATA, CS>(checksum)) // third, test checksum
+                if (XORdiff<CS>::checksumsDiffer(*data, XOR<DATA, CS>::computeFinalChecksum(checksum))) // third, test checksum
                         {
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<CS>(), iterations);
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<CS>(), iterations);
                 }
             }
         }
@@ -113,10 +111,10 @@ struct XOR_seq :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->in.template end<DATA>() - this->in.template begin<DATA>();
+            size_t numValues = this->bufRaw.template end<DATA>() - this->bufRaw.template begin<DATA>();
             size_t i = 0;
-            auto dataIn = this->out.template begin<CS>();
-            auto dataOut = this->in.template begin<DATA>();
+            auto dataIn = this->bufEncoded.template begin<CS>();
+            auto dataOut = this->bufResult.template begin<DATA>();
             while (i <= (numValues - BLOCKSIZE)) {
                 auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
                 for (size_t k = 0; k < BLOCKSIZE; ++k) {

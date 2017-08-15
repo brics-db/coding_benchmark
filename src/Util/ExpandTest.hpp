@@ -34,12 +34,13 @@ struct ExpandTest {
             const char* const name,
             const TestConfiguration & testConfig,
             const DataGenerationConfiguration & dataGenConfig,
-            AlignedBlock & in,
-            AlignedBlock & out) {
+            AlignedBlock & bufRaw,
+            AlignedBlock & bufEncoded,
+            AlignedBlock & bufResult) {
         std::clog << "#  * " << start << ": " << std::flush;
-        TestType<start>(name, in, out).Execute(testConfig, dataGenConfig);
+        TestType<start>(name, bufRaw, bufEncoded, bufResult).Execute(testConfig, dataGenConfig);
         std::clog << std::endl;
-        ExpandTest<TestType, start * 2, end>::WarmUp(name, testConfig, dataGenConfig, in, out);
+        ExpandTest<TestType, start * 2, end>::WarmUp(name, testConfig, dataGenConfig, bufRaw, bufEncoded, bufResult);
     }
 
     template<typename ... ArgTypes>
@@ -48,13 +49,14 @@ struct ExpandTest {
             const char* const name,
             const TestConfiguration & testConfig,
             const DataGenerationConfiguration & dataGenConfig,
-            AlignedBlock & in,
-            AlignedBlock & out,
+            AlignedBlock & bufRaw,
+            AlignedBlock & bufEncoded,
+            AlignedBlock & bufResult,
             ArgTypes && ... args) {
         std::clog << "#      * " << start << ": " << std::flush;
-        vecTestInfos.push_back(TestType<start>(name, in, out, std::forward<ArgTypes>(args)...).Execute(testConfig, dataGenConfig));
+        vecTestInfos.push_back(TestType<start>(name, bufRaw, bufEncoded, bufResult, std::forward<ArgTypes>(args)...).Execute(testConfig, dataGenConfig));
         std::clog << std::endl;
-        ExpandTest<TestType, start * 2, end>::Execute(vecTestInfos, name, testConfig, dataGenConfig, in, out, std::forward<ArgTypes>(args)...);
+        ExpandTest<TestType, start * 2, end>::Execute(vecTestInfos, name, testConfig, dataGenConfig, bufRaw, bufEncoded, bufResult, std::forward<ArgTypes>(args)...);
     }
 };
 
@@ -65,10 +67,11 @@ struct ExpandTest<TestType, start, start> {
             const char* const name,
             const TestConfiguration & testConfig,
             const DataGenerationConfiguration & dataGenConfig,
-            AlignedBlock & in,
-            AlignedBlock & out) {
+            AlignedBlock & bufRaw,
+            AlignedBlock & bufEncoded,
+            AlignedBlock & bufResult) {
         std::clog << "#  * " << start << ": " << std::flush;
-        TestType<start>(name, in, out).Execute(testConfig, dataGenConfig);
+        TestType<start>(name, bufRaw, bufEncoded, bufResult).Execute(testConfig, dataGenConfig);
         std::clog << std::endl;
     }
 
@@ -78,11 +81,12 @@ struct ExpandTest<TestType, start, start> {
             const char* const name,
             const TestConfiguration & testConfig,
             const DataGenerationConfiguration & dataGenConfig,
-            AlignedBlock & in,
-            AlignedBlock & out,
+            AlignedBlock & bufRaw,
+            AlignedBlock & bufEncoded,
+            AlignedBlock & bufResult,
             ArgTypes && ... args) {
         std::clog << "#      * " << start << ": " << std::flush;
-        vecTestInfos.push_back(TestType<start>(name, in, out, std::forward<ArgTypes>(args)...).Execute(testConfig, dataGenConfig));
+        vecTestInfos.push_back(TestType<start>(name, bufRaw, bufEncoded, bufResult, std::forward<ArgTypes>(args)...).Execute(testConfig, dataGenConfig));
         std::clog << std::endl;
     }
 };

@@ -22,11 +22,12 @@
 #pragma once
 
 #include <AN/ANTest.hpp>
+#include <Util/Euclidean.hpp>
 
 template<typename DATARAW, typename DATAENC, size_t UNROLL>
 struct AN_seq :
         public ANTest<DATARAW, DATAENC, UNROLL>,
-        public SequentialTest {
+        public ScalarTest {
 
     using ANTest<DATARAW, DATAENC, UNROLL>::ANTest;
 
@@ -37,10 +38,10 @@ struct AN_seq :
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
             size_t i = 0;
-            auto dataIn = this->in.template begin<DATARAW>();
-            auto dataOut = this->out.template begin<DATAENC>();
+            auto dataIn = this->bufRaw.template begin<DATARAW>();
+            auto dataOut = this->bufEncoded.template begin<DATAENC>();
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
@@ -62,10 +63,10 @@ struct AN_seq :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
             size_t i = 0;
-            auto dataIn = this->out.template begin<DATAENC>();
-            auto dataOut = this->in.template begin<DATARAW>();
+            auto dataIn = this->bufEncoded.template begin<DATAENC>();
+            auto dataOut = this->bufResult.template begin<DATARAW>();
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {

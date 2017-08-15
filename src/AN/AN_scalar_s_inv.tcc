@@ -22,7 +22,6 @@
 #pragma once
 
 #include <AN/AN_scalar.tcc>
-#include <sstream>
 
 template<typename DATARAW, typename DATAENC, size_t UNROLL>
 struct AN_seq_s_inv :
@@ -30,11 +29,12 @@ struct AN_seq_s_inv :
 
     AN_seq_s_inv(
             const char* const name,
-            AlignedBlock & in,
-            AlignedBlock & out,
+            AlignedBlock & bufRaw,
+            AlignedBlock & bufEncoded,
+            AlignedBlock & bufResult,
             DATAENC A,
             DATAENC AInv)
-            : AN_seq<DATARAW, DATAENC, UNROLL>(name, in, out, A, AInv) {
+            : AN_seq<DATARAW, DATAENC, UNROLL>(name, bufRaw, bufEncoded, bufResult, A, AInv) {
     }
 
     virtual ~AN_seq_s_inv() {
@@ -48,9 +48,9 @@ struct AN_seq_s_inv :
             const CheckConfiguration & config) {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
             size_t i = 0;
-            auto data = this->out.template begin<DATAENC>();
+            auto data = this->bufEncoded.template begin<DATAENC>();
             DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
             DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
             for (; i <= (numValues - UNROLL); i += UNROLL) {
@@ -60,7 +60,7 @@ struct AN_seq_s_inv :
                     if (dec < dMin || dec > dMax) {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
                     }
                     ++data;
                 }
@@ -71,7 +71,7 @@ struct AN_seq_s_inv :
                 if (dec < dMin || dec > dMax) {
                     std::stringstream ss;
                     ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
+                    throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
                 }
             }
         }
@@ -85,34 +85,35 @@ struct AN_seq_s_inv :
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
             size_t i = 0;
-            auto data = this->out.template begin<DATAENC>();
+            auto dataIn = this->bufEncoded.template begin<DATAENC>();
+            auto dataOut = this->bufResult.template begin<DATAENC>();
             DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
             DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
             const DATAENC reenc = this->A_INV * config.newA;
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++data) {
-                    DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataIn, ++dataOut) {
+                    DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
                     if (dec < dMin || dec > dMax) {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
                     } else {
-                        *data = static_cast<DATAENC>(*data * reenc);
+                        *dataOut = static_cast<DATAENC>(*dataIn * reenc);
                     }
                 }
             }
             // remaining numbers
-            for (; i < numValues; ++i, ++data) {
-                DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
+            for (; i < numValues; ++i, ++dataIn, ++dataOut) {
+                DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
                 if (dec < dMin || dec > dMax) {
                     std::stringstream ss;
                     ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
+                    throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
                 } else {
-                    *data = static_cast<DATAENC>(*data * reenc);
+                    *dataOut = static_cast<DATAENC>(*dataIn * reenc);
                 }
             }
             this->A = static_cast<DATAENC>(config.newA);
@@ -128,10 +129,10 @@ struct AN_seq_s_inv :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->in.template end<DATARAW>() - this->in.template begin<DATARAW>();
+            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
             size_t i = 0;
-            auto dataIn = this->out.template begin<DATAENC>();
-            auto dataOut = this->in.template begin<DATARAW>();
+            auto dataIn = this->bufEncoded.template begin<DATAENC>();
+            auto dataOut = this->bufResult.template begin<DATARAW>();
             DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
             DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
             for (; i <= (numValues - UNROLL); i += UNROLL) {
@@ -141,7 +142,7 @@ struct AN_seq_s_inv :
                     if (dec < dMin || dec > dMax) {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
                     } else {
                         *dataOut = static_cast<DATARAW>(dec);
                     }
@@ -153,7 +154,7 @@ struct AN_seq_s_inv :
                 if (dec < dMin || dec > dMax) {
                     std::stringstream ss;
                     ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                    throw ErrorInfo(__FILE__, __LINE__, dataIn - this->out.template begin<DATAENC>(), iteration, ss.str().c_str());
+                    throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
                 } else {
                     *dataOut = static_cast<DATARAW>(dec);
                 }

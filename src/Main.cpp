@@ -58,90 +58,99 @@ int main(
     _ReadWriteBarrier();
     uint32_t AUserInv = ext_euclidean(AUser, 32);
 
-    AlignedBlock input(rawDataSize, 64);
-    AlignedBlock output(2 * rawDataSize, 64); // AN coding generates twice as much output data as input data
+    AlignedBlock bufRawdata16(rawDataSize, 64);
+    AlignedBlock bufEncoded16(2 * rawDataSize, 64); // Coding may generate twice as much encoded output data as raw input data
+    AlignedBlock bufResult16(2 * rawDataSize, 64); // Coding may generate twice as much encoded result data as raw input data (or the same amount as encoded data)
+
+    AlignedBlock bufRawdata32(2 * rawDataSize, 64);
+    AlignedBlock bufEncoded32(4 * rawDataSize, 64); // Coding may generate twice as much encoded output data as raw input data
+    AlignedBlock bufResult32(4 * rawDataSize, 64); // Coding may generate twice as much encoded result data as raw input data (or the same amount as encoded data)
+
     std::vector<std::vector<TestInfos>> vecTestInfos;
 
-#define WarmUp(type, name) \
+#define WarmUp(type, name, bufRawdata, bufEncoded, bufResult) \
     do { \
         std::clog << "# WarmUp " << #type << std::endl; \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, input, output); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult); \
         std::clog << '#' << std::endl; \
     } while (0)
 
 #define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
 
-#define TestCase2(type,name) \
+#define TestCase5(type, name, bufRawdata, bufEncoded, bufResult) \
     do { \
         std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
         vecTestInfos.emplace_back(); \
         auto & vec = *vecTestInfos.rbegin(); \
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult); \
         std::clog << '#' << std::endl; \
     } while (0)
 
-#define TestCase4(type,name,A,AInv) \
+#define TestCase7(type, name, bufRawdata, bufEncoded, bufResult, A, AInv) \
     do { \
         std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
         vecTestInfos.emplace_back(); \
         auto & vec = *vecTestInfos.rbegin(); \
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, output, A, AInv); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult, A, AInv); \
         std::clog << '#' << std::endl; \
     } while (0)
 
     TestConfiguration testConfig(iterations);
     DataGenerationConfiguration dataGenConfig;
 
-    WarmUp(CopyTest, "Copy");
+    WarmUp(CopyTest16, "Copy", bufRawdata16, bufEncoded16, bufResult16);
 
-    std::clog << "# Baseline (memcpy / memcmp) test:" << std::endl;
-    TestCase(CopyTest, "Copy");
+    std::clog << "# 16-bit Baseline (memcpy / memcmp) test:" << std::endl;
+    TestCase(CopyTest16, "Copy", bufRawdata16, bufEncoded16, bufResult16);
 
     // 16-bit data sequential tests
     std::clog << "# 16-bit scalar tests:" << std::endl;
-    TestCase(XOR_seq_16_16, "XOR Seq");
-    TestCase(AN_seq_16_32_u_divmod, "AN Seq U DivMod", AUser, AUserInv);
-    TestCase(AN_seq_16_32_s_divmod, "AN Seq S DivMod", (static_cast<int32_t>(AUser)), (static_cast<int32_t>(AUserInv)));
-    TestCase(AN_seq_16_32_u_inv, "AN Seq U Inv", AUser, AUserInv);
-    TestCase(AN_seq_16_32_s_inv, "AN Seq S Inv", static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(Hamming_seq_16, "Hamming Seq");
+    TestCase(XOR_scalar_16_16, "XOR Seq", bufRawdata16, bufEncoded16, bufResult16);
+    TestCase(AN_seq_16_32_u_divmod, "AN Seq U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
+    TestCase(AN_seq_16_32_s_divmod, "AN Seq S DivMod", bufRawdata16, bufEncoded16, bufResult16, (static_cast<int32_t>(AUser)), (static_cast<int32_t>(AUserInv)));
+    TestCase(AN_seq_16_32_u_inv, "AN Seq U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
+    TestCase(AN_seq_16_32_s_inv, "AN Seq S Inv", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(Hamming_scalar_16, "Hamming Seq", bufRawdata16, bufEncoded16, bufResult16);
 
     // 16-bit data vectorized tests
     std::clog << "# 16-bit SSE4.2 tests:" << std::endl;
-    TestCase(XOR_sse42_8x16_8x16, "XOR SSE4.2");
-    TestCase(AN_sse42_8x16_8x32_u_divmod, "AN SSE4.2 U DivMod", AUser, AUserInv);
-    TestCase(AN_sse42_8x16_8x32_s_divmod, "AN SSE4.2 S DivMod", static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(AN_sse42_8x16_8x32_u_inv, "AN SSE4.2 U Inv", AUser, AUserInv);
-    TestCase(AN_sse42_8x16_8x32_s_inv, "AN SSE4.2 S Inv", static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(Hamming_sse42_16, "Hamming SSE4.2");
+    TestCase(XOR_sse42_8x16_8x16, "XOR SSE4.2", bufRawdata16, bufEncoded16, bufResult16);
+    TestCase(AN_sse42_8x16_8x32_u_divmod, "AN SSE4.2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
+    TestCase(AN_sse42_8x16_8x32_s_divmod, "AN SSE4.2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(AN_sse42_8x16_8x32_u_inv, "AN SSE4.2 U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
+    TestCase(AN_sse42_8x16_8x32_s_inv, "AN SSE4.2 S Inv", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(Hamming_sse42_16, "Hamming SSE4.2", bufRawdata16, bufEncoded16, bufResult16);
 
 #ifdef __AVX2__
     std::clog << "# 16-bit AVX2 tests:" << std::endl;
-    TestCase(XOR_avx2_16x16_16x16, "XOR AVX2");
-    TestCase(AN_avx2_16x16_16x32_u_divmod, "AN AVX2 U DivMod", AUser, AUserInv);
-    TestCase(AN_avx2_16x16_16x32_s_divmod, "AN AVX2 S DivMod", static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(AN_avx2_16x16_16x32_u_inv, "AN AVX2 U Inv", AUser, AUserInv);
-    TestCase(AN_avx2_16x16_16x32_s_inv, "AN AVX2 S Inv", static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(Hamming_avx2_16, "Hamming AVX2");
+    TestCase(XOR_avx2_16x16_16x16, "XOR AVX2", bufRawdata16, bufEncoded16, bufResult16);
+    TestCase(AN_avx2_16x16_16x32_u_divmod, "AN AVX2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
+    TestCase(AN_avx2_16x16_16x32_s_divmod, "AN AVX2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(AN_avx2_16x16_16x32_u_inv, "AN AVX2 U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
+    TestCase(AN_avx2_16x16_16x32_s_inv, "AN AVX2 S Inv", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(Hamming_avx2_16, "Hamming AVX2", bufRawdata16, bufEncoded16, bufResult16);
 #endif
 
 #ifdef TEST32
+    std::clog << "# 32-bit Baseline (memcpy / memcmp) test:" << std::endl;
+    TestCase(CopyTest32, "Copy", bufRawdata32, bufEncoded32, bufResult32);
+
     std::clog << "# 32-bit scalar tests:" << std::endl;
     // 32-bit data sequential tests
-    TestCase(XOR_seq_32_32, "XOR Seq");
-    TestCase(Hamming_seq_32, "Hamming Seq");
+    TestCase(XOR_seq_32_32, "XOR Seq", bufRawdata32, bufEncoded32, bufResult32);
+    TestCase(Hamming_seq_32, "Hamming Seq", bufRawdata32, bufEncoded32, bufResult32);
 
     std::clog << "# 32-bit SSE4.2 tests:" << std::endl;
     // 32-bit data vectorized tests
-    TestCase(XOR_sse42_4x32_4x32, "XOR SSE4.2");
-    TestCase(Hamming_sse42_32, "Hamming SSE4.2");
+    TestCase(XOR_sse42_4x32_4x32, "XOR SSE4.2", bufRawdata32, bufEncoded32, bufResult32);
+    TestCase(Hamming_sse42_32, "Hamming SSE4.2", bufRawdata32, bufEncoded32, bufResult32);
 
 #ifdef __AVX2__
     std::clog << "# 32-bit AVX2 tests:" << std::endl;
-    TestCase(XOR_avx2_8x32_8x32, "XOR AVX2");
-    TestCase(Hamming_avx2_32, "Hamming AVX2");
+    TestCase(XOR_avx2_8x32_8x32, "XOR AVX2", bufRawdata32, bufEncoded32, bufResult32);
+    TestCase(Hamming_avx2_32, "Hamming AVX2", bufRawdata32, bufEncoded32, bufResult32);
 #endif
 #endif
 
