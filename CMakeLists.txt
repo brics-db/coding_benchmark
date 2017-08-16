@@ -56,8 +56,11 @@ src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp")
 add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Test.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Output.cpp \
 src/AN/AN_scalar.cpp")
 
-#add_algorithm(benchmark_novec "Main.cpp Test.cpp Util/ErrorInfo.cpp Util/TestInfo.cpp Util/Stopwatch.cpp Util/CPU.cpp")
-#TARGET_COMPILE_OPTIONS(benchmark_novec PRIVATE "-fno-tree-vectorize")
+add_algorithm(benchmark_novec "src/Main.cpp src/Test.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Output.cpp \
+src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp \
+src/XOR/XOR_base.cpp src/XOR/XOR_scalar.cpp src/XOR/XOR_sse42.cpp src/XOR/XOR_avx2.cpp \
+src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp")
+TARGET_COMPILE_OPTIONS(benchmark_novec PRIVATE "-fno-tree-vectorize")
 
 FIND_PACKAGE(OpenMP)
 IF(OPENMP_FOUND)

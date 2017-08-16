@@ -107,12 +107,12 @@ int main(
 
     // 16-bit data sequential tests
     std::clog << "# 16-bit scalar tests:" << std::endl;
-    TestCase(XOR_scalar_16_16, "XOR Seq", bufRawdata16, bufEncoded16, bufResult16);
-    TestCase(AN_seq_16_32_u_divmod, "AN Seq U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
-    TestCase(AN_seq_16_32_s_divmod, "AN Seq S DivMod", bufRawdata16, bufEncoded16, bufResult16, (static_cast<int32_t>(AUser)), (static_cast<int32_t>(AUserInv)));
-    TestCase(AN_seq_16_32_u_inv, "AN Seq U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
-    TestCase(AN_seq_16_32_s_inv, "AN Seq S Inv", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(Hamming_scalar_16, "Hamming Seq", bufRawdata16, bufEncoded16, bufResult16);
+    TestCase(XOR_scalar_16_16, "XOR Scalar", bufRawdata16, bufEncoded16, bufResult16);
+    TestCase(AN_seq_16_32_u_divmod, "AN Scalar U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
+    TestCase(AN_seq_16_32_s_divmod, "AN Scalar S DivMod", bufRawdata16, bufEncoded16, bufResult16, (static_cast<int32_t>(AUser)), (static_cast<int32_t>(AUserInv)));
+    TestCase(AN_seq_16_32_u_inv, "AN Scalar U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
+    TestCase(AN_seq_16_32_s_inv, "AN Scalar S Inv", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(Hamming_scalar_16, "Hamming Scalar", bufRawdata16, bufEncoded16, bufResult16);
 
     // 16-bit data vectorized tests
     std::clog << "# 16-bit SSE4.2 tests:" << std::endl;
@@ -137,10 +137,10 @@ int main(
     std::clog << "# 32-bit Baseline (memcpy / memcmp) test:" << std::endl;
     TestCase(CopyTest32, "Copy", bufRawdata32, bufEncoded32, bufResult32);
 
-    std::clog << "# 32-bit scalar tests:" << std::endl;
+    std::clog << "# 32-bit Scalar tests:" << std::endl;
     // 32-bit data sequential tests
-    TestCase(XOR_seq_32_32, "XOR Seq", bufRawdata32, bufEncoded32, bufResult32);
-    TestCase(Hamming_seq_32, "Hamming Seq", bufRawdata32, bufEncoded32, bufResult32);
+    TestCase(XOR_seq_32_32, "XOR Scalar", bufRawdata32, bufEncoded32, bufResult32);
+    TestCase(Hamming_seq_32, "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32);
 
     std::clog << "# 32-bit SSE4.2 tests:" << std::endl;
     // 32-bit data vectorized tests

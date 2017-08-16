@@ -65,7 +65,7 @@ struct CopyTest :
     }
 
     bool DoArithmetic() override {
-        return true;
+        return false;
     }
 
     void RunArithmetic(
@@ -102,7 +102,7 @@ struct CopyTest :
     }
 
     bool DoReencodeChecked() override {
-        return true;
+        return false;
     }
 
     void RunReencodeChecked(
