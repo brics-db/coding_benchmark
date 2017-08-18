@@ -29,10 +29,6 @@ struct XOR_scalar :
     virtual ~XOR_scalar() {
     }
 
-    size_t getNumValues() {
-        return this->bufRaw.template end<DATA>() - this->bufRaw.template begin<DATA>();
-    }
-
     void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
@@ -74,7 +70,7 @@ struct XOR_scalar :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = getNumValues();
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<CS>();
             while (i <= (numValues - BLOCKSIZE)) {
@@ -124,7 +120,7 @@ struct XOR_scalar :
         }
         void operator()(
                 ArithmeticConfiguration::Add) {
-            size_t numValues = test.getNumValues();
+            size_t numValues = test.template getNumValues();
             size_t i = 0;
             auto dataIn = test.bufEncoded.template begin<CS>();
             auto dataOut = test.bufResult.template begin<DATA>();
@@ -181,15 +177,18 @@ struct XOR_scalar :
     struct ArithmetorChecked {
         XOR_scalar & test;
         const ArithmeticConfiguration & config;
+        const size_t iteration;
         ArithmetorChecked(
                 XOR_scalar & test,
-                const ArithmeticConfiguration & config)
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
                 : test(test),
-                  config(config) {
+                  config(config),
+                  iteration(iteration) {
         }
         void operator()(
                 ArithmeticConfiguration::Add) {
-            size_t numValues = test.getNumValues();
+            size_t numValues = test.template getNumValues();
             size_t i = 0;
             auto dataIn = test.bufEncoded.template begin<CS>();
             auto dataOut = test.bufResult.template begin<DATA>();
@@ -204,16 +203,15 @@ struct XOR_scalar :
                     newChecksum ^= tmp;
                     *dataOut++ = tmp;
                 }
+                dataIn = reinterpret_cast<CS*>(dataIn2);
                 const auto finalOLdChecksum = XOR<DATA, CS>::computeFinalChecksum(oldChecksum);
                 const auto finalNewChecksum = XOR<DATA, CS>::computeFinalChecksum(newChecksum);
-                if (XORdiff<CS>::checksumsDiffer(finalOLdChecksum, finalNewChecksum)) // third, test checksum
-                        {
-                    throw ErrorInfo(__FILE__, __LINE__, i, 0);
+                if (XORdiff<CS>::checksumsDiffer(*dataIn++, finalOLdChecksum)) {
+                    throw ErrorInfo(__FILE__, __LINE__, i + BLOCKSIZE, iteration);
                 }
                 auto chkOut = reinterpret_cast<CS*>(dataOut);
                 *chkOut++ = finalNewChecksum;
                 dataOut = reinterpret_cast<DATA*>(chkOut);
-                dataIn = reinterpret_cast<CS*>(dataIn2) + 1;
             }
             // checksum remaining values which do not fit in the block size
             if (i < numValues) {
@@ -230,9 +228,8 @@ struct XOR_scalar :
                 dataIn = reinterpret_cast<CS*>(dataIn2);
                 const auto finalOLdChecksum = XOR<DATA, CS>::computeFinalChecksum(oldChecksum);
                 const auto finalNewChecksum = XOR<DATA, CS>::computeFinalChecksum(newChecksum);
-                if (XORdiff<CS>::checksumsDiffer(finalOLdChecksum, finalNewChecksum)) // third, test checksum
-                        {
-                    throw ErrorInfo(__FILE__, __LINE__, i, 0);
+                if (XORdiff<CS>::checksumsDiffer(*dataIn++, finalOLdChecksum)) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
                 auto chkOut = reinterpret_cast<CS*>(dataOut);
                 *chkOut = finalNewChecksum;
@@ -253,7 +250,7 @@ struct XOR_scalar :
             const ArithmeticConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            std::visit(Arithmetor(*this, config), config.mode);
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
         }
     }
 
@@ -265,7 +262,7 @@ struct XOR_scalar :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = getNumValues();
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto dataIn = this->bufEncoded.template begin<CS>();
             auto dataOut = this->bufResult.template begin<DATA>();
@@ -295,7 +292,7 @@ struct XOR_scalar :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = getNumValues();
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto dataIn = this->bufEncoded.template begin<CS>();
             auto dataOut = this->bufResult.template begin<DATA>();

@@ -22,22 +22,23 @@
 #pragma once
 
 #include <AN/AN_scalar.tcc>
+#include <Util/ArithmeticSelector.hpp>
 
 template<typename DATARAW, typename DATAENC, size_t UNROLL>
-struct AN_seq_s_inv :
-        public AN_seq<DATARAW, DATAENC, UNROLL> {
+struct AN_scalar_s_inv :
+        public AN_scalar<DATARAW, DATAENC, UNROLL> {
 
-    AN_seq_s_inv(
+    AN_scalar_s_inv(
             const char* const name,
             AlignedBlock & bufRaw,
             AlignedBlock & bufEncoded,
             AlignedBlock & bufResult,
             DATAENC A,
             DATAENC AInv)
-            : AN_seq<DATARAW, DATAENC, UNROLL>(name, bufRaw, bufEncoded, bufResult, A, AInv) {
+            : AN_scalar<DATARAW, DATAENC, UNROLL>(name, bufRaw, bufEncoded, bufResult, A, AInv) {
     }
 
-    virtual ~AN_seq_s_inv() {
+    virtual ~AN_scalar_s_inv() {
     }
 
     bool DoCheck() override {
@@ -48,7 +49,7 @@ struct AN_seq_s_inv :
             const CheckConfiguration & config) {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+            const size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<DATAENC>();
             DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
@@ -60,7 +61,7 @@ struct AN_seq_s_inv :
                     if (dec < dMin || dec > dMax) {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration, ss.str().c_str());
                     }
                     ++data;
                 }
@@ -71,9 +72,76 @@ struct AN_seq_s_inv :
                 if (dec < dMin || dec > dMax) {
                     std::stringstream ss;
                     ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration, ss.str().c_str());
                 }
             }
+        }
+    }
+
+    bool DoArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct ArithmetorChecked {
+        AN_scalar_s_inv & test;
+        const ArithmeticConfiguration & config;
+        const size_t iteration;
+        ArithmetorChecked(
+                AN_scalar_s_inv & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
+                : test(test),
+                  config(config),
+                  iteration(iteration) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            const size_t numValues = test.template getNumValues();
+            size_t i = 0;
+            auto dataIn = test.bufEncoded.template begin<DATAENC>();
+            auto dataOut = test.bufResult.template begin<DATAENC>();
+            DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+            DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
+            DATAENC operandEnc = config.operand * test.A;
+            for (; i <= (numValues - UNROLL); i += UNROLL) { // let the compiler unroll the loop
+                for (size_t k = 0; k < UNROLL; ++k) {
+                    DATAENC dec = static_cast<DATAENC>(*dataIn * test.A_INV);
+                    if (dec < dMin || dec > dMax) {
+                        std::stringstream ss;
+                        ss << "A=" << test.A << ", A^-1=" << test.A_INV;
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    *dataOut++ = *dataIn++ + operandEnc;
+                }
+            }
+            // remaining numbers
+            for (; i < numValues; ++i) {
+                DATAENC dec = static_cast<DATAENC>(*dataIn * test.A_INV);
+                if (dec < dMin || dec > dMax) {
+                    std::stringstream ss;
+                    ss << "A=" << test.A << ", A^-1=" << test.A_INV;
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                }
+                *dataOut++ = *dataIn++ + operandEnc;
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
         }
     }
 

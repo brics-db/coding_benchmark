@@ -110,10 +110,10 @@ int main(
     // 16-bit data sequential tests
     std::clog << "# 16-bit scalar tests:" << std::endl;
     TestCase(XOR_scalar_16_16, "XOR Scalar", bufRawdata16, bufEncoded16, bufResult16);
-    TestCase(AN_seq_16_32_u_divmod, "AN Scalar U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
-    TestCase(AN_seq_16_32_s_divmod, "AN Scalar S DivMod", bufRawdata16, bufEncoded16, bufResult16, (static_cast<int32_t>(AUser)), (static_cast<int32_t>(AUserInv)));
-    TestCase(AN_seq_16_32_u_inv, "AN Scalar U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
-    TestCase(AN_seq_16_32_s_inv, "AN Scalar S Inv", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(AN_scalar_16_32_u_divmod, "AN Scalar U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
+    TestCase(AN_scalar_16_32_s_divmod, "AN Scalar S DivMod", bufRawdata16, bufEncoded16, bufResult16, (static_cast<int32_t>(AUser)), (static_cast<int32_t>(AUserInv)));
+    TestCase(AN_scalar_16_32_u_inv, "AN Scalar U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
+    TestCase(AN_scalar_16_32_s_inv, "AN Scalar S Inv", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
     TestCase(Hamming_scalar_16, "Hamming Scalar", bufRawdata16, bufEncoded16, bufResult16);
 
     // 16-bit data vectorized tests

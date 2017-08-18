@@ -22,185 +22,185 @@
 #include <AN/AN_scalar.hpp>
 
 template
-struct AN_seq_8_16_s_inv<1>;
+struct AN_scalar_8_16_s_inv<1> ;
 template
-struct AN_seq_8_16_s_inv<2>;
+struct AN_scalar_8_16_s_inv<2> ;
 template
-struct AN_seq_8_16_s_inv<4>;
+struct AN_scalar_8_16_s_inv<4> ;
 template
-struct AN_seq_8_16_s_inv<8>;
+struct AN_scalar_8_16_s_inv<8> ;
 template
-struct AN_seq_8_16_s_inv<16>;
+struct AN_scalar_8_16_s_inv<16> ;
 template
-struct AN_seq_8_16_s_inv<32>;
+struct AN_scalar_8_16_s_inv<32> ;
 template
-struct AN_seq_8_16_s_inv<64>;
+struct AN_scalar_8_16_s_inv<64> ;
 template
-struct AN_seq_8_16_s_inv<128>;
+struct AN_scalar_8_16_s_inv<128> ;
 template
-struct AN_seq_8_16_s_inv<256>;
+struct AN_scalar_8_16_s_inv<256> ;
 template
-struct AN_seq_8_16_s_inv<512>;
+struct AN_scalar_8_16_s_inv<512> ;
 template
-struct AN_seq_8_16_s_inv<1024>;
+struct AN_scalar_8_16_s_inv<1024> ;
 
 template
-struct AN_seq_8_16_u_inv<1>;
+struct AN_scalar_8_16_u_inv<1> ;
 template
-struct AN_seq_8_16_u_inv<2>;
+struct AN_scalar_8_16_u_inv<2> ;
 template
-struct AN_seq_8_16_u_inv<4>;
+struct AN_scalar_8_16_u_inv<4> ;
 template
-struct AN_seq_8_16_u_inv<8>;
+struct AN_scalar_8_16_u_inv<8> ;
 template
-struct AN_seq_8_16_u_inv<16>;
+struct AN_scalar_8_16_u_inv<16> ;
 template
-struct AN_seq_8_16_u_inv<32>;
+struct AN_scalar_8_16_u_inv<32> ;
 template
-struct AN_seq_8_16_u_inv<64>;
+struct AN_scalar_8_16_u_inv<64> ;
 template
-struct AN_seq_8_16_u_inv<128>;
+struct AN_scalar_8_16_u_inv<128> ;
 template
-struct AN_seq_8_16_u_inv<256>;
+struct AN_scalar_8_16_u_inv<256> ;
 template
-struct AN_seq_8_16_u_inv<512>;
+struct AN_scalar_8_16_u_inv<512> ;
 template
-struct AN_seq_8_16_u_inv<1024>;
+struct AN_scalar_8_16_u_inv<1024> ;
 
 template
-struct AN_seq_32_64_s_inv<1>;
+struct AN_scalar_32_64_s_inv<1> ;
 template
-struct AN_seq_32_64_s_inv<2>;
+struct AN_scalar_32_64_s_inv<2> ;
 template
-struct AN_seq_32_64_s_inv<4>;
+struct AN_scalar_32_64_s_inv<4> ;
 template
-struct AN_seq_32_64_s_inv<8>;
+struct AN_scalar_32_64_s_inv<8> ;
 template
-struct AN_seq_32_64_s_inv<16>;
+struct AN_scalar_32_64_s_inv<16> ;
 template
-struct AN_seq_32_64_s_inv<32>;
+struct AN_scalar_32_64_s_inv<32> ;
 template
-struct AN_seq_32_64_s_inv<64>;
+struct AN_scalar_32_64_s_inv<64> ;
 template
-struct AN_seq_32_64_s_inv<128>;
+struct AN_scalar_32_64_s_inv<128> ;
 template
-struct AN_seq_32_64_s_inv<256>;
+struct AN_scalar_32_64_s_inv<256> ;
 template
-struct AN_seq_32_64_s_inv<512>;
+struct AN_scalar_32_64_s_inv<512> ;
 template
-struct AN_seq_32_64_s_inv<1024>;
+struct AN_scalar_32_64_s_inv<1024> ;
 
 template
-struct AN_seq_32_64_u_inv<1>;
+struct AN_scalar_32_64_u_inv<1> ;
 template
-struct AN_seq_32_64_u_inv<2>;
+struct AN_scalar_32_64_u_inv<2> ;
 template
-struct AN_seq_32_64_u_inv<4>;
+struct AN_scalar_32_64_u_inv<4> ;
 template
-struct AN_seq_32_64_u_inv<8>;
+struct AN_scalar_32_64_u_inv<8> ;
 template
-struct AN_seq_32_64_u_inv<16>;
+struct AN_scalar_32_64_u_inv<16> ;
 template
-struct AN_seq_32_64_u_inv<32>;
+struct AN_scalar_32_64_u_inv<32> ;
 template
-struct AN_seq_32_64_u_inv<64>;
+struct AN_scalar_32_64_u_inv<64> ;
 template
-struct AN_seq_32_64_u_inv<128>;
+struct AN_scalar_32_64_u_inv<128> ;
 template
-struct AN_seq_32_64_u_inv<256>;
+struct AN_scalar_32_64_u_inv<256> ;
 template
-struct AN_seq_32_64_u_inv<512>;
+struct AN_scalar_32_64_u_inv<512> ;
 template
-struct AN_seq_32_64_u_inv<1024>;
+struct AN_scalar_32_64_u_inv<1024> ;
 
 template
-struct AN_seq_16_32_s_divmod<1>;
+struct AN_scalar_16_32_s_divmod<1> ;
 template
-struct AN_seq_16_32_s_divmod<2>;
+struct AN_scalar_16_32_s_divmod<2> ;
 template
-struct AN_seq_16_32_s_divmod<4>;
+struct AN_scalar_16_32_s_divmod<4> ;
 template
-struct AN_seq_16_32_s_divmod<8>;
+struct AN_scalar_16_32_s_divmod<8> ;
 template
-struct AN_seq_16_32_s_divmod<16>;
+struct AN_scalar_16_32_s_divmod<16> ;
 template
-struct AN_seq_16_32_s_divmod<32>;
+struct AN_scalar_16_32_s_divmod<32> ;
 template
-struct AN_seq_16_32_s_divmod<64>;
+struct AN_scalar_16_32_s_divmod<64> ;
 template
-struct AN_seq_16_32_s_divmod<128>;
+struct AN_scalar_16_32_s_divmod<128> ;
 template
-struct AN_seq_16_32_s_divmod<256>;
+struct AN_scalar_16_32_s_divmod<256> ;
 template
-struct AN_seq_16_32_s_divmod<512>;
+struct AN_scalar_16_32_s_divmod<512> ;
 template
-struct AN_seq_16_32_s_divmod<1024>;
+struct AN_scalar_16_32_s_divmod<1024> ;
 
 template
-struct AN_seq_16_32_u_divmod<1>;
+struct AN_scalar_16_32_u_divmod<1> ;
 template
-struct AN_seq_16_32_u_divmod<2>;
+struct AN_scalar_16_32_u_divmod<2> ;
 template
-struct AN_seq_16_32_u_divmod<4>;
+struct AN_scalar_16_32_u_divmod<4> ;
 template
-struct AN_seq_16_32_u_divmod<8>;
+struct AN_scalar_16_32_u_divmod<8> ;
 template
-struct AN_seq_16_32_u_divmod<16>;
+struct AN_scalar_16_32_u_divmod<16> ;
 template
-struct AN_seq_16_32_u_divmod<32>;
+struct AN_scalar_16_32_u_divmod<32> ;
 template
-struct AN_seq_16_32_u_divmod<64>;
+struct AN_scalar_16_32_u_divmod<64> ;
 template
-struct AN_seq_16_32_u_divmod<128>;
+struct AN_scalar_16_32_u_divmod<128> ;
 template
-struct AN_seq_16_32_u_divmod<256>;
+struct AN_scalar_16_32_u_divmod<256> ;
 template
-struct AN_seq_16_32_u_divmod<512>;
+struct AN_scalar_16_32_u_divmod<512> ;
 template
-struct AN_seq_16_32_u_divmod<1024>;
+struct AN_scalar_16_32_u_divmod<1024> ;
 
 template
-struct AN_seq_16_32_s_inv<1>;
+struct AN_scalar_16_32_s_inv<1> ;
 template
-struct AN_seq_16_32_s_inv<2>;
+struct AN_scalar_16_32_s_inv<2> ;
 template
-struct AN_seq_16_32_s_inv<4>;
+struct AN_scalar_16_32_s_inv<4> ;
 template
-struct AN_seq_16_32_s_inv<8>;
+struct AN_scalar_16_32_s_inv<8> ;
 template
-struct AN_seq_16_32_s_inv<16>;
+struct AN_scalar_16_32_s_inv<16> ;
 template
-struct AN_seq_16_32_s_inv<32>;
+struct AN_scalar_16_32_s_inv<32> ;
 template
-struct AN_seq_16_32_s_inv<64>;
+struct AN_scalar_16_32_s_inv<64> ;
 template
-struct AN_seq_16_32_s_inv<128>;
+struct AN_scalar_16_32_s_inv<128> ;
 template
-struct AN_seq_16_32_s_inv<256>;
+struct AN_scalar_16_32_s_inv<256> ;
 template
-struct AN_seq_16_32_s_inv<512>;
+struct AN_scalar_16_32_s_inv<512> ;
 template
-struct AN_seq_16_32_s_inv<1024>;
+struct AN_scalar_16_32_s_inv<1024> ;
 
 template
-struct AN_seq_16_32_u_inv<1>;
+struct AN_scalar_16_32_u_inv<1> ;
 template
-struct AN_seq_16_32_u_inv<2>;
+struct AN_scalar_16_32_u_inv<2> ;
 template
-struct AN_seq_16_32_u_inv<4>;
+struct AN_scalar_16_32_u_inv<4> ;
 template
-struct AN_seq_16_32_u_inv<8>;
+struct AN_scalar_16_32_u_inv<8> ;
 template
-struct AN_seq_16_32_u_inv<16>;
+struct AN_scalar_16_32_u_inv<16> ;
 template
-struct AN_seq_16_32_u_inv<32>;
+struct AN_scalar_16_32_u_inv<32> ;
 template
-struct AN_seq_16_32_u_inv<64>;
+struct AN_scalar_16_32_u_inv<64> ;
 template
-struct AN_seq_16_32_u_inv<128>;
+struct AN_scalar_16_32_u_inv<128> ;
 template
-struct AN_seq_16_32_u_inv<256>;
+struct AN_scalar_16_32_u_inv<256> ;
 template
-struct AN_seq_16_32_u_inv<512>;
+struct AN_scalar_16_32_u_inv<512> ;
 template
-struct AN_seq_16_32_u_inv<1024>;
+struct AN_scalar_16_32_u_inv<1024> ;

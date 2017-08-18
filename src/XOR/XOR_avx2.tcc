@@ -65,10 +65,6 @@ struct XOR_avx2 :
     virtual ~XOR_avx2() {
     }
 
-    size_t getNumValues() {
-        return this->bufRaw.template end<DATA>() - this->bufRaw.template begin<DATA>();
-    }
-
     void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
@@ -124,7 +120,7 @@ struct XOR_avx2 :
             _ReadWriteBarrier();
             const size_t NUM_VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATA);
             const size_t NUM_VALUES_PER_BLOCK = BLOCKSIZE * NUM_VALUES_PER_VECTOR;
-            size_t numValues = getNumValues();
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data256 = this->bufEncoded.template begin<__m256i >();
             while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
@@ -186,7 +182,7 @@ struct XOR_avx2 :
                 ArithmeticConfiguration::Add) {
             const size_t NUM_VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATA);
             const size_t NUM_VALUES_PER_BLOCK = BLOCKSIZE * NUM_VALUES_PER_VECTOR;
-            size_t numValues = test.getNumValues();
+            size_t numValues = test.template getNumValues();
             size_t i = 0;
             auto data256In = test.bufEncoded.template begin<__m256i>();
             auto data256Out = test.bufResult.template begin<__m256i>();
@@ -257,17 +253,20 @@ struct XOR_avx2 :
     struct ArithmetorChecked {
         XOR_avx2 & test;
         const ArithmeticConfiguration & config;
+        const size_t iteration;
         ArithmetorChecked(
                 XOR_avx2 & test,
-                const ArithmeticConfiguration & config)
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
         : test(test),
-        config(config) {
+        config(config),
+        iteration(iteration) {
         }
         void operator()(
                 ArithmeticConfiguration::Add) {
             constexpr const size_t NUM_VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATA);
             constexpr const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
-            size_t numValues = test.getNumValues();
+            size_t numValues = test.template getNumValues();
             size_t i = 0;
             auto data256In = test.bufEncoded.template begin<__m256i>();
             auto data256Out = test.bufResult.template begin<__m256i>();
@@ -282,9 +281,9 @@ struct XOR_avx2 :
                     _mm256_storeu_si256(data256Out++, mmTmp);
                 }
                 auto storedChecksum = reinterpret_cast<CS*>(data256In);
-                if (XORdiff<DATA>::checksumsDiffer(*storedChecksum, XOR<__m256i, CS>::computeFinalChecksum(oldChecksum))) // test checksum
+                if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<__m256i, CS>::computeFinalChecksum(oldChecksum))) // test checksum
                 {
-                    throw ErrorInfo(__FILE__, __LINE__, i, 0);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
                 data256In = reinterpret_cast<__m256i*>(storedChecksum + 1);
                 auto newChecksumOut = reinterpret_cast<CS*>(data256Out);
@@ -307,7 +306,7 @@ struct XOR_avx2 :
                 auto storedChecksum = reinterpret_cast<CS*>(data256In);
                 if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<__m256i, CS>::computeFinalChecksum(oldChecksum))) // test checksum
                 {
-                    throw ErrorInfo(__FILE__, __LINE__, i, 0);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
                 data256In = reinterpret_cast<__m256i*>(storedChecksum + 1);
                 auto newChecksumOut = reinterpret_cast<CS*>(data256Out);
@@ -327,13 +326,11 @@ struct XOR_avx2 :
                     newChecksum ^= tmp;
                     *dataOut++ = tmp;
                 }
-                auto storedChecksum = reinterpret_cast<CS*>(dataIn);
-                if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<DATA, CS>::computeFinalChecksum(oldChecksum))) // test checksum
+                if (XORdiff<DATA>::checksumsDiffer(*dataIn, XOR<DATA, DATA>::computeFinalChecksum(oldChecksum))) // test checksum
                 {
-                    throw ErrorInfo(__FILE__, __LINE__, i, 0);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
-                auto newChecksumOut = reinterpret_cast<CS*>(dataOut);
-                *newChecksumOut = XOR<DATA, CS>::computeFinalChecksum(newChecksum);
+                *dataOut = XOR<DATA, DATA>::computeFinalChecksum(newChecksum);
             }
         }
         void operator()(
@@ -351,7 +348,7 @@ struct XOR_avx2 :
             const ArithmeticConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            std::visit(Arithmetor(*this, config), config.mode);
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
         }
     }
 

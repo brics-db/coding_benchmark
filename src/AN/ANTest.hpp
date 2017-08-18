@@ -16,13 +16,13 @@
 
 #include <Test.hpp>
 
-template<typename DATAIN, typename DATAOUT, size_t UNROLL>
+template<typename DATARAW, typename DATAENC, size_t UNROLL>
 class ANTest :
-        public Test<DATAIN, DATAOUT> {
+        public Test<DATARAW, DATAENC> {
 
 protected:
-    DATAOUT A;
-    DATAOUT A_INV;
+    DATAENC A;
+    DATAENC A_INV;
 
 public:
 
@@ -31,9 +31,9 @@ public:
             AlignedBlock & bufRaw,
             AlignedBlock & bufEncoded,
             AlignedBlock & bufResult,
-            const DATAOUT A,
-            const DATAOUT A_INV)
-            : Test<DATAIN, DATAOUT>(name, bufRaw, bufEncoded, bufResult),
+            const DATAENC A,
+            const DATAENC A_INV)
+            : Test<DATARAW, DATAENC>(name, bufRaw, bufEncoded, bufResult),
               A(A),
               A_INV(A_INV) {
         std::stringstream ss;

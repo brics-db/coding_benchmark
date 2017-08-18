@@ -68,6 +68,82 @@ struct AN_avx2_16x16_16x32_s_divmod :
         }
     }
 
+    bool DoArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct ArithmetorChecked {
+        AN_avx2_16x16_16x32_s_divmod & test;
+        const ArithmeticConfiguration & config;
+        const size_t iteration;
+        ArithmetorChecked(
+                AN_avx2_16x16_16x32_s_divmod & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
+                : test(test),
+                  config(config),
+                  iteration(iteration) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            auto mmData = test.bufEncoded.template begin<__m256i >();
+            auto const mmDataEnd = test.bufEncoded.template end<__m256i >();
+            auto mmOut = test.bufResult.template begin<__m256i >();
+            int32_t operandEnc = config.operand * test.A;
+            auto mmOperandEnc = _mm256_set1_epi32(operandEnc);
+            while (mmData <= (mmDataEnd - UNROLL)) {
+                // let the compiler unroll the loop
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                    auto mmIn = _mm256_lddqu_si256(mmData++);
+                    if ((_mm256_extract_epi32(mmIn, 0) % test.A != 0) || (_mm256_extract_epi32(mmIn, 1) % test.A != 0) || (_mm256_extract_epi32(mmIn, 2) % test.A != 0)
+                            || (_mm256_extract_epi32(mmIn, 3) % test.A != 0) || (_mm256_extract_epi32(mmIn, 4) % test.A != 0) || (_mm256_extract_epi32(mmIn, 5) % test.A != 0)
+                            || (_mm256_extract_epi32(mmIn, 6) % test.A != 0) || (_mm256_extract_epi32(mmIn, 7) % test.A != 0)) {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
+                    }
+                    _mm256_storeu_si256(mmOut++, _mm256_add_epi32(mmIn, mmOperandEnc));
+                }
+            }
+            // remaining numbers
+            while (mmData <= (mmDataEnd - 1)) {
+                auto mmIn = _mm256_lddqu_si256(mmData++);
+                if ((_mm256_extract_epi32(mmIn, 0) % test.A != 0) || (_mm256_extract_epi32(mmIn, 1) % test.A != 0) || (_mm256_extract_epi32(mmIn, 2) % test.A != 0)
+                        || (_mm256_extract_epi32(mmIn, 3) % test.A != 0) || (_mm256_extract_epi32(mmIn, 4) % test.A != 0) || (_mm256_extract_epi32(mmIn, 5) % test.A != 0)
+                        || (_mm256_extract_epi32(mmIn, 6) % test.A != 0) || (_mm256_extract_epi32(mmIn, 7) % test.A != 0)) {
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
+                }
+                _mm256_storeu_si256(mmOut++, _mm256_add_epi32(mmIn, mmOperandEnc));
+            }
+            if (mmData < mmDataEnd) {
+                auto data32End = reinterpret_cast<int32_t*>(mmDataEnd);
+                auto out32 = reinterpret_cast<int32_t*>(mmOut);
+                for (auto data32 = reinterpret_cast<int32_t*>(mmData); data32 < data32End; ++data32, ++out32) {
+                    if (*data32 % test.A != 0) {
+                        throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<int32_t>(), iteration);
+                    }
+                    *out32 = *data32 + operandEnc;
+                }
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
+        }
+    }
+
     bool DoDecode() override {
         return true;
     }

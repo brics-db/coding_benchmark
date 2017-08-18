@@ -36,14 +36,14 @@ struct AN_sse42_8x16_8x32_s_inv :
             auto dataEnd = this->bufEncoded.template end<__m128i >();
             int32_t dMin = std::numeric_limits<int16_t>::min();
             int32_t dMax = std::numeric_limits<int16_t>::max();
-            __m128i mm_dMin = _mm_set1_epi32(dMin); // we assume 16-bit input data
-            __m128i mm_dMax = _mm_set1_epi32(dMax); // we assume 16-bit input data
-            __m128i mm_ainv = _mm_set1_epi32(this->A_INV);
+            __m128i mmDMin = _mm_set1_epi32(dMin); // we assume 16-bit input data
+            __m128i mmDMax = _mm_set1_epi32(dMax); // we assume 16-bit input data
+            __m128i mmAInv = _mm_set1_epi32(this->A_INV);
             while (data <= (dataEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
-                    auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mm_ainv);
-                    if (_mm_movemask_epi8(_mm_cmplt_epi32(mmIn, mm_dMin)) | _mm_movemask_epi8(_mm_cmpgt_epi32(mmIn, mm_dMax))) {
+                    auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mmAInv);
+                    if (_mm_movemask_epi8(_mm_cmplt_epi32(mmIn, mmDMin)) | _mm_movemask_epi8(_mm_cmpgt_epi32(mmIn, mmDMax))) {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data) - this->bufEncoded.template begin<int32_t>(), iteration);
                     }
                     ++data;
@@ -51,8 +51,8 @@ struct AN_sse42_8x16_8x32_s_inv :
             }
             // here follows the non-unrolled remainder
             while (data <= (dataEnd - 1)) {
-                auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mm_ainv);
-                if (_mm_movemask_epi8(_mm_cmplt_epi32(mmIn, mm_dMin)) | _mm_movemask_epi8(_mm_cmpgt_epi32(mmIn, mm_dMax))) {
+                auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mmAInv);
+                if (_mm_movemask_epi8(_mm_cmplt_epi32(mmIn, mmDMin)) | _mm_movemask_epi8(_mm_cmpgt_epi32(mmIn, mmDMax))) {
                     throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data) - this->bufEncoded.template begin<int32_t>(), iteration);
                 }
                 ++data;
@@ -66,6 +66,86 @@ struct AN_sse42_8x16_8x32_s_inv :
                     }
                 }
             }
+        }
+    }
+
+    bool DoArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct ArithmetorChecked {
+        AN_sse42_8x16_8x32_s_inv & test;
+        const ArithmeticConfiguration & config;
+        const size_t iteration;
+        ArithmetorChecked(
+                AN_sse42_8x16_8x32_s_inv & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
+                : test(test),
+                  config(config),
+                  iteration(iteration) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            int32_t dMin = std::numeric_limits<int16_t>::min();
+            int32_t dMax = std::numeric_limits<int16_t>::max();
+            __m128i mmDMin = _mm_set1_epi32(dMin); // we assume 16-bit input data
+            __m128i mmDMax = _mm_set1_epi32(dMax); // we assume 16-bit input data
+            __m128i mmAInv = _mm_set1_epi32(test.A_INV);
+            auto mmData = test.bufEncoded.template begin<__m128i >();
+            auto const mmDataEnd = test.bufEncoded.template end<__m128i >();
+            auto mmOut = test.bufResult.template begin<__m128i >();
+            int32_t operandEnc = config.operand * test.A;
+            auto mmOperandEnc = _mm_set1_epi32(operandEnc);
+            while (mmData <= (mmDataEnd - UNROLL)) {
+                // let the compiler unroll the loop
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                    auto mmIn = _mm_lddqu_si128(mmData++);
+                    auto mmIn2 = _mm_mullo_epi32(mmIn, mmAInv);
+                    if (_mm_movemask_epi8(_mm_cmplt_epi32(mmIn2, mmDMin)) | _mm_movemask_epi8(_mm_cmpgt_epi32(mmIn2, mmDMax))) {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
+                    }
+                    _mm_storeu_si128(mmOut++, _mm_add_epi32(mmIn, mmOperandEnc));
+                }
+            }
+            // remaining numbers
+            while (mmData <= (mmDataEnd - 1)) {
+                auto mmIn = _mm_lddqu_si128(mmData++);
+                auto mmIn2 = _mm_mullo_epi32(mmIn, mmAInv);
+                if (_mm_movemask_epi8(_mm_cmplt_epi32(mmIn2, mmDMin)) | _mm_movemask_epi8(_mm_cmpgt_epi32(mmIn2, mmDMax))) {
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
+                }
+                _mm_storeu_si128(mmOut++, _mm_add_epi32(mmIn, mmOperandEnc));
+            }
+            if (mmData < mmDataEnd) {
+                auto data32End = reinterpret_cast<int32_t*>(mmDataEnd);
+                auto out32 = reinterpret_cast<int32_t*>(mmOut);
+                for (auto data32 = reinterpret_cast<int32_t*>(mmData); data32 < data32End; ++data32, ++out32) {
+                    auto tmp = *data32 * test.A_INV;
+                    if ((tmp < dMin) | (tmp > dMax)) {
+                        throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<int32_t>(), iteration);
+                    }
+                    *out32 = *data32 + operandEnc;
+                }
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
         }
     }
 

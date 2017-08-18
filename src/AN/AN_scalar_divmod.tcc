@@ -18,16 +18,12 @@
 #include <Util/ArithmeticSelector.hpp>
 
 template<typename DATARAW, typename DATAENC, size_t UNROLL>
-struct AN_seq_divmod :
-        public AN_seq<DATARAW, DATAENC, UNROLL> {
+struct AN_scalar_divmod :
+        public AN_scalar<DATARAW, DATAENC, UNROLL> {
 
-    using AN_seq<DATARAW, DATAENC, UNROLL>::AN_seq;
+    using AN_scalar<DATARAW, DATAENC, UNROLL>::AN_scalar;
 
-    virtual ~AN_seq_divmod() {
-    }
-
-    size_t getNumValues() {
-        return this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+    virtual ~AN_scalar_divmod() {
     }
 
     virtual bool DoCheck() override {
@@ -38,7 +34,7 @@ struct AN_seq_divmod :
             const CheckConfiguration & config) {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = getNumValues();
+            const size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<DATAENC>();
             while (i <= (numValues - UNROLL)) {
@@ -60,22 +56,47 @@ struct AN_seq_divmod :
         }
     }
 
-    bool DoArithmetic(
+    bool DoArithmeticChecked(
             const ArithmeticConfiguration & config) override {
         return std::visit(ArithmeticSelector(), config.mode);
     }
 
-    struct Arithmetor {
-        AN_seq_divmod & test;
+    struct ArithmetorChecked {
+        AN_scalar_divmod & test;
         const ArithmeticConfiguration & config;
-        Arithmetor(
-                AN_seq_divmod & test,
-                const ArithmeticConfiguration & config)
+        const size_t iteration;
+        ArithmetorChecked(
+                AN_scalar_divmod & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
                 : test(test),
-                  config(config) {
+                  config(config),
+                  iteration(iteration) {
         }
         void operator()(
                 ArithmeticConfiguration::Add) {
+            const size_t numValues = test.template getNumValues();
+            size_t i = 0;
+            auto dataIn = test.bufEncoded.template begin<DATAENC>();
+            auto dataOut = test.bufResult.template begin<DATAENC>();
+            DATAENC operandEnc = config.operand * test.A;
+            while (i <= (numValues - UNROLL)) {
+                // let the compiler unroll the loop
+                for (size_t k = 0; k < UNROLL; ++k) {
+                    if ((*dataIn % test.A) != 0) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    *dataOut++ = *dataIn++ + operandEnc;
+                }
+                i += UNROLL;
+            }
+            // remaining numbers
+            for (; i < numValues; ++i) {
+                if ((*dataIn % test.A) != 0) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                }
+                *dataOut++ = *dataIn++ + operandEnc;
+            }
         }
         void operator()(
                 ArithmeticConfiguration::Sub) {
@@ -88,11 +109,11 @@ struct AN_seq_divmod :
         }
     };
 
-    void RunArithmetic(
+    void RunArithmeticChecked(
             const ArithmeticConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            std::visit(Arithmetor(*this, config), config.mode);
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
         }
     }
 
@@ -104,7 +125,7 @@ struct AN_seq_divmod :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = getNumValues();
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto dataIn = this->bufEncoded.template begin<DATAENC>();
             auto dataOut = this->bufResult.template begin<DATARAW>();
@@ -129,7 +150,7 @@ struct AN_seq_divmod :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = getNumValues();
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto dataIn = this->bufEncoded.template begin<DATAENC>();
             auto dataOut = this->bufResult.template begin<DATARAW>();

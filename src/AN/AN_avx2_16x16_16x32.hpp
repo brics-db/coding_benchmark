@@ -22,13 +22,14 @@
 #pragma once
 
 #include <AN/ANTest.hpp>
+#include <Util/ArithmeticSelector.hpp>
 
-template<typename DATAIN, typename DATAOUT, size_t UNROLL>
+template<typename DATARAW, typename DATAENC, size_t UNROLL>
 struct AN_avx2_16x16_16x32 :
-        public ANTest<DATAIN, DATAOUT, UNROLL>,
+        public ANTest<DATARAW, DATAENC, UNROLL>,
         public AVX2Test {
 
-    using ANTest<DATAIN, DATAOUT, UNROLL>::ANTest;
+    using ANTest<DATARAW, DATAENC, UNROLL>::ANTest;
 
     virtual ~AN_avx2_16x16_16x32() {
     }
@@ -42,7 +43,7 @@ struct AN_avx2_16x16_16x32 :
             auto *dataOut = this->bufEncoded.template begin<__m256i >();
             auto mmA = _mm256_set1_epi32(this->A);
 
-            constexpr const bool isSigned = std::is_signed < DATAIN > ::value;
+            constexpr const bool isSigned = std::is_signed<DATARAW>::value;
             while (dataIn <= (dataInEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
@@ -60,13 +61,70 @@ struct AN_avx2_16x16_16x32 :
 
             // multiply remaining numbers sequentially
             if (dataIn < dataInEnd) {
-                auto data16 = reinterpret_cast<DATAIN*>(dataIn);
-                auto data16End = reinterpret_cast<DATAIN*>(dataInEnd);
-                auto out32 = reinterpret_cast<DATAOUT*>(dataOut);
+                auto data16 = reinterpret_cast<DATARAW*>(dataIn);
+                auto data16End = reinterpret_cast<DATARAW*>(dataInEnd);
+                auto out32 = reinterpret_cast<DATAENC*>(dataOut);
                 do {
-                    *out32++ = static_cast<DATAOUT>(*data16++) * this->A;
+                    *out32++ = static_cast<DATAENC>(*data16++) * this->A;
                 } while (data16 < data16End);
             }
+        }
+    }
+
+    bool DoArithmetic(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct Arithmetor {
+        AN_avx2_16x16_16x32 & test;
+        const ArithmeticConfiguration & config;
+        Arithmetor(
+                AN_avx2_16x16_16x32 & test,
+                const ArithmeticConfiguration & config)
+                : test(test),
+                  config(config) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            auto *mmData = test.bufEncoded.template begin<__m256i >();
+            auto * const mmDataEnd = test.bufEncoded.template end<__m256i >();
+            auto *mmOut = test.bufResult.template begin<__m256i >();
+            DATAENC operandEnc = config.operand * test.A;
+            auto mmOperandEnc = _mm256_set1_epi32(operandEnc);
+            while (mmData <= (mmDataEnd - UNROLL)) {
+                // let the compiler unroll the loop
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                    _mm256_storeu_si256(mmOut++, _mm256_add_epi32(_mm256_lddqu_si256(mmData++), mmOperandEnc));
+                }
+            }
+            // remaining numbers
+            while (mmData <= (mmDataEnd - 1)) {
+                _mm256_storeu_si256(mmOut++, _mm256_add_epi32(_mm256_lddqu_si256(mmData++), mmOperandEnc));
+            }
+            if (mmData < mmDataEnd) {
+                auto data32End = reinterpret_cast<DATAENC*>(mmDataEnd);
+                auto out32 = reinterpret_cast<DATAENC*>(mmOut);
+                for (auto data32 = reinterpret_cast<DATAENC*>(mmData); data32 < data32End; ++data32, ++out32)
+                    *out32 = *data32 + operandEnc;
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmetic(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(Arithmetor(*this, config), config.mode);
         }
     }
 };

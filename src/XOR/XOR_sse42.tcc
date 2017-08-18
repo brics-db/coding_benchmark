@@ -64,10 +64,6 @@ struct XOR_sse42 :
     virtual ~XOR_sse42() {
     }
 
-    size_t getNumValues() {
-        return this->bufRaw.template end<DATA>() - this->bufRaw.template begin<DATA>();
-    }
-
     void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
@@ -123,7 +119,7 @@ struct XOR_sse42 :
             _ReadWriteBarrier();
             const size_t NUM_VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATA);
             const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
-            size_t numValues = getNumValues();
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data128 = this->bufEncoded.template begin<__m128i >();
             while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
@@ -185,7 +181,7 @@ struct XOR_sse42 :
                 ArithmeticConfiguration::Add) {
             constexpr const size_t NUM_VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATA);
             constexpr const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
-            size_t numValues = test.getNumValues();
+            size_t numValues = test.template getNumValues();
             size_t i = 0;
             auto data128In = test.bufEncoded.template begin<__m128i>();
             auto data128Out = test.bufResult.template begin<__m128i>();
@@ -256,17 +252,20 @@ struct XOR_sse42 :
     struct ArithmetorChecked {
         XOR_sse42 & test;
         const ArithmeticConfiguration & config;
+        const size_t iteration;
         ArithmetorChecked(
                 XOR_sse42 & test,
-                const ArithmeticConfiguration & config)
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
         : test(test),
-        config(config) {
+        config(config),
+        iteration(iteration) {
         }
         void operator()(
                 ArithmeticConfiguration::Add) {
             constexpr const size_t NUM_VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATA);
             constexpr const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
-            size_t numValues = test.getNumValues();
+            size_t numValues = test.template getNumValues();
             size_t i = 0;
             auto data128In = test.bufEncoded.template begin<__m128i>();
             auto data128Out = test.bufResult.template begin<__m128i>();
@@ -281,9 +280,9 @@ struct XOR_sse42 :
                     _mm_storeu_si128(data128Out++, mmTmp);
                 }
                 auto storedChecksum = reinterpret_cast<CS*>(data128In);
-                if (XORdiff<DATA>::checksumsDiffer(*storedChecksum, XOR<__m128i, CS>::computeFinalChecksum(oldChecksum))) // test checksum
+                if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<__m128i, CS>::computeFinalChecksum(oldChecksum))) // test checksum
                 {
-                    throw ErrorInfo(__FILE__, __LINE__, i, 0);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
                 data128In = reinterpret_cast<__m128i*>(storedChecksum + 1);
                 auto newChecksumOut = reinterpret_cast<CS*>(data128Out);
@@ -306,7 +305,7 @@ struct XOR_sse42 :
                 auto storedChecksum = reinterpret_cast<CS*>(data128In);
                 if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<__m128i, CS>::computeFinalChecksum(oldChecksum))) // test checksum
                 {
-                    throw ErrorInfo(__FILE__, __LINE__, i, 0);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
                 data128In = reinterpret_cast<__m128i*>(storedChecksum + 1);
                 auto newChecksumOut = reinterpret_cast<CS*>(data128Out);
@@ -326,13 +325,11 @@ struct XOR_sse42 :
                     newChecksum ^= tmp;
                     *dataOut++ = tmp;
                 }
-                auto storedChecksum = reinterpret_cast<CS*>(dataIn);
-                if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<DATA, CS>::computeFinalChecksum(oldChecksum))) // test checksum
+                if (XORdiff<DATA>::checksumsDiffer(*dataIn, XOR<DATA, DATA>::computeFinalChecksum(oldChecksum))) // test checksum
                 {
-                    throw ErrorInfo(__FILE__, __LINE__, i, 0);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
-                auto newChecksumOut = reinterpret_cast<CS*>(dataOut);
-                *newChecksumOut = XOR<DATA, CS>::computeFinalChecksum(newChecksum);
+                *dataOut = XOR<DATA, DATA>::computeFinalChecksum(newChecksum);
             }
         }
         void operator()(
@@ -350,7 +347,7 @@ struct XOR_sse42 :
             const ArithmeticConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            std::visit(Arithmetor(*this, config), config.mode);
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
         }
     }
 
@@ -365,7 +362,7 @@ struct XOR_sse42 :
             _ReadWriteBarrier();
             const size_t VALUES_PER_SIMDREG = sizeof (__m128i) / sizeof (DATA);
             const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
-            size_t numValues = getNumValues();
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto dataIn = this->bufEncoded.template begin<CS>();
             auto dataOut = this->bufResult.template begin<__m128i>();

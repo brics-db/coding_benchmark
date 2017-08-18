@@ -31,66 +31,111 @@ struct AN_sse42_8x16_8x32_s_divmod :
 
     virtual void RunCheck(
             const CheckConfiguration & config) override {
-        bool first = true;
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            auto data = this->bufEncoded.template begin<__m128i >();
-            auto dataEnd = this->bufEncoded.template end<__m128i >();
-            while (data <= (dataEnd - UNROLL)) {
+            auto mmData = this->bufEncoded.template begin<__m128i >();
+            auto const mmDataEnd = this->bufEncoded.template end<__m128i >();
+            while (mmData <= (mmDataEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
-                    auto mmIn = _mm_lddqu_si128(data);
+                    auto mmIn = _mm_lddqu_si128(mmData);
                     if ((_mm_extract_epi32(mmIn, 0) % this->A != 0) || (_mm_extract_epi32(mmIn, 1) % this->A != 0) || (_mm_extract_epi32(mmIn, 2) % this->A != 0)
                             || (_mm_extract_epi32(mmIn, 3) % this->A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
-                        if (first) {
-                            std::cerr << "[A=" << this->A << "]\n";
-                            first = false;
-                        }
-                        size_t i = reinterpret_cast<int32_t*>(data) - this->bufEncoded.template begin<int32_t>();
-                        std::cerr << "\tout: [" << i << '=' << _mm_extract_epi32(mmIn, 0) << "] [" << (i + 1) << '=' << _mm_extract_epi32(mmIn, 1) << "] [" << (i + 2) << '='
-                                << _mm_extract_epi32(mmIn, 2) << "] [" << (i + 3) << '=' << _mm_extract_epi32(mmIn, 3) << ']' << std::endl;
-                        auto pIn = this->bufEncoded.template begin<int16_t>() + i;
-                        std::cerr << "\t in: [" << i << '=' << *pIn << "] [" << (i + 1) << '=' << *(pIn + 1) << "] [" << (i + 2) << '=' << *(pIn + 2) << "] [" << (i + 3) << '=' << *(pIn + 3) << ']'
-                                << std::endl;
-                        // throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - this->bufEncoded.template begin<int32_t>(), iteration);
                     }
-                    ++data;
+                    ++mmData;
                 }
             }
             // here follows the non-unrolled remainder
-            while (data <= (dataEnd - 1)) {
-                auto mmIn = _mm_lddqu_si128(data);
+            while (mmData <= (mmDataEnd - 1)) {
+                auto mmIn = _mm_lddqu_si128(mmData);
                 if ((_mm_extract_epi32(mmIn, 0) % this->A != 0) || (_mm_extract_epi32(mmIn, 1) % this->A != 0) || (_mm_extract_epi32(mmIn, 2) % this->A != 0)
                         || (_mm_extract_epi32(mmIn, 3) % this->A != 0)) { // we need to do this "hack" because comparison is only on signed integers!
-                    if (first) {
-                        std::cerr << "[A=" << this->A << "]\n";
-                        first = false;
-                    }
-                    size_t i = reinterpret_cast<int32_t*>(data) - this->bufEncoded.template begin<int32_t>();
-                    std::cerr << "\t[" << i << '=' << _mm_extract_epi32(mmIn, 0) << "] [" << (i + 1) << '=' << _mm_extract_epi32(mmIn, 1) << "] [" << (i + 2) << '=' << _mm_extract_epi32(mmIn, 2)
-                            << "] [" << (i + 3) << '=' << _mm_extract_epi32(mmIn, 3) << ']' << std::endl;
-                    auto pIn = this->bufEncoded.template begin<int16_t>() + i;
-                    std::cerr << "\t in: [" << i << '=' << *pIn << "] [" << (i + 1) << '=' << *(pIn + 1) << "] [" << (i + 2) << '=' << *(pIn + 2) << "] [" << (i + 3) << '=' << *(pIn + 3) << ']'
-                            << std::endl;
-                    // throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - this->bufEncoded.template begin<int32_t>(), iteration);
                 }
-                ++data;
+                ++mmData;
             }
-            if (data < dataEnd) {
-                auto dataEnd2 = reinterpret_cast<int32_t*>(dataEnd);
-                for (auto data2 = reinterpret_cast<int32_t*>(data); data2 < dataEnd2; ++data2) {
+            if (mmData < mmDataEnd) {
+                auto dataEnd2 = reinterpret_cast<int32_t*>(mmDataEnd);
+                for (auto data2 = reinterpret_cast<int32_t*>(mmData); data2 < dataEnd2; ++data2) {
                     if ((*data2 % this->A) != 0) {
-                        if (first) {
-                            std::cerr << "[A=" << this->A << "]\n";
-                            first = false;
-                        }
-                        size_t i = data2 - this->bufEncoded.template begin<int32_t>();
-                        std::cerr << "\t[" << i << '=' << *data2 << ']' << std::endl;
-                        auto pIn = this->bufEncoded.template begin<int16_t>() + i;
-                        std::cerr << "\t in: [" << i << '=' << *pIn << std::endl;
-                        // throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, data2 - this->bufEncoded.template begin<int32_t>(), iteration);
                     }
                 }
             }
+        }
+    }
+
+    bool DoArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct ArithmetorChecked {
+        AN_sse42_8x16_8x32_s_divmod & test;
+        const ArithmeticConfiguration & config;
+        const size_t iteration;
+        ArithmetorChecked(
+                AN_sse42_8x16_8x32_s_divmod & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
+                : test(test),
+                  config(config),
+                  iteration(iteration) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            auto mmData = test.bufEncoded.template begin<__m128i >();
+            auto const mmDataEnd = test.bufEncoded.template end<__m128i >();
+            auto mmOut = test.bufResult.template begin<__m128i >();
+            int32_t operandEnc = config.operand * test.A;
+            auto mmOperandEnc = _mm_set1_epi32(operandEnc);
+            while (mmData <= (mmDataEnd - UNROLL)) {
+                // let the compiler unroll the loop
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                    auto mmIn = _mm_lddqu_si128(mmData++);
+                    if ((_mm_extract_epi32(mmIn, 0) % test.A != 0) || (_mm_extract_epi32(mmIn, 1) % test.A != 0) || (_mm_extract_epi32(mmIn, 2) % test.A != 0)
+                            || (_mm_extract_epi32(mmIn, 3) % test.A != 0)) {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
+                    }
+                    _mm_storeu_si128(mmOut++, _mm_add_epi32(mmIn, mmOperandEnc));
+                }
+            }
+            // remaining numbers
+            while (mmData <= (mmDataEnd - 1)) {
+                auto mmIn = _mm_lddqu_si128(mmData++);
+                if ((_mm_extract_epi32(mmIn, 0) % test.A != 0) || (_mm_extract_epi32(mmIn, 1) % test.A != 0) || (_mm_extract_epi32(mmIn, 2) % test.A != 0)
+                        || (_mm_extract_epi32(mmIn, 3) % test.A != 0)) {
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
+                }
+                _mm_storeu_si128(mmOut++, _mm_add_epi32(mmIn, mmOperandEnc));
+            }
+            if (mmData < mmDataEnd) {
+                auto data32End = reinterpret_cast<int32_t*>(mmDataEnd);
+                auto out32 = reinterpret_cast<int32_t*>(mmOut);
+                for (auto data32 = reinterpret_cast<int32_t*>(mmData); data32 < data32End; ++data32, ++out32) {
+                    if (*data32 % test.A != 0) {
+                        throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<int32_t>(), iteration);
+                    }
+                    *out32 = *data32 + operandEnc;
+                }
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
         }
     }
 

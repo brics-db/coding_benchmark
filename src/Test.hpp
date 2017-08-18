@@ -393,7 +393,7 @@ struct AVX2Test :
     virtual bool HasCapabilities() override;
 };
 
-template<typename DATAIN, typename DATAOUT>
+template<typename DATARAW, typename DATAENC>
 struct Test :
         public TestBase {
 
@@ -402,31 +402,35 @@ struct Test :
             AlignedBlock & bufRaw,
             AlignedBlock & bufEncoded,
             AlignedBlock & bufResult)
-            : TestBase(sizeof(DATAIN), name, bufRaw, bufEncoded, bufResult) {
+            : TestBase(sizeof(DATARAW), name, bufRaw, bufEncoded, bufResult) {
     }
 
     virtual ~Test() {
     }
 
     virtual size_t getInputTypeSize() override {
-        return sizeof(DATAIN);
+        return sizeof(DATARAW);
     }
 
     virtual size_t getOutputTypeSize() override {
-        return sizeof(DATAOUT);
+        return sizeof(DATARAW);
+    }
+
+    size_t getNumValues() {
+        return this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
     }
 
     void ResetBuffers(
             const DataGenerationConfiguration & dataGenConfig) override {
-        DATAIN mask = static_cast<DATAIN>(-1);
+        DATARAW mask = static_cast<DATARAW>(-1);
         if (dataGenConfig.numEffectiveLSBs) {
-            mask = static_cast<DATAIN>((1ull << *dataGenConfig.numEffectiveLSBs) - 1ull);
+            mask = static_cast<DATARAW>((1ull << *dataGenConfig.numEffectiveLSBs) - 1ull);
         }
-        auto pInEnd = bufRaw.template end<DATAIN>();
-        DATAIN value = static_cast<DATAIN>(12783);
-        for (DATAIN* pIn = bufRaw.template begin<DATAIN>(); pIn < pInEnd; ++pIn) {
+        auto pInEnd = bufRaw.template end<DATARAW>();
+        DATARAW value = static_cast<DATARAW>(12783);
+        for (DATARAW* pIn = bufRaw.template begin<DATARAW>(); pIn < pInEnd; ++pIn) {
             *pIn = mask & value;
-            value = value * static_cast<DATAIN>(7577) + static_cast<DATAIN>(10467);
+            value = value * static_cast<DATARAW>(7577) + static_cast<DATARAW>(10467);
         }
         memset(bufEncoded.begin(), 0, bufEncoded.nBytes);
         memset(bufResult.begin(), 0, bufResult.nBytes);

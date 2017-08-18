@@ -70,6 +70,80 @@ struct AN_sse42_8x16_8x32_u_divmod :
         }
     }
 
+    bool DoArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct ArithmetorChecked {
+        AN_sse42_8x16_8x32_u_divmod & test;
+        const ArithmeticConfiguration & config;
+        const size_t iteration;
+        ArithmetorChecked(
+                AN_sse42_8x16_8x32_u_divmod & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
+                : test(test),
+                  config(config),
+                  iteration(iteration) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            auto mmData = test.bufEncoded.template begin<__m128i >();
+            auto const mmDataEnd = test.bufEncoded.template end<__m128i >();
+            auto mmOut = test.bufResult.template begin<__m128i >();
+            uint32_t operandEnc = config.operand * test.A;
+            auto mmOperandEnc = _mm_set1_epi32(operandEnc);
+            while (mmData <= (mmDataEnd - UNROLL)) {
+                // let the compiler unroll the loop
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                    auto mmIn = _mm_lddqu_si128(mmData++);
+                    if ((_mm_extract_epi32(mmIn, 0) % test.A != 0) || (_mm_extract_epi32(mmIn, 1) % test.A != 0) || (_mm_extract_epi32(mmIn, 2) % test.A != 0)
+                            || (_mm_extract_epi32(mmIn, 3) % test.A != 0)) {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - test.bufEncoded.template begin<uint32_t>(), iteration);
+                    }
+                    _mm_storeu_si128(mmOut++, _mm_add_epi32(mmIn, mmOperandEnc));
+                }
+            }
+            // remaining numbers
+            while (mmData <= (mmDataEnd - 1)) {
+                auto mmIn = _mm_lddqu_si128(mmData++);
+                if ((_mm_extract_epi32(mmIn, 0) % test.A != 0) || (_mm_extract_epi32(mmIn, 1) % test.A != 0) || (_mm_extract_epi32(mmIn, 2) % test.A != 0)
+                        || (_mm_extract_epi32(mmIn, 3) % test.A != 0)) {
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - test.bufEncoded.template begin<uint32_t>(), iteration);
+                }
+                _mm_storeu_si128(mmOut++, _mm_add_epi32(mmIn, mmOperandEnc));
+            }
+            if (mmData < mmDataEnd) {
+                auto data32End = reinterpret_cast<uint32_t*>(mmDataEnd);
+                auto out32 = reinterpret_cast<uint32_t*>(mmOut);
+                for (auto data32 = reinterpret_cast<uint32_t*>(mmData); data32 < data32End; ++data32, ++out32) {
+                    if (*data32 % test.A != 0) {
+                        throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<uint32_t>(), iteration);
+                    }
+                    *out32 = *data32 + operandEnc;
+                }
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
+        }
+    }
+
     bool DoDecode() override {
         return true;
     }
@@ -77,8 +151,8 @@ struct AN_sse42_8x16_8x32_u_divmod :
     void RunDecode(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (uint32_t);
-            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
+            constexpr const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (uint32_t);
+            constexpr const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
             size_t numValues = this->bufRaw.template end<int16_t>() - this->bufRaw.template begin<int16_t>();
             size_t i = 0;
             auto dataIn = this->bufEncoded.template begin<__m128i>();

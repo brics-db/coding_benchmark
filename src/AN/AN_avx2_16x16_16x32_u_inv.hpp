@@ -33,37 +33,115 @@ struct AN_avx2_16x16_16x32_u_inv :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            auto mm_Data = this->bufEncoded.template begin<__m256i >();
-            auto mm_DataEnd = this->bufEncoded.template end<__m256i >();
+            auto mmData = this->bufEncoded.template begin<__m256i >();
+            auto mmDataEnd = this->bufEncoded.template end<__m256i >();
             uint32_t dMax = std::numeric_limits<uint16_t>::max();
-            __m256i mm_dMax = _mm256_set1_epi32(dMax); // we assume 16-bit input data
-            __m256i mm_AInv = _mm256_set1_epi32(this->A_INV);
-            while (mm_Data <= (mm_DataEnd - UNROLL)) {
+            __m256i mmDMax = _mm256_set1_epi32(dMax); // we assume 16-bit input data
+            __m256i mmAInv = _mm256_set1_epi32(this->A_INV);
+            while (mmData <= (mmDataEnd - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
-                    auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(mm_Data), mm_AInv);
-                    if (!_mm256_movemask_epi8(_mm256_cmpeq_epi32(_mm256_min_epu32(mmIn, mm_dMax), mmIn))) { // we need to do this "hack" because comparison is only on signed integers!
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mm_Data) - this->bufEncoded.template begin<uint32_t>(), iteration);
+                    auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(mmData), mmAInv);
+                    if (!_mm256_movemask_epi8(_mm256_cmpeq_epi32(_mm256_min_epu32(mmIn, mmDMax), mmIn))) { // we need to do this "hack" because comparison is only on signed integers!
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - this->bufEncoded.template begin<uint32_t>(), iteration);
                     }
-                    ++mm_Data;
+                    ++mmData;
                 }
             }
             // here follows the non-unrolled remainder
-            while (mm_Data <= (mm_DataEnd - 1)) {
-                auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(mm_Data), mm_AInv);
-                if (!_mm256_movemask_epi8(_mm256_cmpeq_epi32(_mm256_min_epu32(mmIn, mm_dMax), mmIn))) { // we need to do this "hack" because comparison is only on signed integers!
-                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mm_Data) - this->bufEncoded.template begin<uint32_t>(), iteration);
+            while (mmData <= (mmDataEnd - 1)) {
+                auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(mmData), mmAInv);
+                if (!_mm256_movemask_epi8(_mm256_cmpeq_epi32(_mm256_min_epu32(mmIn, mmDMax), mmIn))) { // we need to do this "hack" because comparison is only on signed integers!
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - this->bufEncoded.template begin<uint32_t>(), iteration);
                 }
-                ++mm_Data;
+                ++mmData;
             }
-            if (mm_Data < mm_DataEnd) {
-                auto dataEnd2 = reinterpret_cast<uint32_t*>(mm_DataEnd);
-                for (auto data2 = reinterpret_cast<uint32_t*>(mm_Data); data2 < dataEnd2; ++data2) {
+            if (mmData < mmDataEnd) {
+                auto dataEnd2 = reinterpret_cast<uint32_t*>(mmDataEnd);
+                for (auto data2 = reinterpret_cast<uint32_t*>(mmData); data2 < dataEnd2; ++data2) {
                     if ((*data2 * this->A_INV) > dMax) {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data2) - this->bufEncoded.template begin<uint32_t>(), iteration);
                     }
                 }
             }
+        }
+    }
+
+    bool DoArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct ArithmetorChecked {
+        AN_avx2_16x16_16x32_u_inv & test;
+        const ArithmeticConfiguration & config;
+        const size_t iteration;
+        ArithmetorChecked(
+                AN_avx2_16x16_16x32_u_inv & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
+                : test(test),
+                  config(config),
+                  iteration(iteration) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            uint32_t dMax = std::numeric_limits<int16_t>::max();
+            __m256i mmDMax = _mm256_set1_epi32(dMax); // we assume 16-bit input data
+            __m256i mmAinv = _mm256_set1_epi32(test.A_INV);
+            auto mmData = test.bufEncoded.template begin<__m256i >();
+            auto const mmDataEnd = test.bufEncoded.template end<__m256i >();
+            auto mmOut = test.bufResult.template begin<__m256i >();
+            uint32_t operandEnc = config.operand * test.A;
+            auto mmOperandEnc = _mm256_set1_epi32(operandEnc);
+            while (mmData <= (mmDataEnd - UNROLL)) {
+                // let the compiler unroll the loop
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                    auto mmIn = _mm256_lddqu_si256(mmData++);
+                    auto mmIn2 = _mm256_mullo_epi32(mmIn, mmAinv);
+                    if (!_mm256_movemask_epi8(_mm256_cmpeq_epi32(_mm256_min_epu32(mmIn2, mmDMax), mmIn2))) { // we need to do this "hack" because comparison is only on signed integers!
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - test.bufEncoded.template begin<uint32_t>(), iteration);
+                    }
+                    _mm256_storeu_si256(mmOut++, _mm256_add_epi32(mmIn, mmOperandEnc));
+                }
+            }
+            // remaining numbers
+            while (mmData <= (mmDataEnd - 1)) {
+                auto mmIn = _mm256_lddqu_si256(mmData++);
+                auto mmIn2 = _mm256_mullo_epi32(mmIn, mmAinv);
+                if (!_mm256_movemask_epi8(_mm256_cmpeq_epi32(_mm256_min_epu32(mmIn2, mmDMax), mmIn2))) { // we need to do this "hack" because comparison is only on signed integers!
+                    throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - test.bufEncoded.template begin<uint32_t>(), iteration);
+                }
+                _mm256_storeu_si256(mmOut++, _mm256_add_epi32(mmIn, mmOperandEnc));
+            }
+            if (mmData < mmDataEnd) {
+                auto data32End = reinterpret_cast<uint32_t*>(mmDataEnd);
+                auto out32 = reinterpret_cast<uint32_t*>(mmOut);
+                for (auto data32 = reinterpret_cast<uint32_t*>(mmData); data32 < data32End; ++data32, ++out32) {
+                    auto tmp = *data32 * test.A_INV;
+                    if (tmp > dMax) {
+                        throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<uint32_t>(), iteration);
+                    }
+                    *out32 = *data32 + operandEnc;
+                }
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
         }
     }
 
