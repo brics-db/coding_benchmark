@@ -125,13 +125,13 @@ int main(
 
     TestCase(CopyTest8, "Copy 8>8", input8, encoded16, result16);
     TestCase(CopyTest2_8_16, "Copy2 8>16", input8, encoded16, result16);
-    TestCase(AN_seq_8_16_u_inv, "AN U 8>16", input8, encoded16, result16, AUser, AUserInv16);
-    TestCase(AN_seq_8_16_s_inv, "AN S 8>16", input8, encoded16, result16, static_cast<int16_t>(AUser), static_cast<int16_t>(AUserInv16));
+    TestCase(AN_scalar_8_16_u_inv, "AN U 8>16", input8, encoded16, result16, AUser, AUserInv16);
+    TestCase(AN_scalar_8_16_s_inv, "AN S 8>16", input8, encoded16, result16, static_cast<int16_t>(AUser), static_cast<int16_t>(AUserInv16));
 
     TestCase(CopyTest32, "Copy 32>32", input32, encoded64, result64);
     TestCase(CopyTest2_32_64, "Copy2 32>64", input32, encoded64, result64);
-    TestCase(AN_seq_32_64_u_inv, "AN U 32>64", input32, encoded64, result64, AUser, AUserInv64);
-    TestCase(AN_seq_32_64_s_inv, "AN S 32>64", input32, encoded64, result64, static_cast<int64_t>(AUser), static_cast<int64_t>(AUserInv64));
+    TestCase(AN_scalar_32_64_u_inv, "AN U 32>64", input32, encoded64, result64, AUser, AUserInv64);
+    TestCase(AN_scalar_32_64_s_inv, "AN S 32>64", input32, encoded64, result64, static_cast<int64_t>(AUser), static_cast<int64_t>(AUserInv64));
 
 #undef WarmUp
 #undef TestCase
