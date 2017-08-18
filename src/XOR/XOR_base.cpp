@@ -22,47 +22,47 @@
 #include <XOR/XOR_base.hpp>
 
 uint8_t XOR<uint16_t, uint8_t>::computeFinalChecksum(
-        uint16_t & checksum) {
-    auto pChk = reinterpret_cast<uint8_t*>(&checksum);
+        const uint16_t & checksum) {
+    auto pChk = reinterpret_cast<const uint8_t *>(&checksum);
     return pChk[0] ^ pChk[1];
 }
 
 uint16_t XOR<uint16_t, uint16_t>::computeFinalChecksum(
-        uint16_t & checksum) {
+        const uint16_t & checksum) {
     return checksum;
 }
 
 uint8_t XOR<uint32_t, uint8_t>::computeFinalChecksum(
-        uint32_t & checksum) {
-    auto pChk = reinterpret_cast<uint8_t*>(&checksum);
+        const uint32_t & checksum) {
+    auto pChk = reinterpret_cast<const uint8_t *>(&checksum);
     return pChk[0] ^ pChk[1] ^ pChk[2] ^ pChk[3];
 }
 
 uint32_t XOR<uint32_t, uint32_t>::computeFinalChecksum(
-        uint32_t & checksum) {
+        const uint32_t & checksum) {
     return checksum;
 }
 
 bool XORdiff<uint8_t>::checksumsDiffer(
-        uint8_t cs1,
-        uint8_t cs2) {
+        const uint8_t cs1,
+        const uint8_t cs2) {
     return cs1 != cs2;
 }
 
 bool XORdiff<uint16_t>::checksumsDiffer(
-        uint16_t cs1,
-        uint16_t cs2) {
+        const uint16_t cs1,
+        const uint16_t cs2) {
     return cs1 != cs2;
 }
 
 bool XORdiff<uint32_t>::checksumsDiffer(
-        uint32_t cs1,
-        uint32_t cs2) {
+        const uint32_t cs1,
+        const uint32_t cs2) {
     return cs1 != cs2;
 }
 
 bool XORdiff<uint64_t>::checksumsDiffer(
-        uint64_t cs1,
-        uint64_t cs2) {
+        const uint64_t cs1,
+        const uint64_t cs2) {
     return cs1 != cs2;
 }

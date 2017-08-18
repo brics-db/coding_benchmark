@@ -69,7 +69,8 @@ void TestBase::RunCheck(
 }
 
 // Arithmetic
-bool TestBase::DoArithmetic() {
+bool TestBase::DoArithmetic(
+        const ArithmeticConfiguration & config) {
     return false;
 }
 
@@ -82,7 +83,8 @@ void TestBase::RunArithmetic(
 }
 
 // Arithmetic Checked
-bool TestBase::DoArithmeticChecked() {
+bool TestBase::DoArithmeticChecked(
+        const ArithmeticConfiguration & config) {
     return false;
 }
 
@@ -177,7 +179,7 @@ TestInfos TestBase::Execute(
 
     EncodeConfiguration encConf(configTest);
     CheckConfiguration chkConf(configTest);
-    ArithmeticConfiguration arithConf(configTest, rDist(rEng));
+    ArithmeticConfiguration arithConf(configTest, ArithmeticConfiguration::Mode(ArithmeticConfiguration::Add()), rDist(rEng));
     // Following: use an odd A. As the actual A is not important we can choose an arbitrary one here and simply cast it later to the desired width (i.e. select the appropriate LSBs).
     std::size_t newA = rDist(rEng) | 0x1;
 #ifdef DEBUG
@@ -239,7 +241,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoArithmetic()) {
+    if (this->DoArithmetic(arithConf)) {
         this->PreArithmetic(arithConf);
         std::clog << ", arithmetic" << std::flush;
         sw.Reset();
@@ -263,7 +265,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoArithmeticChecked()) {
+    if (this->DoArithmeticChecked(arithConf)) {
         this->PreArithmeticChecked(arithConf);
         std::clog << ", arithmetic checked" << std::flush;
         sw.Reset();

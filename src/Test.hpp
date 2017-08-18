@@ -61,11 +61,23 @@ struct CheckConfiguration :
 
 struct ArithmeticConfiguration :
         public TestConfiguration {
+    struct Add {
+    };
+    struct Sub {
+    };
+    struct Mul {
+    };
+    struct Div {
+    };
+    typedef std::variant<Add, Sub, Mul, Div> Mode;
+    Mode mode;
     size_t operand;
     ArithmeticConfiguration(
             const TestConfiguration & config,
+            Mode mode,
             const size_t operand)
             : TestConfiguration(config),
+              mode(mode),
               operand(operand) {
     }
 };
@@ -82,7 +94,6 @@ struct AggregateConfiguration :
     };
     typedef std::variant<Sum, Min, Max, Avg> Mode;
     Mode mode;
-
     AggregateConfiguration(
             const TestConfiguration & config,
             Mode mode)
@@ -180,7 +191,8 @@ public:
             const CheckConfiguration & config);
 
     // Arithmetic
-    virtual bool DoArithmetic();
+    virtual bool DoArithmetic(
+            const ArithmeticConfiguration & config);
 
     virtual void PreArithmetic(
             const ArithmeticConfiguration & config);
@@ -189,7 +201,8 @@ public:
             const ArithmeticConfiguration & config);
 
     // Arithmetic Checked
-    virtual bool DoArithmeticChecked();
+    virtual bool DoArithmeticChecked(
+            const ArithmeticConfiguration & config);
 
     virtual void PreArithmeticChecked(
             const ArithmeticConfiguration & config);

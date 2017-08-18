@@ -22,6 +22,7 @@
 #pragma once
 
 #include <cstring>
+#include <variant>
 
 #include <Test.hpp>
 #include <Util/ErrorInfo.hpp>
@@ -59,46 +60,164 @@ struct CopyTest :
             _ReadWriteBarrier();
             int ret = memcmp(this->bufEncoded.begin(), this->bufRaw.begin(), getNumBytes());
             if (ret != 0) {
-                throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
+                throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
         }
     }
 
-    bool DoArithmetic() override {
-        return false;
+    struct ArithmeticSelector {
+        DATA operator()(
+                ArithmeticConfiguration::Add) {
+            return true;
+        }
+        DATA operator()(
+                ArithmeticConfiguration::Sub) {
+            return false;
+        }
+        DATA operator()(
+                ArithmeticConfiguration::Mul) {
+            return false;
+        }
+        DATA operator()(
+                ArithmeticConfiguration::Div) {
+            return false;
+        }
+    };
+
+    bool DoArithmetic(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
     }
+
+    struct Arithmetor {
+        CopyTest & ct;
+        const ArithmeticConfiguration & config;
+        Arithmetor(
+                CopyTest & ct,
+                const ArithmeticConfiguration & config)
+                : ct(ct),
+                  config(config) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            auto beg = ct.bufEncoded.template begin<DATA>();
+            auto end = ct.bufEncoded.template end<DATA>();
+            auto out = ct.bufResult.template begin<DATA>();
+            for (; beg < end; ++beg) {
+                *out = *beg + config.operand;
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
 
     void RunArithmetic(
             const ArithmeticConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
+            std::visit(Arithmetor(*this, config), config.mode);
         }
     }
 
-    bool DoArithmeticChecked() override {
-        return false;
+    bool DoArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
     }
 
     void RunArithmeticChecked(
             const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            int ret = memcmp(this->bufEncoded.begin(), this->bufRaw.begin(), getNumBytes());
+            if (ret != 0) {
+                throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
+            }
+            std::visit(Arithmetor(*this, config), config.mode);
+        }
     }
+
+    struct AggregateSelector {
+        bool operator()(
+                AggregateConfiguration::Min) {
+            return false;
+        }
+        bool operator()(
+                AggregateConfiguration::Max) {
+            return false;
+        }
+        bool operator()(
+                AggregateConfiguration::Avg) {
+            return false;
+        }
+        bool operator()(
+                AggregateConfiguration::Sum) {
+            return true;
+        }
+    };
 
     bool DoAggregate(
             const AggregateConfiguration & config) override {
-        return false;
+        return std::visit(AggregateSelector(), config.mode);
     }
+
+    struct Aggregator {
+        CopyTest & ct;
+        Aggregator(
+                CopyTest & ct)
+                : ct(ct) {
+        }
+        void operator()(
+                AggregateConfiguration::Min) {
+        }
+        void operator()(
+                AggregateConfiguration::Max) {
+        }
+        void operator()(
+                AggregateConfiguration::Avg) {
+        }
+        void operator()(
+                AggregateConfiguration::Sum) {
+            DATA sum = DATA(0);
+            auto beg = ct.bufEncoded.template begin<DATA>();
+            auto end = ct.bufEncoded.template end<DATA>();
+            auto out = ct.bufResult.template begin<DATA>();
+            for (; beg < end; ++beg) {
+                sum += *beg;
+            }
+            *out = sum;
+        }
+    };
 
     void RunAggregate(
             const AggregateConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(Aggregator(*this), config.mode);
+        }
     }
 
     bool DoAggregateChecked(
             const AggregateConfiguration & config) override {
-        return false;
+        return std::visit(AggregateSelector(), config.mode);
     }
 
     void RunAggregateChecked(
             const AggregateConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            int ret = memcmp(this->bufRaw.begin(), this->bufEncoded.begin(), getNumBytes());
+            if (ret != 0) {
+                throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
+            }
+            std::visit(Aggregator(*this), config.mode);
+        }
     }
 
     bool DoReencodeChecked() override {
@@ -112,7 +231,7 @@ struct CopyTest :
             size_t numBytes = getNumBytes();
             int ret = memcmp(this->bufRaw.begin(), this->bufEncoded.begin(), numBytes);
             if (ret != 0) {
-                throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
+                throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
             memmove(this->bufResult.begin(), this->bufEncoded.begin(), numBytes);
         }
@@ -141,7 +260,7 @@ struct CopyTest :
             size_t numBytes = getNumBytes();
             int ret = memcmp(this->bufEncoded.begin(), this->bufRaw.begin(), numBytes);
             if (ret != 0) {
-                throw ErrorInfo(__FILE__, __LINE__, ret, config.numIterations);
+                throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
             memmove(this->bufResult.begin(), this->bufEncoded.begin(), numBytes);
         }

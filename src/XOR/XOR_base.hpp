@@ -23,28 +23,28 @@ template<>
 struct XOR<uint16_t, uint8_t> {
     static uint8_t
     computeFinalChecksum(
-            uint16_t & checksum);
+            const uint16_t & checksum);
 };
 
 template<>
 struct XOR<uint16_t, uint16_t> {
     static uint16_t
     computeFinalChecksum(
-            uint16_t & checksum);
+            const uint16_t & checksum);
 };
 
 template<>
 struct XOR<uint32_t, uint8_t> {
     static uint8_t
     computeFinalChecksum(
-            uint32_t & checksum);
+            const uint32_t & checksum);
 };
 
 template<>
 struct XOR<uint32_t, uint32_t> {
     static uint32_t
     computeFinalChecksum(
-            uint32_t & checksum);
+            const uint32_t & checksum);
 };
 
 template<typename CS>
@@ -54,30 +54,30 @@ template<>
 struct XORdiff<uint8_t> {
     static bool
     checksumsDiffer(
-            uint8_t cs1,
-            uint8_t cs2);
+            const uint8_t cs1,
+            const uint8_t cs2);
 };
 
 template<>
 struct XORdiff<uint16_t> {
     static bool
     checksumsDiffer(
-            uint16_t cs1,
-            uint16_t cs2);
+            const uint16_t cs1,
+            const uint16_t cs2);
 };
 
 template<>
 struct XORdiff<uint32_t> {
     static bool
     checksumsDiffer(
-            uint32_t cs1,
-            uint32_t cs2);
+            const uint32_t cs1,
+            const uint32_t cs2);
 };
 
 template<>
 struct XORdiff<uint64_t> {
     static bool
     checksumsDiffer(
-            uint64_t cs1,
-            uint64_t cs2);
+            const uint64_t cs1,
+            const uint64_t cs2);
 };
