@@ -15,6 +15,7 @@
 #pragma once
 
 #include <AN/AN_scalar.tcc>
+#include <Util/ArithmeticSelector.hpp>
 
 template<typename DATARAW, typename DATAENC, size_t UNROLL>
 struct AN_seq_divmod :
@@ -25,6 +26,10 @@ struct AN_seq_divmod :
     virtual ~AN_seq_divmod() {
     }
 
+    size_t getNumValues() {
+        return this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+    }
+
     virtual bool DoCheck() override {
         return true;
     }
@@ -33,14 +38,14 @@ struct AN_seq_divmod :
             const CheckConfiguration & config) {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+            const size_t numValues = getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<DATAENC>();
             while (i <= (numValues - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t k = 0; k < UNROLL; ++k) {
                     if ((*data % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     ++data;
                 }
@@ -49,9 +54,45 @@ struct AN_seq_divmod :
             // remaining numbers
             for (; i < numValues; ++i, ++data) {
                 if ((*data % this->A) != 0) {
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
             }
+        }
+    }
+
+    bool DoArithmetic(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct Arithmetor {
+        AN_seq_divmod & test;
+        const ArithmeticConfiguration & config;
+        Arithmetor(
+                AN_seq_divmod & test,
+                const ArithmeticConfiguration & config)
+                : test(test),
+                  config(config) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmetic(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(Arithmetor(*this, config), config.mode);
         }
     }
 
@@ -63,7 +104,7 @@ struct AN_seq_divmod :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+            size_t numValues = getNumValues();
             size_t i = 0;
             auto dataIn = this->bufEncoded.template begin<DATAENC>();
             auto dataOut = this->bufResult.template begin<DATARAW>();
@@ -88,7 +129,7 @@ struct AN_seq_divmod :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+            size_t numValues = getNumValues();
             size_t i = 0;
             auto dataIn = this->bufEncoded.template begin<DATAENC>();
             auto dataOut = this->bufResult.template begin<DATARAW>();
@@ -96,7 +137,7 @@ struct AN_seq_divmod :
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
                     if ((*dataIn % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     *dataOut = *dataIn / this->A;
                 }
@@ -104,7 +145,7 @@ struct AN_seq_divmod :
             // remaining numbers
             for (; i < numValues; ++i, ++dataOut, ++dataIn) {
                 if ((*dataIn % this->A) != 0) {
-                    throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
                 *dataOut = *dataIn / this->A;
             }

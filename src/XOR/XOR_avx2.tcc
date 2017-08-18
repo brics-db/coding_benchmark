@@ -18,6 +18,7 @@
 #include <Test.hpp>
 #include <Util/Intrinsics.hpp>
 #include <Util/ErrorInfo.hpp>
+#include <Util/ArithmeticSelector.hpp>
 
 template<>
 struct XOR<__m256i, __m256i> {
@@ -166,25 +167,6 @@ struct XOR_avx2 :
             }
         }
     }
-
-    struct ArithmeticSelector {
-        DATA operator()(
-                ArithmeticConfiguration::Add) {
-            return true;
-        }
-        DATA operator()(
-                ArithmeticConfiguration::Sub) {
-            return false;
-        }
-        DATA operator()(
-                ArithmeticConfiguration::Mul) {
-            return false;
-        }
-        DATA operator()(
-                ArithmeticConfiguration::Div) {
-            return false;
-        }
-    };
 
     bool DoArithmetic(
             const ArithmeticConfiguration & config) override {

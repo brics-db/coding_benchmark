@@ -18,6 +18,7 @@
 #include <Test.hpp>
 #include <Util/Intrinsics.hpp>
 #include <Util/ErrorInfo.hpp>
+#include <Util/ArithmeticSelector.hpp>
 
 template<typename DATA, typename CS, size_t BLOCKSIZE>
 struct XOR_scalar :
@@ -106,25 +107,6 @@ struct XOR_scalar :
             }
         }
     }
-
-    struct ArithmeticSelector {
-        DATA operator()(
-                ArithmeticConfiguration::Add) {
-            return true;
-        }
-        DATA operator()(
-                ArithmeticConfiguration::Sub) {
-            return false;
-        }
-        DATA operator()(
-                ArithmeticConfiguration::Mul) {
-            return false;
-        }
-        DATA operator()(
-                ArithmeticConfiguration::Div) {
-            return false;
-        }
-    };
 
     bool DoArithmetic(
             const ArithmeticConfiguration & config) override {
