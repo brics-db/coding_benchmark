@@ -66,19 +66,19 @@ struct CopyTest :
     }
 
     struct ArithmeticSelector {
-        DATA operator()(
+        bool operator()(
                 ArithmeticConfiguration::Add) {
             return true;
         }
-        DATA operator()(
+        bool operator()(
                 ArithmeticConfiguration::Sub) {
             return false;
         }
-        DATA operator()(
+        bool operator()(
                 ArithmeticConfiguration::Mul) {
             return false;
         }
-        DATA operator()(
+        bool operator()(
                 ArithmeticConfiguration::Div) {
             return false;
         }

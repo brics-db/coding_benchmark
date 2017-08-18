@@ -68,6 +68,32 @@ void TestBase::RunCheck(
         const CheckConfiguration & config) {
 }
 
+// Filter
+bool TestBase::DoFilter() {
+    return false;
+}
+
+void TestBase::PreFilter(
+        const FilterConfiguration & config) {
+}
+
+void TestBase::RunFilter(
+        const FilterConfiguration & config) {
+}
+
+// Filter Checked
+bool TestBase::DoFilterChecked() {
+    return false;
+}
+
+void TestBase::PreFilterChecked(
+        const FilterConfiguration & config) {
+}
+
+void TestBase::RunFilterChecked(
+        const FilterConfiguration & config) {
+}
+
 // Arithmetic
 bool TestBase::DoArithmetic(
         const ArithmeticConfiguration & config) {
@@ -217,7 +243,7 @@ TestInfos TestBase::Execute(
         tiEnc.set(msg);
     }
 
-    if (this->DoCheck()) {
+    if (configTest.enableCheck && this->DoCheck()) {
         this->PreCheck(chkConf);
         std::clog << ", check" << std::flush;
         sw.Reset();
@@ -241,7 +267,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoArithmetic(arithConf)) {
+    if (configTest.enableArithmetic && this->DoArithmetic(arithConf)) {
         this->PreArithmetic(arithConf);
         std::clog << ", arithmetic" << std::flush;
         sw.Reset();
@@ -265,7 +291,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoArithmeticChecked(arithConf)) {
+    if (configTest.enableArithmeticChk && this->DoArithmeticChecked(arithConf)) {
         this->PreArithmeticChecked(arithConf);
         std::clog << ", arithmetic checked" << std::flush;
         sw.Reset();
@@ -289,7 +315,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoAggregate(aggrSumConf)) {
+    if (configTest.enableAggregate && this->DoAggregate(aggrSumConf)) {
         this->PreAggregate(aggrSumConf);
         std::clog << ", aggregate" << std::flush;
         sw.Reset();
@@ -313,7 +339,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoAggregateChecked(aggrSumConf)) {
+    if (configTest.enableAggregateChk && this->DoAggregateChecked(aggrSumConf)) {
         this->PreAggregateChecked(aggrSumConf);
         std::clog << ", aggregate checked" << std::flush;
         sw.Reset();
@@ -337,7 +363,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoReencodeChecked()) {
+    if (configTest.enableReencodeChk && this->DoReencodeChecked()) {
         this->PreReencodeChecked(reencConf);
         std::clog << ", reencode checked" << std::flush;
         sw.Reset();
@@ -361,7 +387,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoDecode()) {
+    if (configTest.enableDecode && this->DoDecode()) {
         this->PreDecode(decConf);
         std::clog << ", decode" << std::flush;
         sw.Reset();
@@ -385,7 +411,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (this->DoDecodeChecked()) {
+    if (configTest.enableDecodeChk && this->DoDecodeChecked()) {
         this->PreDecodeChecked(decConf);
         std::clog << ", decode checked" << std::flush;
         sw.Reset();

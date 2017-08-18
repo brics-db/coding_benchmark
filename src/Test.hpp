@@ -34,33 +34,115 @@
 #include <Util/ErrorInfo.hpp>
 #include <Util/Intrinsics.hpp>
 
-struct TestConfiguration {
+struct BasicTestConfiguration {
     const size_t numIterations;
 
-    TestConfiguration(
+    BasicTestConfiguration(
             const size_t numIterations)
             : numIterations(numIterations) {
     }
 };
 
+struct TestConfiguration :
+        public BasicTestConfiguration {
+    bool enableCheck;
+    bool enableArithmetic;
+    bool enableArithmeticChk;
+    bool enableAggregate;
+    bool enableAggregateChk;
+    bool enableReencodeChk;
+    bool enableDecode;
+    bool enableDecodeChk;
+
+    TestConfiguration(
+            const size_t numIterations)
+            : BasicTestConfiguration(numIterations),
+              enableCheck(true),
+              enableArithmetic(true),
+              enableArithmeticChk(true),
+              enableAggregate(true),
+              enableAggregateChk(true),
+              enableReencodeChk(true),
+              enableDecode(true),
+              enableDecodeChk(true) {
+    }
+
+    void disableAll() {
+        enableCheck = false;
+        enableArithmetic = false;
+        enableArithmeticChk = false;
+        enableAggregate = false;
+        enableAggregateChk = false;
+        enableReencodeChk = false;
+        enableDecode = false;
+        enableDecodeChk = false;
+    }
+};
+
 struct EncodeConfiguration :
-        public TestConfiguration {
+        public BasicTestConfiguration {
     EncodeConfiguration(
-            const TestConfiguration & config)
-            : TestConfiguration(config) {
+            const BasicTestConfiguration & config)
+            : BasicTestConfiguration(config) {
     }
 };
 
 struct CheckConfiguration :
-        public TestConfiguration {
+        public BasicTestConfiguration {
     CheckConfiguration(
-            const TestConfiguration & config)
-            : TestConfiguration(config) {
+            const BasicTestConfiguration & config)
+            : BasicTestConfiguration(config) {
+    }
+};
+
+struct FilterConfiguration :
+        public BasicTestConfiguration {
+    struct None {
+    };
+    struct LT {
+    };
+    struct LE {
+    };
+    struct EQ {
+    };
+    struct NE {
+    };
+    struct GE {
+    };
+    struct GT {
+    };
+    typedef std::variant<LT, LE, EQ, NE, GE, GT> Mode1;
+    typedef std::variant<None, LT, LE, EQ, NE, GE, GT> Mode2;
+    Mode1 mode1;
+    size_t predicate1;
+    Mode2 mode2;
+    size_t predicate2;
+    FilterConfiguration(
+            const BasicTestConfiguration & config,
+            Mode1 mode,
+            size_t predicate)
+            : BasicTestConfiguration(config),
+              mode1(mode),
+              predicate1(predicate),
+              mode2(None()),
+              predicate2() {
+    }
+    FilterConfiguration(
+            const BasicTestConfiguration & config,
+            Mode1 mode1,
+            size_t predicate1,
+            Mode2 mode2,
+            size_t predicate2)
+            : BasicTestConfiguration(config),
+              mode1(mode1),
+              predicate1(predicate1),
+              mode2(mode2),
+              predicate2(predicate2) {
     }
 };
 
 struct ArithmeticConfiguration :
-        public TestConfiguration {
+        public BasicTestConfiguration {
     struct Add {
     };
     struct Sub {
@@ -73,17 +155,17 @@ struct ArithmeticConfiguration :
     Mode mode;
     size_t operand;
     ArithmeticConfiguration(
-            const TestConfiguration & config,
+            const BasicTestConfiguration & config,
             Mode mode,
             const size_t operand)
-            : TestConfiguration(config),
+            : BasicTestConfiguration(config),
               mode(mode),
               operand(operand) {
     }
 };
 
 struct AggregateConfiguration :
-        public TestConfiguration {
+        public BasicTestConfiguration {
     struct Sum {
     };
     struct Min {
@@ -95,29 +177,29 @@ struct AggregateConfiguration :
     typedef std::variant<Sum, Min, Max, Avg> Mode;
     Mode mode;
     AggregateConfiguration(
-            const TestConfiguration & config,
+            const BasicTestConfiguration & config,
             Mode mode)
-            : TestConfiguration(config),
+            : BasicTestConfiguration(config),
               mode(mode) {
     }
 };
 
 struct ReencodeConfiguration :
-        public TestConfiguration {
+        public BasicTestConfiguration {
     size_t newA;
     ReencodeConfiguration(
-            const TestConfiguration & config,
+            const BasicTestConfiguration & config,
             const size_t newA)
-            : TestConfiguration(config),
+            : BasicTestConfiguration(config),
               newA(newA) {
     }
 };
 
 struct DecodeConfiguration :
-        public TestConfiguration {
+        public BasicTestConfiguration {
     DecodeConfiguration(
-            const TestConfiguration & config)
-            : TestConfiguration(config) {
+            const BasicTestConfiguration & config)
+            : BasicTestConfiguration(config) {
     }
 };
 
@@ -189,6 +271,24 @@ public:
 
     virtual void RunCheck(
             const CheckConfiguration & config);
+
+    // Filter
+    virtual bool DoFilter();
+
+    virtual void PreFilter(
+            const FilterConfiguration & config);
+
+    virtual void RunFilter(
+            const FilterConfiguration & config);
+
+    // Filter Checked
+    virtual bool DoFilterChecked();
+
+    virtual void PreFilterChecked(
+            const FilterConfiguration & config);
+
+    virtual void RunFilterChecked(
+            const FilterConfiguration & config);
 
     // Arithmetic
     virtual bool DoArithmetic(

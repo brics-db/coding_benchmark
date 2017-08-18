@@ -98,6 +98,8 @@ int main(
     } while (0)
 
     TestConfiguration testConfig(iterations);
+    testConfig.enableAggregate = false;
+    testConfig.enableAggregateChk = false;
     DataGenerationConfiguration dataGenConfig;
 
     WarmUp(CopyTest16, "Copy", bufRawdata16, bufEncoded16, bufResult16);
