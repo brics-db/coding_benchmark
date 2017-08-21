@@ -20,51 +20,19 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include <Test.hpp>
 #include <Util/Intrinsics.hpp>
 #include <Util/ErrorInfo.hpp>
-
-struct hamming_scalar_16_t {
-
-    uint16_t data;
-    uint8_t code;
-};
-
-struct hamming_scalar_32_t {
-
-    uint32_t data;
-    uint8_t code;
-};
-
-template<typename OrigType>
-struct HammingScalar;
-
-template<>
-struct HammingScalar<uint16_t> {
-
-    typedef hamming_scalar_16_t hamming_scalar_t;
-
-    static uint8_t computeHamming(
-            uint16_t data);
-};
-
-template<>
-struct HammingScalar<uint32_t> {
-
-    typedef hamming_scalar_32_t hamming_scalar_t;
-
-    static uint8_t computeHamming(
-            uint32_t data);
-};
+#include <Util/ArithmeticSelector.hpp>
+#include <Hamming/Hamming_base.hpp>
 
 template<typename DATAIN, size_t UNROLL>
 struct Hamming_scalar :
-        public Test<DATAIN, typename HammingScalar<DATAIN>::hamming_scalar_t>,
+        public Test<DATAIN, hamming_t<DATAIN, DATAIN>>,
         public ScalarTest {
 
-    typedef typename HammingScalar<DATAIN>::hamming_scalar_t hamming_scalar_t;
+    typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
+    typedef typename hamming_scalar_t::code_t code_t;
 
     using Test<DATAIN, hamming_scalar_t>::Test;
 
@@ -81,12 +49,12 @@ struct Hamming_scalar :
             while (data <= (dataEnd - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                     dataOut->data = *data;
-                    dataOut->code = HammingScalar<DATAIN>::computeHamming(*data);
+                    dataOut->code = hamming_scalar_t::computeHamming(*data);
                 }
             }
             for (; data < dataEnd; ++data, ++dataOut) {
                 dataOut->data = *data;
-                dataOut->code = HammingScalar<DATAIN>::computeHamming(*data);
+                dataOut->code = hamming_scalar_t::computeHamming(*data);
             }
         }
     }
@@ -104,16 +72,132 @@ struct Hamming_scalar :
             auto data = this->bufEncoded.template begin<hamming_scalar_t>();
             while (i <= (numValues - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++i, ++data) {
-                    if (data->code != HammingScalar<DATAIN>::computeHamming(data->data)) {
+                    if (data->code != hamming_scalar_t::computeHamming(data->data)) {
                         throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), config.numIterations);
                     }
                 }
             }
             for (; i < numValues; ++i, ++data) {
-                if (data->code != HammingScalar<DATAIN>::computeHamming(data->data)) {
+                if (data->code != hamming_scalar_t::computeHamming(data->data)) {
                     throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), config.numIterations);
                 }
             }
+        }
+    }
+
+    bool DoArithmetic(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct Arithmetor {
+        using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
+        Hamming_scalar & test;
+        const ArithmeticConfiguration & config;
+        Arithmetor(
+                Hamming_scalar & test,
+                const ArithmeticConfiguration & config)
+                : test(test),
+                  config(config) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            const size_t numValues = test.getNumValues();
+            auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+            auto dataEnd = data + numValues;
+            auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
+            while (data <= (dataEnd - UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
+                    dataOut->data = data->data + config.operand;
+                    dataOut->code = hamming_scalar_t::computeHamming(data->data);
+                }
+            }
+            for (; data < dataEnd; ++data, ++dataOut) {
+                dataOut->data = data->data + config.operand;
+                dataOut->code = hamming_scalar_t::computeHamming(data->data);
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmetic(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(Arithmetor(*this, config), config.mode);
+        }
+    }
+
+    bool DoArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct ArithmetorChecked {
+        using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
+        Hamming_scalar & test;
+        const ArithmeticConfiguration & config;
+        const size_t iteration;
+        ArithmetorChecked(
+                Hamming_scalar & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
+                : test(test),
+                  config(config),
+                  iteration(iteration) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            const size_t numValues = test.getNumValues();
+            auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+            auto dataEnd = data + numValues;
+            auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
+            size_t i = 0;
+            while (data <= (dataEnd - UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut, ++i) {
+                    auto tmp = data->data;
+                    if (data->code != hamming_scalar_t::computeHamming(tmp)) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
+                    }
+                    tmp += config.operand;
+                    dataOut->data = tmp;
+                    dataOut->code = hamming_scalar_t::computeHamming(tmp);
+                }
+            }
+            for (; data < dataEnd; ++data, ++dataOut) {
+                auto tmp = data->data;
+                if (data->code != hamming_scalar_t::computeHamming(tmp)) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
+                }
+                tmp += config.operand;
+                dataOut->data = tmp;
+                dataOut->code = hamming_scalar_t::computeHamming(tmp);
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
         }
     }
 
@@ -125,7 +209,7 @@ struct Hamming_scalar :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->bufRaw.template end<DATAIN>() - this->bufRaw.template begin<DATAIN>();
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<hamming_scalar_t>();
             auto dataOut = this->bufResult.template begin<DATAIN>();

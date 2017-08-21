@@ -21,7 +21,8 @@
 
 #include <Hamming/Hamming_scalar.hpp>
 
-uint8_t HammingScalar<uint16_t>::computeHamming(
+template<>
+uint8_t hamming_t<uint16_t, uint16_t>::computeHamming(
         uint16_t data) {
     uint8_t hamming = 0;
     hamming |= (__builtin_popcount(data & 0xAD5B) & 0x1) << 1;
@@ -33,7 +34,8 @@ uint8_t HammingScalar<uint16_t>::computeHamming(
     return hamming;
 }
 
-uint8_t HammingScalar<uint32_t>::computeHamming(
+template<>
+uint8_t hamming_t<uint32_t, uint32_t>::computeHamming(
         uint32_t data) {
     uint8_t hamming = 0;
     hamming |= (__builtin_popcount(data & 0x56AAAD5B) & 0x1) << 1;

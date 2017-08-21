@@ -20,70 +20,65 @@
 
 #pragma once
 
+#include <Test.hpp>
+#include <Util/Intrinsics.hpp>
+#include <Util/ErrorInfo.hpp>
+#include <Util/ArithmeticSelector.hpp>
+#include <Util/SIMD.hpp>
 #include <Hamming/Hamming_scalar.hpp>
-#include <cstdint>
-
-#include "../Test.hpp"
-#include "../Util/Intrinsics.hpp"
-
-struct hamming_sse42_8_t {
-    __m128i data;
-    __m128i code;
-};
-
-struct hamming_sse42_16_t {
-    __m128i data;
-    uint64_t code;
-};
-
-struct hamming_sse42_32_t {
-    __m128i data;
-    uint32_t code;
-};
-
-__m128i _mm_popcount_epi8(
-        __m128i data);
-
-__m128i _mm_popcount_epi8_2(
-        __m128i data);
-
-uint64_t _mm_popcount_epi16(
-        __m128i data);
-
-uint64_t _mm_popcount_epi16_2(
-        __m128i data);
-
-uint32_t _mm_popcount_epi32(
-        __m128i data);
-
-uint32_t _mm_popcount_epi32_2(
-        __m128i data);
 
 template<typename OrigType>
 struct HammingSSE42;
 
 template<>
+struct HammingSSE42<uint8_t> {
+    typedef hamming_sse42_8_t hamming_sse42_t;
+    typedef typename hamming_sse42_t::data_t data_t;
+    typedef typename hamming_sse42_t::code_t code_t;
+
+    static code_t computeHamming(
+            data_t data);
+
+    static code_t computeHamming2(
+            data_t data);
+
+    static bool eq(
+            code_t hamming1,
+            code_t hamming2);
+};
+
+template<>
 struct HammingSSE42<uint16_t> {
-
     typedef hamming_sse42_16_t hamming_sse42_t;
+    typedef typename hamming_sse42_t::data_t data_t;
+    typedef typename hamming_sse42_t::code_t code_t;
 
-    static uint64_t computeHamming(
-            __m128i data);
+    static code_t computeHamming(
+            data_t data);
 
-    static uint64_t computeHamming2(
-            __m128i data);
+    static code_t computeHamming2(
+            data_t data);
+
+    static bool eq(
+            code_t hamming1,
+            code_t hamming2);
 };
 
 template<>
 struct HammingSSE42<uint32_t> {
+    typedef hamming_sse42_16_t hamming_sse42_t;
+    typedef typename hamming_sse42_t::data_t data_t;
+    typedef typename hamming_sse42_t::code_t code_t;
 
-    typedef hamming_sse42_32_t hamming_sse42_t;
+    static code_t computeHamming(
+            data_t data);
 
-    static uint32_t computeHamming(
-            __m128i data);
+    static code_t computeHamming2(
+            data_t data);
 
-    static uint32_t computeHamming2(
-            __m128i data);
+    static bool eq(
+            code_t hamming1,
+            code_t hamming2);
 };
 
 template<typename DATAIN, size_t UNROLL>
@@ -122,7 +117,7 @@ struct Hamming_sse42 :
                 auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
                 for (; data2 < dataEnd2; ++data2, ++dataOut2) {
                     dataOut2->data = *data2;
-                    dataOut2->code = HammingScalar<DATAIN>::computeHamming(*data2);
+                    dataOut2->code = HammingScalar < DATAIN > ::computeHamming(*data2);
                 }
             }
         }
@@ -136,28 +131,98 @@ struct Hamming_sse42 :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->bufRaw.template end<DATAIN>() - this->bufRaw.template begin<DATAIN>();
+            const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<hamming_sse42_t>();
-            while (i <= (numValues - UNROLL)) {
-                for (size_t k = 0; k < UNROLL; ++k, i += (sizeof(__m128i) / sizeof (DATAIN)), ++data) {
+            while (i <= VALUES_PER_UNROLL) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++data) {
                     if (data->code != HammingSSE42<DATAIN>::computeHamming(data->data)) {
                         throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_sse42_t>(), config.numIterations);
                     }
                 }
             }
-            for (; i <= (numValues - 1); i += (sizeof(__m128i) / sizeof (DATAIN)), ++data) {
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++data) {
                 if (data->code != HammingSSE42<DATAIN>::computeHamming(data->data)) {
                     throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_sse42_t>(), config.numIterations);
                 }
             }
             if (i < numValues) {
                 for (auto data2 = reinterpret_cast<hamming_scalar_t*>(data); i < numValues; ++i, ++data2) {
-                    if (data2->code != HammingScalar<DATAIN>::computeHamming(data2->data)) {
+                    if (data2->code != HammingScalar < DATAIN > ::computeHamming(data2->data)) {
                         throw ErrorInfo(__FILE__, __LINE__, data2 - this->bufEncoded.template begin<hamming_scalar_t>(), config.numIterations);
                     }
                 }
             }
+        }
+    }
+
+    bool DoArithmetic(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct Arithmetor {
+        typedef typename HammingSSE42<DATAIN>::hamming_sse42_t hamming_sse42_t;
+        typedef typename HammingScalar<DATAIN>::hamming_scalar_t hamming_scalar_t;
+        Hamming_sse42 & test;
+        const ArithmeticConfiguration & config;
+        const size_t iteration;
+        Arithmetor(
+                Hamming_sse42 & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
+                : test(test),
+                  config(config),
+                  iteration(iteration) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+            const size_t numValues = test.getNumValues();
+            auto mmOperand = SIMD<__m128i, DATAIN>::set1(config.operand);
+            size_t i = 0;
+            auto data = test.bufEncoded.template begin<hamming_sse42_t>();
+            while (i <= VALUES_PER_UNROLL) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++data) {
+                    auto tmp = data->data;
+                    if (data->code != HammingSSE42<DATAIN>::computeHamming(tmp)) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    tmp = SIMD<__m128i, DATAIN>::add(tmp, mmOperand);
+                }
+            }
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++data) {
+                if (data->code != HammingSSE42<DATAIN>::computeHamming(data->data)) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                }
+            }
+            if (i < numValues) {
+                for (auto data2 = reinterpret_cast<hamming_scalar_t*>(data); i < numValues; ++i, ++data2) {
+                    if (data2->code != HammingScalar<DATAIN>::computeHamming(data2->data)) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                }
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmetic(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(Arithmetor(*this, config), config.mode);
         }
     }
 
@@ -169,9 +234,9 @@ struct Hamming_sse42 :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (DATAIN);
-            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
-            size_t numValues = this->bufRaw.template end<DATAIN>() - this->bufRaw.template begin<DATAIN>();
+            const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<hamming_sse42_t>();
             auto dataOut = this->bufResult.template begin<__m128i >();
@@ -181,7 +246,7 @@ struct Hamming_sse42 :
                 }
                 i += VALUES_PER_UNROLL;
             }
-            for (; i <= (numValues - 1); i += VALUES_PER_SIMDREG, ++data, ++dataOut) {
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++data, ++dataOut) {
                 *dataOut = data->data;
             }
             if (i < numValues) {

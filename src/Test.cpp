@@ -476,5 +476,19 @@ AVX2Test::getSIMDtypeName() {
 
 bool AVX2Test::HasCapabilities() {
     auto& cpu = CPU::Instance();
-    return cpu.AVX2 && cpu.OS_X64;
+    return cpu.AVX2 && cpu.OS_X64 && cpu.OS_AVX;
+}
+
+AVX512Test::~AVX512Test() {
+}
+
+const std::string &
+AVX512Test::getSIMDtypeName() {
+    static const std::string SIMDtypeName("AVX512");
+    return SIMDtypeName;
+}
+
+bool AVX512Test::HasCapabilities() {
+    auto& cpu = CPU::Instance();
+    return (cpu.AVX512_BW | cpu.AVX512_CD | cpu.AVX512_DQ | cpu.AVX512_ER | cpu.AVX512_F | cpu.AVX512_IFMA | cpu.AVX512_PF | cpu.AVX512_VBMI | cpu.AVX512_VL) && cpu.OS_X64 && cpu.OS_AVX512;
 }

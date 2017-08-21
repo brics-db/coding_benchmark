@@ -18,8 +18,8 @@
  *
  * Created on 07-07-2017 17:24
  */
-#ifndef HAMMING_HAMMING_SSE42_HPP_
-#define HAMMING_HAMMING_SSE42_HPP_
+
+#pragma once
 
 #include <Hamming/Hamming_sse42.tcc>
 
@@ -45,4 +45,48 @@ struct Hamming_sse42_32 :
 
 };
 
-#endif /* HAMMING_HAMMING_SSE42_HPP_ */
+extern template
+struct Hamming_sse42_16<1> ;
+extern template
+struct Hamming_sse42_16<2> ;
+extern template
+struct Hamming_sse42_16<4> ;
+extern template
+struct Hamming_sse42_16<8> ;
+extern template
+struct Hamming_sse42_16<16> ;
+extern template
+struct Hamming_sse42_16<32> ;
+extern template
+struct Hamming_sse42_16<64> ;
+extern template
+struct Hamming_sse42_16<128> ;
+extern template
+struct Hamming_sse42_16<256> ;
+extern template
+struct Hamming_sse42_16<512> ;
+extern template
+struct Hamming_sse42_16<1024> ;
+
+extern template
+struct Hamming_sse42_32<1> ;
+extern template
+struct Hamming_sse42_32<2> ;
+extern template
+struct Hamming_sse42_32<4> ;
+extern template
+struct Hamming_sse42_32<8> ;
+extern template
+struct Hamming_sse42_32<16> ;
+extern template
+struct Hamming_sse42_32<32> ;
+extern template
+struct Hamming_sse42_32<64> ;
+extern template
+struct Hamming_sse42_32<128> ;
+extern template
+struct Hamming_sse42_32<256> ;
+extern template
+struct Hamming_sse42_32<512> ;
+extern template
+struct Hamming_sse42_32<1024> ;
