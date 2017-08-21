@@ -109,6 +109,8 @@ struct SIMD<__m128i, uint8_t> {
             __m128i a);
     static __m128i cvt_larger_hi(
             __m128i a);
+    static uint8_t sum(
+            __m128i a);
 };
 
 template<>
@@ -126,6 +128,8 @@ struct SIMD<__m128i, uint16_t> {
             __m128i a);
     static __m128i cvt_larger_hi(
             __m128i a);
+    static uint16_t sum(
+            __m128i a);
 };
 
 template<>
@@ -142,6 +146,23 @@ struct SIMD<__m128i, uint32_t> {
     static __m128i cvt_larger_lo(
             __m128i a);
     static __m128i cvt_larger_hi(
+            __m128i a);
+    static uint32_t sum(
+            __m128i a);
+};
+
+template<>
+struct SIMD<__m128i, uint64_t> {
+    static __m128i set1(
+            uint32_t a);
+    static __m128i add(
+            __m128i a,
+            __m128i b);
+    static uint32_t popcount(
+            __m128i a);
+    static uint32_t popcount2(
+            __m128i a);
+    static uint64_t sum(
             __m128i a);
 };
 
@@ -161,6 +182,8 @@ struct SIMD<__m256i, uint8_t> {
             __m256i a);
     static __m256i cvt_larger_hi(
             __m256i a);
+    static uint8_t sum(
+            __m256i a);
 };
 
 template<>
@@ -178,6 +201,8 @@ struct SIMD<__m256i, uint16_t> {
             __m256i a);
     static __m256i cvt_larger_hi(
             __m256i a);
+    static uint16_t sum(
+            __m256i a);
 };
 
 template<>
@@ -194,6 +219,23 @@ struct SIMD<__m256i, uint32_t> {
     static __m256i cvt_larger_lo(
             __m256i a);
     static __m256i cvt_larger_hi(
+            __m256i a);
+    static uint32_t sum(
+            __m256i a);
+};
+
+template<>
+struct SIMD<__m256i, uint64_t> {
+    static __m256i set1(
+            uint32_t a);
+    static __m256i add(
+            __m256i a,
+            __m256i b);
+    static uint32_t popcount(
+            __m256i a);
+    static uint32_t popcount2(
+            __m256i a);
+    static uint64_t sum(
             __m256i a);
 };
 #endif /* __AVX2__ */

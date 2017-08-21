@@ -54,6 +54,24 @@ __m128i SIMD<__m128i, uint8_t>::popcount2(
     return _mm_add_epi8(cnt_lo, cnt_hi);
 }
 
+__m128i SIMD<__m128i, uint8_t>::cvt_larger_lo(
+        __m128i a) {
+    return _mm_cvtepi8_epi16(a);
+}
+
+__m128i SIMD<__m128i, uint8_t>::cvt_larger_hi(
+        __m128i a) {
+    return _mm_cvtepi8_epi16(_mm_srli_si128(a, 8));
+}
+
+uint8_t SIMD<__m128i, uint8_t>::sum(
+        __m128i a) {
+    auto tmp = _mm_add_epi8(a, _mm_srli_si128(a, 8));
+    tmp = _mm_add_epi8(tmp, _mm_srli_si128(tmp, 4));
+    tmp = _mm_add_epi8(tmp, _mm_srli_si128(tmp, 2));
+    return _mm_extract_epi8(tmp, 1) + _mm_extract_epi8(tmp, 0);
+}
+
 __m128i SIMD<__m128i, uint16_t>::set1(
         uint16_t a) {
     return _mm_set1_epi16(a);
@@ -87,6 +105,23 @@ uint64_t SIMD<__m128i, uint16_t>::popcount2(
     return _mm_extract_epi64(_mm_shuffle_epi8(_mm_mullo_epi16(popcount8, mask), shuffle), 0);
 }
 
+__m128i SIMD<__m128i, uint16_t>::cvt_larger_lo(
+        __m128i a) {
+    return _mm_cvtepi16_epi32(a);
+}
+
+__m128i SIMD<__m128i, uint16_t>::cvt_larger_hi(
+        __m128i a) {
+    return _mm_cvtepi16_epi32(_mm_srli_si128(a, 8));
+}
+
+uint16_t SIMD<__m128i, uint16_t>::sum(
+        __m128i a) {
+    auto tmp = _mm_add_epi16(a, _mm_srli_si128(a, 8));
+    tmp = _mm_add_epi16(tmp, _mm_srli_si128(tmp, 4));
+    return _mm_extract_epi16(tmp, 1) + _mm_extract_epi16(tmp, 0);
+}
+
 __m128i SIMD<__m128i, uint32_t>::set1(
         uint32_t a) {
     return _mm_set1_epi32(a);
@@ -118,6 +153,22 @@ uint32_t SIMD<__m128i, uint32_t>::popcount2(
     static auto shuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
     auto popcount8 = SIMD<__m128i, uint8_t>::popcount2(a);
     return _mm_extract_epi32(_mm_shuffle_epi8(_mm_mullo_epi32(popcount8, mask), shuffle), 0);
+}
+
+__m128i SIMD<__m128i, uint32_t>::cvt_larger_lo(
+        __m128i a) {
+    return _mm_cvtepi16_epi32(a);
+}
+
+__m128i SIMD<__m128i, uint32_t>::cvt_larger_hi(
+        __m128i a) {
+    return _mm_cvtepi16_epi32(_mm_srli_si128(a, 8));
+}
+
+uint32_t SIMD<__m128i, uint32_t>::sum(
+        __m128i a) {
+    auto tmp = _mm_add_epi32(a, _mm_srli_si128(a, 8));
+    return _mm_extract_epi32(tmp, 1) + _mm_extract_epi32(tmp, 0);
 }
 
 #ifdef __AVX2__

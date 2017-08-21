@@ -23,6 +23,7 @@
 #include <Test.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/ArithmeticSelector.hpp>
+#include <Util/AggregateSelector.hpp>
 #include <Hamming/Hamming_scalar.hpp>
 #include <Util/SIMD.hpp>
 
@@ -238,6 +239,147 @@ struct Hamming_sse42 :
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
             std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
+        }
+    }
+
+    bool DoAggregate(
+            const AggregateConfiguration & config) override {
+        return std::visit(AggregateSelector(), config.mode);
+    }
+
+    struct Aggregator {
+        using hamming_sse24_t = Hamming_sse42::hamming_sse42_t;
+        using hamming_scalar_t = Hamming_sse42::hamming_scalar_t;
+        typedef typename Larger<DATAIN>::larger_t larger_t;
+        typedef hamming_t<larger_t, larger_t> hamming_larger_t;
+        Hamming_sse42 & test;
+        const AggregateConfiguration & config;
+        Aggregator(
+                Hamming_sse42 & test,
+                const AggregateConfiguration & config)
+        : test(test),
+        config(config) {
+        }
+        void operator()(
+                AggregateConfiguration::Sum) {
+            const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+            const size_t numValues = test.getNumValues();
+            auto mmOperand = SIMD<__m128i, DATAIN>::set1(config.operand);
+            size_t i = 0;
+            auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
+            auto dataOut = test.bufResult.template begin<hamming_sse42_t>();
+            auto mmTmp = SIMD<__m128i, larger_t>::set1(0);
+            while (i <= VALUES_PER_UNROLL) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
+                    dataOut->store(SIMD<__m128i, DATAIN>::add(dataIn->data, mmOperand));
+                }
+            }
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
+                dataOut->store(SIMD<__m128i, DATAIN>::add(dataIn->data, mmOperand));
+            }
+            if (i < numValues) {
+                auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
+                auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
+                for (; i < numValues; ++i, ++dataIn2, ++dataOut2) {
+                    dataOut2->store(dataIn2->data + config.operand);
+                }
+            }
+
+            const size_t numValues = test.getNumValues();
+            auto data = test.bufEncoded.template begin<hamming_sse24_t>();
+            auto dataEnd = data + numValues;
+            auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+            larger_t tmp(0);
+            while (data <= (dataEnd - UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, ++data) {
+                    tmp += data->data;
+                }
+            }
+            for (; data < dataEnd; ++data) {
+                tmp += data->data;
+            }
+            dataOut->store(tmp);
+        }
+        void operator()(
+                AggregateConfiguration::Min) {
+        }
+        void operator()(
+                AggregateConfiguration::Max) {
+        }
+        void operator()(
+                AggregateConfiguration::Avg) {
+        }
+    };
+
+    void RunAggregate(
+            const AggregateConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(Aggregator(*this, config), config.mode);
+        }
+    }
+
+    bool DoAggregateChecked(
+            const AggregateConfiguration & config) override {
+        return std::visit(AggregateSelector(), config.mode);
+    }
+
+    struct AggregatorChecked {
+        using hamming_scalar_t = Hamming_scalar::hamming_sse24_t;
+        typedef typename Larger<DATAIN>::larger_t larger_t;
+        typedef hamming_t<larger_t, larger_t> hamming_larger_t;
+        Hamming_scalar & test;
+        const AggregateConfiguration & config;
+        const size_t iteration;
+        AggregatorChecked(
+                Hamming_scalar & test,
+                const AggregateConfiguration & config,
+                const size_t iteration)
+        : test(test),
+        config(config),
+        iteration(iteration) {
+        }
+        void operator()(
+                AggregateConfiguration::Sum) {
+            const size_t numValues = test.getNumValues();
+            auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+            auto dataEnd = data + numValues;
+            auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+            larger_t tmp(0);
+            size_t i = 0;
+            while (data <= (dataEnd - UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, ++data, ++i) {
+                    if (!data->isValid()) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    tmp += data->data;
+                }
+            }
+            for (; data < dataEnd; ++data, ++i) {
+                if (!data->isValid()) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                }
+                tmp += data->data;
+            }
+            dataOut->store(tmp);
+        }
+        void operator()(
+                AggregateConfiguration::Min) {
+        }
+        void operator()(
+                AggregateConfiguration::Max) {
+        }
+        void operator()(
+                AggregateConfiguration::Avg) {
+        }
+    };
+
+    void RunAggregateChecked(
+            const AggregateConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(AggregatorChecked(*this, config, iteration), config.mode);
         }
     }
 
