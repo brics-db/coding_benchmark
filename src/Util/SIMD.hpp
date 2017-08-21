@@ -25,7 +25,73 @@
 
 #include <Util/Intrinsics.hpp>
 
-template<typename vector_t, typename type_t>
+template<typename T>
+struct Larger;
+
+template<>
+struct Larger<uint8_t> {
+    typedef uint16_t larger_t;
+};
+
+template<>
+struct Larger<int8_t> {
+    typedef int16_t larger_t;
+};
+
+template<>
+struct Larger<uint16_t> {
+    typedef uint32_t larger_t;
+};
+
+template<>
+struct Larger<int16_t> {
+    typedef int32_t larger_t;
+};
+
+template<>
+struct Larger<uint32_t> {
+    typedef uint64_t larger_t;
+};
+
+template<>
+struct Larger<int32_t> {
+    typedef int64_t larger_t;
+};
+
+template<typename T>
+struct Smaller;
+
+template<>
+struct Smaller<uint8_t> {
+    typedef uint8_t smaller_t;
+};
+
+template<>
+struct Smaller<int8_t> {
+    typedef int16_t smaller_t;
+};
+
+template<>
+struct Smaller<uint16_t> {
+    typedef uint8_t smaller_t;
+};
+
+template<>
+struct Smaller<int16_t> {
+    typedef int8_t smaller_t;
+};
+
+template<>
+struct Smaller<uint32_t> {
+    typedef uint16_t smaller_t;
+};
+
+template<>
+struct Smaller<int32_t> {
+    typedef int16_t smaller_t;
+};
+
+template<typename V, typename T>
 struct SIMD;
 
 template<>
@@ -38,6 +104,10 @@ struct SIMD<__m128i, uint8_t> {
     static __m128i popcount(
             __m128i a);
     static __m128i popcount2(
+            __m128i a);
+    static __m128i cvt_larger_lo(
+            __m128i a);
+    static __m128i cvt_larger_hi(
             __m128i a);
 };
 
@@ -52,6 +122,10 @@ struct SIMD<__m128i, uint16_t> {
             __m128i a);
     static uint64_t popcount2(
             __m128i a);
+    static __m128i cvt_larger_lo(
+            __m128i a);
+    static __m128i cvt_larger_hi(
+            __m128i a);
 };
 
 template<>
@@ -64,6 +138,10 @@ struct SIMD<__m128i, uint32_t> {
     static uint32_t popcount(
             __m128i a);
     static uint32_t popcount2(
+            __m128i a);
+    static __m128i cvt_larger_lo(
+            __m128i a);
+    static __m128i cvt_larger_hi(
             __m128i a);
 };
 
@@ -79,6 +157,10 @@ struct SIMD<__m256i, uint8_t> {
             __m256i a);
     static __m256i popcount2(
             __m256i a);
+    static __m256i cvt_larger_lo(
+            __m256i a);
+    static __m256i cvt_larger_hi(
+            __m256i a);
 };
 
 template<>
@@ -92,6 +174,10 @@ struct SIMD<__m256i, uint16_t> {
             __m256i a);
     static __m128i popcount2(
             __m256i a);
+    static __m256i cvt_larger_lo(
+            __m256i a);
+    static __m256i cvt_larger_hi(
+            __m256i a);
 };
 
 template<>
@@ -104,6 +190,10 @@ struct SIMD<__m256i, uint32_t> {
     static uint64_t popcount(
             __m256i a);
     static uint64_t popcount2(
+            __m256i a);
+    static __m256i cvt_larger_lo(
+            __m256i a);
+    static __m256i cvt_larger_hi(
             __m256i a);
 };
 #endif /* __AVX2__ */

@@ -27,6 +27,8 @@
 #include <Test.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/Intrinsics.hpp>
+#include <Util/ArithmeticSelector.hpp>
+#include <Util/AggregateSelector.hpp>
 
 template<typename DATA, size_t UNROLL>
 struct CopyTest :
@@ -64,25 +66,6 @@ struct CopyTest :
             }
         }
     }
-
-    struct ArithmeticSelector {
-        bool operator()(
-                ArithmeticConfiguration::Add) {
-            return true;
-        }
-        bool operator()(
-                ArithmeticConfiguration::Sub) {
-            return false;
-        }
-        bool operator()(
-                ArithmeticConfiguration::Mul) {
-            return false;
-        }
-        bool operator()(
-                ArithmeticConfiguration::Div) {
-            return false;
-        }
-    };
 
     bool DoArithmetic(
             const ArithmeticConfiguration & config) override {
@@ -142,25 +125,6 @@ struct CopyTest :
             std::visit(Arithmetor(*this, config), config.mode);
         }
     }
-
-    struct AggregateSelector {
-        bool operator()(
-                AggregateConfiguration::Min) {
-            return false;
-        }
-        bool operator()(
-                AggregateConfiguration::Max) {
-            return false;
-        }
-        bool operator()(
-                AggregateConfiguration::Avg) {
-            return false;
-        }
-        bool operator()(
-                AggregateConfiguration::Sum) {
-            return true;
-        }
-    };
 
     bool DoAggregate(
             const AggregateConfiguration & config) override {

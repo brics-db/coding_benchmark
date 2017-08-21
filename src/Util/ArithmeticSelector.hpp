@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <Util/TestConfiguration.hpp>
+
 struct ArithmeticSelector {
     bool operator()(
             ArithmeticConfiguration::Add) {

@@ -23,6 +23,7 @@
 
 template struct hamming_t<uint16_t, uint16_t> ;
 template struct hamming_t<uint32_t, uint32_t> ;
+template struct hamming_t<uint64_t, uint64_t> ;
 
 template<>
 uint8_t hamming_t<uint16_t, uint16_t>::computeHamming(
@@ -85,6 +86,40 @@ bool hamming_t<uint32_t, uint32_t>::isValid() {
 template<>
 void hamming_t<uint32_t, uint32_t>::store(
         uint32_t data) {
+    this->data = data;
+    this->code = computeHamming(data);
+}
+
+template<>
+uint8_t hamming_t<uint64_t, uint64_t>::computeHamming(
+        uint64_t data) {
+    uint8_t hamming = 0;
+    hamming |= (__builtin_popcount(data & 0xAB55555556AAAD5B) & 0x1) << 1;
+    hamming |= (__builtin_popcount(data & 0xCD9999999B33366D) & 0x1) << 2;
+    hamming |= (__builtin_popcount(data & 0x78F1E1E1E3C3C78E) & 0x1) << 3;
+    hamming |= (__builtin_popcount(data & 0x01FE01FE03FC07F0) & 0x1) << 4;
+    hamming |= (__builtin_popcount(data & 0x01FFFE0003FFF800) & 0x1) << 5;
+    hamming |= (__builtin_popcount(data & 0x01FFFFFFFC000000) & 0x1) << 6;
+    hamming |= (__builtin_popcount(data & 0xFE00000000000000) & 0x1) << 7;
+    hamming |= (__builtin_popcount(data) + __builtin_popcount(hamming)) & 0x1;
+    return hamming;
+}
+
+template<>
+bool hamming_t<uint64_t, uint64_t>::code_cmp_eq(
+        uint8_t code1,
+        uint8_t code2) {
+    return code1 == code2;
+}
+
+template<>
+bool hamming_t<uint64_t, uint64_t>::isValid() {
+    return hamming_t<uint64_t, uint64_t>::code_cmp_eq(this->code, hamming_t<uint64_t, uint64_t>::computeHamming(this->data));
+}
+
+template<>
+void hamming_t<uint64_t, uint64_t>::store(
+        uint64_t data) {
     this->data = data;
     this->code = computeHamming(data);
 }

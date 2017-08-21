@@ -23,10 +23,13 @@
 #include <Test.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/ArithmeticSelector.hpp>
+#include <Util/AggregateSelector.hpp>
 #include <Hamming/Hamming_base.hpp>
+#include <Util/SIMD.hpp>
 
 extern template struct hamming_t<uint16_t, uint16_t> ;
 extern template struct hamming_t<uint32_t, uint32_t> ;
+extern template struct hamming_t<uint64_t, uint64_t> ;
 
 template<typename DATAIN, size_t UNROLL>
 struct Hamming_scalar :
@@ -67,19 +70,19 @@ struct Hamming_scalar :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->bufRaw.template end<DATAIN>() - this->bufRaw.template begin<DATAIN>();
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<hamming_scalar_t>();
             while (i <= (numValues - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++i, ++data) {
                     if (!data->isValid()) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), config.numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
             }
             for (; i < numValues; ++i, ++data) {
                 if (!data->isValid()) {
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), config.numIterations);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
             }
         }
@@ -165,7 +168,7 @@ struct Hamming_scalar :
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut, ++i) {
                     auto tmp = data->data;
                     if (!data->isValid()) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     dataOut->store(tmp + config.operand);
                 }
@@ -173,7 +176,7 @@ struct Hamming_scalar :
             for (; data < dataEnd; ++data, ++dataOut) {
                 auto tmp = data->data;
                 if (!data->isValid()) {
-                    throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
                 dataOut->store(tmp + config.operand);
             }
@@ -194,6 +197,122 @@ struct Hamming_scalar :
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
             std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
+        }
+    }
+
+    bool DoAggregate(
+            const AggregateConfiguration & config) override {
+        return std::visit(AggregateSelector(), config.mode);
+    }
+
+    struct Aggregator {
+        using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
+        typedef typename Larger<DATAIN>::larger_t larger_t;
+        typedef hamming_t<larger_t, larger_t> hamming_larger_t;
+        Hamming_scalar & test;
+        const AggregateConfiguration & config;
+        Aggregator(
+                Hamming_scalar & test,
+                const AggregateConfiguration & config)
+                : test(test),
+                  config(config) {
+        }
+        void operator()(
+                AggregateConfiguration::Sum) {
+            const size_t numValues = test.getNumValues();
+            auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+            auto dataEnd = data + numValues;
+            auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+            larger_t tmp(0);
+            while (data <= (dataEnd - UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, ++data) {
+                    tmp += data->data;
+                }
+            }
+            for (; data < dataEnd; ++data) {
+                tmp += data->data;
+            }
+            dataOut->store(tmp);
+        }
+        void operator()(
+                AggregateConfiguration::Min) {
+        }
+        void operator()(
+                AggregateConfiguration::Max) {
+        }
+        void operator()(
+                AggregateConfiguration::Avg) {
+        }
+    };
+
+    void RunAggregate(
+            const AggregateConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(Aggregator(*this, config), config.mode);
+        }
+    }
+
+    bool DoAggregateChecked(
+            const AggregateConfiguration & config) override {
+        return std::visit(AggregateSelector(), config.mode);
+    }
+
+    struct AggregatorChecked {
+        using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
+        typedef typename Larger<DATAIN>::larger_t larger_t;
+        typedef hamming_t<larger_t, larger_t> hamming_larger_t;
+        Hamming_scalar & test;
+        const AggregateConfiguration & config;
+        const size_t iteration;
+        AggregatorChecked(
+                Hamming_scalar & test,
+                const AggregateConfiguration & config,
+                const size_t iteration)
+                : test(test),
+                  config(config),
+                  iteration(iteration) {
+        }
+        void operator()(
+                AggregateConfiguration::Sum) {
+            const size_t numValues = test.getNumValues();
+            auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+            auto dataEnd = data + numValues;
+            auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+            larger_t tmp(0);
+            size_t i = 0;
+            while (data <= (dataEnd - UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, ++data, ++i) {
+                    if (!data->isValid()) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    tmp += data->data;
+                }
+            }
+            for (; data < dataEnd; ++data, ++i) {
+                if (!data->isValid()) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                }
+                tmp += data->data;
+            }
+            dataOut->store(tmp);
+        }
+        void operator()(
+                AggregateConfiguration::Min) {
+        }
+        void operator()(
+                AggregateConfiguration::Max) {
+        }
+        void operator()(
+                AggregateConfiguration::Avg) {
+        }
+    };
+
+    void RunAggregateChecked(
+            const AggregateConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(AggregatorChecked(*this, config, iteration), config.mode);
         }
     }
 

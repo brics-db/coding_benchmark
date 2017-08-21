@@ -38,6 +38,11 @@ struct hamming_typehelper_t<uint32_t, uint32_t> {
 };
 
 template<>
+struct hamming_typehelper_t<uint64_t, uint64_t> {
+    typedef uint8_t code_t;
+};
+
+template<>
 struct hamming_typehelper_t<uint16_t, __m128i> {
 typedef uint64_t code_t;
 };
@@ -45,6 +50,11 @@ typedef uint64_t code_t;
 template<>
 struct hamming_typehelper_t<uint32_t, __m128i> {
 typedef uint32_t code_t;
+};
+
+template<>
+struct hamming_typehelper_t<uint64_t, __m128i> {
+typedef uint16_t code_t;
 };
 
 #ifdef __AVX2__
@@ -56,6 +66,11 @@ typedef __m128i code_t;
 template<>
 struct hamming_typehelper_t<uint32_t, __m256i> {
 typedef uint64_t code_t;
+};
+
+template<>
+struct hamming_typehelper_t<uint64_t, __m256i> {
+typedef uint32_t code_t;
 };
 #endif
 
