@@ -38,25 +38,37 @@ struct hamming_typehelper_t<uint32_t, uint32_t> {
 };
 
 template<>
-struct hamming_typehelper_t<uint8_t, __m128i> {
-    typedef __m128i code_t;
-};
-
-template<>
 struct hamming_typehelper_t<uint16_t, __m128i> {
-    typedef uint64_t code_t;
+typedef uint64_t code_t;
 };
 
 template<>
 struct hamming_typehelper_t<uint32_t, __m128i> {
-    typedef uint32_t code_t;
+typedef uint32_t code_t;
 };
+
+#ifdef __AVX2__
+template<>
+struct hamming_typehelper_t<uint16_t, __m256i> {
+typedef __m128i code_t;
+};
+
+template<>
+struct hamming_typehelper_t<uint32_t, __m256i> {
+typedef uint64_t code_t;
+};
+#endif
 
 template<typename data_t, typename granularity_t>
 struct hamming_t {
     typedef typename hamming_typehelper_t<data_t, granularity_t>::code_t code_t;
-    data_t data;
+    granularity_t data;
     code_t code;
+
+    void store(
+            granularity_t data);
+
+    bool isValid();
 
     static code_t computeHamming(
             granularity_t data);
@@ -68,29 +80,3 @@ struct hamming_t {
             code_t c1,
             code_t c2);
 };
-
-// Scalar
-extern template uint8_t hamming_t<uint16_t, uint16_t>::computeHamming(
-        uint16_t);
-extern template uint8_t hamming_t<uint32_t, uint32_t>::computeHamming(
-        uint32_t);
-// SSE4.2
-extern template uint64_t hamming_t<uint16_t, __m128i>::computeHamming(
-        __m128i);
-extern template uint64_t hamming_t<uint16_t, __m128i>::computeHamming2(
-        __m128i);
-extern template uint32_t hamming_t<uint32_t, __m128i>::computeHamming(
-        __m128i);
-extern template uint32_t hamming_t<uint32_t, __m128i>::computeHamming2(
-        __m128i);
-// AVX2
-#ifdef __AVX2__
-extern template __m128i hamming_t<uint16_t, __m256i>::computeHamming(
-        __m128i);
-extern template __m128i hamming_t<uint16_t, __m256i>::computeHamming2(
-        __m128i);
-extern template uint64_t hamming_t<uint32_t, __m256i>::computeHamming(
-        __m128i);
-extern template uint64_t hamming_t<uint32_t, __m256i>::computeHamming2(
-        __m128i);
-#endif

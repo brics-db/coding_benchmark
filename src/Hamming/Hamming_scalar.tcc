@@ -21,10 +21,12 @@
 #pragma once
 
 #include <Test.hpp>
-#include <Util/Intrinsics.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Hamming/Hamming_base.hpp>
+
+extern template struct hamming_t<uint16_t, uint16_t> ;
+extern template struct hamming_t<uint32_t, uint32_t> ;
 
 template<typename DATAIN, size_t UNROLL>
 struct Hamming_scalar :
@@ -48,13 +50,11 @@ struct Hamming_scalar :
             auto dataOut = this->bufEncoded.template begin<hamming_scalar_t>();
             while (data <= (dataEnd - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                    dataOut->data = *data;
-                    dataOut->code = hamming_scalar_t::computeHamming(*data);
+                    dataOut->store(*data);
                 }
             }
             for (; data < dataEnd; ++data, ++dataOut) {
-                dataOut->data = *data;
-                dataOut->code = hamming_scalar_t::computeHamming(*data);
+                dataOut->store(*data);
             }
         }
     }
@@ -72,13 +72,13 @@ struct Hamming_scalar :
             auto data = this->bufEncoded.template begin<hamming_scalar_t>();
             while (i <= (numValues - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++i, ++data) {
-                    if (data->code != hamming_scalar_t::computeHamming(data->data)) {
+                    if (!data->isValid()) {
                         throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), config.numIterations);
                     }
                 }
             }
             for (; i < numValues; ++i, ++data) {
-                if (data->code != hamming_scalar_t::computeHamming(data->data)) {
+                if (!data->isValid()) {
                     throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), config.numIterations);
                 }
             }
@@ -108,13 +108,13 @@ struct Hamming_scalar :
             auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
             while (data <= (dataEnd - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                    dataOut->data = data->data + config.operand;
-                    dataOut->code = hamming_scalar_t::computeHamming(data->data);
+                    auto tmp = data->data + config.operand;
+                    dataOut->store(tmp);
                 }
             }
             for (; data < dataEnd; ++data, ++dataOut) {
-                dataOut->data = data->data + config.operand;
-                dataOut->code = hamming_scalar_t::computeHamming(data->data);
+                auto tmp = data->data + config.operand;
+                dataOut->store(tmp);
             }
         }
         void operator()(
@@ -164,22 +164,18 @@ struct Hamming_scalar :
             while (data <= (dataEnd - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut, ++i) {
                     auto tmp = data->data;
-                    if (data->code != hamming_scalar_t::computeHamming(tmp)) {
+                    if (!data->isValid()) {
                         throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
                     }
-                    tmp += config.operand;
-                    dataOut->data = tmp;
-                    dataOut->code = hamming_scalar_t::computeHamming(tmp);
+                    dataOut->store(tmp + config.operand);
                 }
             }
             for (; data < dataEnd; ++data, ++dataOut) {
                 auto tmp = data->data;
-                if (data->code != hamming_scalar_t::computeHamming(tmp)) {
+                if (!data->isValid()) {
                     throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
                 }
-                tmp += config.operand;
-                dataOut->data = tmp;
-                dataOut->code = hamming_scalar_t::computeHamming(tmp);
+                dataOut->store(tmp + config.operand);
             }
         }
         void operator()(

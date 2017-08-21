@@ -20,7 +20,6 @@
  */
 
 #include <Hamming/Hamming_sse42.hpp>
-#include <Util/SIMD.hpp>
 
 /*
  * For the following algorithms, see
@@ -28,6 +27,10 @@
  * Credit also goes to the book "Hacker's Delight" 2nd Edition, by Henry S. Warren, Jr., published at Addison-Wesley
  */
 
+template struct hamming_t<uint16_t, __m128i > ;
+template struct hamming_t<uint32_t, __m128i > ;
+
+template<>
 uint64_t hamming_t<uint16_t, __m128i >::computeHamming(
         __m128i data) {
     static auto pattern1 = _mm_set1_epi16(static_cast<int16_t>(0xAD5B));
@@ -55,6 +58,7 @@ uint64_t hamming_t<uint16_t, __m128i >::computeHamming(
     return hamming;
 }
 
+template<>
 uint64_t hamming_t<uint16_t, __m128i >::computeHamming2(
         __m128i data) {
     static auto pattern1 = _mm_set1_epi16(static_cast<int16_t>(0xAD5B));
@@ -82,6 +86,26 @@ uint64_t hamming_t<uint16_t, __m128i >::computeHamming2(
     return hamming;
 }
 
+template<>
+bool hamming_t<uint16_t, __m128i >::code_cmp_eq(
+        uint64_t code1,
+        uint64_t code2) {
+    return code1 == code2;
+}
+
+template<>
+bool hamming_t<uint16_t, __m128i >::isValid() {
+    return hamming_t<uint16_t, __m128i >::code_cmp_eq(this->code, hamming_t<uint16_t, __m128i >::computeHamming(this->data));
+}
+
+template<>
+void hamming_t<uint16_t, __m128i >::store(
+        __m128i data) {
+    _mm_storeu_si128(&this->data, data);
+    this->code = computeHamming(data);
+}
+
+template<>
 uint32_t hamming_t<uint32_t, __m128i >::computeHamming(
         __m128i data) {
     static auto pattern1 = _mm_set1_epi32(0x56AAAD5B);
@@ -113,6 +137,7 @@ uint32_t hamming_t<uint32_t, __m128i >::computeHamming(
     return hamming;
 }
 
+template<>
 uint32_t hamming_t<uint32_t, __m128i >::computeHamming2(
         __m128i data) {
     static auto pattern1 = _mm_set1_epi32(0x56AAAD5B);
@@ -142,6 +167,25 @@ uint32_t hamming_t<uint32_t, __m128i >::computeHamming2(
     hamming |= tmp1 << 6;
     hamming |= (SIMD<__m128i, uint32_t>::popcount2(data) + tmp2) & 0x01010101;
     return hamming;
+}
+
+template<>
+bool hamming_t<uint32_t, __m128i >::code_cmp_eq(
+        uint32_t code1,
+        uint32_t code2) {
+    return code1 == code2;
+}
+
+template<>
+bool hamming_t<uint32_t, __m128i >::isValid() {
+    return hamming_t<uint32_t, __m128i >::code_cmp_eq(this->code, hamming_t<uint32_t, __m128i >::computeHamming(this->data));
+}
+
+template<>
+void hamming_t<uint32_t, __m128i >::store(
+        __m128i data) {
+    _mm_storeu_si128(&this->data, data);
+    this->code = computeHamming(data);
 }
 
 template

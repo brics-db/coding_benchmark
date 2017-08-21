@@ -20,87 +20,22 @@
 
 #pragma once
 
+#include <Test.hpp>
+#include <Util/ErrorInfo.hpp>
+#include <Util/ArithmeticSelector.hpp>
 #include <Hamming/Hamming_scalar.hpp>
-#include <cstdint>
+#include <Util/SIMD.hpp>
 
-#include "../Test.hpp"
-#include "../Util/Intrinsics.hpp"
-
-struct hamming_avx2_8_t {
-    __m256i data;
-    __m256i code;
-};
-
-struct hamming_avx2_16_t {
-    __m256i data;
-    __m128i code;
-};
-
-struct hamming_avx2_32_t {
-    __m256i data;
-    uint64_t code;
-};
-
-__m256i _mm256_popcount_epi8(
-        __m256i data);
-
-__m256i _mm256_popcount_epi8_2(
-        __m256i data);
-
-__m128i _mm256_popcount_epi16(
-        __m256i data);
-
-__m128i _mm256_popcount_epi16_2(
-        __m256i data);
-
-uint64_t _mm256_popcount_epi32(
-        __m256i data);
-
-uint64_t _mm256_popcount_epi32_2(
-        __m256i data);
-
-template<typename OrigType>
-struct HammingAVX2;
-
-template<>
-struct HammingAVX2<uint16_t> {
-
-    typedef hamming_avx2_16_t hamming_avx2_t;
-
-    static __m128i computeHamming(
-            __m256i data);
-
-    static __m128i computeHamming2(
-            __m256i data);
-
-    static bool isHammingEqual(
-            __m128i hamming1,
-            __m128i hamming2);
-};
-
-template<>
-struct HammingAVX2<uint32_t> {
-
-    typedef hamming_avx2_32_t hamming_avx2_t;
-
-    static uint64_t computeHamming(
-            __m256i data);
-
-    static uint64_t computeHamming2(
-            __m256i data);
-
-    static bool isHammingEqual(
-            uint64_t hamming1,
-            uint64_t hamming2);
-};
+extern template struct hamming_t<uint16_t, __m256i > ;
+extern template struct hamming_t<uint32_t, __m256i > ;
 
 template<typename DATAIN, size_t UNROLL>
 struct Hamming_avx2 :
-        public Test<DATAIN, typename HammingAVX2<DATAIN>::hamming_avx2_t>,
+        public Test<DATAIN, hamming_t<DATAIN, __m256i >>,
         public AVX2Test {
 
-    typedef typename HammingAVX2<DATAIN>::hamming_avx2_t hamming_avx2_t;
-    typedef typename HammingScalar<DATAIN>::hamming_scalar_t hamming_scalar_t;
+    typedef hamming_t<DATAIN, __m256i > hamming_avx2_t;
+    typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
 
     using Test<DATAIN, hamming_avx2_t>::Test;
 
@@ -116,21 +51,18 @@ struct Hamming_avx2 :
             auto dataOut = this->bufEncoded.template begin<hamming_avx2_t>();
             while (data <= (dataEnd - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                    dataOut->data = *data;
-                    dataOut->code = HammingAVX2<DATAIN>::computeHamming(*data);
+                    dataOut->store(*data);
                 }
             }
             for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
-                dataOut->data = *data;
-                dataOut->code = HammingAVX2<DATAIN>::computeHamming(*data);
+                dataOut->store(*data);
             }
             if (data < dataEnd) {
                 auto data2 = reinterpret_cast<DATAIN*>(data);
                 auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
                 auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
                 for (; data2 < dataEnd2; ++data2, ++dataOut2) {
-                    dataOut2->data = *data2;
-                    dataOut2->code = HammingScalar<DATAIN>::computeHamming(*data2);
+                    dataOut2->store(*data2);
                 }
             }
         }
@@ -144,28 +76,168 @@ struct Hamming_avx2 :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numValues = this->bufRaw.template end<DATAIN>() - this->bufRaw.template begin<DATAIN>();
+            constexpr const size_t VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATAIN);
+            constexpr const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<hamming_avx2_t>();
-            while (i <= (numValues - UNROLL)) {
-                for (size_t k = 0; k < UNROLL; ++k, i += (sizeof(__m256i) / sizeof (DATAIN)), ++data) {
-                    if (!HammingAVX2<DATAIN>::isHammingEqual(data->code, HammingAVX2<DATAIN>::computeHamming(data->data))) {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_avx2_t>(), config.numIterations);
+            while (i <= (numValues - VALUES_PER_UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++data) {
+                    if (!data->isValid()) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
                     }
                 }
             }
-            for (; i <= (numValues - 1); i += (sizeof(__m256i) / sizeof (DATAIN)), ++data) {
-                if (!HammingAVX2<DATAIN>::isHammingEqual(data->code, HammingAVX2<DATAIN>::computeHamming(data->data))) {
-                    throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_avx2_t>(), config.numIterations);
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++data) {
+                if (!data->isValid()) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
                 }
             }
             if (i < numValues) {
                 for (auto data2 = reinterpret_cast<hamming_scalar_t*>(data); i < numValues; ++i, ++data2) {
-                    if (data2->code != HammingScalar<DATAIN>::computeHamming(data2->data)) {
-                        throw ErrorInfo(__FILE__, __LINE__, data2 - this->bufEncoded.template begin<hamming_scalar_t>(), config.numIterations);
+                    if (!data2->isValid()) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
                     }
                 }
             }
+        }
+    }
+
+    bool DoArithmetic(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct Arithmetor {
+        typedef hamming_t<DATAIN, __m256i> hamming_avx2_t;
+        typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
+        Hamming_avx2 & test;
+        const ArithmeticConfiguration & config;
+        const size_t iteration;
+        Arithmetor(
+                Hamming_avx2 & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
+        : test(test),
+        config(config),
+        iteration(iteration) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            const size_t VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATAIN);
+            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+            const size_t numValues = test.getNumValues();
+            auto mmOperand = SIMD<__m256i, DATAIN>::set1(config.operand);
+            size_t i = 0;
+            auto dataIn = test.bufEncoded.template begin<hamming_avx2_t>();
+            auto dataOut = test.bufResult.template begin<hamming_avx2_t>();
+            while (i <= VALUES_PER_UNROLL) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
+                    dataOut->store(SIMD<__m256i, DATAIN>::add(dataIn->data, mmOperand));
+                }
+            }
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
+                dataOut->store(SIMD<__m256i, DATAIN>::add(dataIn->data, mmOperand));
+            }
+            if (i < numValues) {
+                auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
+                auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
+                for (; i < numValues; ++i, ++dataIn2, ++dataOut2) {
+                    dataOut2->store(dataIn2->data + config.operand);
+                }
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmetic(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(Arithmetor(*this, config, iteration), config.mode);
+        }
+    }
+
+    bool DoArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        return std::visit(ArithmeticSelector(), config.mode);
+    }
+
+    struct ArithmetorChecked {
+        typedef hamming_t<DATAIN, __m256i> hamming_avx2_t;
+        typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
+        Hamming_avx2 & test;
+        const ArithmeticConfiguration & config;
+        const size_t iteration;
+        ArithmetorChecked(
+                Hamming_avx2 & test,
+                const ArithmeticConfiguration & config,
+                const size_t iteration)
+        : test(test),
+        config(config),
+        iteration(iteration) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            const size_t VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATAIN);
+            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+            const size_t numValues = test.getNumValues();
+            auto mmOperand = SIMD<__m256i, DATAIN>::set1(config.operand);
+            size_t i = 0;
+            auto dataIn = test.bufEncoded.template begin<hamming_avx2_t>();
+            auto dataOut = test.bufResult.template begin<hamming_avx2_t>();
+            while (i <= VALUES_PER_UNROLL) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
+                    auto tmp = dataIn->data;
+                    if (!dataIn->isValid()) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    dataOut->store(SIMD<__m256i, DATAIN>::add(tmp, mmOperand));
+                }
+            }
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
+                auto tmp = dataIn->data;
+                if (!dataIn->isValid()) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                }
+                dataOut->store(SIMD<__m256i, DATAIN>::add(tmp, mmOperand));
+            }
+            if (i < numValues) {
+                auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
+                auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
+                for (; i < numValues; ++i, ++dataIn2, ++dataOut2) {
+                    auto tmp = dataIn2->data;
+                    if (!dataIn2->isValid()) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    dataOut2->store(tmp + config.operand);
+                }
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+        }
+    };
+
+    void RunArithmeticChecked(
+            const ArithmeticConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
         }
     }
 
@@ -177,19 +249,18 @@ struct Hamming_avx2 :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (DATAIN);
-            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
-            size_t numValues = this->bufRaw.template end<DATAIN>() - this->bufRaw.template begin<DATAIN>();
+            constexpr const size_t VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATAIN);
+            constexpr const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+            size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<hamming_avx2_t>();
             auto dataOut = this->bufResult.template begin<__m256i >();
             while (i <= (numValues - VALUES_PER_UNROLL)) {
-                for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++data, ++dataOut) {
                     *dataOut = data->data;
                 }
-                i += VALUES_PER_UNROLL;
             }
-            for (; i <= (numValues - 1); i += VALUES_PER_SIMDREG, ++data, ++dataOut) {
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++data, ++dataOut) {
                 *dataOut = data->data;
             }
             if (i < numValues) {

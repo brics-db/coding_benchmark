@@ -18,8 +18,8 @@
  *
  * Created on 07-07-2017 17:22
  */
-#ifndef HAMMING_HAMMING_SCALAR_HPP_
-#define HAMMING_HAMMING_SCALAR_HPP_
+
+#pragma once
 
 #include <Hamming/Hamming_scalar.tcc>
 
@@ -46,49 +46,47 @@ struct Hamming_scalar_32 :
 };
 
 extern template
-struct Hamming_scalar_16<1>;
+struct Hamming_scalar_16<1> ;
 extern template
-struct Hamming_scalar_16<2>;
+struct Hamming_scalar_16<2> ;
 extern template
-struct Hamming_scalar_16<4>;
+struct Hamming_scalar_16<4> ;
 extern template
-struct Hamming_scalar_16<8>;
+struct Hamming_scalar_16<8> ;
 extern template
-struct Hamming_scalar_16<16>;
+struct Hamming_scalar_16<16> ;
 extern template
-struct Hamming_scalar_16<32>;
+struct Hamming_scalar_16<32> ;
 extern template
-struct Hamming_scalar_16<64>;
+struct Hamming_scalar_16<64> ;
 extern template
-struct Hamming_scalar_16<128>;
+struct Hamming_scalar_16<128> ;
 extern template
-struct Hamming_scalar_16<256>;
+struct Hamming_scalar_16<256> ;
 extern template
-struct Hamming_scalar_16<512>;
+struct Hamming_scalar_16<512> ;
 extern template
-struct Hamming_scalar_16<1024>;
+struct Hamming_scalar_16<1024> ;
 
 extern template
-struct Hamming_scalar_32<1>;
+struct Hamming_scalar_32<1> ;
 extern template
-struct Hamming_scalar_32<2>;
+struct Hamming_scalar_32<2> ;
 extern template
-struct Hamming_scalar_32<4>;
+struct Hamming_scalar_32<4> ;
 extern template
-struct Hamming_scalar_32<8>;
+struct Hamming_scalar_32<8> ;
 extern template
-struct Hamming_scalar_32<16>;
+struct Hamming_scalar_32<16> ;
 extern template
-struct Hamming_scalar_32<32>;
+struct Hamming_scalar_32<32> ;
 extern template
-struct Hamming_scalar_32<64>;
+struct Hamming_scalar_32<64> ;
 extern template
-struct Hamming_scalar_32<128>;
+struct Hamming_scalar_32<128> ;
 extern template
-struct Hamming_scalar_32<256>;
+struct Hamming_scalar_32<256> ;
 extern template
-struct Hamming_scalar_32<512>;
+struct Hamming_scalar_32<512> ;
 extern template
-struct Hamming_scalar_32<1024>;
-
-#endif /* HAMMING_HAMMING_SCALAR_HPP_ */
+struct Hamming_scalar_32<1024> ;

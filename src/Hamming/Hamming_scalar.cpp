@@ -21,6 +21,9 @@
 
 #include <Hamming/Hamming_scalar.hpp>
 
+template struct hamming_t<uint16_t, uint16_t> ;
+template struct hamming_t<uint32_t, uint32_t> ;
+
 template<>
 uint8_t hamming_t<uint16_t, uint16_t>::computeHamming(
         uint16_t data) {
@@ -35,6 +38,25 @@ uint8_t hamming_t<uint16_t, uint16_t>::computeHamming(
 }
 
 template<>
+bool hamming_t<uint16_t, uint16_t>::code_cmp_eq(
+        uint8_t code1,
+        uint8_t code2) {
+    return code1 == code2;
+}
+
+template<>
+bool hamming_t<uint16_t, uint16_t>::isValid() {
+    return hamming_t<uint16_t, uint16_t>::code_cmp_eq(this->code, hamming_t<uint16_t, uint16_t>::computeHamming(this->data));
+}
+
+template<>
+void hamming_t<uint16_t, uint16_t>::store(
+        uint16_t data) {
+    this->data = data;
+    this->code = computeHamming(data);
+}
+
+template<>
 uint8_t hamming_t<uint32_t, uint32_t>::computeHamming(
         uint32_t data) {
     uint8_t hamming = 0;
@@ -46,6 +68,25 @@ uint8_t hamming_t<uint32_t, uint32_t>::computeHamming(
     hamming |= (__builtin_popcount(data & 0xFC000000) & 0x1) << 6;
     hamming |= (__builtin_popcount(data) + __builtin_popcount(hamming)) & 0x1;
     return hamming;
+}
+
+template<>
+bool hamming_t<uint32_t, uint32_t>::code_cmp_eq(
+        uint8_t code1,
+        uint8_t code2) {
+    return code1 == code2;
+}
+
+template<>
+bool hamming_t<uint32_t, uint32_t>::isValid() {
+    return hamming_t<uint32_t, uint32_t>::code_cmp_eq(this->code, hamming_t<uint32_t, uint32_t>::computeHamming(this->data));
+}
+
+template<>
+void hamming_t<uint32_t, uint32_t>::store(
+        uint32_t data) {
+    this->data = data;
+    this->code = computeHamming(data);
 }
 
 template
