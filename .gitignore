@@ -45,3 +45,6 @@
 /nbproject/private/
 
 /build/
+/vs2017/CodingBenchmark.vcxproj.user
+/vs2017/.vs
+/vs2017/x64

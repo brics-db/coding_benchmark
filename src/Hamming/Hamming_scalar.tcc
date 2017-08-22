@@ -96,7 +96,7 @@ namespace coding_benchmark {
         }
 
         struct Arithmetor {
-            using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
+        using typename Hamming_scalar::hamming_scalar_t;
             Hamming_scalar & test;
             const ArithmeticConfiguration & config;
             Arithmetor(
@@ -147,7 +147,7 @@ namespace coding_benchmark {
         }
 
         struct ArithmetorChecked {
-            using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
+        using Hamming_scalar::hamming_scalar_t;
             Hamming_scalar & test;
             const ArithmeticConfiguration & config;
             const size_t iteration;
@@ -208,7 +208,7 @@ namespace coding_benchmark {
         }
 
         struct Aggregator {
-            using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
+        using Hamming_scalar::hamming_scalar_t;
             typedef typename Larger<DATAIN>::larger_t larger_t;
             typedef hamming_t<larger_t, larger_t> hamming_larger_t;
             Hamming_scalar & test;
@@ -261,7 +261,7 @@ namespace coding_benchmark {
         }
 
         struct AggregatorChecked {
-            using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
+        using Hamming_scalar::hamming_scalar_t;
             typedef typename Larger<DATAIN>::larger_t larger_t;
             typedef hamming_t<larger_t, larger_t> hamming_larger_t;
             Hamming_scalar & test;

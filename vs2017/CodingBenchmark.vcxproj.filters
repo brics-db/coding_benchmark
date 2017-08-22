@@ -1,0 +1,214 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="AN">
+      <UniqueIdentifier>{0149baf8-3fff-4b31-9cca-983a716c3b3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hamming">
+      <UniqueIdentifier>{f0a3dbe5-37c8-83ce-6043-40c220dd0576}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{a15e87e6-5f89-48ef-96d6-2fd824510b6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="XOR">
+      <UniqueIdentifier>{b01feee7-f521-4753-8864-b60c06c4dfe1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\CopyTest.hpp" />
+    <ClInclude Include="..\src\CopyTest2.hpp" />
+    <ClInclude Include="..\src\Main.hpp" />
+    <ClInclude Include="..\src\Output.hpp" />
+    <ClInclude Include="..\src\Test.hpp" />
+    <ClInclude Include="..\src\Util\AlignedBlock.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\ANTest.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_avx2.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_avx2_16x16_16x32.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_avx2_16x16_16x32_s_divmod.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_avx2_16x16_16x32_s_inv.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_avx2_16x16_16x32_u_divmod.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_avx2_16x16_16x32_u_inv.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_scalar.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_sse42.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_sse42_8x16_8x32.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_sse42_8x16_8x32_s_divmod.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_sse42_8x16_8x32_s_inv.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_sse42_8x16_8x32_u_divmod.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\AN\AN_sse42_8x16_8x32_u_inv.hpp">
+      <Filter>AN</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\ArithmeticSelector.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\ComputeNumRuns.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\CPU.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\ErrorInfo.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\Euclidean.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\ExpandTest.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Hamming\Hamming_avx2.hpp">
+      <Filter>Hamming</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Hamming\Hamming_base.hpp">
+      <Filter>Hamming</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Hamming\Hamming_scalar.hpp">
+      <Filter>Hamming</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Hamming\Hamming_sse42.hpp">
+      <Filter>Hamming</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\Intrinsics.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\Macros.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\SIMD.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\Stopwatch.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\TestConfiguration.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\TestInfo.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Util\VFunc.hpp">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\XOR\XOR_avx2.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\XOR\XOR_base.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\XOR\XOR_scalar.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\XOR\XOR_sse42.hpp">
+      <Filter>XOR</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\Main.cpp" />
+    <ClCompile Include="..\src\Output.cpp" />
+    <ClCompile Include="..\src\Test.cpp" />
+    <ClCompile Include="..\src\AN\AN_avx2.cpp">
+      <Filter>AN</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\AN\AN_scalar.cpp">
+      <Filter>AN</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\AN\AN_sse42.cpp">
+      <Filter>AN</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Util\CPU.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Util\ErrorInfo.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Hamming\Hamming_avx2.cpp">
+      <Filter>Hamming</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Hamming\Hamming_scalar.cpp">
+      <Filter>Hamming</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Hamming\Hamming_sse42.cpp">
+      <Filter>Hamming</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Util\SIMD.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Util\Stopwatch.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Util\TestInfo.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\XOR\XOR_avx2.cpp">
+      <Filter>XOR</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\XOR\XOR_base.cpp">
+      <Filter>XOR</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\XOR\XOR_scalar.cpp">
+      <Filter>XOR</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\XOR\XOR_sse42.cpp">
+      <Filter>XOR</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\AN\AN_scalar.tcc">
+      <Filter>AN</Filter>
+    </None>
+    <None Include="..\src\AN\AN_scalar_divmod.tcc">
+      <Filter>AN</Filter>
+    </None>
+    <None Include="..\src\AN\AN_scalar_s_inv.tcc">
+      <Filter>AN</Filter>
+    </None>
+    <None Include="..\src\AN\AN_scalar_u_inv.tcc">
+      <Filter>AN</Filter>
+    </None>
+    <None Include="..\src\Hamming\Hamming_avx2.tcc">
+      <Filter>Hamming</Filter>
+    </None>
+    <None Include="..\src\Hamming\Hamming_scalar.tcc">
+      <Filter>Hamming</Filter>
+    </None>
+    <None Include="..\src\Hamming\Hamming_sse42.tcc">
+      <Filter>Hamming</Filter>
+    </None>
+    <None Include="..\src\XOR\XOR_avx2.tcc">
+      <Filter>XOR</Filter>
+    </None>
+    <None Include="..\src\XOR\XOR_scalar.tcc">
+      <Filter>XOR</Filter>
+    </None>
+    <None Include="..\src\XOR\XOR_sse42.tcc">
+      <Filter>XOR</Filter>
+    </None>
+  </ItemGroup>
+</Project>
