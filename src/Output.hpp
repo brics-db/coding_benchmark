@@ -26,7 +26,7 @@
 #include <iomanip>
 #include <vector>
 
-#include "Util/TestInfo.hpp"
+#include <Util/TestInfo.hpp>
 
 void printUsage(
         char* argv[]);

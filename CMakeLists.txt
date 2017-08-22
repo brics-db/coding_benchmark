@@ -87,4 +87,6 @@ ENDIF(OPENMP_FOUND)
 
 add_algorithm(TestModuloInverseComputation "src/TestModuloInverseComputation.cpp src/Util/Stopwatch.cpp")
 add_algorithm(TestModuloInverseComputation2 "src/TestModuloInverseComputation2.cpp src/Util/Stopwatch.cpp")
+add_algorithm(TestComputeHamming "src/TestComputeHamming.cpp src/Test.cpp src/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Util/SIMD.cpp \
+src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_compute.cpp")
 

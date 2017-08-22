@@ -25,8 +25,8 @@
 
 #include <boost/multiprecision/cpp_int.hpp>
 
-#include "Util/Euclidean.hpp"
-#include "Util/Stopwatch.hpp"
+#include <Util/Euclidean.hpp>
+#include <Util/Stopwatch.hpp>
 
 using boost::multiprecision::uint128_t;
 

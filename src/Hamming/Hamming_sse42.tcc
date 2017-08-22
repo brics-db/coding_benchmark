@@ -38,6 +38,9 @@ struct Hamming_sse42 :
     typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
     typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
 
+    constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+    constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+
     using Test<DATAIN, hamming_sse42_t>::Test;
 
     virtual ~Hamming_sse42() {
@@ -47,8 +50,8 @@ struct Hamming_sse42 :
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            auto data = this->bufRaw.template begin<__m128i >();
-            auto dataEnd = this->bufRaw.template end<__m128i >();
+            auto data = this->bufRaw.template begin<__m128i>();
+            auto dataEnd = this->bufRaw.template end<__m128i>();
             auto dataOut = this->bufEncoded.template begin<hamming_sse42_t>();
             while (data <= (dataEnd - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
@@ -77,19 +80,17 @@ struct Hamming_sse42 :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
             size_t numValues = this->getNumValues();
             size_t i = 0;
             auto data = this->bufEncoded.template begin<hamming_sse42_t>();
-            while (i <= VALUES_PER_UNROLL) {
+            while (i <= (numValues - VALUES_PER_UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++data) {
                     if (!data->isValid()) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
             }
-            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++data) {
+            for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++data) {
                 if (!data->isValid()) {
                     throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
@@ -110,8 +111,10 @@ struct Hamming_sse42 :
     }
 
     struct Arithmetor {
-        typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
-        typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
+        using hamming_sse24_t = Hamming_sse42::hamming_sse42_t;
+        using hamming_scalar_t = Hamming_sse42::hamming_scalar_t;
+        constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+        constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
         Hamming_sse42 & test;
         const ArithmeticConfiguration & config;
         const size_t iteration;
@@ -125,19 +128,17 @@ struct Hamming_sse42 :
         }
         void operator()(
                 ArithmeticConfiguration::Add) {
-            const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
             const size_t numValues = test.getNumValues();
             auto mmOperand = SIMD<__m128i, DATAIN>::set1(config.operand);
             size_t i = 0;
             auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
             auto dataOut = test.bufResult.template begin<hamming_sse42_t>();
-            while (i <= VALUES_PER_UNROLL) {
+            while (i <= (numValues - VALUES_PER_UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                     dataOut->store(SIMD<__m128i, DATAIN>::add(dataIn->data, mmOperand));
                 }
             }
-            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
+            for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                 dataOut->store(SIMD<__m128i, DATAIN>::add(dataIn->data, mmOperand));
             }
             if (i < numValues) {
@@ -173,8 +174,10 @@ struct Hamming_sse42 :
     }
 
     struct ArithmetorChecked {
-        typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
-        typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
+        using hamming_sse24_t = Hamming_sse42::hamming_sse42_t;
+        using hamming_scalar_t = Hamming_sse42::hamming_scalar_t;
+        constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+        constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
         Hamming_sse42 & test;
         const ArithmeticConfiguration & config;
         const size_t iteration;
@@ -188,14 +191,12 @@ struct Hamming_sse42 :
         }
         void operator()(
                 ArithmeticConfiguration::Add) {
-            const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-            const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
             const size_t numValues = test.getNumValues();
             auto mmOperand = SIMD<__m128i, DATAIN>::set1(config.operand);
             size_t i = 0;
             auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
             auto dataOut = test.bufResult.template begin<hamming_sse42_t>();
-            while (i <= VALUES_PER_UNROLL) {
+            while (i <= (numValues - VALUES_PER_UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                     auto tmp = dataIn->data;
                     if (!dataIn->isValid()) {
@@ -204,7 +205,7 @@ struct Hamming_sse42 :
                     dataOut->store(SIMD<__m128i, DATAIN>::add(tmp, mmOperand));
                 }
             }
-            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
+            for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                 auto tmp = dataIn->data;
                 if (!dataIn->isValid()) {
                     throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -252,6 +253,8 @@ struct Hamming_sse42 :
         using hamming_scalar_t = Hamming_sse42::hamming_scalar_t;
         typedef typename Larger<DATAIN>::larger_t larger_t;
         typedef hamming_t<larger_t, larger_t> hamming_larger_t;
+        constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+        constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
         Hamming_sse42 & test;
         const AggregateConfiguration & config;
         Aggregator(
@@ -265,39 +268,27 @@ struct Hamming_sse42 :
             const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
             const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
             const size_t numValues = test.getNumValues();
-            auto mmOperand = SIMD<__m128i, DATAIN>::set1(config.operand);
             size_t i = 0;
             auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
-            auto dataOut = test.bufResult.template begin<hamming_sse42_t>();
+            auto dataOut = test.bufResult.template begin<hamming_larger_t>();
             auto mmTmp = SIMD<__m128i, larger_t>::set1(0);
-            while (i <= VALUES_PER_UNROLL) {
+            while (i <= (numValues - VALUES_PER_UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                    dataOut->store(SIMD<__m128i, DATAIN>::add(dataIn->data, mmOperand));
+                    mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
+                    mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
                 }
             }
-            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
-                dataOut->store(SIMD<__m128i, DATAIN>::add(dataIn->data, mmOperand));
+            for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+                mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
+                mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
             }
+            auto tmp = SIMD<__m128i, larger_t>::sum(mmTmp);
             if (i < numValues) {
                 auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
                 auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
                 for (; i < numValues; ++i, ++dataIn2, ++dataOut2) {
-                    dataOut2->store(dataIn2->data + config.operand);
+                    tmp += dataIn2->data;
                 }
-            }
-
-            const size_t numValues = test.getNumValues();
-            auto data = test.bufEncoded.template begin<hamming_sse24_t>();
-            auto dataEnd = data + numValues;
-            auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-            larger_t tmp(0);
-            while (data <= (dataEnd - UNROLL)) {
-                for (size_t k = 0; k < UNROLL; ++k, ++data) {
-                    tmp += data->data;
-                }
-            }
-            for (; data < dataEnd; ++data) {
-                tmp += data->data;
             }
             dataOut->store(tmp);
         }
@@ -326,16 +317,19 @@ struct Hamming_sse42 :
     }
 
     struct AggregatorChecked {
-        using hamming_scalar_t = Hamming_scalar::hamming_sse24_t;
+        using hamming_sse24_t = Hamming_sse42::hamming_sse42_t;
+        using hamming_scalar_t = Hamming_sse42::hamming_scalar_t;
         typedef typename Larger<DATAIN>::larger_t larger_t;
         typedef hamming_t<larger_t, larger_t> hamming_larger_t;
-        Hamming_scalar & test;
+        constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+        constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+        Hamming_sse42 & test;
         const AggregateConfiguration & config;
-        const size_t iteration;
+        size_t iteration;
         AggregatorChecked(
-                Hamming_scalar & test,
+                Hamming_sse42 & test,
                 const AggregateConfiguration & config,
-                const size_t iteration)
+                size_t iteration)
         : test(test),
         config(config),
         iteration(iteration) {
@@ -343,24 +337,27 @@ struct Hamming_sse42 :
         void operator()(
                 AggregateConfiguration::Sum) {
             const size_t numValues = test.getNumValues();
-            auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-            auto dataEnd = data + numValues;
-            auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-            larger_t tmp(0);
             size_t i = 0;
-            while (data <= (dataEnd - UNROLL)) {
-                for (size_t k = 0; k < UNROLL; ++k, ++data, ++i) {
-                    if (!data->isValid()) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
-                    }
-                    tmp += data->data;
+            auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
+            auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+            auto mmTmp = SIMD<__m128i, larger_t>::set1(0);
+            while (i <= (numValues - VALUES_PER_UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
+                    mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
+                    mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
                 }
             }
-            for (; data < dataEnd; ++data, ++i) {
-                if (!data->isValid()) {
-                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
+                mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
+                mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
+            }
+            auto tmp = SIMD<__m128i, larger_t>::sum(mmTmp);
+            if (i < numValues) {
+                auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
+                auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
+                for (; i < numValues; ++i, ++dataIn2, ++dataOut2) {
+                    tmp += dataIn2->data;
                 }
-                tmp += data->data;
             }
             dataOut->store(tmp);
         }

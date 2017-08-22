@@ -23,9 +23,9 @@
 #include <iostream>
 #include <sstream>
 
-#include "Util/AlignedBlock.hpp"
-#include "Util/Euclidean.hpp"
-#include "Util/Stopwatch.hpp"
+#include <Util/AlignedBlock.hpp>
+#include <Util/Euclidean.hpp>
+#include <Util/Stopwatch.hpp>
 
 int main(
         int argc,

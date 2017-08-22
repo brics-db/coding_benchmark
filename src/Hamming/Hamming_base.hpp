@@ -83,12 +83,21 @@ struct hamming_t {
     void store(
             granularity_t data);
 
+    void store2(
+            granularity_t data);
+
+    void store3(
+            granularity_t data);
+
     bool isValid();
 
     static code_t computeHamming(
             granularity_t data);
 
     static code_t computeHamming2(
+            granularity_t data);
+
+    static code_t computeHamming3(
             granularity_t data);
 
     static bool code_cmp_eq(

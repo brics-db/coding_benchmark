@@ -54,6 +54,14 @@ __m128i SIMD<__m128i, uint8_t>::popcount2(
     return _mm_add_epi8(cnt_lo, cnt_hi);
 }
 
+__m128i SIMD<__m128i, uint8_t>::popcount3(
+        __m128i a) {
+    return _mm_set_epi8(_mm_popcnt_u32(_mm_extract_epi8(a, 15)), _mm_popcnt_u32(_mm_extract_epi8(a, 14)), _mm_popcnt_u32(_mm_extract_epi8(a, 13)), _mm_popcnt_u32(_mm_extract_epi8(a, 12)),
+            _mm_popcnt_u32(_mm_extract_epi8(a, 11)), _mm_popcnt_u32(_mm_extract_epi8(a, 10)), _mm_popcnt_u32(_mm_extract_epi8(a, 9)), _mm_popcnt_u32(_mm_extract_epi8(a, 8)),
+            _mm_popcnt_u32(_mm_extract_epi8(a, 7)), _mm_popcnt_u32(_mm_extract_epi8(a, 6)), _mm_popcnt_u32(_mm_extract_epi8(a, 5)), _mm_popcnt_u32(_mm_extract_epi8(a, 4)),
+            _mm_popcnt_u32(_mm_extract_epi8(a, 3)), _mm_popcnt_u32(_mm_extract_epi8(a, 2)), _mm_popcnt_u32(_mm_extract_epi8(a, 1)), _mm_popcnt_u32(_mm_extract_epi8(a, 0)));
+}
+
 __m128i SIMD<__m128i, uint8_t>::cvt_larger_lo(
         __m128i a) {
     return _mm_cvtepi8_epi16(a);
@@ -89,11 +97,11 @@ uint64_t SIMD<__m128i, uint16_t>::popcount(
     static auto pattern2 = _mm_set1_epi16(0x3333);
     static auto pattern3 = _mm_set1_epi16(0x0F0F);
     static auto pattern4 = _mm_set1_epi16(0x0101);
-    static auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0E0C0A0806040200);
+    static auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301);
     auto temp = _mm_sub_epi16(a, _mm_and_si128(_mm_srli_epi16(a, 1), pattern1));
     temp = _mm_add_epi16(_mm_and_si128(temp, pattern2), _mm_and_si128(_mm_srli_epi16(temp, 2), pattern2));
     temp = _mm_and_si128(_mm_add_epi16(temp, _mm_srli_epi16(temp, 4)), pattern3);
-    temp = _mm_srli_epi16(_mm_mullo_epi16(temp, pattern4), 8);
+    temp = _mm_mullo_epi16(temp, pattern4);
     return static_cast<uint64_t>(_mm_extract_epi64(_mm_shuffle_epi8(temp, shuffle), 0));
 }
 
@@ -103,6 +111,14 @@ uint64_t SIMD<__m128i, uint16_t>::popcount2(
     static auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301);
     auto popcount8 = SIMD<__m128i, uint8_t>::popcount2(a);
     return _mm_extract_epi64(_mm_shuffle_epi8(_mm_mullo_epi16(popcount8, mask), shuffle), 0);
+}
+
+uint64_t SIMD<__m128i, uint16_t>::popcount3(
+        __m128i a) {
+    return (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 7))) << 56) | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 6))) << 48)
+            | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 5))) << 40) | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 4))) << 23)
+            | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 3))) << 24) | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 2))) << 16)
+            | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 1))) << 8) | static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 0)));
 }
 
 __m128i SIMD<__m128i, uint16_t>::cvt_larger_lo(
@@ -139,11 +155,11 @@ uint32_t SIMD<__m128i, uint32_t>::popcount(
     static auto pattern2 = _mm_set1_epi32(0x33333333);
     static auto pattern3 = _mm_set1_epi32(0x0F0F0F0F);
     static auto pattern4 = _mm_set1_epi32(0x01010101);
-    static auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFF0C080400);
+    static auto shuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
     auto temp = _mm_sub_epi32(a, _mm_and_si128(_mm_srli_epi32(a, 1), pattern1));
     temp = _mm_add_epi32(_mm_and_si128(temp, pattern2), _mm_and_si128(_mm_srli_epi32(temp, 2), pattern2));
     temp = _mm_and_si128(_mm_add_epi32(temp, _mm_srli_epi32(temp, 4)), pattern3);
-    temp = _mm_srli_epi32(_mm_mullo_epi32(temp, pattern4), 24);
+    temp = _mm_mullo_epi32(temp, pattern4);
     return static_cast<uint32_t>(_mm_extract_epi32(_mm_shuffle_epi8(temp, shuffle), 0));
 }
 
@@ -153,6 +169,11 @@ uint32_t SIMD<__m128i, uint32_t>::popcount2(
     static auto shuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
     auto popcount8 = SIMD<__m128i, uint8_t>::popcount2(a);
     return _mm_extract_epi32(_mm_shuffle_epi8(_mm_mullo_epi32(popcount8, mask), shuffle), 0);
+}
+
+uint32_t SIMD<__m128i, uint32_t>::popcount3(
+        __m128i a) {
+    return (_mm_popcnt_u32(_mm_extract_epi32(a, 3) << 24) | (_mm_popcnt_u32(_mm_extract_epi32(a, 2)) << 16) | (_mm_popcnt_u32(_mm_extract_epi32(a, 1)) << 8) | _mm_popcnt_u32(_mm_extract_epi32(a, 0)));
 }
 
 __m128i SIMD<__m128i, uint32_t>::cvt_larger_lo(
@@ -166,6 +187,47 @@ __m128i SIMD<__m128i, uint32_t>::cvt_larger_hi(
 }
 
 uint32_t SIMD<__m128i, uint32_t>::sum(
+        __m128i a) {
+    auto tmp = _mm_add_epi32(a, _mm_srli_si128(a, 8));
+    return _mm_extract_epi32(tmp, 1) + _mm_extract_epi32(tmp, 0);
+}
+
+__m128i SIMD<__m128i, uint64_t>::set1(
+        uint32_t a) {
+    return _mm_set1_epi64x(a);
+}
+
+__m128i SIMD<__m128i, uint64_t>::add(
+        __m128i a,
+        __m128i b) {
+    return _mm_add_epi64(a, b);
+}
+
+uint16_t SIMD<__m128i, uint64_t>::popcount(
+        __m128i a) {
+    static auto pattern1 = _mm_set1_epi64x(0x5555555555555555);
+    static auto pattern2 = _mm_set1_epi64x(0x3333333333333333);
+    static auto pattern3 = _mm_set1_epi64x(0x0F0F0F0F0F0F0F0F);
+    static auto pattern4 = _mm_set1_epi64x(0x0101010101010101);
+    static auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFF0F07);
+    auto temp = _mm_sub_epi32(a, _mm_and_si128(_mm_srli_epi32(a, 1), pattern1));
+    temp = _mm_add_epi32(_mm_and_si128(temp, pattern2), _mm_and_si128(_mm_srli_epi32(temp, 2), pattern2));
+    temp = _mm_and_si128(_mm_add_epi32(temp, _mm_srli_epi32(temp, 4)), pattern3);
+    temp = _mm_srli_epi32(_mm_mullo_epi32(temp, pattern4), 24);
+    return static_cast<uint16_t>(_mm_extract_epi16(_mm_shuffle_epi8(temp, shuffle), 0));
+}
+
+uint16_t SIMD<__m128i, uint64_t>::popcount2(
+        __m128i a) {
+    return (static_cast<uint16_t>(_mm_popcnt_u64(_mm_extract_epi64(a, 1))) << 8) | static_cast<uint16_t>(_mm_popcnt_u64(_mm_extract_epi64(a, 0)));
+}
+
+uint16_t SIMD<__m128i, uint64_t>::popcount3(
+        __m128i a) {
+    return (_mm_popcnt_u64(_mm_extract_epi64(a, 1) << 8) | _mm_popcnt_u64(_mm_extract_epi64(a, 0)));
+}
+
+uint64_t SIMD<__m128i, uint64_t>::sum(
         __m128i a) {
     auto tmp = _mm_add_epi32(a, _mm_srli_si128(a, 8));
     return _mm_extract_epi32(tmp, 1) + _mm_extract_epi32(tmp, 0);

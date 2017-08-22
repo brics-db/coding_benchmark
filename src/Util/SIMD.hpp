@@ -105,6 +105,8 @@ struct SIMD<__m128i, uint8_t> {
             __m128i a);
     static __m128i popcount2(
             __m128i a);
+    static __m128i popcount3(
+            __m128i a);
     static __m128i cvt_larger_lo(
             __m128i a);
     static __m128i cvt_larger_hi(
@@ -123,6 +125,8 @@ struct SIMD<__m128i, uint16_t> {
     static uint64_t popcount(
             __m128i a);
     static uint64_t popcount2(
+            __m128i a);
+    static uint64_t popcount3(
             __m128i a);
     static __m128i cvt_larger_lo(
             __m128i a);
@@ -143,6 +147,8 @@ struct SIMD<__m128i, uint32_t> {
             __m128i a);
     static uint32_t popcount2(
             __m128i a);
+    static uint32_t popcount3(
+            __m128i a);
     static __m128i cvt_larger_lo(
             __m128i a);
     static __m128i cvt_larger_hi(
@@ -158,9 +164,11 @@ struct SIMD<__m128i, uint64_t> {
     static __m128i add(
             __m128i a,
             __m128i b);
-    static uint32_t popcount(
+    static uint16_t popcount(
             __m128i a);
-    static uint32_t popcount2(
+    static uint16_t popcount2(
+            __m128i a);
+    static uint16_t popcount3(
             __m128i a);
     static uint64_t sum(
             __m128i a);
