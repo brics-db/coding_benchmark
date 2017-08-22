@@ -72,9 +72,9 @@ int main() {
     TestCase(Hamming_compute_sse42_3_16, "Hamming SSE4.2 3 16", bufRawdata16, bufResult);
     TestCase(Hamming_compute_sse42_3_32, "Hamming SSE4.2 3 32", bufRawdata32, bufResult);
 
-    printResults<false>(vecTestInfos);
+    printResults<false>(vecTestInfos, OutputConfiguration(false, false));
     std::cout << "\n\n";
-    printResults<true>(vecTestInfos);
+    printResults<true>(vecTestInfos, OutputConfiguration(false, false));
 
     return 0;
 }

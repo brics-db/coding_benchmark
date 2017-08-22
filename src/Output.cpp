@@ -3,16 +3,16 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* 
+/*
  * File:   Output.cpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
@@ -29,7 +29,7 @@ void printUsage(
 template<bool doRelative>
 void printResults(
         std::vector<std::vector<TestInfos>> & results,
-        bool renameFirst) {
+        OutputConfiguration config) {
     size_t numResults = results.size();
     size_t maxPos = 0;
     for (auto & v : results) {
@@ -240,7 +240,7 @@ void printResults(
     for (auto & v : results) {
         auto & ti = v[0];
         if (isEnc) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " enc");
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " enc");
         }
         ++i;
     }
@@ -248,7 +248,7 @@ void printResults(
     for (auto & v : results) {
         auto & ti = v[0];
         if (isCheck) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp" : ti.name) << (((i == 0) && renameFirst) ? "" : " check");
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " check");
         }
         ++i;
     }
@@ -256,7 +256,7 @@ void printResults(
     for (auto & v : results) {
         auto & ti = v[0];
         if (isArith) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " arith");
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " arith");
         }
         ++i;
     }
@@ -264,7 +264,7 @@ void printResults(
     for (auto & v : results) {
         auto & ti = v[0];
         if (isArithChk) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp+memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " arithChk");
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " arithChk");
         }
         ++i;
     }
@@ -272,7 +272,7 @@ void printResults(
     for (auto & v : results) {
         auto & ti = v[0];
         if (isAggr) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " aggr");
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " aggr");
         }
         ++i;
     }
@@ -280,7 +280,7 @@ void printResults(
     for (auto & v : results) {
         auto & ti = v[0];
         if (isAggrChk) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp+memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " aggrChk");
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " aggrChk");
         }
         ++i;
     }
@@ -288,7 +288,7 @@ void printResults(
     for (auto & v : results) {
         auto & ti = v[0];
         if (isReencChk) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcmp+memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " reencChk");
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " reencChk");
         }
         ++i;
     }
@@ -296,7 +296,7 @@ void printResults(
     for (auto & v : results) {
         auto & ti = v[0];
         if (isDec) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " dec");
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " dec");
         }
         ++i;
     }
@@ -304,7 +304,7 @@ void printResults(
     for (auto & v : results) {
         auto & ti = v[0];
         if (isDecChk) {
-            std::cout << ',' << (((i == 0) && renameFirst) ? "memcpy" : ti.name) << (((i == 0) && renameFirst) ? "" : " decChk");
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " decChk");
         }
         ++i;
     }
@@ -421,8 +421,8 @@ void printResults(
 
 template void printResults<true>(
         std::vector<std::vector<TestInfos>> & results,
-        bool renameFirst);
+        OutputConfiguration config);
 
 template void printResults<false>(
         std::vector<std::vector<TestInfos>> & results,
-        bool renameFirst);
+        OutputConfiguration config);

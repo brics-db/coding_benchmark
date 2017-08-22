@@ -138,7 +138,7 @@ int main(
 #undef TestCase2
 #undef TestCase4
 
-    printResults<false>(vecTestInfos, false);
+    printResults<false>(vecTestInfos, OutputConfiguration(false, true));
     std::cout << "\n\n";
-    printResults<true>(vecTestInfos, false);
+    printResults<true>(vecTestInfos, OutputConfiguration(false, true));
 }
