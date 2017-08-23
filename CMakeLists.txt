@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.1 FATAL_ERROR)
+# The high CMake version is required due to dependency on C++17 features!
+CMAKE_MINIMUM_REQUIRED(VERSION 3.8 FATAL_ERROR)
 
 IF(POLICY CMP0048)
     CMAKE_POLICY(SET CMP0048 NEW)
-    PROJECT(CodingBenchmark VERSION 0.6 LANGUAGES CXX)
+    PROJECT(CodingBenchmark VERSION 1.0 LANGUAGES CXX)
 ELSE()
     PROJECT(CodingBenchmark LANGUAGES CXX)
 ENDIF()
@@ -24,7 +25,7 @@ ENDIF()
 ADD_DEFINITIONS(-Wall)
 ADD_DEFINITIONS(-pedantic)
 ADD_DEFINITIONS(-march=native)
-#ADD_DEFINITIONS(-mavx2)
+ADD_DEFINITIONS(-mavx2)
 ADD_DEFINITIONS(-Wno-ignored-attributes)
 ADD_DEFINITIONS(-Weffc++)
 
@@ -89,9 +90,8 @@ add_algorithm(TestModuloInverseComputation "src/TestModuloInverseComputation.cpp
 add_algorithm(TestModuloInverseComputation2 "src/TestModuloInverseComputation2.cpp src/Util/Stopwatch.cpp")
 
 add_algorithm(TestComputeHamming "src/TestComputeHamming.cpp src/Test.cpp src/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Util/SIMD.cpp \
-src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_compute.cpp")
+src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp src/Hamming/Hamming_compute.cpp")
 
 add_algorithm(TestComputeHamming_novec "src/TestComputeHamming.cpp src/Test.cpp src/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Util/SIMD.cpp \
-src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_compute.cpp")
+src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp src/Hamming/Hamming_compute.cpp")
 TARGET_COMPILE_OPTIONS(TestComputeHamming_novec PRIVATE "-fno-tree-vectorize")
-

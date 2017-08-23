@@ -3,16 +3,16 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* 
+/*
  * File:   Hamming_compute.tcc
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
@@ -22,9 +22,10 @@
 #pragma once
 
 #include <Test.hpp>
+#include <Util/SIMD.hpp>
 #include <Hamming/Hamming_scalar.hpp>
 #include <Hamming/Hamming_sse42.hpp>
-#include <Util/SIMD.hpp>
+#include <Hamming/Hamming_avx2.hpp>
 
 template<typename DATAIN, size_t UNROLL>
 struct Hamming_compute_scalar :
@@ -65,8 +66,8 @@ struct Hamming_compute_sse42_1 :
     typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
     typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
 
-    constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-    constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+    static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+    static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
 
     using Test<DATAIN, hamming_sse42_t>::Test;
 
@@ -108,8 +109,8 @@ struct Hamming_compute_sse42_2 :
     typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
     typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
 
-    constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-    constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+    static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+    static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
 
     using Test<DATAIN, hamming_sse42_t>::Test;
 
@@ -151,8 +152,8 @@ struct Hamming_compute_sse42_3 :
     typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
     typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
 
-    constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-    constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+    static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+    static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
 
     using Test<DATAIN, hamming_sse42_t>::Test;
 
@@ -166,6 +167,135 @@ struct Hamming_compute_sse42_3 :
             auto data = this->bufRaw.template begin<__m128i>();
             auto dataEnd = this->bufRaw.template end<__m128i>();
             auto dataOut = this->bufEncoded.template begin<hamming_sse42_t>();
+            while (data <= (dataEnd - UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
+                    dataOut->store3(*data);
+                }
+            }
+            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+                dataOut->store3(*data);
+            }
+            if (data < dataEnd) {
+                auto data2 = reinterpret_cast<DATAIN*>(data);
+                auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
+                auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
+                for (; data2 < dataEnd2; ++data2, ++dataOut2) {
+                    dataOut2->store3(*data2);
+                }
+            }
+        }
+    }
+};
+
+template<typename DATAIN, size_t UNROLL>
+struct Hamming_compute_avx2_1 :
+        public Test<DATAIN, hamming_t<DATAIN, __m256i >>,
+        public AVX2Test {
+
+    typedef hamming_t<DATAIN, __m256i> hamming_avx2_t;
+    typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
+
+    static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATAIN);
+    static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+
+    using Test<DATAIN, hamming_avx2_t>::Test;
+
+    virtual ~Hamming_compute_avx2_1() {
+    }
+
+    void RunEncode(
+            const EncodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            auto data = this->bufRaw.template begin<__m256i >();
+            auto dataEnd = this->bufRaw.template end<__m256i >();
+            auto dataOut = this->bufEncoded.template begin<hamming_avx2_t>();
+            while (data <= (dataEnd - UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
+                    dataOut->store(*data);
+                }
+            }
+            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+                dataOut->store(*data);
+            }
+            if (data < dataEnd) {
+                auto data2 = reinterpret_cast<DATAIN*>(data);
+                auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
+                auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
+                for (; data2 < dataEnd2; ++data2, ++dataOut2) {
+                    dataOut2->store(*data2);
+                }
+            }
+        }
+    }
+};
+
+template<typename DATAIN, size_t UNROLL>
+struct Hamming_compute_avx2_2 :
+        public Test<DATAIN, hamming_t<DATAIN, __m256i >>,
+        public AVX2Test {
+
+    typedef hamming_t<DATAIN, __m256i> hamming_avx2_t;
+    typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
+
+    static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATAIN);
+    static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+
+    using Test<DATAIN, hamming_avx2_t>::Test;
+
+    virtual ~Hamming_compute_avx2_2() {
+    }
+
+    void RunEncode(
+            const EncodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            auto data = this->bufRaw.template begin<__m256i >();
+            auto dataEnd = this->bufRaw.template end<__m256i >();
+            auto dataOut = this->bufEncoded.template begin<hamming_avx2_t>();
+            while (data <= (dataEnd - UNROLL)) {
+                for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
+                    dataOut->store2(*data);
+                }
+            }
+            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+                dataOut->store2(*data);
+            }
+            if (data < dataEnd) {
+                auto data2 = reinterpret_cast<DATAIN*>(data);
+                auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
+                auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
+                for (; data2 < dataEnd2; ++data2, ++dataOut2) {
+                    dataOut2->store2(*data2);
+                }
+            }
+        }
+    }
+};
+
+template<typename DATAIN, size_t UNROLL>
+struct Hamming_compute_avx2_3 :
+        public Test<DATAIN, hamming_t<DATAIN, __m256i >>,
+        public AVX2Test {
+
+    typedef hamming_t<DATAIN, __m256i> hamming_avx2_t;
+    typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
+
+    static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATAIN);
+    static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+
+    using Test<DATAIN, hamming_avx2_t>::Test;
+
+    virtual ~Hamming_compute_avx2_3() {
+    }
+
+    void RunEncode(
+            const EncodeConfiguration & config) override {
+        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+            _ReadWriteBarrier();
+            auto data = this->bufRaw.template begin<__m256i >();
+            auto dataEnd = this->bufRaw.template end<__m256i >();
+            auto dataOut = this->bufEncoded.template begin<hamming_avx2_t>();
             while (data <= (dataEnd - UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                     dataOut->store3(*data);

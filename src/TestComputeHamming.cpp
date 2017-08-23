@@ -60,17 +60,26 @@ int main() {
     TestConfiguration testConfig(iterations);
     DataGenerationConfiguration dataGenConfig;
 
-    TestCase(Hamming_compute_scalar_16, "Hamming Scalar 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_scalar_32, "Hamming Scalar 32", bufRawdata32, bufResult);
+    TestCase(Hamming_compute_scalar_16, "Scalar 16", bufRawdata16, bufResult);
+    TestCase(Hamming_compute_scalar_32, "Scalar 32", bufRawdata32, bufResult);
 
-    TestCase(Hamming_compute_sse42_1_16, "Hamming SSE4.2 1 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_sse42_1_32, "Hamming SSE4.2 1 32", bufRawdata32, bufResult);
+    TestCase(Hamming_compute_sse42_1_16, "SSE4.2 1 16", bufRawdata16, bufResult);
+    TestCase(Hamming_compute_sse42_1_32, "SSE4.2 1 32", bufRawdata32, bufResult);
 
-    TestCase(Hamming_compute_sse42_2_16, "Hamming SSE4.2 2 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_sse42_2_32, "Hamming SSE4.2 2 32", bufRawdata32, bufResult);
+    TestCase(Hamming_compute_sse42_2_16, "SSE4.2 2 16", bufRawdata16, bufResult);
+    TestCase(Hamming_compute_sse42_2_32, "SSE4.2 2 32", bufRawdata32, bufResult);
 
-    TestCase(Hamming_compute_sse42_3_16, "Hamming SSE4.2 3 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_sse42_3_32, "Hamming SSE4.2 3 32", bufRawdata32, bufResult);
+    TestCase(Hamming_compute_sse42_3_16, "SSE4.2 3 16", bufRawdata16, bufResult);
+    TestCase(Hamming_compute_sse42_3_32, "SSE4.2 3 32", bufRawdata32, bufResult);
+
+    TestCase(Hamming_compute_avx2_1_16, "AVX2 1 16", bufRawdata16, bufResult);
+    TestCase(Hamming_compute_avx2_1_32, "AVX2 1 32", bufRawdata32, bufResult);
+
+    TestCase(Hamming_compute_avx2_2_16, "AVX2 2 16", bufRawdata16, bufResult);
+    TestCase(Hamming_compute_avx2_2_32, "AVX2 2 32", bufRawdata32, bufResult);
+
+    TestCase(Hamming_compute_avx2_3_16, "AVX2 3 16", bufRawdata16, bufResult);
+    TestCase(Hamming_compute_avx2_3_32, "AVX2 3 32", bufRawdata32, bufResult);
 
     printResults<false>(vecTestInfos, OutputConfiguration(false, false));
     std::cout << "\n\n";

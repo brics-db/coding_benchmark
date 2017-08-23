@@ -3,16 +3,16 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* 
+/*
  * File:   SIMD.hpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
@@ -186,6 +186,8 @@ struct SIMD<__m256i, uint8_t> {
             __m256i a);
     static __m256i popcount2(
             __m256i a);
+    static __m256i popcount3(
+            __m256i a);
     static __m256i cvt_larger_lo(
             __m256i a);
     static __m256i cvt_larger_hi(
@@ -204,6 +206,8 @@ struct SIMD<__m256i, uint16_t> {
     static __m128i popcount(
             __m256i a);
     static __m128i popcount2(
+            __m256i a);
+    static __m128i popcount3(
             __m256i a);
     static __m256i cvt_larger_lo(
             __m256i a);
@@ -224,6 +228,8 @@ struct SIMD<__m256i, uint32_t> {
             __m256i a);
     static uint64_t popcount2(
             __m256i a);
+    static uint64_t popcount3(
+            __m256i a);
     static __m256i cvt_larger_lo(
             __m256i a);
     static __m256i cvt_larger_hi(
@@ -235,13 +241,15 @@ struct SIMD<__m256i, uint32_t> {
 template<>
 struct SIMD<__m256i, uint64_t> {
     static __m256i set1(
-            uint32_t a);
+            uint64_t a);
     static __m256i add(
             __m256i a,
             __m256i b);
     static uint32_t popcount(
             __m256i a);
     static uint32_t popcount2(
+            __m256i a);
+    static uint32_t popcount3(
             __m256i a);
     static uint64_t sum(
             __m256i a);

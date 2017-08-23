@@ -111,6 +111,72 @@ struct Hamming_compute_sse42_3_32 :
 
 };
 
+template<size_t UNROLL>
+struct Hamming_compute_avx2_1_16 :
+        public Hamming_compute_avx2_1<uint16_t, UNROLL> {
+
+    using Hamming_compute_avx2_1<uint16_t, UNROLL>::Hamming_compute_avx2_1;
+
+    virtual ~Hamming_compute_avx2_1_16() {
+    }
+
+};
+
+template<size_t UNROLL>
+struct Hamming_compute_avx2_1_32 :
+        public Hamming_compute_avx2_1<uint32_t, UNROLL> {
+
+    using Hamming_compute_avx2_1<uint32_t, UNROLL>::Hamming_compute_avx2_1;
+
+    virtual ~Hamming_compute_avx2_1_32() {
+    }
+
+};
+
+template<size_t UNROLL>
+struct Hamming_compute_avx2_2_16 :
+        public Hamming_compute_avx2_2<uint16_t, UNROLL> {
+
+    using Hamming_compute_avx2_2<uint16_t, UNROLL>::Hamming_compute_avx2_2;
+
+    virtual ~Hamming_compute_avx2_2_16() {
+    }
+
+};
+
+template<size_t UNROLL>
+struct Hamming_compute_avx2_2_32 :
+        public Hamming_compute_avx2_2<uint32_t, UNROLL> {
+
+    using Hamming_compute_avx2_2<uint32_t, UNROLL>::Hamming_compute_avx2_2;
+
+    virtual ~Hamming_compute_avx2_2_32() {
+    }
+
+};
+
+template<size_t UNROLL>
+struct Hamming_compute_avx2_3_16 :
+        public Hamming_compute_avx2_3<uint16_t, UNROLL> {
+
+    using Hamming_compute_avx2_3<uint16_t, UNROLL>::Hamming_compute_avx2_3;
+
+    virtual ~Hamming_compute_avx2_3_16() {
+    }
+
+};
+
+template<size_t UNROLL>
+struct Hamming_compute_avx2_3_32 :
+        public Hamming_compute_avx2_3<uint32_t, UNROLL> {
+
+    using Hamming_compute_avx2_3<uint32_t, UNROLL>::Hamming_compute_avx2_3;
+
+    virtual ~Hamming_compute_avx2_3_32() {
+    }
+
+};
+
 extern template
 struct Hamming_compute_scalar_16<1> ;
 extern template
@@ -294,3 +360,141 @@ extern template
 struct Hamming_compute_sse42_3_32<512> ;
 extern template
 struct Hamming_compute_sse42_3_32<1024> ;
+
+extern template
+struct Hamming_compute_avx2_1_16<1> ;
+extern template
+struct Hamming_compute_avx2_1_16<2> ;
+extern template
+struct Hamming_compute_avx2_1_16<4> ;
+extern template
+struct Hamming_compute_avx2_1_16<8> ;
+extern template
+struct Hamming_compute_avx2_1_16<16> ;
+extern template
+struct Hamming_compute_avx2_1_16<32> ;
+extern template
+struct Hamming_compute_avx2_1_16<64> ;
+extern template
+struct Hamming_compute_avx2_1_16<128> ;
+extern template
+struct Hamming_compute_avx2_1_16<256> ;
+extern template
+struct Hamming_compute_avx2_1_16<512> ;
+extern template
+struct Hamming_compute_avx2_1_16<1024> ;
+
+extern template
+struct Hamming_compute_avx2_1_32<1> ;
+extern template
+struct Hamming_compute_avx2_1_32<2> ;
+extern template
+struct Hamming_compute_avx2_1_32<4> ;
+extern template
+struct Hamming_compute_avx2_1_32<8> ;
+extern template
+struct Hamming_compute_avx2_1_32<16> ;
+extern template
+struct Hamming_compute_avx2_1_32<32> ;
+extern template
+struct Hamming_compute_avx2_1_32<64> ;
+extern template
+struct Hamming_compute_avx2_1_32<128> ;
+extern template
+struct Hamming_compute_avx2_1_32<256> ;
+extern template
+struct Hamming_compute_avx2_1_32<512> ;
+extern template
+struct Hamming_compute_avx2_1_32<1024> ;
+
+extern template
+struct Hamming_compute_avx2_2_16<1> ;
+extern template
+struct Hamming_compute_avx2_2_16<2> ;
+extern template
+struct Hamming_compute_avx2_2_16<4> ;
+extern template
+struct Hamming_compute_avx2_2_16<8> ;
+extern template
+struct Hamming_compute_avx2_2_16<16> ;
+extern template
+struct Hamming_compute_avx2_2_16<32> ;
+extern template
+struct Hamming_compute_avx2_2_16<64> ;
+extern template
+struct Hamming_compute_avx2_2_16<128> ;
+extern template
+struct Hamming_compute_avx2_2_16<256> ;
+extern template
+struct Hamming_compute_avx2_2_16<512> ;
+extern template
+struct Hamming_compute_avx2_2_16<1024> ;
+
+extern template
+struct Hamming_compute_avx2_2_32<1> ;
+extern template
+struct Hamming_compute_avx2_2_32<2> ;
+extern template
+struct Hamming_compute_avx2_2_32<4> ;
+extern template
+struct Hamming_compute_avx2_2_32<8> ;
+extern template
+struct Hamming_compute_avx2_2_32<16> ;
+extern template
+struct Hamming_compute_avx2_2_32<32> ;
+extern template
+struct Hamming_compute_avx2_2_32<64> ;
+extern template
+struct Hamming_compute_avx2_2_32<128> ;
+extern template
+struct Hamming_compute_avx2_2_32<256> ;
+extern template
+struct Hamming_compute_avx2_2_32<512> ;
+extern template
+struct Hamming_compute_avx2_2_32<1024> ;
+
+extern template
+struct Hamming_compute_avx2_3_16<1> ;
+extern template
+struct Hamming_compute_avx2_3_16<2> ;
+extern template
+struct Hamming_compute_avx2_3_16<4> ;
+extern template
+struct Hamming_compute_avx2_3_16<8> ;
+extern template
+struct Hamming_compute_avx2_3_16<16> ;
+extern template
+struct Hamming_compute_avx2_3_16<32> ;
+extern template
+struct Hamming_compute_avx2_3_16<64> ;
+extern template
+struct Hamming_compute_avx2_3_16<128> ;
+extern template
+struct Hamming_compute_avx2_3_16<256> ;
+extern template
+struct Hamming_compute_avx2_3_16<512> ;
+extern template
+struct Hamming_compute_avx2_3_16<1024> ;
+
+extern template
+struct Hamming_compute_avx2_3_32<1> ;
+extern template
+struct Hamming_compute_avx2_3_32<2> ;
+extern template
+struct Hamming_compute_avx2_3_32<4> ;
+extern template
+struct Hamming_compute_avx2_3_32<8> ;
+extern template
+struct Hamming_compute_avx2_3_32<16> ;
+extern template
+struct Hamming_compute_avx2_3_32<32> ;
+extern template
+struct Hamming_compute_avx2_3_32<64> ;
+extern template
+struct Hamming_compute_avx2_3_32<128> ;
+extern template
+struct Hamming_compute_avx2_3_32<256> ;
+extern template
+struct Hamming_compute_avx2_3_32<512> ;
+extern template
+struct Hamming_compute_avx2_3_32<1024> ;
