@@ -3,15 +3,15 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-/* 
+/*
  * File:   Hamming_sse42.hpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
@@ -19,6 +19,8 @@
  */
 
 #pragma once
+
+#ifdef __SSE4_2__
 
 #include <Test.hpp>
 #include <Util/ErrorInfo.hpp>
@@ -38,8 +40,8 @@ struct Hamming_sse42 :
     typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
     typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
 
-    constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-    constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+    static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+    static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
 
     using Test<DATAIN, hamming_sse42_t>::Test;
 
@@ -113,8 +115,8 @@ struct Hamming_sse42 :
     struct Arithmetor {
         using hamming_sse24_t = Hamming_sse42::hamming_sse42_t;
         using hamming_scalar_t = Hamming_sse42::hamming_scalar_t;
-        constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-        constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+        static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
         Hamming_sse42 & test;
         const ArithmeticConfiguration & config;
         const size_t iteration;
@@ -176,8 +178,8 @@ struct Hamming_sse42 :
     struct ArithmetorChecked {
         using hamming_sse24_t = Hamming_sse42::hamming_sse42_t;
         using hamming_scalar_t = Hamming_sse42::hamming_scalar_t;
-        constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-        constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+        static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
         Hamming_sse42 & test;
         const ArithmeticConfiguration & config;
         const size_t iteration;
@@ -253,8 +255,8 @@ struct Hamming_sse42 :
         using hamming_scalar_t = Hamming_sse42::hamming_scalar_t;
         typedef typename Larger<DATAIN>::larger_t larger_t;
         typedef hamming_t<larger_t, larger_t> hamming_larger_t;
-        constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-        constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+        static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
         Hamming_sse42 & test;
         const AggregateConfiguration & config;
         Aggregator(
@@ -321,8 +323,8 @@ struct Hamming_sse42 :
         using hamming_scalar_t = Hamming_sse42::hamming_scalar_t;
         typedef typename Larger<DATAIN>::larger_t larger_t;
         typedef hamming_t<larger_t, larger_t> hamming_larger_t;
-        constexpr static const size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-        constexpr static const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+        static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
         Hamming_sse42 & test;
         const AggregateConfiguration & config;
         size_t iteration;
@@ -413,3 +415,5 @@ struct Hamming_sse42 :
         }
     }
 };
+
+#endif

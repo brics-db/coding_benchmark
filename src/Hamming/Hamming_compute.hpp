@@ -45,6 +45,8 @@ struct Hamming_compute_scalar_32 :
 
 };
 
+#ifdef __SSE4_2__
+
 template<size_t UNROLL>
 struct Hamming_compute_sse42_1_16 :
         public Hamming_compute_sse42_1<uint16_t, UNROLL> {
@@ -110,6 +112,10 @@ struct Hamming_compute_sse42_3_32 :
     }
 
 };
+
+#endif
+
+#ifdef __AVX2__
 
 template<size_t UNROLL>
 struct Hamming_compute_avx2_1_16 :
@@ -177,6 +183,8 @@ struct Hamming_compute_avx2_3_32 :
 
 };
 
+#endif
+
 extern template
 struct Hamming_compute_scalar_16<1> ;
 extern template
@@ -222,6 +230,8 @@ extern template
 struct Hamming_compute_scalar_32<512> ;
 extern template
 struct Hamming_compute_scalar_32<1024> ;
+
+#ifdef __SSE4_2__
 
 extern template
 struct Hamming_compute_sse42_1_16<1> ;
@@ -361,6 +371,10 @@ struct Hamming_compute_sse42_3_32<512> ;
 extern template
 struct Hamming_compute_sse42_3_32<1024> ;
 
+#endif
+
+#ifdef __AVX2__
+
 extern template
 struct Hamming_compute_avx2_1_16<1> ;
 extern template
@@ -498,3 +512,5 @@ extern template
 struct Hamming_compute_avx2_3_32<512> ;
 extern template
 struct Hamming_compute_avx2_3_32<1024> ;
+
+#endif

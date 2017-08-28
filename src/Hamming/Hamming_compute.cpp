@@ -67,6 +67,8 @@ struct Hamming_compute_scalar_32<512> ;
 template
 struct Hamming_compute_scalar_32<1024> ;
 
+#ifdef __SSE4_2__
+
 template
 struct Hamming_compute_sse42_1_16<1> ;
 template
@@ -205,6 +207,10 @@ struct Hamming_compute_sse42_3_32<512> ;
 template
 struct Hamming_compute_sse42_3_32<1024> ;
 
+#endif
+
+#ifdef __AVX2__
+
 template
 struct Hamming_compute_avx2_1_16<1> ;
 template
@@ -342,3 +348,5 @@ template
 struct Hamming_compute_avx2_3_32<512> ;
 template
 struct Hamming_compute_avx2_3_32<1024> ;
+
+#endif

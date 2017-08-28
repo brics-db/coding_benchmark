@@ -35,31 +35,6 @@ void printResults(
     for (auto & v : results) {
         maxPos = std::max(maxPos, v.size());
     }
-    std::vector<double> baseEncode(maxPos);
-    std::vector<double> baseCheck(maxPos);
-    std::vector<double> baseArithmetic(maxPos);
-    std::vector<double> baseArithmeticChecked(maxPos);
-    std::vector<double> baseAggregate(maxPos);
-    std::vector<double> baseAggregateChecked(maxPos);
-    std::vector<double> baseReencodeChecked(maxPos);
-    std::vector<double> baseDecode(maxPos);
-    std::vector<double> baseDecodeChecked(maxPos);
-
-    if (doRelative) {
-        // copy results
-        for (size_t i = 0; i < maxPos; ++i) {
-            auto & r = results[0][i];
-            baseEncode[i] = static_cast<double>(r.encode.nanos);
-            baseCheck[i] = static_cast<double>(r.check.nanos);
-            baseArithmetic[i] = static_cast<double>(r.arithmetic.nanos);
-            baseArithmeticChecked[i] = static_cast<double>(r.arithmeticChecked.nanos);
-            baseAggregate[i] = static_cast<double>(r.aggregate.nanos);
-            baseAggregateChecked[i] = static_cast<double>(r.aggregateChecked.nanos);
-            baseReencodeChecked[i] = static_cast<double>(r.reencodeChecked.nanos);
-            baseDecode[i] = static_cast<double>(r.decode.nanos);
-            baseDecodeChecked[i] = static_cast<double>(r.decodeChecked.nanos);
-        }
-    }
 
     // The following does pretty-print everything so that it can be easily used as input for gnuplot & co.
 
@@ -320,10 +295,16 @@ void printResults(
             if (isEnc) {
                 std::cout << ',';
                 if (pos < v.size() && v[pos].encode.isExecuted && v[pos].encode.error.empty()) {
-                    if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].encode.nanos) / baseEncode[pos]);
-                    else
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].encode.nanos) / x.reference->encode.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
                         std::cout << v[pos].encode.nanos;
+                    }
                 }
             }
         }
@@ -331,10 +312,16 @@ void printResults(
             if (isCheck) {
                 std::cout << ',';
                 if (pos < v.size() && v[pos].check.isExecuted && v[pos].check.error.empty()) {
-                    if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].check.nanos) / baseCheck[pos]);
-                    else
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].check.nanos) / x.reference->check.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
                         std::cout << v[pos].check.nanos;
+                    }
                 }
             }
         }
@@ -342,10 +329,16 @@ void printResults(
             if (isArith) {
                 std::cout << ',';
                 if (pos < v.size() && v[pos].arithmetic.isExecuted && v[pos].arithmetic.error.empty()) {
-                    if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].arithmetic.nanos) / baseArithmetic[pos]);
-                    else
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].arithmetic.nanos) / x.reference->arithmetic.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
                         std::cout << v[pos].arithmetic.nanos;
+                    }
                 }
             }
         }
@@ -353,10 +346,16 @@ void printResults(
             if (isArithChk) {
                 std::cout << ',';
                 if (pos < v.size() && v[pos].arithmeticChecked.isExecuted && v[pos].arithmeticChecked.error.empty()) {
-                    if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].arithmeticChecked.nanos) / baseArithmeticChecked[pos]);
-                    else
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].arithmeticChecked.nanos) / x.reference->arithmeticChecked.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
                         std::cout << v[pos].arithmeticChecked.nanos;
+                    }
                 }
             }
         }
@@ -364,10 +363,16 @@ void printResults(
             if (isAggr) {
                 std::cout << ',';
                 if (pos < v.size() && v[pos].aggregate.isExecuted && v[pos].aggregate.error.empty()) {
-                    if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].aggregate.nanos) / baseAggregate[pos]);
-                    else
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].aggregate.nanos) / x.reference->aggregate.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
                         std::cout << v[pos].aggregate.nanos;
+                    }
                 }
             }
         }
@@ -375,10 +380,16 @@ void printResults(
             if (isAggrChk) {
                 std::cout << ',';
                 if (pos < v.size() && v[pos].aggregateChecked.isExecuted && v[pos].aggregateChecked.error.empty()) {
-                    if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].aggregateChecked.nanos) / baseAggregateChecked[pos]);
-                    else
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].aggregateChecked.nanos) / x.reference->aggregateChecked.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
                         std::cout << v[pos].aggregateChecked.nanos;
+                    }
                 }
             }
         }
@@ -386,10 +397,16 @@ void printResults(
             if (isReencChk) {
                 std::cout << ',';
                 if (pos < v.size() && v[pos].reencodeChecked.isExecuted && v[pos].reencodeChecked.error.empty()) {
-                    if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].reencodeChecked.nanos) / baseReencodeChecked[pos]);
-                    else
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].reencodeChecked.nanos) / x.reference->reencodeChecked.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
                         std::cout << v[pos].reencodeChecked.nanos;
+                    }
                 }
             }
         }
@@ -397,10 +414,16 @@ void printResults(
             if (isDec) {
                 std::cout << ',';
                 if (pos < v.size() && v[pos].decode.isExecuted && v[pos].decode.error.empty()) {
-                    if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].decode.nanos) / baseDecode[pos]);
-                    else
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].decode.nanos) / x.reference->decode.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
                         std::cout << v[pos].decode.nanos;
+                    }
                 }
             }
         }
@@ -408,10 +431,16 @@ void printResults(
             if (isDecChk) {
                 std::cout << ',';
                 if (pos < v.size() && v[pos].decodeChecked.isExecuted && v[pos].decodeChecked.error.empty()) {
-                    if (doRelative)
-                        std::cout << (static_cast<double>(v[pos].decodeChecked.nanos) / baseDecodeChecked[pos]);
-                    else
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].decodeChecked.nanos) / x.reference->decodeChecked.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
                         std::cout << v[pos].decodeChecked.nanos;
+                    }
                 }
             }
         }

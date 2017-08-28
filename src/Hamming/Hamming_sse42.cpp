@@ -21,6 +21,8 @@
 
 #include <Hamming/Hamming_sse42.hpp>
 
+#ifdef __SSE4_2__
+
 /*
  * For the following algorithms, see
  * https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
@@ -321,3 +323,5 @@ template
 struct Hamming_sse42_32<512> ;
 template
 struct Hamming_sse42_32<1024> ;
+
+#endif

@@ -58,6 +58,8 @@ struct Hamming_compute_scalar :
     }
 };
 
+#ifdef __SSE4_2__
+
 template<typename DATAIN, size_t UNROLL>
 struct Hamming_compute_sse42_1 :
         public Test<DATAIN, hamming_t<DATAIN, __m128i >>,
@@ -187,6 +189,10 @@ struct Hamming_compute_sse42_3 :
     }
 };
 
+#endif
+
+#ifdef __AVX2__
+
 template<typename DATAIN, size_t UNROLL>
 struct Hamming_compute_avx2_1 :
         public Test<DATAIN, hamming_t<DATAIN, __m256i >>,
@@ -315,3 +321,5 @@ struct Hamming_compute_avx2_3 :
         }
     }
 };
+
+#endif

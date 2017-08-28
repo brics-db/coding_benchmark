@@ -3,9 +3,9 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -77,7 +77,7 @@ int main(
 
 #define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
 
-#define TestCase5(type, name, bufRawdata, bufEncoded, bufResult) \
+#define TestCase6(vecTestInfos, type, name, bufRawdata, bufEncoded, bufResult) \
     do { \
         std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
         vecTestInfos.emplace_back(); \
@@ -87,7 +87,18 @@ int main(
         std::clog << '#' << std::endl; \
     } while (0)
 
-#define TestCase7(type, name, bufRawdata, bufEncoded, bufResult, A, AInv) \
+#define TestCase7(vecTestInfos, type, name, bufRawdata, bufEncoded, bufResult, ref) \
+    do { \
+        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
+        vecTestInfos.emplace_back(); \
+        auto & vec = *vecTestInfos.rbegin(); \
+        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult); \
+        std::clog << '#' << std::endl; \
+        setTestInfosReference(vec, ref); \
+    } while (0)
+
+#define TestCase8(vecTestInfos, type, name, bufRawdata, bufEncoded, bufResult, A, AInv) \
     do { \
         std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
         vecTestInfos.emplace_back(); \
@@ -95,6 +106,18 @@ int main(
         vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
         ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult, A, AInv); \
         std::clog << '#' << std::endl; \
+        setTestInfosReference(vec, ref); \
+    } while (0)
+
+#define TestCase9(vecTestInfos, type, name, bufRawdata, bufEncoded, bufResult, ref, A, AInv) \
+    do { \
+        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
+        vecTestInfos.emplace_back(); \
+        auto & vec = *vecTestInfos.rbegin(); \
+        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult, A, AInv); \
+        std::clog << '#' << std::endl; \
+        setTestInfosReference(vec, ref); \
     } while (0)
 
     TestConfiguration testConfig(iterations);
@@ -103,54 +126,60 @@ int main(
     WarmUp(CopyTest16, "Copy", bufRawdata16, bufEncoded16, bufResult16);
 
     std::clog << "# 16-bit Baseline (memcpy / memcmp) test:" << std::endl;
-    TestCase(CopyTest16, "Copy", bufRawdata16, bufEncoded16, bufResult16);
+    TestCase(vecTestInfos, CopyTest16, "Copy", bufRawdata16, bufEncoded16, bufResult16);
+    auto & ref = *vecTestInfos.rbegin();
 
     // 16-bit data sequential tests
     std::clog << "# 16-bit scalar tests:" << std::endl;
-    TestCase(XOR_scalar_16_16, "XOR Scalar", bufRawdata16, bufEncoded16, bufResult16);
-    TestCase(AN_scalar_16_32_u_divmod, "AN Scalar U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
-    TestCase(AN_scalar_16_32_s_divmod, "AN Scalar S DivMod", bufRawdata16, bufEncoded16, bufResult16, (static_cast<int32_t>(AUser)), (static_cast<int32_t>(AUserInv)));
-    TestCase(AN_scalar_16_32_u_inv, "AN Scalar U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
-    TestCase(AN_scalar_16_32_s_inv, "AN Scalar S Inv", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(Hamming_scalar_16, "Hamming Scalar", bufRawdata16, bufEncoded16, bufResult16);
+    TestCase(vecTestInfos, XOR_scalar_16_16, "XOR Scalar", bufRawdata16, bufEncoded16, bufResult16, ref);
+    TestCase(vecTestInfos, AN_scalar_16_32_u_divmod, "AN Scalar U DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
+    TestCase(vecTestInfos, AN_scalar_16_32_s_divmod, "AN Scalar S DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, (static_cast<int32_t>(AUser)), (static_cast<int32_t>(AUserInv)));
+    TestCase(vecTestInfos, AN_scalar_16_32_u_inv, "AN Scalar U Inv", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
+    TestCase(vecTestInfos, AN_scalar_16_32_s_inv, "AN Scalar S Inv", bufRawdata16, bufEncoded16, bufResult16, ref, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(vecTestInfos, Hamming_scalar_16, "Hamming Scalar", bufRawdata16, bufEncoded16, bufResult16, ref);
 
+#ifdef __SSE4_2__
     // 16-bit data vectorized tests
     std::clog << "# 16-bit SSE4.2 tests:" << std::endl;
-    TestCase(XOR_sse42_8x16_8x16, "XOR SSE4.2", bufRawdata16, bufEncoded16, bufResult16);
-    TestCase(AN_sse42_8x16_8x32_u_divmod, "AN SSE4.2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
-    TestCase(AN_sse42_8x16_8x32_s_divmod, "AN SSE4.2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(AN_sse42_8x16_8x32_u_inv, "AN SSE4.2 U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
-    TestCase(AN_sse42_8x16_8x32_s_inv, "AN SSE4.2 S Inv", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(Hamming_sse42_16, "Hamming SSE4.2", bufRawdata16, bufEncoded16, bufResult16);
+    TestCase(vecTestInfos, XOR_sse42_8x16_8x16, "XOR SSE4.2", bufRawdata16, bufEncoded16, bufResult16, ref);
+    TestCase(vecTestInfos, AN_sse42_8x16_8x32_u_divmod, "AN SSE4.2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
+    TestCase(vecTestInfos, AN_sse42_8x16_8x32_s_divmod, "AN SSE4.2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(vecTestInfos, AN_sse42_8x16_8x32_u_inv, "AN SSE4.2 U Inv", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
+    TestCase(vecTestInfos, AN_sse42_8x16_8x32_s_inv, "AN SSE4.2 S Inv", bufRawdata16, bufEncoded16, bufResult16, ref, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(vecTestInfos, Hamming_sse42_16, "Hamming SSE4.2", bufRawdata16, bufEncoded16, bufResult16, ref);
+#endif
 
 #ifdef __AVX2__
     std::clog << "# 16-bit AVX2 tests:" << std::endl;
-    TestCase(XOR_avx2_16x16_16x16, "XOR AVX2", bufRawdata16, bufEncoded16, bufResult16);
-    TestCase(AN_avx2_16x16_16x32_u_divmod, "AN AVX2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
-    TestCase(AN_avx2_16x16_16x32_s_divmod, "AN AVX2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(AN_avx2_16x16_16x32_u_inv, "AN AVX2 U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv);
-    TestCase(AN_avx2_16x16_16x32_s_inv, "AN AVX2 S Inv", bufRawdata16, bufEncoded16, bufResult16, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(Hamming_avx2_16, "Hamming AVX2", bufRawdata16, bufEncoded16, bufResult16);
+    TestCase(vecTestInfos, XOR_avx2_16x16_16x16, "XOR AVX2", bufRawdata16, bufEncoded16, bufResult16, ref);
+    TestCase(vecTestInfos, AN_avx2_16x16_16x32_u_divmod, "AN AVX2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
+    TestCase(vecTestInfos, AN_avx2_16x16_16x32_s_divmod, "AN AVX2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(vecTestInfos, AN_avx2_16x16_16x32_u_inv, "AN AVX2 U Inv", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
+    TestCase(vecTestInfos, AN_avx2_16x16_16x32_s_inv, "AN AVX2 S Inv", bufRawdata16, bufEncoded16, bufResult16, ref, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
+    TestCase(vecTestInfos, Hamming_avx2_16, "Hamming AVX2", bufRawdata16, bufEncoded16, bufResult16, ref);
 #endif
 
 #ifdef TEST32
     std::clog << "# 32-bit Baseline (memcpy / memcmp) test:" << std::endl;
-    TestCase(CopyTest32, "Copy", bufRawdata32, bufEncoded32, bufResult32);
+    TestCase(vecTestInfos, CopyTest32, "Copy", bufRawdata32, bufEncoded32, bufResult32);
+    ref = *vecTestInfos.rbegin();
 
     std::clog << "# 32-bit Scalar tests:" << std::endl;
     // 32-bit data sequential tests
-    TestCase(XOR_seq_32_32, "XOR Scalar", bufRawdata32, bufEncoded32, bufResult32);
-    TestCase(Hamming_seq_32, "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32);
+    TestCase(vecTestInfos, XOR_seq_32_32, "XOR Scalar", bufRawdata32, bufEncoded32, bufResult32, ref);
+    TestCase(vecTestInfos, Hamming_seq_32, "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32, ref);
 
+#ifdef __SSE4_2__
     std::clog << "# 32-bit SSE4.2 tests:" << std::endl;
     // 32-bit data vectorized tests
-    TestCase(XOR_sse42_4x32_4x32, "XOR SSE4.2", bufRawdata32, bufEncoded32, bufResult32);
-    TestCase(Hamming_sse42_32, "Hamming SSE4.2", bufRawdata32, bufEncoded32, bufResult32);
+    TestCase(vecTestInfos, XOR_sse42_4x32_4x32, "XOR SSE4.2", bufRawdata32, bufEncoded32, bufResult32, ref);
+    TestCase(vecTestInfos, Hamming_sse42_32, "Hamming SSE4.2", bufRawdata32, bufEncoded32, bufResult32, ref);
+#endif
 
 #ifdef __AVX2__
     std::clog << "# 32-bit AVX2 tests:" << std::endl;
-    TestCase(XOR_avx2_8x32_8x32, "XOR AVX2", bufRawdata32, bufEncoded32, bufResult32);
-    TestCase(Hamming_avx2_32, "Hamming AVX2", bufRawdata32, bufEncoded32, bufResult32);
+    TestCase(vecTestInfos, XOR_avx2_8x32_8x32, "XOR AVX2", bufRawdata32, bufEncoded32, bufResult32, ref);
+    TestCase(vecTestInfos, Hamming_avx2_32, "Hamming AVX2", bufRawdata32, bufEncoded32, bufResult32, ref);
 #endif
 #endif
 

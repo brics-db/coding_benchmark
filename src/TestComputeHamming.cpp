@@ -20,6 +20,7 @@
  */
 
 #include <iostream>
+#include <sstream>
 
 #include <Util/AlignedBlock.hpp>
 #include <Util/Stopwatch.hpp>
@@ -48,6 +49,17 @@
         std::clog << '#' << std::endl; \
     } while (0)
 
+#define TestCase5(type, name, bufRawdata, bufResult, ref) \
+    do { \
+        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
+        vecTestInfos.emplace_back(); \
+        auto & vec = *vecTestInfos.rbegin(); \
+        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
+        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufResult, bufResult); \
+        std::clog << '#' << std::endl; \
+        setTestInfosReference(*vecTestInfos.rbegin(), ref); \
+    } while (0)
+
 int main() {
     const size_t rawDataSize = 1024 * 1024; // size in BYTES
     const size_t iterations = 10;
@@ -61,25 +73,26 @@ int main() {
     DataGenerationConfiguration dataGenConfig;
 
     TestCase(Hamming_compute_scalar_16, "Scalar 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_scalar_32, "Scalar 32", bufRawdata32, bufResult);
+    auto & ref = *vecTestInfos.rbegin();
+    TestCase(Hamming_compute_sse42_1_16, "SSE4.2 1 16", bufRawdata16, bufResult, ref);
+    TestCase(Hamming_compute_sse42_2_16, "SSE4.2 2 16", bufRawdata16, bufResult, ref);
+    TestCase(Hamming_compute_sse42_3_16, "SSE4.2 3 16", bufRawdata16, bufResult, ref);
+#ifdef __AVX2__
+    TestCase(Hamming_compute_avx2_1_16, "AVX2 1 16", bufRawdata16, bufResult, ref);
+    TestCase(Hamming_compute_avx2_2_16, "AVX2 2 16", bufRawdata16, bufResult, ref);
+    TestCase(Hamming_compute_avx2_3_16, "AVX2 3 16", bufRawdata16, bufResult, ref);
+#endif
 
-    TestCase(Hamming_compute_sse42_1_16, "SSE4.2 1 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_sse42_1_32, "SSE4.2 1 32", bufRawdata32, bufResult);
-
-    TestCase(Hamming_compute_sse42_2_16, "SSE4.2 2 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_sse42_2_32, "SSE4.2 2 32", bufRawdata32, bufResult);
-
-    TestCase(Hamming_compute_sse42_3_16, "SSE4.2 3 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_sse42_3_32, "SSE4.2 3 32", bufRawdata32, bufResult);
-
-    TestCase(Hamming_compute_avx2_1_16, "AVX2 1 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_avx2_1_32, "AVX2 1 32", bufRawdata32, bufResult);
-
-    TestCase(Hamming_compute_avx2_2_16, "AVX2 2 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_avx2_2_32, "AVX2 2 32", bufRawdata32, bufResult);
-
-    TestCase(Hamming_compute_avx2_3_16, "AVX2 3 16", bufRawdata16, bufResult);
-    TestCase(Hamming_compute_avx2_3_32, "AVX2 3 32", bufRawdata32, bufResult);
+    TestCase(Hamming_compute_scalar_32, "Scalar 32", bufRawdata32, bufResult, ref);
+    ref = *vecTestInfos.rbegin();
+    TestCase(Hamming_compute_sse42_1_32, "SSE4.2 1 32", bufRawdata32, bufResult, ref);
+    TestCase(Hamming_compute_sse42_2_32, "SSE4.2 2 32", bufRawdata32, bufResult, ref);
+    TestCase(Hamming_compute_sse42_3_32, "SSE4.2 3 32", bufRawdata32, bufResult, ref);
+#ifdef __AVX2__
+    TestCase(Hamming_compute_avx2_1_32, "AVX2 1 32", bufRawdata32, bufResult, ref);
+    TestCase(Hamming_compute_avx2_2_32, "AVX2 2 32", bufRawdata32, bufResult, ref);
+    TestCase(Hamming_compute_avx2_3_32, "AVX2 3 32", bufRawdata32, bufResult, ref);
+#endif
 
     printResults<false>(vecTestInfos, OutputConfiguration(false, false));
     std::cout << "\n\n";

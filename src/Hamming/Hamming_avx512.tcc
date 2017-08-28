@@ -20,16 +20,14 @@
 
 #pragma once
 
-#ifdef __AVX2__
-
 #include <Test.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Hamming/Hamming_scalar.hpp>
 #include <Util/SIMD.hpp>
 
-extern template struct hamming_t<uint16_t, __m256i > ;
-extern template struct hamming_t<uint32_t, __m256i > ;
+extern template struct hamming_t<uint16_t, __m512i > ;
+extern template struct hamming_t<uint32_t, __m512i > ;
 
 template<typename DATAIN, size_t UNROLL>
 struct Hamming_avx2 :
@@ -275,5 +273,3 @@ struct Hamming_avx2 :
         }
     }
 };
-
-#endif
