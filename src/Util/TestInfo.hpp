@@ -16,7 +16,13 @@
 
 #include <string>
 #include <vector>
+#if __has_include(<optional>)
 #include <optional>
+#elif __has_include(<experimental/optional>)
+#include <optional>
+#else
+#error "<optional> include not found!"
+#endif
 
 #include "Stopwatch.hpp"
 

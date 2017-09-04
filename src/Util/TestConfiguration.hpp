@@ -21,7 +21,18 @@
 
 #pragma once
 
+#if __has_include(<variant>)
 #include <variant>
+#define nspvar std
+#elif __has_include(<experimental/variant>)
+#include <experimental/variant>
+#define nspvar std::experimental
+#elif __has_include(<boost/variant.hpp>)
+#include <boost/variant.hpp>
+#define nspvar boost
+#else
+#error "Neither of the includes <variant>, <experimental/variant>, nor <boost/variant> was found!"
+#endif
 
 struct BasicTestConfiguration {
     const size_t numIterations;
@@ -100,8 +111,8 @@ struct FilterConfiguration :
     };
     struct GT {
     };
-    typedef std::variant<LT, LE, EQ, NE, GE, GT> Mode1;
-    typedef std::variant<None, LT, LE, EQ, NE, GE, GT> Mode2;
+    typedef nspvar::variant<LT, LE, EQ, NE, GE, GT> Mode1;
+    typedef nspvar::variant<None, LT, LE, EQ, NE, GE, GT> Mode2;
     Mode1 mode1;
     size_t predicate1;
     Mode2 mode2;
@@ -140,7 +151,7 @@ struct ArithmeticConfiguration :
     };
     struct Div {
     };
-    typedef std::variant<Add, Sub, Mul, Div> Mode;
+    typedef nspvar::variant<Add, Sub, Mul, Div> Mode;
     Mode mode;
     size_t operand;
     ArithmeticConfiguration(
@@ -163,7 +174,7 @@ struct AggregateConfiguration :
     };
     struct Avg {
     };
-    typedef std::variant<Sum, Min, Max, Avg> Mode;
+    typedef nspvar::variant<Sum, Min, Max, Avg> Mode;
     Mode mode;
     AggregateConfiguration(
             const BasicTestConfiguration & config,

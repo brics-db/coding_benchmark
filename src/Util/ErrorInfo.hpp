@@ -16,7 +16,15 @@
 
 #include <exception>
 #include <cstddef>
+#if __has_include(<optional>)
 #include <optional>
+#define nspopt std
+#elif __has_include(<experimental/optional>)
+#include <experimental/optional>
+#define nspopt std::experimental
+#else
+#error "Neither includes <optional> nor <experimental/optional> found!"
+#endif
 
 class ErrorInfo : public std::exception {
 
@@ -25,7 +33,7 @@ public:
     size_t line;
     size_t i;
     size_t iter;
-    std::optional<std::string> message;
+    nspopt::optional<std::string> message;
 
     ErrorInfo(
             const char* file,

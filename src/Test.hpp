@@ -20,8 +20,17 @@
 #include <string>
 #include <cstring>
 #include <cstdint>
+
+#if __has_include(<optional>)
 #include <optional>
-#include <variant>
+#define nspopt std
+#elif __has_include(<experimental/optional>)
+#include <experimental/optional>
+#define nspopt std::experimental
+#else
+#error "Neither of the includes <optional>, or <experimental/optional> was found!"
+#endif
+
 #include <type_traits>
 #include <sstream>
 
@@ -36,10 +45,10 @@
 #include <Util/TestConfiguration.hpp>
 
 struct DataGenerationConfiguration {
-    const std::optional<size_t> numEffectiveLSBs;
+    const nspopt::optional<size_t> numEffectiveLSBs;
 
     DataGenerationConfiguration()
-            : numEffectiveLSBs(std::nullopt) {
+            : numEffectiveLSBs(nspopt::nullopt) {
     }
 
     DataGenerationConfiguration(
