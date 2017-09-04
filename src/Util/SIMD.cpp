@@ -93,16 +93,10 @@ __m128i SIMD<__m128i, uint16_t>::add(
 
 uint64_t SIMD<__m128i, uint16_t>::popcount(
         __m128i a) {
-    auto pattern1 = _mm_set1_epi16(0x5555);
-    auto pattern2 = _mm_set1_epi16(0x3333);
-    auto pattern3 = _mm_set1_epi16(0x0F0F);
-    auto pattern4 = _mm_set1_epi16(0x0101);
+    auto mask = _mm_set1_epi16(0x0101);
     auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301);
-    auto temp = _mm_sub_epi16(a, _mm_and_si128(_mm_srli_epi16(a, 1), pattern1));
-    temp = _mm_add_epi16(_mm_and_si128(temp, pattern2), _mm_and_si128(_mm_srli_epi16(temp, 2), pattern2));
-    temp = _mm_and_si128(_mm_add_epi16(temp, _mm_srli_epi16(temp, 4)), pattern3);
-    temp = _mm_mullo_epi16(temp, pattern4);
-    return static_cast<uint64_t>(_mm_extract_epi64(_mm_shuffle_epi8(temp, shuffle), 0));
+    auto popcount8 = SIMD<__m128i, uint8_t>::popcount(a);
+    return _mm_extract_epi64(_mm_shuffle_epi8(_mm_mullo_epi16(popcount8, mask), shuffle), 0);
 }
 
 uint64_t SIMD<__m128i, uint16_t>::popcount2(
@@ -151,16 +145,10 @@ __m128i SIMD<__m128i, uint32_t>::add(
 
 uint32_t SIMD<__m128i, uint32_t>::popcount(
         __m128i a) {
-    auto pattern1 = _mm_set1_epi32(0x55555555);
-    auto pattern2 = _mm_set1_epi32(0x33333333);
-    auto pattern3 = _mm_set1_epi32(0x0F0F0F0F);
-    auto pattern4 = _mm_set1_epi32(0x01010101);
+    auto mask = _mm_set1_epi32(0x01010101);
     auto shuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
-    auto temp = _mm_sub_epi32(a, _mm_and_si128(_mm_srli_epi32(a, 1), pattern1));
-    temp = _mm_add_epi32(_mm_and_si128(temp, pattern2), _mm_and_si128(_mm_srli_epi32(temp, 2), pattern2));
-    temp = _mm_and_si128(_mm_add_epi32(temp, _mm_srli_epi32(temp, 4)), pattern3);
-    temp = _mm_mullo_epi32(temp, pattern4);
-    return static_cast<uint32_t>(_mm_extract_epi32(_mm_shuffle_epi8(temp, shuffle), 0));
+    auto popcount8 = SIMD<__m128i, uint8_t>::popcount(a);
+    return _mm_extract_epi32(_mm_shuffle_epi8(_mm_mullo_epi32(popcount8, mask), shuffle), 0);
 }
 
 uint32_t SIMD<__m128i, uint32_t>::popcount2(
@@ -205,21 +193,16 @@ __m128i SIMD<__m128i, uint64_t>::add(
 
 uint16_t SIMD<__m128i, uint64_t>::popcount(
         __m128i a) {
-    auto pattern1 = _mm_set1_epi64x(0x5555555555555555);
-    auto pattern2 = _mm_set1_epi64x(0x3333333333333333);
-    auto pattern3 = _mm_set1_epi64x(0x0F0F0F0F0F0F0F0F);
-    auto pattern4 = _mm_set1_epi64x(0x0101010101010101);
-    auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFF0F07);
-    auto temp = _mm_sub_epi32(a, _mm_and_si128(_mm_srli_epi32(a, 1), pattern1));
-    temp = _mm_add_epi32(_mm_and_si128(temp, pattern2), _mm_and_si128(_mm_srli_epi32(temp, 2), pattern2));
-    temp = _mm_and_si128(_mm_add_epi32(temp, _mm_srli_epi32(temp, 4)), pattern3);
-    temp = _mm_mullo_epi32(temp, pattern4);
-    return static_cast<uint16_t>(_mm_extract_epi16(_mm_shuffle_epi8(temp, shuffle), 0));
+    uint64_t pattern = 0x0101010101010101ull;
+    auto popcount8 = SIMD<__m128i, uint8_t>::popcount(a);
+    return (static_cast<uint16_t>((_mm_extract_epi64(popcount8, 1) * pattern) >> 57) << 8) | static_cast<uint16_t>((_mm_extract_epi64(popcount8, 0) * pattern) >> 57);
 }
 
 uint16_t SIMD<__m128i, uint64_t>::popcount2(
         __m128i a) {
-    return (static_cast<uint16_t>(_mm_popcnt_u64(_mm_extract_epi64(a, 1))) << 8) | static_cast<uint16_t>(_mm_popcnt_u64(_mm_extract_epi64(a, 0)));
+    uint64_t pattern = 0x0101010101010101ull;
+    auto popcount8 = SIMD<__m128i, uint8_t>::popcount2(a);
+    return (static_cast<uint16_t>((_mm_extract_epi64(popcount8, 1) * pattern) >> 57) << 8) | static_cast<uint16_t>((_mm_extract_epi64(popcount8, 0) * pattern) >> 57);
 }
 
 uint16_t SIMD<__m128i, uint64_t>::popcount3(
