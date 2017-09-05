@@ -54,7 +54,7 @@ struct Hamming_avx2 :
                     dataOut->store(*data);
                 }
             }
-            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+            for (; data <= (dataEnd - 1); ++data, ++dataOut) {
                 dataOut->store(*data);
             }
             if (data < dataEnd) {
@@ -84,19 +84,19 @@ struct Hamming_avx2 :
             while (i <= (numValues - VALUES_PER_UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++data) {
                     if (!data->isValid()) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
             }
             for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++data) {
                 if (!data->isValid()) {
-                    throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
             }
             if (i < numValues) {
                 for (auto data2 = reinterpret_cast<hamming_scalar_t*>(data); i < numValues; ++i, ++data2) {
                     if (!data2->isValid()) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, config.numIterations);
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
             }
@@ -132,11 +132,11 @@ struct Hamming_avx2 :
             auto dataIn = test.bufEncoded.template begin<hamming_avx2_t>();
             auto dataOut = test.bufResult.template begin<hamming_avx2_t>();
             while (i <= VALUES_PER_UNROLL) {
-                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                     dataOut->store(SIMD<__m256i, DATAIN>::add(dataIn->data, mmOperand));
                 }
             }
-            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                 dataOut->store(SIMD<__m256i, DATAIN>::add(dataIn->data, mmOperand));
             }
             if (i < numValues) {
@@ -195,7 +195,7 @@ struct Hamming_avx2 :
             auto dataIn = test.bufEncoded.template begin<hamming_avx2_t>();
             auto dataOut = test.bufResult.template begin<hamming_avx2_t>();
             while (i <= VALUES_PER_UNROLL) {
-                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                     auto tmp = dataIn->data;
                     if (!dataIn->isValid()) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -203,7 +203,7 @@ struct Hamming_avx2 :
                     dataOut->store(SIMD<__m256i, DATAIN>::add(tmp, mmOperand));
                 }
             }
-            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
+            for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                 auto tmp = dataIn->data;
                 if (!dataIn->isValid()) {
                     throw ErrorInfo(__FILE__, __LINE__, i, iteration);

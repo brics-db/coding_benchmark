@@ -39,13 +39,14 @@
 #include <Output.hpp>
 
 int main() {
-    const constexpr size_t rawDataSize = 1024 * 1024; // size in BYTES
+    const constexpr size_t numElements = 1000001;
     const constexpr size_t iterations = 10;
     const constexpr size_t UNROLL_LO = 1;
     const constexpr size_t UNROLL_HI = 1024;
-    AlignedBlock bufRawdata16(2 * rawDataSize, 64);
-    AlignedBlock bufRawdata32(4 * rawDataSize, 64);
-    AlignedBlock bufResult(16 * rawDataSize, 64);
+
+    AlignedBlock bufRawdata16(numElements * sizeof(uint16_t), 64);
+    AlignedBlock bufRawdata32(numElements * sizeof(uint32_t), 64);
+    AlignedBlock bufResult(numElements * sizeof(uint64_t), 64);
     std::vector<std::vector<TestInfos>> vecTestInfos;
     vecTestInfos.reserve(32); // Reserve space to store sub-vectors!
     TestConfiguration testConfig(iterations);

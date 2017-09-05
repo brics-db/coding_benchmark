@@ -3,16 +3,16 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* 
+/*
  * File:   CopyTest.hpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
@@ -47,19 +47,19 @@ struct CopyTest2 :
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+            const size_t numValues = this->getNumValues();
             size_t i = 0;
-            auto dataIn = this->bufRaw.template begin<DATARAW>();
-            auto dataOut = this->bufEncoded.template begin<DATAENC>();
+            auto dataRaw = this->bufRaw.template begin<DATARAW>();
+            auto dataEnc = this->bufEncoded.template begin<DATAENC>();
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                    *dataOut = static_cast<DATAENC>(*dataIn);
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataEnc, ++dataRaw) {
+                    *dataEnc = static_cast<DATAENC>(*dataRaw);
                 }
             }
             // remaining numbers
-            for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                *dataOut = static_cast<DATAENC>(*dataIn);
+            for (; i < numValues; ++i, ++dataEnc, ++dataRaw) {
+                *dataEnc = static_cast<DATAENC>(*dataRaw);
             }
         }
     }
@@ -72,20 +72,23 @@ struct CopyTest2 :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+            const size_t numValues = this->getNumValues();
             size_t i = 0;
-            auto dataOut = this->bufEncoded.template begin<DATAENC>();
-            for (; i <= (numValues - UNROLL); i += UNROLL) {
+            auto dataRaw = this->bufRaw.template begin<DATARAW>();
+            auto dataEnc = this->bufEncoded.template begin<DATAENC>();
+            while (i <= (numValues - UNROLL)) {
                 // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut) {
-                    volatile DATAENC value = *dataOut;
-                    (void) value;
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataRaw, ++dataEnc, ++i) {
+                    if (*dataRaw != *dataEnc) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
                 }
             }
             // remaining numbers
-            for (; i < numValues; ++i, ++dataOut) {
-                volatile DATAENC value = *dataOut;
-                (void) value;
+            for (; i < numValues; ++i, ++dataEnc, ++dataRaw) {
+                if (*dataRaw != *dataEnc) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                }
             }
         }
     }
@@ -98,21 +101,26 @@ struct CopyTest2 :
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+            const size_t numValues = this->getNumValues();
             size_t i = 0;
+            auto dataRaw = this->bufRaw.template begin<DATARAW>();
             auto dataEnc = this->bufEncoded.template begin<DATAENC>();
-            auto dataOut = this->bufResult.template begin<DATAENC>();
-            for (; i <= (numValues - UNROLL); i += UNROLL) {
+            auto dataRes = this->bufResult.template begin<DATAENC>();
+            while (i <= (numValues - UNROLL)) {
                 // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataEnc) {
-                    volatile DATAENC value = *dataEnc;
-                    *dataOut = static_cast<DATAENC>(value);
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataRaw, ++dataEnc, ++dataRes, ++i) {
+                    if (*dataRaw != *dataEnc) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    *dataRes = static_cast<DATAENC>(*dataEnc);
                 }
             }
             // remaining numbers
-            for (; i < numValues; ++i, ++dataEnc) {
-                volatile DATAENC value = *dataEnc;
-                *dataEnc = static_cast<DATAENC>(value);
+            for (; i < numValues; ++i, ++dataRaw, ++dataEnc, ++dataRes) {
+                if (*dataRaw != *dataEnc) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                }
+                *dataRes = static_cast<DATAENC>(*dataEnc);
             }
         }
     }
@@ -125,19 +133,19 @@ struct CopyTest2 :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+            const size_t numValues = this->getNumValues();
             size_t i = 0;
             auto dataEnc = this->bufEncoded.template begin<DATAENC>();
-            auto dataDec = this->bufResult.template begin<DATARAW>();
+            auto dataRes = this->bufResult.template begin<DATARAW>();
             for (; i <= (numValues - UNROLL); i += UNROLL) {
                 // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataDec, ++dataEnc) {
-                    *dataDec = static_cast<DATARAW>(*dataEnc);
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataRes, ++dataEnc) {
+                    *dataRes = static_cast<DATARAW>(*dataEnc);
                 }
             }
             // remaining numbers
-            for (; i < numValues; ++i, ++dataDec, ++dataEnc) {
-                *dataDec = static_cast<DATARAW>(*dataEnc);
+            for (; i < numValues; ++i, ++dataRes, ++dataEnc) {
+                *dataRes = static_cast<DATARAW>(*dataEnc);
             }
         }
     }
@@ -150,26 +158,26 @@ struct CopyTest2 :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+            const size_t numValues = this->getNumValues();
             size_t i = 0;
             auto dataRaw = this->bufRaw.template begin<DATARAW>();
             auto dataEnc = this->bufEncoded.template begin<DATAENC>();
             auto dataRes = this->bufResult.template begin<DATARAW>();
-            for (; i <= (numValues - UNROLL); i += UNROLL) {
+            while (i <= (numValues - UNROLL)) {
                 // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataRaw, ++dataRes, ++dataEnc) {
-                    *dataRes = static_cast<DATARAW>(*dataEnc);
-                    if (*dataRaw != *dataRes) {
-                        throw ErrorInfo(__FILE__, __LINE__, dataEnc - this->bufEncoded.template begin<DATAENC>(), config.numIterations);
+                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataRaw, ++dataEnc, ++dataRes, ++i) {
+                    if (*dataRaw != *dataEnc) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
+                    *dataRes = static_cast<DATARAW>(*dataEnc);
                 }
             }
             // remaining numbers
-            for (; i < numValues; ++i, ++dataRes, ++dataEnc) {
-                *dataRes = static_cast<DATARAW>(*dataEnc);
-                if (*dataRaw != *dataRes) {
-                    throw ErrorInfo(__FILE__, __LINE__, dataEnc - this->bufEncoded.template begin<DATAENC>(), config.numIterations);
+            for (; i < numValues; ++i, ++dataRaw, ++dataEnc, ++dataRes) {
+                if (*dataRaw != *dataEnc) {
+                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
+                *dataRes = static_cast<DATARAW>(*dataEnc);
             }
         }
     }

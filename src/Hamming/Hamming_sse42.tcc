@@ -60,7 +60,7 @@ struct Hamming_sse42 :
                     dataOut->store(*data);
                 }
             }
-            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+            for (; data <= (dataEnd - 1); ++data, ++dataOut) {
                 dataOut->store(*data);
             }
             if (data < dataEnd) {
@@ -136,11 +136,11 @@ struct Hamming_sse42 :
             auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
             auto dataOut = test.bufResult.template begin<hamming_sse42_t>();
             while (i <= (numValues - VALUES_PER_UNROLL)) {
-                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                     dataOut->store(SIMD<__m128i, DATAIN>::add(dataIn->data, mmOperand));
                 }
             }
-            for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+            for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                 dataOut->store(SIMD<__m128i, DATAIN>::add(dataIn->data, mmOperand));
             }
             if (i < numValues) {
@@ -199,7 +199,7 @@ struct Hamming_sse42 :
             auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
             auto dataOut = test.bufResult.template begin<hamming_sse42_t>();
             while (i <= (numValues - VALUES_PER_UNROLL)) {
-                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
+                for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                     auto tmp = dataIn->data;
                     if (!dataIn->isValid()) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -207,7 +207,7 @@ struct Hamming_sse42 :
                     dataOut->store(SIMD<__m128i, DATAIN>::add(tmp, mmOperand));
                 }
             }
-            for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+            for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                 auto tmp = dataIn->data;
                 if (!dataIn->isValid()) {
                     throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -287,8 +287,7 @@ struct Hamming_sse42 :
             auto tmp = SIMD<__m128i, larger_t>::sum(mmTmp);
             if (i < numValues) {
                 auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                for (; i < numValues; ++i, ++dataIn2, ++dataOut2) {
+                for (; i < numValues; ++i, ++dataIn2) {
                     tmp += dataIn2->data;
                 }
             }
@@ -356,8 +355,7 @@ struct Hamming_sse42 :
             auto tmp = SIMD<__m128i, larger_t>::sum(mmTmp);
             if (i < numValues) {
                 auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                for (; i < numValues; ++i, ++dataIn2, ++dataOut2) {
+                for (; i < numValues; ++i, ++dataIn2) {
                     tmp += dataIn2->data;
                 }
             }

@@ -88,7 +88,7 @@ struct Hamming_compute_sse42_1 :
                     dataOut->store(*data);
                 }
             }
-            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+            for (; data <= (dataEnd - 1); ++data, ++dataOut) {
                 dataOut->store(*data);
             }
             if (data < dataEnd) {
@@ -131,7 +131,7 @@ struct Hamming_compute_sse42_2 :
                     dataOut->store2(*data);
                 }
             }
-            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+            for (; data <= (dataEnd - 1); ++data, ++dataOut) {
                 dataOut->store2(*data);
             }
             if (data < dataEnd) {
@@ -174,7 +174,7 @@ struct Hamming_compute_sse42_3 :
                     dataOut->store3(*data);
                 }
             }
-            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+            for (; data <= (dataEnd - 1); ++data, ++dataOut) {
                 dataOut->store3(*data);
             }
             if (data < dataEnd) {
@@ -221,7 +221,7 @@ struct Hamming_compute_avx2_1 :
                     dataOut->store(*data);
                 }
             }
-            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+            for (; data <= (dataEnd - 1); ++data, ++dataOut) {
                 dataOut->store(*data);
             }
             if (data < dataEnd) {
@@ -264,7 +264,7 @@ struct Hamming_compute_avx2_2 :
                     dataOut->store2(*data);
                 }
             }
-            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+            for (; data <= (dataEnd - 1); ++data, ++dataOut) {
                 dataOut->store2(*data);
             }
             if (data < dataEnd) {
@@ -307,7 +307,7 @@ struct Hamming_compute_avx2_3 :
                     dataOut->store3(*data);
                 }
             }
-            for (; data <= (dataEnd - 1); ++data, ++dataEnd) {
+            for (; data <= (dataEnd - 1); ++data, ++dataOut) {
                 dataOut->store3(*data);
             }
             if (data < dataEnd) {
