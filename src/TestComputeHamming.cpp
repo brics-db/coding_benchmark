@@ -32,66 +32,45 @@
 #include <Util/VFunc.hpp>
 #include <Util/ComputeNumRuns.hpp>
 #include <Util/ExpandTest.hpp>
+#include <Util/TestCase.hpp>
 
 #include <Hamming/Hamming_compute.hpp>
 
 #include <Output.hpp>
 
-#define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
-
-#define TestCase4(type, name, bufRawdata, bufResult) \
-    do { \
-        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
-        vecTestInfos.emplace_back(); \
-        auto & vec = *vecTestInfos.rbegin(); \
-        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufResult, bufResult); \
-        std::clog << '#' << std::endl; \
-    } while (0)
-
-#define TestCase5(type, name, bufRawdata, bufResult, ref) \
-    do { \
-        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
-        vecTestInfos.emplace_back(); \
-        auto & vec = *vecTestInfos.rbegin(); \
-        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufResult, bufResult); \
-        std::clog << '#' << std::endl; \
-        setTestInfosReference(*vecTestInfos.rbegin(), ref); \
-    } while (0)
-
 int main() {
-    const size_t rawDataSize = 1024 * 1024; // size in BYTES
-    const size_t iterations = 10;
-    const size_t UNROLL_LO = 1;
-    const size_t UNROLL_HI = 1024;
+    const constexpr size_t rawDataSize = 1024 * 1024; // size in BYTES
+    const constexpr size_t iterations = 10;
+    const constexpr size_t UNROLL_LO = 1;
+    const constexpr size_t UNROLL_HI = 1024;
     AlignedBlock bufRawdata16(2 * rawDataSize, 64);
     AlignedBlock bufRawdata32(4 * rawDataSize, 64);
     AlignedBlock bufResult(16 * rawDataSize, 64);
     std::vector<std::vector<TestInfos>> vecTestInfos;
+    vecTestInfos.reserve(32); // Reserve space to store sub-vectors!
     TestConfiguration testConfig(iterations);
     DataGenerationConfiguration dataGenConfig;
 
-    TestCase(Hamming_compute_scalar_16, "Scalar 16", bufRawdata16, bufResult);
-    auto & ref = *vecTestInfos.rbegin();
-    TestCase(Hamming_compute_sse42_1_16, "SSE4.2 1 16", bufRawdata16, bufResult, ref);
-    TestCase(Hamming_compute_sse42_2_16, "SSE4.2 2 16", bufRawdata16, bufResult, ref);
-    TestCase(Hamming_compute_sse42_3_16, "SSE4.2 3 16", bufRawdata16, bufResult, ref);
+    TestCase<Hamming_compute_scalar_16, UNROLL_LO, UNROLL_HI>("Hamming_compute_scalar_16", "Scalar 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
+    auto idx = vecTestInfos.size() - 1;
+    TestCase<Hamming_compute_sse42_1_16, UNROLL_LO, UNROLL_HI>("Hamming_compute_sse42_1_16", "SSE4.2 1 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<Hamming_compute_sse42_2_16, UNROLL_LO, UNROLL_HI>("Hamming_compute_sse42_2_16", "SSE4.2 2 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<Hamming_compute_sse42_3_16, UNROLL_LO, UNROLL_HI>("Hamming_compute_sse42_3_16", "SSE4.2 3 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #ifdef __AVX2__
-    TestCase(Hamming_compute_avx2_1_16, "AVX2 1 16", bufRawdata16, bufResult, ref);
-    TestCase(Hamming_compute_avx2_2_16, "AVX2 2 16", bufRawdata16, bufResult, ref);
-    TestCase(Hamming_compute_avx2_3_16, "AVX2 3 16", bufRawdata16, bufResult, ref);
+    TestCase<Hamming_compute_avx2_1_16, UNROLL_LO, UNROLL_HI>("Hamming_compute_avx2_1_16", "AVX2 1 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<Hamming_compute_avx2_2_16, UNROLL_LO, UNROLL_HI>("Hamming_compute_avx2_2_16", "AVX2 2 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<Hamming_compute_avx2_3_16, UNROLL_LO, UNROLL_HI>("Hamming_compute_avx2_3_16", "AVX2 3 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 
-    TestCase(Hamming_compute_scalar_32, "Scalar 32", bufRawdata32, bufResult, ref);
-    ref = *vecTestInfos.rbegin();
-    TestCase(Hamming_compute_sse42_1_32, "SSE4.2 1 32", bufRawdata32, bufResult, ref);
-    TestCase(Hamming_compute_sse42_2_32, "SSE4.2 2 32", bufRawdata32, bufResult, ref);
-    TestCase(Hamming_compute_sse42_3_32, "SSE4.2 3 32", bufRawdata32, bufResult, ref);
+    TestCase<Hamming_compute_scalar_32, UNROLL_LO, UNROLL_HI>("Hamming_compute_scalar_32", "Scalar 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
+    idx = vecTestInfos.size() - 1;
+    TestCase<Hamming_compute_sse42_1_32, UNROLL_LO, UNROLL_HI>("Hamming_compute_sse42_1_32", "SSE4.2 1 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<Hamming_compute_sse42_2_32, UNROLL_LO, UNROLL_HI>("Hamming_compute_sse42_2_32", "SSE4.2 2 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<Hamming_compute_sse42_3_32, UNROLL_LO, UNROLL_HI>("Hamming_compute_sse42_3_32", "SSE4.2 3 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #ifdef __AVX2__
-    TestCase(Hamming_compute_avx2_1_32, "AVX2 1 32", bufRawdata32, bufResult, ref);
-    TestCase(Hamming_compute_avx2_2_32, "AVX2 2 32", bufRawdata32, bufResult, ref);
-    TestCase(Hamming_compute_avx2_3_32, "AVX2 3 32", bufRawdata32, bufResult, ref);
+    TestCase<Hamming_compute_avx2_1_32, UNROLL_LO, UNROLL_HI>("Hamming_compute_avx2_1_32", "AVX2 1 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<Hamming_compute_avx2_2_32, UNROLL_LO, UNROLL_HI>("Hamming_compute_avx2_2_32", "AVX2 2 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<Hamming_compute_avx2_3_32, UNROLL_LO, UNROLL_HI>("Hamming_compute_avx2_3_32", "AVX2 3 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 
     printResults<false>(vecTestInfos, OutputConfiguration(false, false));

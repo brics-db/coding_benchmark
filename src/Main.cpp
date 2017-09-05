@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <Main.hpp>
-#include "Output.hpp"
 
 int checkArgs(
         int argc,
@@ -44,11 +43,10 @@ int checkArgs(
 int main(
         int argc,
         char* argv[]) {
-    const size_t rawDataSize = 1024 * 1024; // size in BYTES
-    const size_t iterations = 10;
-
-    const size_t UNROLL_LO = 1;
-    const size_t UNROLL_HI = 1024;
+    const constexpr size_t numElements = 1000000;
+    const constexpr size_t iterations = 10;
+    const constexpr size_t UNROLL_LO = 1;
+    const constexpr size_t UNROLL_HI = 1024;
 
     uint32_t AUser = 64311ul;
     int result = checkArgs(argc, argv, AUser);
@@ -58,135 +56,90 @@ int main(
     _ReadWriteBarrier();
     uint32_t AUserInv = ext_euclidean(AUser, 32);
 
-    AlignedBlock bufRawdata16(rawDataSize, 64);
-    AlignedBlock bufEncoded16(2 * rawDataSize, 64); // Coding may generate twice as much encoded output data as raw input data
-    AlignedBlock bufResult16(2 * rawDataSize, 64); // Coding may generate twice as much encoded result data as raw input data (or the same amount as encoded data)
+    AlignedBlock bufRawdata16(numElements * sizeof(uint16_t), 64);
+    AlignedBlock bufEncoded16(2 * numElements * sizeof(uint16_t), 64); // Coding may generate twice as much encoded output data as raw input data
+    AlignedBlock bufResult16(2 * numElements * sizeof(uint16_t), 64); // Coding may generate twice as much encoded result data as raw input data (or the same amount as encoded data)
 
-    AlignedBlock bufRawdata32(2 * rawDataSize, 64);
-    AlignedBlock bufEncoded32(4 * rawDataSize, 64); // Coding may generate twice as much encoded output data as raw input data
-    AlignedBlock bufResult32(4 * rawDataSize, 64); // Coding may generate twice as much encoded result data as raw input data (or the same amount as encoded data)
+    AlignedBlock bufRawdata32(numElements * sizeof(uint32_t), 64);
+    AlignedBlock bufEncoded32(2 * numElements * sizeof(uint32_t), 64); // Coding may generate twice as much encoded output data as raw input data
+    AlignedBlock bufResult32(2 * numElements * sizeof(uint32_t), 64); // Coding may generate twice as much encoded result data as raw input data (or the same amount as encoded data)
 
     std::vector<std::vector<TestInfos>> vecTestInfos;
-
-#define WarmUp(type, name, bufRawdata, bufEncoded, bufResult) \
-    do { \
-        std::clog << "# WarmUp " << #type << std::endl; \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult); \
-        std::clog << '#' << std::endl; \
-    } while (0)
-
-#define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
-
-#define TestCase6(vecTestInfos, type, name, bufRawdata, bufEncoded, bufResult) \
-    do { \
-        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
-        vecTestInfos.emplace_back(); \
-        auto & vec = *vecTestInfos.rbegin(); \
-        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult); \
-        std::clog << '#' << std::endl; \
-    } while (0)
-
-#define TestCase7(vecTestInfos, type, name, bufRawdata, bufEncoded, bufResult, ref) \
-    do { \
-        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
-        vecTestInfos.emplace_back(); \
-        auto & vec = *vecTestInfos.rbegin(); \
-        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult); \
-        std::clog << '#' << std::endl; \
-        setTestInfosReference(vec, ref); \
-    } while (0)
-
-#define TestCase8(vecTestInfos, type, name, bufRawdata, bufEncoded, bufResult, A, AInv) \
-    do { \
-        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
-        vecTestInfos.emplace_back(); \
-        auto & vec = *vecTestInfos.rbegin(); \
-        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult, A, AInv); \
-        std::clog << '#' << std::endl; \
-        setTestInfosReference(vec, ref); \
-    } while (0)
-
-#define TestCase9(vecTestInfos, type, name, bufRawdata, bufEncoded, bufResult, ref, A, AInv) \
-    do { \
-        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
-        vecTestInfos.emplace_back(); \
-        auto & vec = *vecTestInfos.rbegin(); \
-        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, bufRawdata, bufEncoded, bufResult, A, AInv); \
-        std::clog << '#' << std::endl; \
-        setTestInfosReference(vec, ref); \
-    } while (0)
 
     TestConfiguration testConfig(iterations);
     DataGenerationConfiguration dataGenConfig;
 
-    WarmUp(CopyTest16, "Copy", bufRawdata16, bufEncoded16, bufResult16);
+    WarmUp<CopyTest16, UNROLL_LO, UNROLL_HI>("CopyTest16", "Copy", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig);
 
     std::clog << "# 16-bit Baseline (memcpy / memcmp) test:" << std::endl;
-    TestCase(vecTestInfos, CopyTest16, "Copy", bufRawdata16, bufEncoded16, bufResult16);
-    auto & ref = *vecTestInfos.rbegin();
+    TestCase<CopyTest16, UNROLL_LO, UNROLL_HI>("CopyTest16", "Copy", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos);
+    size_t refIdx = vecTestInfos.size() - 1;
 
     // 16-bit data sequential tests
     std::clog << "# 16-bit scalar tests:" << std::endl;
-    TestCase(vecTestInfos, XOR_scalar_16_16, "XOR Scalar", bufRawdata16, bufEncoded16, bufResult16, ref);
-    TestCase(vecTestInfos, AN_scalar_16_32_u_divmod, "AN Scalar U DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
-    TestCase(vecTestInfos, AN_scalar_16_32_s_divmod, "AN Scalar S DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, (static_cast<int32_t>(AUser)), (static_cast<int32_t>(AUserInv)));
-    TestCase(vecTestInfos, AN_scalar_16_32_u_inv, "AN Scalar U Inv", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
-    TestCase(vecTestInfos, AN_scalar_16_32_s_inv, "AN Scalar S Inv", bufRawdata16, bufEncoded16, bufResult16, ref, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(vecTestInfos, Hamming_scalar_16, "Hamming Scalar", bufRawdata16, bufEncoded16, bufResult16, ref);
+    TestCase<XOR_scalar_16_16, UNROLL_LO, UNROLL_HI>("XOR_scalar_16_16", "XOR Scalar", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_scalar_16_32_u_divmod, UNROLL_LO, UNROLL_HI>("AN_scalar_16_32_u_divmod", "AN Scalar U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
+            vecTestInfos, refIdx);
+    TestCase<AN_scalar_16_32_s_divmod, UNROLL_LO, UNROLL_HI>("AN_scalar_16_32_s_divmod", "AN Scalar S DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
+            vecTestInfos, refIdx);
+    TestCase<AN_scalar_16_32_u_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_16_32_u_inv", "AN Scalar U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig, vecTestInfos,
+            refIdx);
+    TestCase<AN_scalar_16_32_s_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_16_32_s_inv", "AN Scalar S Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig, vecTestInfos,
+            refIdx);
+    TestCase<Hamming_scalar_16, UNROLL_LO, UNROLL_HI>("Hamming_scalar_16", "Hamming Scalar", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
 
 #ifdef __SSE4_2__
     // 16-bit data vectorized tests
     std::clog << "# 16-bit SSE4.2 tests:" << std::endl;
-    TestCase(vecTestInfos, XOR_sse42_8x16_8x16, "XOR SSE4.2", bufRawdata16, bufEncoded16, bufResult16, ref);
-    TestCase(vecTestInfos, AN_sse42_8x16_8x32_u_divmod, "AN SSE4.2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
-    TestCase(vecTestInfos, AN_sse42_8x16_8x32_s_divmod, "AN SSE4.2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(vecTestInfos, AN_sse42_8x16_8x32_u_inv, "AN SSE4.2 U Inv", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
-    TestCase(vecTestInfos, AN_sse42_8x16_8x32_s_inv, "AN SSE4.2 S Inv", bufRawdata16, bufEncoded16, bufResult16, ref, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(vecTestInfos, Hamming_sse42_16, "Hamming SSE4.2", bufRawdata16, bufEncoded16, bufResult16, ref);
+    TestCase<XOR_sse42_8x16_8x16, UNROLL_LO, UNROLL_HI>("XOR_sse42_8x16_8x16", "XOR SSE4.2", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_sse42_8x16_8x32_u_divmod, UNROLL_LO, UNROLL_HI>("AN_sse42_8x16_8x32_u_divmod", "AN SSE4.2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
+            dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_sse42_8x16_8x32_s_divmod, UNROLL_LO, UNROLL_HI>("AN_sse42_8x16_8x32_s_divmod", "AN SSE4.2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
+            dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_sse42_8x16_8x32_u_inv, UNROLL_LO, UNROLL_HI>("AN_sse42_8x16_8x32_u_inv", "AN SSE4.2 U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
+            vecTestInfos, refIdx);
+    TestCase<AN_sse42_8x16_8x32_s_inv, UNROLL_LO, UNROLL_HI>("AN_sse42_8x16_8x32_s_inv", "AN SSE4.2 S Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
+            vecTestInfos, refIdx);
+    TestCase<Hamming_sse42_16, UNROLL_LO, UNROLL_HI>("Hamming_sse42_16", "Hamming SSE4.2", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
 #endif
 
 #ifdef __AVX2__
     std::clog << "# 16-bit AVX2 tests:" << std::endl;
-    TestCase(vecTestInfos, XOR_avx2_16x16_16x16, "XOR AVX2", bufRawdata16, bufEncoded16, bufResult16, ref);
-    TestCase(vecTestInfos, AN_avx2_16x16_16x32_u_divmod, "AN AVX2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
-    TestCase(vecTestInfos, AN_avx2_16x16_16x32_s_divmod, "AN AVX2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, ref, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(vecTestInfos, AN_avx2_16x16_16x32_u_inv, "AN AVX2 U Inv", bufRawdata16, bufEncoded16, bufResult16, ref, AUser, AUserInv);
-    TestCase(vecTestInfos, AN_avx2_16x16_16x32_s_inv, "AN AVX2 S Inv", bufRawdata16, bufEncoded16, bufResult16, ref, static_cast<int32_t>(AUser), static_cast<int32_t>(AUserInv));
-    TestCase(vecTestInfos, Hamming_avx2_16, "Hamming AVX2", bufRawdata16, bufEncoded16, bufResult16, ref);
+    TestCase<XOR_avx2_16x16_16x16, UNROLL_LO, UNROLL_HI>("XOR_avx2_16x16_16x16", "XOR AVX2", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_avx2_16x16_16x32_u_divmod, UNROLL_LO, UNROLL_HI>("AN_avx2_16x16_16x32_u_divmod", "AN AVX2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
+            dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_avx2_16x16_16x32_s_divmod, UNROLL_LO, UNROLL_HI>("AN_avx2_16x16_16x32_s_divmod", "AN AVX2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
+            dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_avx2_16x16_16x32_u_inv, UNROLL_LO, UNROLL_HI>("AN_avx2_16x16_16x32_u_inv", "AN AVX2 U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
+            vecTestInfos, refIdx);
+    TestCase<AN_avx2_16x16_16x32_s_inv, UNROLL_LO, UNROLL_HI>("AN_avx2_16x16_16x32_s_inv", "AN AVX2 S Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
+            vecTestInfos, refIdx);
+    TestCase<Hamming_avx2_16, UNROLL_LO, UNROLL_HI>("Hamming_avx2_16", "Hamming AVX2", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
 #endif
 
 #ifdef TEST32
     std::clog << "# 32-bit Baseline (memcpy / memcmp) test:" << std::endl;
-    TestCase(vecTestInfos, CopyTest32, "Copy", bufRawdata32, bufEncoded32, bufResult32);
-    ref = *vecTestInfos.rbegin();
+    TestCase<CopyTest32, UNROLL_LO, UNROLL_HI>("CopyTest32", "Copy", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    refIdx = vecTestInfos.size() - 1;
 
     std::clog << "# 32-bit Scalar tests:" << std::endl;
     // 32-bit data sequential tests
-    TestCase(vecTestInfos, XOR_seq_32_32, "XOR Scalar", bufRawdata32, bufEncoded32, bufResult32, ref);
-    TestCase(vecTestInfos, Hamming_seq_32, "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32, ref);
+    TestCase<XOR_seq_32_32, UNROLL_LO, UNROLL_HI>("XOR_seq_32_32", "XOR Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<Hamming_seq_32, UNROLL_LO, UNROLL_HI>("Hamming_seq_32", "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
 
 #ifdef __SSE4_2__
     std::clog << "# 32-bit SSE4.2 tests:" << std::endl;
     // 32-bit data vectorized tests
-    TestCase(vecTestInfos, XOR_sse42_4x32_4x32, "XOR SSE4.2", bufRawdata32, bufEncoded32, bufResult32, ref);
-    TestCase(vecTestInfos, Hamming_sse42_32, "Hamming SSE4.2", bufRawdata32, bufEncoded32, bufResult32, ref);
+    TestCase<XOR_sse42_4x32_4x32, UNROLL_LO, UNROLL_HI>("XOR_sse42_4x32_4x32", "XOR SSE4.2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<Hamming_sse42_32, UNROLL_LO, UNROLL_HI>("Hamming_sse42_32", "Hamming SSE4.2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
 #endif
 
 #ifdef __AVX2__
     std::clog << "# 32-bit AVX2 tests:" << std::endl;
-    TestCase(vecTestInfos, XOR_avx2_8x32_8x32, "XOR AVX2", bufRawdata32, bufEncoded32, bufResult32, ref);
-    TestCase(vecTestInfos, Hamming_avx2_32, "Hamming AVX2", bufRawdata32, bufEncoded32, bufResult32, ref);
+    TestCase<XOR_avx2_8x32_8x32, UNROLL_LO, UNROLL_HI>("XOR_avx2_8x32_8x32", "XOR AVX2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<Hamming_avx2_32, UNROLL_LO, UNROLL_HI>("Hamming_avx2_32", "Hamming AVX2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
 #endif
 #endif
-
-#undef WarmUp
-#undef TestCase
-#undef TestCase2
-#undef TestCase4
 
     printResults<false>(vecTestInfos);
     std::cout << "\n\n";

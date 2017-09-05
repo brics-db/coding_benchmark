@@ -24,6 +24,7 @@
 #include <Util/Intrinsics.hpp>
 #include <Util/ComputeNumRuns.hpp>
 #include <Util/ExpandTest.hpp>
+#include <Util/TestCase.hpp>
 
 #include <Test.hpp>
 #include <CopyTest.hpp>
@@ -61,11 +62,10 @@ int checkArgs(
 int main(
         int argc,
         char* argv[]) {
-    const size_t numElements = 1000000;
-    const size_t iterations = 1000;
-
-    const size_t UNROLL_LO = 1;
-    const size_t UNROLL_HI = 1024;
+    const constexpr size_t numElements = 1000000;
+    const constexpr size_t iterations = 10;
+    const constexpr size_t UNROLL_LO = 1;
+    const constexpr size_t UNROLL_HI = 1024;
 
     uint32_t AUser = 233ul;
     int result = checkArgs(argc, argv, AUser);
@@ -77,66 +77,39 @@ int main(
     uint16_t AUserInv16 = ext_euclidean(AUser, 16);
 
     AlignedBlock input8(numElements * sizeof(uint8_t), 64);
-    AlignedBlock encoded16(numElements * sizeof(uint16_t), 64);
-    AlignedBlock result16(numElements * sizeof(uint16_t), 64);
+    AlignedBlock encoded8(numElements * sizeof(uint16_t), 64);
+    AlignedBlock result8(numElements * sizeof(uint16_t), 64);
 
     AlignedBlock input16(numElements * sizeof(uint16_t), 64);
+    AlignedBlock encoded16(numElements * sizeof(uint32_t), 64);
+    AlignedBlock result16(numElements * sizeof(uint32_t), 64);
 
     AlignedBlock input32(numElements * sizeof(uint32_t), 64);
-    AlignedBlock encoded64(numElements * sizeof(uint64_t), 64);
-    AlignedBlock result64(numElements * sizeof(uint64_t), 64);
+    AlignedBlock encoded32(numElements * sizeof(uint64_t), 64);
+    AlignedBlock result32(numElements * sizeof(uint64_t), 64);
 
     std::vector<std::vector<TestInfos>> vecTestInfos;
-
-#define WarmUp(type, name, input, encoded, result) \
-    do { \
-        std::clog << "# WarmUp " << name << std::endl; \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::WarmUp(name, testConfig, dataGenConfig, input, encoded, result); \
-    } while (0)
-
-#define TestCase(...) VFUNC(TestCase, __VA_ARGS__)
-
-#define TestCase5(type, name, input, encoded, result) \
-    do { \
-        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << ")" << std::endl; \
-        vecTestInfos.emplace_back(); \
-        auto & vec = *vecTestInfos.rbegin(); \
-        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, encoded, result); \
-    } while (0)
-
-#define TestCase7(type, name, input, encoded, result, A, AInv) \
-    do { \
-        std::clog << "# " << std::setw(4) << (vecTestInfos.size() + 2) <<  ": Testing " << #type << " (" << name << " " << A << ")" << std::endl; \
-        vecTestInfos.emplace_back(); \
-        auto & vec = *vecTestInfos.rbegin(); \
-        vec.reserve(ComputeNumRuns<UNROLL_LO, UNROLL_HI>::value); \
-        ExpandTest<type, UNROLL_LO, UNROLL_HI>::Execute(vec, name, testConfig, dataGenConfig, input, encoded, result, A, AInv); \
-    } while (0)
 
     TestConfiguration testConfig(iterations);
     DataGenerationConfiguration dataGenConfig(8);
 
-    WarmUp(CopyTest8, "Copy 8>8", input8, encoded16, result16);
-    WarmUp(CopyTest16, "Copy 16>16", input16, encoded16, result16);
-    WarmUp(CopyTest32, "Copy 32>32", input32, encoded64, result64);
-    WarmUp(CopyTest2_8_16, "Copy2 8>16", input8, encoded16, result16);
-    WarmUp(CopyTest2_32_64, "Copy2 32>64", input32, encoded64, result64);
+    WarmUp<CopyTest8, UNROLL_LO, UNROLL_HI>("CopyTest8", "Copy 8>8", input8, encoded8, result8, testConfig, dataGenConfig);
+    WarmUp<CopyTest16, UNROLL_LO, UNROLL_HI>("CopyTest16", "Copy 16>16", input16, encoded16, result16, testConfig, dataGenConfig);
+    WarmUp<CopyTest32, UNROLL_LO, UNROLL_HI>("CopyTest32", "Copy 32>32", input32, encoded32, result32, testConfig, dataGenConfig);
+    WarmUp<CopyTest2_8_16, UNROLL_LO, UNROLL_HI>("CopyTest2_8_16", "Copy2 8>16", input8, encoded8, result8, testConfig, dataGenConfig);
+    WarmUp<CopyTest2_32_64, UNROLL_LO, UNROLL_HI>("CopyTest2_32_64", "Copy2 32>64", input32, encoded32, result32, testConfig, dataGenConfig);
 
-    TestCase(CopyTest8, "Copy 8>8", input8, encoded16, result16);
-    TestCase(CopyTest2_8_16, "Copy2 8>16", input8, encoded16, result16);
-    TestCase(AN_scalar_8_16_u_inv, "AN U 8>16", input8, encoded16, result16, AUser, AUserInv16);
-    TestCase(AN_scalar_8_16_s_inv, "AN S 8>16", input8, encoded16, result16, static_cast<int16_t>(AUser), static_cast<int16_t>(AUserInv16));
+    TestCase<CopyTest8, UNROLL_LO, UNROLL_HI>("CopyTest8", "Copy 8>8", input8, encoded8, result8, testConfig, dataGenConfig, vecTestInfos);
+    size_t refIdx = vecTestInfos.size() - 1;
+    TestCase<CopyTest2_8_16, UNROLL_LO, UNROLL_HI>("CopyTest2_8_16", "Copy2 8>16", input8, encoded8, result8, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_scalar_8_16_u_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_8_16_u_inv", "AN U 8>16", input8, encoded8, result8, AUser, AUserInv16, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_scalar_8_16_s_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_8_16_s_inv", "AN S 8>16", input8, encoded8, result8, AUser, AUserInv16, testConfig, dataGenConfig, vecTestInfos, refIdx);
 
-    TestCase(CopyTest32, "Copy 32>32", input32, encoded64, result64);
-    TestCase(CopyTest2_32_64, "Copy2 32>64", input32, encoded64, result64);
-    TestCase(AN_scalar_32_64_u_inv, "AN U 32>64", input32, encoded64, result64, AUser, AUserInv64);
-    TestCase(AN_scalar_32_64_s_inv, "AN S 32>64", input32, encoded64, result64, static_cast<int64_t>(AUser), static_cast<int64_t>(AUserInv64));
-
-#undef WarmUp
-#undef TestCase
-#undef TestCase2
-#undef TestCase4
+    TestCase<CopyTest32, UNROLL_LO, UNROLL_HI>("CopyTest32", "Copy 32>32", input32, encoded32, result32, testConfig, dataGenConfig, vecTestInfos);
+    refIdx = vecTestInfos.size() - 1;
+    TestCase<CopyTest2_32_64, UNROLL_LO, UNROLL_HI>("CopyTest2_32_64", "Copy2 32>64", input32, encoded32, result32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_scalar_32_64_u_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_32_64_u_inv", "AN U 32>64", input32, encoded32, result32, AUser, AUserInv64, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<AN_scalar_32_64_s_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_32_64_s_inv", "AN S 32>64", input32, encoded32, result32, AUser, AUserInv64, testConfig, dataGenConfig, vecTestInfos, refIdx);
 
     printResults<false>(vecTestInfos, OutputConfiguration(false, true));
     std::cout << "\n\n";

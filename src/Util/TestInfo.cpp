@@ -133,7 +133,7 @@ TestInfos::TestInfos(
         TestInfo & reencodeChecked,
         TestInfo & decode,
         TestInfo & checkAndDecode,
-        TestInfos * reference)
+        const TestInfos * reference)
         : datawidth(datawidth),
           name(name),
           simd(simd),
@@ -154,10 +154,10 @@ TestInfos::~TestInfos() {
 
 void setTestInfosReference(
         std::vector<TestInfos> & vecTarget,
-        std::vector<TestInfos> & vecReferences) {
+        const std::vector<TestInfos> & vecReferences) {
     if (vecTarget.size() != vecReferences.size()) {
         std::stringstream ss;
-        ss << "[ſetTestInfosReference] Sizes don't match! " << vecTarget.size() << " != " << vecReferences.size();
+        ss << "[setTestInfosReference] Sizes don't match! " << vecTarget.size() << " != " << vecReferences.size();
         throw std::runtime_error(ss.str().c_str());
     }
     for (size_t i = 0; i < vecTarget.size(); ++i) {

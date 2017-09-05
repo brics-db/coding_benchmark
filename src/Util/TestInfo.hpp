@@ -68,7 +68,7 @@ struct TestInfos {
     TestInfo reencodeChecked;
     TestInfo decode;
     TestInfo decodeChecked;
-    TestInfos * reference;
+    const TestInfos * reference;
 
     TestInfos(
             const size_t datawidth,
@@ -102,7 +102,7 @@ struct TestInfos {
             TestInfo & reencodeChecked,
             TestInfo & decode,
             TestInfo & checkAndDecode,
-            TestInfos * reference);
+            const TestInfos * reference);
 
     TestInfos(
             const TestInfos &) = default;
@@ -115,4 +115,4 @@ struct TestInfos {
 
 void setTestInfosReference(
         std::vector<TestInfos> & vecTarget,
-        std::vector<TestInfos> & vecReferences);
+        const std::vector<TestInfos> & vecReferences);
