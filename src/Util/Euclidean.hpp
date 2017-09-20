@@ -3,16 +3,16 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* 
+/*
  * File:   Euclidean.hpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
@@ -39,7 +39,7 @@ namespace Private {
     struct extractor<T, uint128_t> {
         static T doIt(
                 const uint128_t source) {
-            constexpr const unsigned nBitsLimb = sizeof(boost::multiprecision::limb_type) * CHAR_BIT; // size of limb in bits
+            const constexpr unsigned nBitsLimb = sizeof(boost::multiprecision::limb_type) * CHAR_BIT; // size of limb in bits
             boost::multiprecision::limb_type target = 0;
             const unsigned nLimbs = source.backend().size(); // number of limbs
             auto pLimbs = source.backend().limbs();
@@ -63,7 +63,8 @@ T ext_euclidean(
         size_t codewidth) {
     uint128_t a0(1);
     a0 <<= codewidth;
-    uint128_t a[16], b[16], q[16], r[16], s[16], t[16];
+    // uint128_t a[32], b[32], q[32], r[32], s[32], t[32];
+    std::vector<uint128_t> a(32), b(32), q(32), r(32), s(32), t(32);
     int aI = 1, bI = 1, qI = 0, rI = 0, sI = 1, tI = 1;
     a[0] = a0;
     b[0] = b0;

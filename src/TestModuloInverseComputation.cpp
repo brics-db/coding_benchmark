@@ -3,16 +3,16 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* 
+/*
  * File:   TestModuloInverseComputation.cpp
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
@@ -21,7 +21,10 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
+
+#include <boost/multiprecision/cpp_int.hpp>
 
 #include <Util/AlignedBlock.hpp>
 #include <Util/Euclidean.hpp>
@@ -30,26 +33,33 @@
 int main(
         int argc,
         char ** argv) {
-    if (argc != 6) {
-        std::cerr << "Usage: " << argv[0] << " <size [Bytes]> <totalnum [#values]> <A16 <= 2^15> <A32 <= 2^31> <A64 <= 2^63>" << std::endl;
+    if (argc != 7) {
+        std::cerr << "Usage: " << argv[0] << " <size [Bytes]> <totalnum [#values]> <A16 <= 2^15> <A32 <= 2^31> <A64 <= 2^63> <A128 <= 2^127>" << std::endl;
         return 1;
     }
+
+    typedef boost::multiprecision::uint128_t uint128_t;
 
     const uint16_t MASK16 = 0x7FFF;
     const uint32_t MASK32 = 0x7FFFFFFFul;
     const uint64_t MASK64 = 0x7FFFFFFFFFFFFFFFull;
+    const uint128_t MASK128("0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
     size_t SIZE = strtoll(argv[1], nullptr, 0);
     size_t TOTALNUM = strtoll(argv[2], nullptr, 0);
     uint16_t A16 = MASK16 & static_cast<uint16_t>(strtol(argv[3], nullptr, 0)); // test for code widths up to 15 bits
     uint32_t A32 = MASK32 & static_cast<uint32_t>(strtol(argv[4], nullptr, 0)); // test for code widths up to 31 bits
     uint64_t A64 = MASK64 & static_cast<uint64_t>(strtoll(argv[5], nullptr, 0)); // test for code widths up to 63 bits
+    uint128_t A128(argv[6]); // test for code widths up to 127 bits
 
     const size_t NUM16 = SIZE / sizeof(uint16_t);
     const size_t NUM32 = SIZE / sizeof(uint32_t);
     const size_t NUM64 = SIZE / sizeof(uint64_t);
+    const size_t NUM128 = SIZE / sizeof(uint128_t);
     TOTALNUM += (NUM16 - (TOTALNUM & (NUM16 - 1)));
     AlignedBlock data(SIZE, SIZE);
+
+    std::cout << std::fixed << std::setprecision(1);
 
 #ifdef DEBUG
     std::cout << TOTALNUM << " numbers." << std::endl;
@@ -64,11 +74,6 @@ int main(
         for (size_t i = 0; i < NUM16; ++i) {
             data16[0] = ext_euclidean(A16, 15);
         }
-        std::stringstream ss;
-        for (size_t i = 0; i < NUM16; ++i) {
-            ss << data16[0];
-        }
-        std::cerr << ss.str();
     }
     auto nanoseconds = sw.Current();
 #ifdef DEBUG
@@ -114,6 +119,25 @@ int main(
     std::cout << "\t " << (static_cast<double>(nanoseconds) / static_cast<double>(TOTALNUM)) << " ns / inverse." << std::endl;
     std::cout << "\t" << A64 << " * " << data64[0] << " = " << ((A64 * data64[0]) & MASK64) << std::endl;
 #else
-    std::cout << '\t' << A64 << '\t' << nanoseconds << '\t' << (static_cast<double>(nanoseconds) / static_cast<double>(TOTALNUM)) << std::endl;
+    std::cout << '\t' << A64 << '\t' << nanoseconds << '\t' << (static_cast<double>(nanoseconds) / static_cast<double>(TOTALNUM));
+#endif
+
+#ifdef DEBUG
+    std::cout << "128-bit: " << (TOTALNUM / NUM64) << " iterations, each on " << NUM128 << " uint128_t." << std::endl;
+#endif
+    auto data128 = data.template begin<uint128_t>();
+    sw.Reset();
+    for (size_t k = 0; k < (TOTALNUM / NUM128); k++) {
+        for (size_t i = 0; i < NUM128; ++i) {
+            data128[i] = ext_euclidean(A128, 127);
+        }
+    }
+    nanoseconds = sw.Current();
+#ifdef DEBUG
+    std::cout << "Computing " << TOTALNUM << " inverses for 64..127-bit codewords took " << nanoseconds << " ns." << std::endl;
+    std::cout << "\t " << (static_cast<double>(nanoseconds) / static_cast<double>(TOTALNUM)) << " ns / inverse." << std::endl;
+    std::cout << "\t" << A128 << " * " << data128[0] << " = " << ((A128 * data128[0]) & MASK128) << std::endl;
+#else
+    std::cout << '\t' << A128 << '\t' << nanoseconds << '\t' << (static_cast<double>(nanoseconds) / static_cast<double>(TOTALNUM)) << std::endl;
 #endif
 }
