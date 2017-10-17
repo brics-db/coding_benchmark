@@ -67,15 +67,15 @@ T test(
         Stopwatch sw;
         for (size_t i = 0; i < TOTALNUM; ++i) {
             result = ext_euclidean(A, wC);
+            if (result == 0) {
+                std::cerr << "Error @ wA=" << wA << ", A=" << A << std::endl;
+            }
         }
         auto nanoseconds = sw.Current();
 #ifdef DEBUG
         std::cout << '\t' << std::hex << std::showbase << A << ':' << std::dec << std::noshowbase << nanoseconds;
 #else
         std::cout << '\t' << nanoseconds;
-        if (result == 0) {
-            std::cerr << "Error @ wA=" << wA << ", A=" << A << std::endl;
-        }
 #endif
     }
     std::cout << std::endl;
@@ -106,20 +106,20 @@ int main(
 
     for (size_t wC = wCmin; wC <= wCmax; ++wC) {
         if (wC < 8) {
-            volatile uint8_t result = test<uint8_t>(TOTALNUM, wC, wAmin);
-            (void) result;
+            // std::cout << "using   8-bit case\n";
+            __attribute__((unused)) volatile uint8_t result = test<uint8_t>(TOTALNUM, wC, wAmin);
         } else if (wC < 16) {
-            volatile uint16_t result = test<uint16_t>(TOTALNUM, wC, wAmin);
-            (void) result;
+            // std::cout << "using  16-bit case\n";
+            __attribute__((unused)) volatile uint16_t result = test<uint16_t>(TOTALNUM, wC, wAmin);
         } else if (wC < 32) {
-            volatile uint32_t result = test<uint32_t>(TOTALNUM, wC, wAmin);
-            (void) result;
+            // std::cout << "using  32-bit case\n";
+            __attribute__((unused)) volatile uint32_t result = test<uint32_t>(TOTALNUM, wC, wAmin);
         } else if (wC < 64) {
-            volatile uint64_t result = test<uint64_t>(TOTALNUM, wC, wAmin);
-            (void) result;
+            // std::cout << "using  64-bit case\n";
+            __attribute__((unused)) volatile uint64_t result = test<uint64_t>(TOTALNUM, wC, wAmin);
         } else if (wC < 128) {
-            volatile uint128_t result = test<uint128_t>(TOTALNUM, wC, wAmin);
-            (void) result;
+            // std::cout << "using 128-bit case\n";
+            __attribute__((unused)) volatile uint128_t result = test<uint128_t>(TOTALNUM, wC, wAmin);
         } else {
             throw std::runtime_error("unsupported code word width");
         }
