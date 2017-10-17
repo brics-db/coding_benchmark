@@ -25,6 +25,7 @@
 #include <iostream>
 #include <vector>
 #include <cinttypes>
+#include <exception>
 
 #include <boost/multiprecision/cpp_int.hpp>
 
@@ -61,10 +62,10 @@ template<typename T>
 T ext_euclidean(
         T b0,
         size_t codewidth) {
-    uint128_t a0(1);
+    T a0(1);
     a0 <<= codewidth;
-    // uint128_t a[32], b[32], q[32], r[32], s[32], t[32];
-    std::vector<uint128_t> a(32), b(32), q(32), r(32), s(32), t(32);
+    T a[32], b[32], q[32], r[32], s[32], t[32];
+    // std::vector<uint128_t> a(32), b(32), q(32), r(32), s(32), t(32);
     int aI = 1, bI = 1, qI = 0, rI = 0, sI = 1, tI = 1;
     a[0] = a0;
     b[0] = b0;
@@ -85,13 +86,18 @@ T ext_euclidean(
         s[j - 1] = t[j];
         t[j - 1] = s[j] - q[j - 1] * t[j];
     }
-    uint128_t result = ((b0 * t[0]) % a0);
+    T result = ((b0 * t[0]) % a0);
     result += result < 0 ? a0 : 0;
     if (result == 1) {
-        return Private::extractor<T, uint128_t>::doIt(t[0]);
-    } else {
-        return 0;
+        if constexpr (std::is_fundamental_v<T>) {
+            return result;
+        } else if constexpr (std::is_base_of_v<T, uint128_t>) {
+            return Private::extractor<T, uint128_t>::doIt(t[0]);
+        } else {
+            throw std::runtime_error("ext_euclidean not supported for this type!");
+        }
     }
+    return 0;
 }
 
 #endif /* EUCLIDEAN_HPP */
