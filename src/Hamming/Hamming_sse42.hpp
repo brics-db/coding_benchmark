@@ -25,72 +25,76 @@
 
 #include <Hamming/Hamming_sse42.tcc>
 
-template<size_t UNROLL>
-struct Hamming_sse42_16 :
-        public Hamming_sse42<uint16_t, UNROLL> {
+namespace coding_benchmark {
 
-    using Hamming_sse42<uint16_t, UNROLL>::Hamming_sse42;
+    template<size_t UNROLL>
+    struct Hamming_sse42_16 :
+            public Hamming_sse42<uint16_t, UNROLL> {
 
-    virtual ~Hamming_sse42_16() {
-    }
+        using Hamming_sse42<uint16_t, UNROLL>::Hamming_sse42;
 
-};
+        virtual ~Hamming_sse42_16() {
+        }
 
-template<size_t UNROLL>
-struct Hamming_sse42_32 :
-        public Hamming_sse42<uint32_t, UNROLL> {
+    };
 
-    using Hamming_sse42<uint32_t, UNROLL>::Hamming_sse42;
+    template<size_t UNROLL>
+    struct Hamming_sse42_32 :
+            public Hamming_sse42<uint32_t, UNROLL> {
 
-    virtual ~Hamming_sse42_32() {
-    }
+        using Hamming_sse42<uint32_t, UNROLL>::Hamming_sse42;
 
-};
+        virtual ~Hamming_sse42_32() {
+        }
 
-extern template
-struct Hamming_sse42_16<1> ;
-extern template
-struct Hamming_sse42_16<2> ;
-extern template
-struct Hamming_sse42_16<4> ;
-extern template
-struct Hamming_sse42_16<8> ;
-extern template
-struct Hamming_sse42_16<16> ;
-extern template
-struct Hamming_sse42_16<32> ;
-extern template
-struct Hamming_sse42_16<64> ;
-extern template
-struct Hamming_sse42_16<128> ;
-extern template
-struct Hamming_sse42_16<256> ;
-extern template
-struct Hamming_sse42_16<512> ;
-extern template
-struct Hamming_sse42_16<1024> ;
+    };
 
-extern template
-struct Hamming_sse42_32<1> ;
-extern template
-struct Hamming_sse42_32<2> ;
-extern template
-struct Hamming_sse42_32<4> ;
-extern template
-struct Hamming_sse42_32<8> ;
-extern template
-struct Hamming_sse42_32<16> ;
-extern template
-struct Hamming_sse42_32<32> ;
-extern template
-struct Hamming_sse42_32<64> ;
-extern template
-struct Hamming_sse42_32<128> ;
-extern template
-struct Hamming_sse42_32<256> ;
-extern template
-struct Hamming_sse42_32<512> ;
-extern template
-struct Hamming_sse42_32<1024> ;
+    extern template
+    struct Hamming_sse42_16<1> ;
+    extern template
+    struct Hamming_sse42_16<2> ;
+    extern template
+    struct Hamming_sse42_16<4> ;
+    extern template
+    struct Hamming_sse42_16<8> ;
+    extern template
+    struct Hamming_sse42_16<16> ;
+    extern template
+    struct Hamming_sse42_16<32> ;
+    extern template
+    struct Hamming_sse42_16<64> ;
+    extern template
+    struct Hamming_sse42_16<128> ;
+    extern template
+    struct Hamming_sse42_16<256> ;
+    extern template
+    struct Hamming_sse42_16<512> ;
+    extern template
+    struct Hamming_sse42_16<1024> ;
+
+    extern template
+    struct Hamming_sse42_32<1> ;
+    extern template
+    struct Hamming_sse42_32<2> ;
+    extern template
+    struct Hamming_sse42_32<4> ;
+    extern template
+    struct Hamming_sse42_32<8> ;
+    extern template
+    struct Hamming_sse42_32<16> ;
+    extern template
+    struct Hamming_sse42_32<32> ;
+    extern template
+    struct Hamming_sse42_32<64> ;
+    extern template
+    struct Hamming_sse42_32<128> ;
+    extern template
+    struct Hamming_sse42_32<256> ;
+    extern template
+    struct Hamming_sse42_32<512> ;
+    extern template
+    struct Hamming_sse42_32<1024> ;
+
+}
 
 #endif

@@ -3,9 +3,9 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,159 +17,163 @@
 #include <AN/AN_scalar.tcc>
 #include <Util/ArithmeticSelector.hpp>
 
-template<typename DATARAW, typename DATAENC, size_t UNROLL>
-struct AN_scalar_divmod :
-        public AN_scalar<DATARAW, DATAENC, UNROLL> {
+namespace coding_benchmark {
 
-    using AN_scalar<DATARAW, DATAENC, UNROLL>::AN_scalar;
+    template<typename DATARAW, typename DATAENC, size_t UNROLL>
+    struct AN_scalar_divmod :
+            public AN_scalar<DATARAW, DATAENC, UNROLL> {
 
-    virtual ~AN_scalar_divmod() {
-    }
+        using AN_scalar<DATARAW, DATAENC, UNROLL>::AN_scalar;
 
-    virtual bool DoCheck() override {
-        return true;
-    }
+        virtual ~AN_scalar_divmod() {
+        }
 
-    virtual void RunCheck(
-            const CheckConfiguration & config) {
-        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            _ReadWriteBarrier();
-            const size_t numValues = this->getNumValues();
-            size_t i = 0;
-            auto data = this->bufEncoded.template begin<DATAENC>();
-            while (i <= (numValues - UNROLL)) {
-                // let the compiler unroll the loop
-                for (size_t k = 0; k < UNROLL; ++k) {
+        virtual bool DoCheck() override {
+            return true;
+        }
+
+        virtual void RunCheck(
+                const CheckConfiguration & config) {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                const size_t numValues = this->getNumValues();
+                size_t i = 0;
+                auto data = this->bufEncoded.template begin<DATAENC>();
+                while (i <= (numValues - UNROLL)) {
+                    // let the compiler unroll the loop
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        if ((*data % this->A) != 0) {
+                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        }
+                        ++data;
+                    }
+                    i += UNROLL;
+                }
+                // remaining numbers
+                for (; i < numValues; ++i, ++data) {
                     if ((*data % this->A) != 0) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
-                    ++data;
-                }
-                i += UNROLL;
-            }
-            // remaining numbers
-            for (; i < numValues; ++i, ++data) {
-                if ((*data % this->A) != 0) {
-                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
             }
         }
-    }
 
-    bool DoArithmeticChecked(
-            const ArithmeticConfiguration & config) override {
-        return std::visit(ArithmeticSelector(), config.mode);
-    }
-
-    struct ArithmetorChecked {
-        AN_scalar_divmod & test;
-        const ArithmeticConfiguration & config;
-        const size_t iteration;
-        ArithmetorChecked(
-                AN_scalar_divmod & test,
-                const ArithmeticConfiguration & config,
-                const size_t iteration)
-                : test(test),
-                  config(config),
-                  iteration(iteration) {
+        bool DoArithmeticChecked(
+                const ArithmeticConfiguration & config) override {
+            return std::visit(ArithmeticSelector(), config.mode);
         }
-        void operator()(
-                ArithmeticConfiguration::Add) {
-            const size_t numValues = test.template getNumValues();
-            size_t i = 0;
-            auto dataIn = test.bufEncoded.template begin<DATAENC>();
-            auto dataOut = test.bufResult.template begin<DATAENC>();
-            DATAENC operandEnc = config.operand * test.A;
-            while (i <= (numValues - UNROLL)) {
-                // let the compiler unroll the loop
-                for (size_t k = 0; k < UNROLL; ++k) {
+
+        struct ArithmetorChecked {
+            AN_scalar_divmod & test;
+            const ArithmeticConfiguration & config;
+            const size_t iteration;
+            ArithmetorChecked(
+                    AN_scalar_divmod & test,
+                    const ArithmeticConfiguration & config,
+                    const size_t iteration)
+                    : test(test),
+                      config(config),
+                      iteration(iteration) {
+            }
+            void operator()(
+                    ArithmeticConfiguration::Add) {
+                const size_t numValues = test.template getNumValues();
+                size_t i = 0;
+                auto dataIn = test.bufEncoded.template begin<DATAENC>();
+                auto dataOut = test.bufResult.template begin<DATAENC>();
+                DATAENC operandEnc = config.operand * test.A;
+                while (i <= (numValues - UNROLL)) {
+                    // let the compiler unroll the loop
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        if ((*dataIn % test.A) != 0) {
+                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        }
+                        *dataOut++ = *dataIn++ + operandEnc;
+                    }
+                    i += UNROLL;
+                }
+                // remaining numbers
+                for (; i < numValues; ++i) {
                     if ((*dataIn % test.A) != 0) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     *dataOut++ = *dataIn++ + operandEnc;
                 }
-                i += UNROLL;
             }
-            // remaining numbers
-            for (; i < numValues; ++i) {
-                if ((*dataIn % test.A) != 0) {
-                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+            void operator()(
+                    ArithmeticConfiguration::Sub) {
+            }
+            void operator()(
+                    ArithmeticConfiguration::Mul) {
+            }
+            void operator()(
+                    ArithmeticConfiguration::Div) {
+            }
+        };
+
+        void RunArithmeticChecked(
+                const ArithmeticConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
+            }
+        }
+
+        bool DoDecode() override {
+            return true;
+        }
+
+        void RunDecode(
+                const DecodeConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                size_t numValues = this->getNumValues();
+                size_t i = 0;
+                auto dataIn = this->bufEncoded.template begin<DATAENC>();
+                auto dataOut = this->bufResult.template begin<DATARAW>();
+                for (; i <= (numValues - UNROLL); i += UNROLL) {
+                    // let the compiler unroll the loop
+                    for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
+                        *dataOut = *dataIn / this->A;
+                    }
                 }
-                *dataOut++ = *dataIn++ + operandEnc;
-            }
-        }
-        void operator()(
-                ArithmeticConfiguration::Sub) {
-        }
-        void operator()(
-                ArithmeticConfiguration::Mul) {
-        }
-        void operator()(
-                ArithmeticConfiguration::Div) {
-        }
-    };
-
-    void RunArithmeticChecked(
-            const ArithmeticConfiguration & config) override {
-        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            _ReadWriteBarrier();
-            std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
-        }
-    }
-
-    bool DoDecode() override {
-        return true;
-    }
-
-    void RunDecode(
-            const DecodeConfiguration & config) override {
-        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            _ReadWriteBarrier();
-            size_t numValues = this->getNumValues();
-            size_t i = 0;
-            auto dataIn = this->bufEncoded.template begin<DATAENC>();
-            auto dataOut = this->bufResult.template begin<DATARAW>();
-            for (; i <= (numValues - UNROLL); i += UNROLL) {
-                // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
+                // remaining numbers
+                for (; i < numValues; ++i, ++dataOut, ++dataIn) {
                     *dataOut = *dataIn / this->A;
                 }
             }
-            // remaining numbers
-            for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                *dataOut = *dataIn / this->A;
-            }
         }
-    }
 
-    bool DoDecodeChecked() override {
-        return true;
-    }
+        bool DoDecodeChecked() override {
+            return true;
+        }
 
-    void RunDecodeChecked(
-            const DecodeConfiguration & config) override {
-        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            _ReadWriteBarrier();
-            size_t numValues = this->getNumValues();
-            size_t i = 0;
-            auto dataIn = this->bufEncoded.template begin<DATAENC>();
-            auto dataOut = this->bufResult.template begin<DATARAW>();
-            for (; i <= (numValues - UNROLL); i += UNROLL) {
-                // let the compiler unroll the loop
-                for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                size_t numValues = this->getNumValues();
+                size_t i = 0;
+                auto dataIn = this->bufEncoded.template begin<DATAENC>();
+                auto dataOut = this->bufResult.template begin<DATARAW>();
+                for (; i <= (numValues - UNROLL); i += UNROLL) {
+                    // let the compiler unroll the loop
+                    for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
+                        if ((*dataIn % this->A) != 0) {
+                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        }
+                        *dataOut = *dataIn / this->A;
+                    }
+                }
+                // remaining numbers
+                for (; i < numValues; ++i, ++dataOut, ++dataIn) {
                     if ((*dataIn % this->A) != 0) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     *dataOut = *dataIn / this->A;
                 }
             }
-            // remaining numbers
-            for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                if ((*dataIn % this->A) != 0) {
-                    throw ErrorInfo(__FILE__, __LINE__, i, iteration);
-                }
-                *dataOut = *dataIn / this->A;
-            }
         }
-    }
-};
+    };
+
+}

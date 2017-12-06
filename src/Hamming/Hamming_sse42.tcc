@@ -26,18 +26,23 @@
 #include <Util/ErrorInfo.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Util/AggregateSelector.hpp>
+#include <Util/Helpers.hpp>
 #include <Hamming/Hamming_scalar.hpp>
-#include <Util/SIMD.hpp>
+#include <SIMD/SSE.hpp>
 
-extern template struct hamming_t<uint16_t, __m128i > ;
-extern template struct hamming_t<uint32_t, __m128i > ;
+using namespace coding_benchmark::simd;
 
-template<typename DATAIN, size_t UNROLL>
-struct Hamming_sse42 :
-        public Test<DATAIN, hamming_t<DATAIN, __m128i >>,
-        public SSE42Test {
+namespace coding_benchmark {
 
-    typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
+    extern template struct hamming_t<uint16_t, __m128i > ;
+    extern template struct hamming_t<uint32_t, __m128i > ;
+
+    template<typename DATAIN, size_t UNROLL>
+    struct Hamming_sse42 :
+            public Test<DATAIN, hamming_t<DATAIN, __m128i >>,
+            public SSE42Test {
+
+        typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
     typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
 
     static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
@@ -131,17 +136,17 @@ struct Hamming_sse42 :
         void operator()(
                 ArithmeticConfiguration::Add) {
             const size_t numValues = test.getNumValues();
-            auto mmOperand = SIMD<__m128i, DATAIN>::set1(config.operand);
+            auto mmOperand = mm<__m128i, DATAIN>::set1(config.operand);
             size_t i = 0;
             auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
             auto dataOut = test.bufResult.template begin<hamming_sse42_t>();
             while (i <= (numValues - VALUES_PER_UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
-                    dataOut->store(SIMD<__m128i, DATAIN>::add(dataIn->data, mmOperand));
+                    dataOut->store(mm<__m128i, DATAIN>::add(dataIn->data, mmOperand));
                 }
             }
             for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
-                dataOut->store(SIMD<__m128i, DATAIN>::add(dataIn->data, mmOperand));
+                dataOut->store(mm<__m128i, DATAIN>::add(dataIn->data, mmOperand));
             }
             if (i < numValues) {
                 auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
@@ -194,7 +199,7 @@ struct Hamming_sse42 :
         void operator()(
                 ArithmeticConfiguration::Add) {
             const size_t numValues = test.getNumValues();
-            auto mmOperand = SIMD<__m128i, DATAIN>::set1(config.operand);
+            auto mmOperand = mm<__m128i, DATAIN>::set1(config.operand);
             size_t i = 0;
             auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
             auto dataOut = test.bufResult.template begin<hamming_sse42_t>();
@@ -204,7 +209,7 @@ struct Hamming_sse42 :
                     if (!dataIn->isValid()) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
-                    dataOut->store(SIMD<__m128i, DATAIN>::add(tmp, mmOperand));
+                    dataOut->store(mm<__m128i, DATAIN>::add(tmp, mmOperand));
                 }
             }
             for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
@@ -212,7 +217,7 @@ struct Hamming_sse42 :
                 if (!dataIn->isValid()) {
                     throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                 }
-                dataOut->store(SIMD<__m128i, DATAIN>::add(tmp, mmOperand));
+                dataOut->store(mm<__m128i, DATAIN>::add(tmp, mmOperand));
             }
             if (i < numValues) {
                 auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
@@ -273,18 +278,18 @@ struct Hamming_sse42 :
             size_t i = 0;
             auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
             auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-            auto mmTmp = SIMD<__m128i, larger_t>::set1(0);
+            auto mmTmp = mm<__m128i, larger_t>::set1(0);
             while (i <= (numValues - VALUES_PER_UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                    mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
-                    mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
+                    mmTmp = mm<__m128i, larger_t>::add(mmTmp, mm<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
+                    mmTmp = mm<__m128i, larger_t>::add(mmTmp, mm<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
                 }
             }
             for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
-                mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
+                mmTmp = mm<__m128i, larger_t>::add(mmTmp, mm<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
+                mmTmp = mm<__m128i, larger_t>::add(mmTmp, mm<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
             }
-            auto tmp = SIMD<__m128i, larger_t>::sum(mmTmp);
+            auto tmp = mm<__m128i, larger_t>::sum(mmTmp);
             if (i < numValues) {
                 auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
                 for (; i < numValues; ++i, ++dataIn2) {
@@ -341,18 +346,18 @@ struct Hamming_sse42 :
             size_t i = 0;
             auto dataIn = test.bufEncoded.template begin<hamming_sse42_t>();
             auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-            auto mmTmp = SIMD<__m128i, larger_t>::set1(0);
+            auto mmTmp = mm<__m128i, larger_t>::set1(0);
             while (i <= (numValues - VALUES_PER_UNROLL)) {
                 for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                    mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
-                    mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
+                    mmTmp = mm<__m128i, larger_t>::add(mmTmp, mm<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
+                    mmTmp = mm<__m128i, larger_t>::add(mmTmp, mm<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
                 }
             }
             for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
-                mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
-                mmTmp = SIMD<__m128i, larger_t>::add(mmTmp, SIMD<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
+                mmTmp = mm<__m128i, larger_t>::add(mmTmp, mm<__m128i, DATAIN>::cvt_larger_lo(dataIn->data));
+                mmTmp = mm<__m128i, larger_t>::add(mmTmp, mm<__m128i, DATAIN>::cvt_larger_hi(dataIn->data));
             }
-            auto tmp = SIMD<__m128i, larger_t>::sum(mmTmp);
+            auto tmp = mm<__m128i, larger_t>::sum(mmTmp);
             if (i < numValues) {
                 auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
                 for (; i < numValues; ++i, ++dataIn2) {
@@ -413,5 +418,7 @@ struct Hamming_sse42 :
         }
     }
 };
+
+}
 
 #endif

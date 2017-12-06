@@ -3,9 +3,9 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,31 +16,35 @@
 
 #include <Test.hpp>
 
-template<typename DATARAW, typename DATAENC, size_t UNROLL>
-class ANTest :
-        public Test<DATARAW, DATAENC> {
+namespace coding_benchmark {
 
-protected:
-    DATAENC A;
-    DATAENC A_INV;
+    template<typename DATARAW, typename DATAENC, size_t UNROLL>
+    class ANTest :
+            public Test<DATARAW, DATAENC> {
 
-public:
+    protected:
+        DATAENC A;
+        DATAENC A_INV;
 
-    ANTest(
-            const std::string & name,
-            AlignedBlock & bufRaw,
-            AlignedBlock & bufEncoded,
-            AlignedBlock & bufResult,
-            const DATAENC A,
-            const DATAENC A_INV)
-            : Test<DATARAW, DATAENC>(name, bufRaw, bufEncoded, bufResult),
-              A(A),
-              A_INV(A_INV) {
-        std::stringstream ss;
-        ss << " " << A;
-        this->name += ss.str();
-    }
+    public:
 
-    virtual ~ANTest() {
-    }
-};
+        ANTest(
+                const std::string & name,
+                AlignedBlock & bufRaw,
+                AlignedBlock & bufEncoded,
+                AlignedBlock & bufResult,
+                const DATAENC A,
+                const DATAENC A_INV)
+                : Test<DATARAW, DATAENC>(name, bufRaw, bufEncoded, bufResult),
+                  A(A),
+                  A_INV(A_INV) {
+            std::stringstream ss;
+            ss << " " << A;
+            this->name += ss.str();
+        }
+
+        virtual ~ANTest() {
+        }
+    };
+
+}

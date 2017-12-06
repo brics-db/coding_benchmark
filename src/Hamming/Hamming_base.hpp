@@ -24,85 +24,89 @@
 #include <cstdint>
 #include <Util/Intrinsics.hpp>
 
-template<typename data_t, typename granularity_t>
-struct hamming_typehelper_t;
+namespace coding_benchmark {
 
-template<>
-struct hamming_typehelper_t<uint16_t, uint16_t> {
-    typedef uint8_t code_t;
-};
+    template<typename data_t, typename granularity_t>
+    struct hamming_typehelper_t;
 
-template<>
-struct hamming_typehelper_t<uint32_t, uint32_t> {
-    typedef uint8_t code_t;
-};
+    template<>
+    struct hamming_typehelper_t<uint16_t, uint16_t> {
+        typedef uint8_t code_t;
+    };
 
-template<>
-struct hamming_typehelper_t<uint64_t, uint64_t> {
-    typedef uint8_t code_t;
-};
+    template<>
+    struct hamming_typehelper_t<uint32_t, uint32_t> {
+        typedef uint8_t code_t;
+    };
+
+    template<>
+    struct hamming_typehelper_t<uint64_t, uint64_t> {
+        typedef uint8_t code_t;
+    };
 
 #ifdef __SSE4_2__
-template<>
-struct hamming_typehelper_t<uint16_t, __m128i> {
-typedef uint64_t code_t;
+    template<>
+    struct hamming_typehelper_t<uint16_t, __m128i> {
+    typedef uint64_t code_t;
 };
 
-template<>
-struct hamming_typehelper_t<uint32_t, __m128i> {
-typedef uint32_t code_t;
+    template<>
+    struct hamming_typehelper_t<uint32_t, __m128i> {
+    typedef uint32_t code_t;
 };
 
-template<>
-struct hamming_typehelper_t<uint64_t, __m128i> {
-typedef uint16_t code_t;
+    template<>
+    struct hamming_typehelper_t<uint64_t, __m128i> {
+    typedef uint16_t code_t;
 };
 #endif
 
 #ifdef __AVX2__
-template<>
-struct hamming_typehelper_t<uint16_t, __m256i> {
-typedef __m128i code_t;
+    template<>
+    struct hamming_typehelper_t<uint16_t, __m256i> {
+    typedef __m128i code_t;
 };
 
-template<>
-struct hamming_typehelper_t<uint32_t, __m256i> {
-typedef uint64_t code_t;
+    template<>
+    struct hamming_typehelper_t<uint32_t, __m256i> {
+    typedef uint64_t code_t;
 };
 
-template<>
-struct hamming_typehelper_t<uint64_t, __m256i> {
-typedef uint32_t code_t;
+    template<>
+    struct hamming_typehelper_t<uint64_t, __m256i> {
+    typedef uint32_t code_t;
 };
 #endif
 
-template<typename data_t, typename granularity_t>
-struct hamming_t {
-    typedef typename hamming_typehelper_t<data_t, granularity_t>::code_t code_t;
-    granularity_t data;
-    code_t code;
+    template<typename data_t, typename granularity_t>
+    struct hamming_t {
+        typedef typename hamming_typehelper_t<data_t, granularity_t>::code_t code_t;
+        granularity_t data;
+        code_t code;
 
-    void store(
-            granularity_t data);
+        void store(
+                granularity_t data);
 
-    void store2(
-            granularity_t data);
+        void store2(
+                granularity_t data);
 
-    void store3(
-            granularity_t data);
+        void store3(
+                granularity_t data);
 
-    bool isValid();
+        bool isValid();
 
-    static code_t computeHamming(
-            granularity_t data);
+        static code_t computeHamming(
+                granularity_t data);
 
-    static code_t computeHamming2(
-            granularity_t data);
+        static code_t computeHamming2(
+                granularity_t data);
 
-    static code_t computeHamming3(
-            granularity_t data);
+        static code_t computeHamming3(
+                granularity_t data);
 
-    static bool code_cmp_eq(
-            code_t c1,
-            code_t c2);
-};
+        static bool code_cmp_eq(
+                code_t c1,
+                code_t c2);
+    };
+
+}

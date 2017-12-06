@@ -51,7 +51,7 @@ MACRO(append_target_property arg_target arg_property arg_setting)
 ENDMACRO(append_target_property)
 
 add_algorithm(benchmark "src/Main.cpp src/Test.cpp src/Output.cpp \
-src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Util/SIMD.cpp \
+src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp \
 src/XOR/XOR_base.cpp src/XOR/XOR_scalar.cpp src/XOR/XOR_sse42.cpp src/XOR/XOR_avx2.cpp \
 src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp")
@@ -59,7 +59,7 @@ add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Tes
 src/AN/AN_scalar.cpp")
 
 add_algorithm(benchmark_novec "src/Main.cpp src/Test.cpp src/Output.cpp \
-src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Util/SIMD.cpp \
+src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp \
 src/XOR/XOR_base.cpp src/XOR/XOR_scalar.cpp src/XOR/XOR_sse42.cpp src/XOR/XOR_avx2.cpp \
 src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp")
@@ -68,7 +68,7 @@ TARGET_COMPILE_OPTIONS(benchmark_novec PRIVATE "-fno-tree-vectorize")
 FIND_PACKAGE(OpenMP)
 IF(OPENMP_FOUND)
 	add_algorithm(benchmarkOMP2 "src/Main.cpp src/Test.cpp src/Output.cpp \
-src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Util/SIMD.cpp \
+src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp \
 src/XOR/XOR_base.cpp src/XOR/XOR_scalar.cpp src/XOR/XOR_sse42.cpp src/XOR/XOR_avx2.cpp \
 src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp")
@@ -77,7 +77,7 @@ src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp")
 	append_target_property(benchmarkOMP2 "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
 
 	add_algorithm(benchmarkOMP "src/Main.cpp src/Test.cpp src/Output.cpp \
-src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Util/SIMD.cpp \
+src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp \
 src/XOR/XOR_base.cpp src/XOR/XOR_scalar.cpp src/XOR/XOR_sse42.cpp src/XOR/XOR_avx2.cpp \
 src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp")
@@ -89,9 +89,9 @@ ENDIF(OPENMP_FOUND)
 add_algorithm(TestModuloInverseComputation "src/TestModuloInverseComputation.cpp src/Util/Stopwatch.cpp")
 add_algorithm(TestModuloInverseComputation2 "src/TestModuloInverseComputation2.cpp src/Util/Stopwatch.cpp")
 
-add_algorithm(TestComputeHamming "src/TestComputeHamming.cpp src/Test.cpp src/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Util/SIMD.cpp \
+add_algorithm(TestComputeHamming "src/TestComputeHamming.cpp src/Test.cpp src/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp src/Hamming/Hamming_compute.cpp")
 
-add_algorithm(TestComputeHamming_novec "src/TestComputeHamming.cpp src/Test.cpp src/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Util/SIMD.cpp \
+add_algorithm(TestComputeHamming_novec "src/TestComputeHamming.cpp src/Test.cpp src/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp src/Hamming/Hamming_compute.cpp")
 TARGET_COMPILE_OPTIONS(TestComputeHamming_novec PRIVATE "-fno-tree-vectorize")

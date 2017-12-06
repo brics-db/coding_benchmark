@@ -14,6 +14,8 @@
 
 #include <Main.hpp>
 
+using namespace coding_benchmark;
+
 int checkArgs(
         int argc,
         char* argv[],

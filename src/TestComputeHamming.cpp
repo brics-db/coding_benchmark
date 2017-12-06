@@ -24,7 +24,6 @@
 
 #include <Util/AlignedBlock.hpp>
 #include <Util/Stopwatch.hpp>
-#include <Util/SIMD.hpp>
 #include <Util/TestInfo.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/Intrinsics.hpp>
@@ -37,6 +36,8 @@
 #include <Hamming/Hamming_compute.hpp>
 
 #include <Output.hpp>
+
+using namespace coding_benchmark;
 
 int main() {
     const constexpr size_t numElements = 1000001;

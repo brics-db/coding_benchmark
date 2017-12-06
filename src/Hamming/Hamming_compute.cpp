@@ -21,332 +21,336 @@
 
 #include <Hamming/Hamming_compute.hpp>
 
-template
-struct Hamming_compute_scalar_16<1> ;
-template
-struct Hamming_compute_scalar_16<2> ;
-template
-struct Hamming_compute_scalar_16<4> ;
-template
-struct Hamming_compute_scalar_16<8> ;
-template
-struct Hamming_compute_scalar_16<16> ;
-template
-struct Hamming_compute_scalar_16<32> ;
-template
-struct Hamming_compute_scalar_16<64> ;
-template
-struct Hamming_compute_scalar_16<128> ;
-template
-struct Hamming_compute_scalar_16<256> ;
-template
-struct Hamming_compute_scalar_16<512> ;
-template
-struct Hamming_compute_scalar_16<1024> ;
+namespace coding_benchmark {
 
-template
-struct Hamming_compute_scalar_32<1> ;
-template
-struct Hamming_compute_scalar_32<2> ;
-template
-struct Hamming_compute_scalar_32<4> ;
-template
-struct Hamming_compute_scalar_32<8> ;
-template
-struct Hamming_compute_scalar_32<16> ;
-template
-struct Hamming_compute_scalar_32<32> ;
-template
-struct Hamming_compute_scalar_32<64> ;
-template
-struct Hamming_compute_scalar_32<128> ;
-template
-struct Hamming_compute_scalar_32<256> ;
-template
-struct Hamming_compute_scalar_32<512> ;
-template
-struct Hamming_compute_scalar_32<1024> ;
+    template
+    struct Hamming_compute_scalar_16<1> ;
+    template
+    struct Hamming_compute_scalar_16<2> ;
+    template
+    struct Hamming_compute_scalar_16<4> ;
+    template
+    struct Hamming_compute_scalar_16<8> ;
+    template
+    struct Hamming_compute_scalar_16<16> ;
+    template
+    struct Hamming_compute_scalar_16<32> ;
+    template
+    struct Hamming_compute_scalar_16<64> ;
+    template
+    struct Hamming_compute_scalar_16<128> ;
+    template
+    struct Hamming_compute_scalar_16<256> ;
+    template
+    struct Hamming_compute_scalar_16<512> ;
+    template
+    struct Hamming_compute_scalar_16<1024> ;
+
+    template
+    struct Hamming_compute_scalar_32<1> ;
+    template
+    struct Hamming_compute_scalar_32<2> ;
+    template
+    struct Hamming_compute_scalar_32<4> ;
+    template
+    struct Hamming_compute_scalar_32<8> ;
+    template
+    struct Hamming_compute_scalar_32<16> ;
+    template
+    struct Hamming_compute_scalar_32<32> ;
+    template
+    struct Hamming_compute_scalar_32<64> ;
+    template
+    struct Hamming_compute_scalar_32<128> ;
+    template
+    struct Hamming_compute_scalar_32<256> ;
+    template
+    struct Hamming_compute_scalar_32<512> ;
+    template
+    struct Hamming_compute_scalar_32<1024> ;
 
 #ifdef __SSE4_2__
 
-template
-struct Hamming_compute_sse42_1_16<1> ;
-template
-struct Hamming_compute_sse42_1_16<2> ;
-template
-struct Hamming_compute_sse42_1_16<4> ;
-template
-struct Hamming_compute_sse42_1_16<8> ;
-template
-struct Hamming_compute_sse42_1_16<16> ;
-template
-struct Hamming_compute_sse42_1_16<32> ;
-template
-struct Hamming_compute_sse42_1_16<64> ;
-template
-struct Hamming_compute_sse42_1_16<128> ;
-template
-struct Hamming_compute_sse42_1_16<256> ;
-template
-struct Hamming_compute_sse42_1_16<512> ;
-template
-struct Hamming_compute_sse42_1_16<1024> ;
+    template
+    struct Hamming_compute_sse42_1_16<1> ;
+    template
+    struct Hamming_compute_sse42_1_16<2> ;
+    template
+    struct Hamming_compute_sse42_1_16<4> ;
+    template
+    struct Hamming_compute_sse42_1_16<8> ;
+    template
+    struct Hamming_compute_sse42_1_16<16> ;
+    template
+    struct Hamming_compute_sse42_1_16<32> ;
+    template
+    struct Hamming_compute_sse42_1_16<64> ;
+    template
+    struct Hamming_compute_sse42_1_16<128> ;
+    template
+    struct Hamming_compute_sse42_1_16<256> ;
+    template
+    struct Hamming_compute_sse42_1_16<512> ;
+    template
+    struct Hamming_compute_sse42_1_16<1024> ;
 
-template
-struct Hamming_compute_sse42_1_32<1> ;
-template
-struct Hamming_compute_sse42_1_32<2> ;
-template
-struct Hamming_compute_sse42_1_32<4> ;
-template
-struct Hamming_compute_sse42_1_32<8> ;
-template
-struct Hamming_compute_sse42_1_32<16> ;
-template
-struct Hamming_compute_sse42_1_32<32> ;
-template
-struct Hamming_compute_sse42_1_32<64> ;
-template
-struct Hamming_compute_sse42_1_32<128> ;
-template
-struct Hamming_compute_sse42_1_32<256> ;
-template
-struct Hamming_compute_sse42_1_32<512> ;
-template
-struct Hamming_compute_sse42_1_32<1024> ;
+    template
+    struct Hamming_compute_sse42_1_32<1> ;
+    template
+    struct Hamming_compute_sse42_1_32<2> ;
+    template
+    struct Hamming_compute_sse42_1_32<4> ;
+    template
+    struct Hamming_compute_sse42_1_32<8> ;
+    template
+    struct Hamming_compute_sse42_1_32<16> ;
+    template
+    struct Hamming_compute_sse42_1_32<32> ;
+    template
+    struct Hamming_compute_sse42_1_32<64> ;
+    template
+    struct Hamming_compute_sse42_1_32<128> ;
+    template
+    struct Hamming_compute_sse42_1_32<256> ;
+    template
+    struct Hamming_compute_sse42_1_32<512> ;
+    template
+    struct Hamming_compute_sse42_1_32<1024> ;
 
-template
-struct Hamming_compute_sse42_2_16<1> ;
-template
-struct Hamming_compute_sse42_2_16<2> ;
-template
-struct Hamming_compute_sse42_2_16<4> ;
-template
-struct Hamming_compute_sse42_2_16<8> ;
-template
-struct Hamming_compute_sse42_2_16<16> ;
-template
-struct Hamming_compute_sse42_2_16<32> ;
-template
-struct Hamming_compute_sse42_2_16<64> ;
-template
-struct Hamming_compute_sse42_2_16<128> ;
-template
-struct Hamming_compute_sse42_2_16<256> ;
-template
-struct Hamming_compute_sse42_2_16<512> ;
-template
-struct Hamming_compute_sse42_2_16<1024> ;
+    template
+    struct Hamming_compute_sse42_2_16<1> ;
+    template
+    struct Hamming_compute_sse42_2_16<2> ;
+    template
+    struct Hamming_compute_sse42_2_16<4> ;
+    template
+    struct Hamming_compute_sse42_2_16<8> ;
+    template
+    struct Hamming_compute_sse42_2_16<16> ;
+    template
+    struct Hamming_compute_sse42_2_16<32> ;
+    template
+    struct Hamming_compute_sse42_2_16<64> ;
+    template
+    struct Hamming_compute_sse42_2_16<128> ;
+    template
+    struct Hamming_compute_sse42_2_16<256> ;
+    template
+    struct Hamming_compute_sse42_2_16<512> ;
+    template
+    struct Hamming_compute_sse42_2_16<1024> ;
 
-template
-struct Hamming_compute_sse42_2_32<1> ;
-template
-struct Hamming_compute_sse42_2_32<2> ;
-template
-struct Hamming_compute_sse42_2_32<4> ;
-template
-struct Hamming_compute_sse42_2_32<8> ;
-template
-struct Hamming_compute_sse42_2_32<16> ;
-template
-struct Hamming_compute_sse42_2_32<32> ;
-template
-struct Hamming_compute_sse42_2_32<64> ;
-template
-struct Hamming_compute_sse42_2_32<128> ;
-template
-struct Hamming_compute_sse42_2_32<256> ;
-template
-struct Hamming_compute_sse42_2_32<512> ;
-template
-struct Hamming_compute_sse42_2_32<1024> ;
+    template
+    struct Hamming_compute_sse42_2_32<1> ;
+    template
+    struct Hamming_compute_sse42_2_32<2> ;
+    template
+    struct Hamming_compute_sse42_2_32<4> ;
+    template
+    struct Hamming_compute_sse42_2_32<8> ;
+    template
+    struct Hamming_compute_sse42_2_32<16> ;
+    template
+    struct Hamming_compute_sse42_2_32<32> ;
+    template
+    struct Hamming_compute_sse42_2_32<64> ;
+    template
+    struct Hamming_compute_sse42_2_32<128> ;
+    template
+    struct Hamming_compute_sse42_2_32<256> ;
+    template
+    struct Hamming_compute_sse42_2_32<512> ;
+    template
+    struct Hamming_compute_sse42_2_32<1024> ;
 
-template
-struct Hamming_compute_sse42_3_16<1> ;
-template
-struct Hamming_compute_sse42_3_16<2> ;
-template
-struct Hamming_compute_sse42_3_16<4> ;
-template
-struct Hamming_compute_sse42_3_16<8> ;
-template
-struct Hamming_compute_sse42_3_16<16> ;
-template
-struct Hamming_compute_sse42_3_16<32> ;
-template
-struct Hamming_compute_sse42_3_16<64> ;
-template
-struct Hamming_compute_sse42_3_16<128> ;
-template
-struct Hamming_compute_sse42_3_16<256> ;
-template
-struct Hamming_compute_sse42_3_16<512> ;
-template
-struct Hamming_compute_sse42_3_16<1024> ;
+    template
+    struct Hamming_compute_sse42_3_16<1> ;
+    template
+    struct Hamming_compute_sse42_3_16<2> ;
+    template
+    struct Hamming_compute_sse42_3_16<4> ;
+    template
+    struct Hamming_compute_sse42_3_16<8> ;
+    template
+    struct Hamming_compute_sse42_3_16<16> ;
+    template
+    struct Hamming_compute_sse42_3_16<32> ;
+    template
+    struct Hamming_compute_sse42_3_16<64> ;
+    template
+    struct Hamming_compute_sse42_3_16<128> ;
+    template
+    struct Hamming_compute_sse42_3_16<256> ;
+    template
+    struct Hamming_compute_sse42_3_16<512> ;
+    template
+    struct Hamming_compute_sse42_3_16<1024> ;
 
-template
-struct Hamming_compute_sse42_3_32<1> ;
-template
-struct Hamming_compute_sse42_3_32<2> ;
-template
-struct Hamming_compute_sse42_3_32<4> ;
-template
-struct Hamming_compute_sse42_3_32<8> ;
-template
-struct Hamming_compute_sse42_3_32<16> ;
-template
-struct Hamming_compute_sse42_3_32<32> ;
-template
-struct Hamming_compute_sse42_3_32<64> ;
-template
-struct Hamming_compute_sse42_3_32<128> ;
-template
-struct Hamming_compute_sse42_3_32<256> ;
-template
-struct Hamming_compute_sse42_3_32<512> ;
-template
-struct Hamming_compute_sse42_3_32<1024> ;
+    template
+    struct Hamming_compute_sse42_3_32<1> ;
+    template
+    struct Hamming_compute_sse42_3_32<2> ;
+    template
+    struct Hamming_compute_sse42_3_32<4> ;
+    template
+    struct Hamming_compute_sse42_3_32<8> ;
+    template
+    struct Hamming_compute_sse42_3_32<16> ;
+    template
+    struct Hamming_compute_sse42_3_32<32> ;
+    template
+    struct Hamming_compute_sse42_3_32<64> ;
+    template
+    struct Hamming_compute_sse42_3_32<128> ;
+    template
+    struct Hamming_compute_sse42_3_32<256> ;
+    template
+    struct Hamming_compute_sse42_3_32<512> ;
+    template
+    struct Hamming_compute_sse42_3_32<1024> ;
 
 #endif
 
 #ifdef __AVX2__
 
-template
-struct Hamming_compute_avx2_1_16<1> ;
-template
-struct Hamming_compute_avx2_1_16<2> ;
-template
-struct Hamming_compute_avx2_1_16<4> ;
-template
-struct Hamming_compute_avx2_1_16<8> ;
-template
-struct Hamming_compute_avx2_1_16<16> ;
-template
-struct Hamming_compute_avx2_1_16<32> ;
-template
-struct Hamming_compute_avx2_1_16<64> ;
-template
-struct Hamming_compute_avx2_1_16<128> ;
-template
-struct Hamming_compute_avx2_1_16<256> ;
-template
-struct Hamming_compute_avx2_1_16<512> ;
-template
-struct Hamming_compute_avx2_1_16<1024> ;
+    template
+    struct Hamming_compute_avx2_1_16<1> ;
+    template
+    struct Hamming_compute_avx2_1_16<2> ;
+    template
+    struct Hamming_compute_avx2_1_16<4> ;
+    template
+    struct Hamming_compute_avx2_1_16<8> ;
+    template
+    struct Hamming_compute_avx2_1_16<16> ;
+    template
+    struct Hamming_compute_avx2_1_16<32> ;
+    template
+    struct Hamming_compute_avx2_1_16<64> ;
+    template
+    struct Hamming_compute_avx2_1_16<128> ;
+    template
+    struct Hamming_compute_avx2_1_16<256> ;
+    template
+    struct Hamming_compute_avx2_1_16<512> ;
+    template
+    struct Hamming_compute_avx2_1_16<1024> ;
 
-template
-struct Hamming_compute_avx2_1_32<1> ;
-template
-struct Hamming_compute_avx2_1_32<2> ;
-template
-struct Hamming_compute_avx2_1_32<4> ;
-template
-struct Hamming_compute_avx2_1_32<8> ;
-template
-struct Hamming_compute_avx2_1_32<16> ;
-template
-struct Hamming_compute_avx2_1_32<32> ;
-template
-struct Hamming_compute_avx2_1_32<64> ;
-template
-struct Hamming_compute_avx2_1_32<128> ;
-template
-struct Hamming_compute_avx2_1_32<256> ;
-template
-struct Hamming_compute_avx2_1_32<512> ;
-template
-struct Hamming_compute_avx2_1_32<1024> ;
+    template
+    struct Hamming_compute_avx2_1_32<1> ;
+    template
+    struct Hamming_compute_avx2_1_32<2> ;
+    template
+    struct Hamming_compute_avx2_1_32<4> ;
+    template
+    struct Hamming_compute_avx2_1_32<8> ;
+    template
+    struct Hamming_compute_avx2_1_32<16> ;
+    template
+    struct Hamming_compute_avx2_1_32<32> ;
+    template
+    struct Hamming_compute_avx2_1_32<64> ;
+    template
+    struct Hamming_compute_avx2_1_32<128> ;
+    template
+    struct Hamming_compute_avx2_1_32<256> ;
+    template
+    struct Hamming_compute_avx2_1_32<512> ;
+    template
+    struct Hamming_compute_avx2_1_32<1024> ;
 
-template
-struct Hamming_compute_avx2_2_16<1> ;
-template
-struct Hamming_compute_avx2_2_16<2> ;
-template
-struct Hamming_compute_avx2_2_16<4> ;
-template
-struct Hamming_compute_avx2_2_16<8> ;
-template
-struct Hamming_compute_avx2_2_16<16> ;
-template
-struct Hamming_compute_avx2_2_16<32> ;
-template
-struct Hamming_compute_avx2_2_16<64> ;
-template
-struct Hamming_compute_avx2_2_16<128> ;
-template
-struct Hamming_compute_avx2_2_16<256> ;
-template
-struct Hamming_compute_avx2_2_16<512> ;
-template
-struct Hamming_compute_avx2_2_16<1024> ;
+    template
+    struct Hamming_compute_avx2_2_16<1> ;
+    template
+    struct Hamming_compute_avx2_2_16<2> ;
+    template
+    struct Hamming_compute_avx2_2_16<4> ;
+    template
+    struct Hamming_compute_avx2_2_16<8> ;
+    template
+    struct Hamming_compute_avx2_2_16<16> ;
+    template
+    struct Hamming_compute_avx2_2_16<32> ;
+    template
+    struct Hamming_compute_avx2_2_16<64> ;
+    template
+    struct Hamming_compute_avx2_2_16<128> ;
+    template
+    struct Hamming_compute_avx2_2_16<256> ;
+    template
+    struct Hamming_compute_avx2_2_16<512> ;
+    template
+    struct Hamming_compute_avx2_2_16<1024> ;
 
-template
-struct Hamming_compute_avx2_2_32<1> ;
-template
-struct Hamming_compute_avx2_2_32<2> ;
-template
-struct Hamming_compute_avx2_2_32<4> ;
-template
-struct Hamming_compute_avx2_2_32<8> ;
-template
-struct Hamming_compute_avx2_2_32<16> ;
-template
-struct Hamming_compute_avx2_2_32<32> ;
-template
-struct Hamming_compute_avx2_2_32<64> ;
-template
-struct Hamming_compute_avx2_2_32<128> ;
-template
-struct Hamming_compute_avx2_2_32<256> ;
-template
-struct Hamming_compute_avx2_2_32<512> ;
-template
-struct Hamming_compute_avx2_2_32<1024> ;
+    template
+    struct Hamming_compute_avx2_2_32<1> ;
+    template
+    struct Hamming_compute_avx2_2_32<2> ;
+    template
+    struct Hamming_compute_avx2_2_32<4> ;
+    template
+    struct Hamming_compute_avx2_2_32<8> ;
+    template
+    struct Hamming_compute_avx2_2_32<16> ;
+    template
+    struct Hamming_compute_avx2_2_32<32> ;
+    template
+    struct Hamming_compute_avx2_2_32<64> ;
+    template
+    struct Hamming_compute_avx2_2_32<128> ;
+    template
+    struct Hamming_compute_avx2_2_32<256> ;
+    template
+    struct Hamming_compute_avx2_2_32<512> ;
+    template
+    struct Hamming_compute_avx2_2_32<1024> ;
 
-template
-struct Hamming_compute_avx2_3_16<1> ;
-template
-struct Hamming_compute_avx2_3_16<2> ;
-template
-struct Hamming_compute_avx2_3_16<4> ;
-template
-struct Hamming_compute_avx2_3_16<8> ;
-template
-struct Hamming_compute_avx2_3_16<16> ;
-template
-struct Hamming_compute_avx2_3_16<32> ;
-template
-struct Hamming_compute_avx2_3_16<64> ;
-template
-struct Hamming_compute_avx2_3_16<128> ;
-template
-struct Hamming_compute_avx2_3_16<256> ;
-template
-struct Hamming_compute_avx2_3_16<512> ;
-template
-struct Hamming_compute_avx2_3_16<1024> ;
+    template
+    struct Hamming_compute_avx2_3_16<1> ;
+    template
+    struct Hamming_compute_avx2_3_16<2> ;
+    template
+    struct Hamming_compute_avx2_3_16<4> ;
+    template
+    struct Hamming_compute_avx2_3_16<8> ;
+    template
+    struct Hamming_compute_avx2_3_16<16> ;
+    template
+    struct Hamming_compute_avx2_3_16<32> ;
+    template
+    struct Hamming_compute_avx2_3_16<64> ;
+    template
+    struct Hamming_compute_avx2_3_16<128> ;
+    template
+    struct Hamming_compute_avx2_3_16<256> ;
+    template
+    struct Hamming_compute_avx2_3_16<512> ;
+    template
+    struct Hamming_compute_avx2_3_16<1024> ;
 
-template
-struct Hamming_compute_avx2_3_32<1> ;
-template
-struct Hamming_compute_avx2_3_32<2> ;
-template
-struct Hamming_compute_avx2_3_32<4> ;
-template
-struct Hamming_compute_avx2_3_32<8> ;
-template
-struct Hamming_compute_avx2_3_32<16> ;
-template
-struct Hamming_compute_avx2_3_32<32> ;
-template
-struct Hamming_compute_avx2_3_32<64> ;
-template
-struct Hamming_compute_avx2_3_32<128> ;
-template
-struct Hamming_compute_avx2_3_32<256> ;
-template
-struct Hamming_compute_avx2_3_32<512> ;
-template
-struct Hamming_compute_avx2_3_32<1024> ;
+    template
+    struct Hamming_compute_avx2_3_32<1> ;
+    template
+    struct Hamming_compute_avx2_3_32<2> ;
+    template
+    struct Hamming_compute_avx2_3_32<4> ;
+    template
+    struct Hamming_compute_avx2_3_32<8> ;
+    template
+    struct Hamming_compute_avx2_3_32<16> ;
+    template
+    struct Hamming_compute_avx2_3_32<32> ;
+    template
+    struct Hamming_compute_avx2_3_32<64> ;
+    template
+    struct Hamming_compute_avx2_3_32<128> ;
+    template
+    struct Hamming_compute_avx2_3_32<256> ;
+    template
+    struct Hamming_compute_avx2_3_32<512> ;
+    template
+    struct Hamming_compute_avx2_3_32<1024> ;
 
 #endif
+
+}

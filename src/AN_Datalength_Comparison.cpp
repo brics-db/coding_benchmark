@@ -33,6 +33,8 @@
 
 #include <AN/AN_scalar.hpp>
 
+using namespace coding_benchmark;
+
 int checkArgs(
         int argc,
         char* argv[],
