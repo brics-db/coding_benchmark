@@ -15,6 +15,7 @@
 #include <cstring>
 #include <iostream>
 #include <random>
+#include <functional>
 
 #ifdef OMP
 #include <omp.h>
@@ -189,6 +190,30 @@ void TestBase::RunDecodeChecked(
         const DecodeConfiguration & config) {
 }
 
+template<typename Conf, size_t max, size_t num = 1>
+struct VariantExecutor {
+    static void run(
+            Conf & conf,
+            std::function<void(
+                    Conf &)> && lambda) {
+        conf.mode = typename std::variant_alternative<num - 1, typename Conf::Mode>::type();
+        lambda(conf);
+        VariantExecutor<Conf, max, num + 1>::run(conf, std::forward<std::function<void(
+                Conf &)>>(lambda));
+    }
+};
+
+template<typename Conf, size_t max>
+struct VariantExecutor<Conf, max, max> {
+    static void run(
+            Conf & conf,
+            std::function<void(
+                    Conf &)> && lambda) {
+        conf.mode = typename std::variant_alternative<max - 1, typename Conf::Mode>::type();
+        lambda(conf);
+    }
+};
+
 // Execute test:
 TestInfos TestBase::Execute(
         const TestConfiguration & configTest,
@@ -214,13 +239,12 @@ TestInfos TestBase::Execute(
     ReencodeConfiguration reencConf(configTest, newA);
     DecodeConfiguration decConf(configTest);
     AggregateConfiguration aggrSumConf(configTest, AggregateConfiguration::Mode(AggregateConfiguration::Sum()));
-    int64_t nanos;
     Stopwatch sw;
 
     // Start test:
     this->PreEncode(encConf);
 
-    TestInfo tiEnc, tiCheck, tiArith, tiArithChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk;
+    TestInfo tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk;
 
     std::clog << "encode" << std::flush;
     sw.Reset();
@@ -235,8 +259,7 @@ TestInfos TestBase::Execute(
         {
             this->RunEncode(encConf);
         }
-        nanos = sw.Current();
-        tiEnc.set(nanos);
+        tiEnc.set(sw.Current());
     } catch (ErrorInfo & ei) {
         auto msg = ei.what();
         std::cerr << msg << std::endl;
@@ -258,8 +281,7 @@ TestInfos TestBase::Execute(
             {
                 this->RunCheck(chkConf);
             }
-            nanos = sw.Current();
-            tiCheck.set(nanos);
+            tiCheck.set(sw.Current());
         } catch (ErrorInfo & ei) {
             auto msg = ei.what();
             std::cerr << msg << std::endl;
@@ -267,11 +289,14 @@ TestInfos TestBase::Execute(
         }
     }
 
-    if (configTest.enableArithmetic && this->DoArithmetic(arithConf)) {
-        this->PreArithmetic(arithConf);
-        std::clog << ", arithmetic" << std::flush;
-        sw.Reset();
-        try {
+    if (configTest.enableArithmetic) {
+        VariantExecutor<ArithmeticConfiguration, std::variant_size<typename ArithmeticConfiguration::Mode>::value>::run(arithConf,
+                [this,&sw,&tiAdd,&tiSub,&tiMul,&tiDiv] (ArithmeticConfiguration & conf) {
+                    if (DoArithmetic(conf)) {
+                        PreArithmetic(conf);
+                        std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode);
+                        sw.Reset();
+                        try {
 #ifdef OMP
 #ifdef OMPNUMTHREADS
 #pragma omp parallel num_threads(OMPNUMTHREADS)
@@ -279,23 +304,60 @@ TestInfos TestBase::Execute(
 #pragma omp parallel
 #endif
 #endif
-            {
-                this->RunArithmetic(arithConf);
+                {
+                    RunArithmetic(conf);
+                }
+                auto nanos = sw.Current();
+                try {
+                    std::get<ArithmeticConfiguration::Add>(conf.mode);
+                    tiAdd.set(nanos);
+                } catch (const std::bad_variant_access&) {
+                    try {
+                        std::get<ArithmeticConfiguration::Sub>(conf.mode);
+                        tiSub.set(nanos);
+                    } catch (const std::bad_variant_access&) {
+                        try {
+                            std::get<ArithmeticConfiguration::Mul>(conf.mode);
+                            tiMul.set(nanos);
+                        } catch (const std::bad_variant_access&) {
+                            std::get<ArithmeticConfiguration::Div>(conf.mode);
+                            tiDiv.set(nanos);
+                        }
+                    }
+                };
+            } catch (ErrorInfo & ei) {
+                auto msg = ei.what();
+                std::cerr << msg << std::endl;
+                try {
+                    std::get<ArithmeticConfiguration::Add>(conf.mode);
+                    tiAdd.set(msg);
+                } catch (const std::bad_variant_access&) {
+                    try {
+                        std::get<ArithmeticConfiguration::Sub>(conf.mode);
+                        tiSub.set(msg);
+                    } catch (const std::bad_variant_access&) {
+                        try {
+                            std::get<ArithmeticConfiguration::Mul>(conf.mode);
+                            tiMul.set(msg);
+                        } catch (const std::bad_variant_access&) {
+                            std::get<ArithmeticConfiguration::Div>(conf.mode);
+                            tiDiv.set(msg);
+                        }
+                    }
+                };
             }
-            nanos = sw.Current();
-            tiArith.set(nanos);
-        } catch (ErrorInfo & ei) {
-            auto msg = ei.what();
-            std::cerr << msg << std::endl;
-            tiArith.set(msg);
         }
+    });
     }
 
-    if (configTest.enableArithmeticChk && this->DoArithmeticChecked(arithConf)) {
-        this->PreArithmeticChecked(arithConf);
-        std::clog << ", arithmetic checked" << std::flush;
-        sw.Reset();
-        try {
+    if (configTest.enableArithmeticChk) {
+        VariantExecutor<ArithmeticConfiguration, std::variant_size<typename ArithmeticConfiguration::Mode>::value>::run(arithConf,
+                [this,&sw,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (ArithmeticConfiguration & conf) {
+                    if (DoArithmeticChecked(conf)) {
+                        PreArithmeticChecked(conf);
+                        std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode) << " checked";
+                        sw.Reset();
+                        try {
 #ifdef OMP
 #ifdef OMPNUMTHREADS
 #pragma omp parallel num_threads(OMPNUMTHREADS)
@@ -303,16 +365,50 @@ TestInfos TestBase::Execute(
 #pragma omp parallel
 #endif
 #endif
-            {
-                this->RunArithmeticChecked(arithConf);
+                {
+                    RunArithmeticChecked(conf);
+                }
+                auto nanos = sw.Current();
+                try {
+                    std::get<ArithmeticConfiguration::Add>(conf.mode);
+                    tiAddChk.set(nanos);
+                } catch (const std::bad_variant_access&) {
+                    try {
+                        std::get<ArithmeticConfiguration::Sub>(conf.mode);
+                        tiSubChk.set(nanos);
+                    } catch (const std::bad_variant_access&) {
+                        try {
+                            std::get<ArithmeticConfiguration::Mul>(conf.mode);
+                            tiMulChk.set(nanos);
+                        } catch (const std::bad_variant_access&) {
+                            std::get<ArithmeticConfiguration::Div>(conf.mode);
+                            tiDivChk.set(nanos);
+                        }
+                    }
+                };
+            } catch (ErrorInfo & ei) {
+                auto msg = ei.what();
+                std::cerr << msg << std::endl;
+                try {
+                    std::get<ArithmeticConfiguration::Add>(conf.mode);
+                    tiAddChk.set(msg);
+                } catch (const std::bad_variant_access&) {
+                    try {
+                        std::get<ArithmeticConfiguration::Sub>(conf.mode);
+                        tiSubChk.set(msg);
+                    } catch (const std::bad_variant_access&) {
+                        try {
+                            std::get<ArithmeticConfiguration::Mul>(conf.mode);
+                            tiMulChk.set(msg);
+                        } catch (const std::bad_variant_access&) {
+                            std::get<ArithmeticConfiguration::Div>(conf.mode);
+                            tiDivChk.set(msg);
+                        }
+                    }
+                };
             }
-            nanos = sw.Current();
-            tiArithChk.set(nanos);
-        } catch (ErrorInfo & ei) {
-            auto msg = ei.what();
-            std::cerr << msg << std::endl;
-            tiArithChk.set(msg);
         }
+    });
     }
 
     if (configTest.enableAggregate && this->DoAggregate(aggrSumConf)) {
@@ -330,8 +426,7 @@ TestInfos TestBase::Execute(
             {
                 this->RunAggregate(aggrSumConf);
             }
-            nanos = sw.Current();
-            tiAggr.set(nanos);
+            tiAggr.set(sw.Current());
         } catch (ErrorInfo & ei) {
             auto msg = ei.what();
             std::cerr << msg << std::endl;
@@ -354,8 +449,7 @@ TestInfos TestBase::Execute(
             {
                 this->RunAggregateChecked(aggrSumConf);
             }
-            nanos = sw.Current();
-            tiAggrChk.set(nanos);
+            tiAggrChk.set(sw.Current());
         } catch (ErrorInfo & ei) {
             auto msg = ei.what();
             std::cerr << msg << std::endl;
@@ -378,8 +472,7 @@ TestInfos TestBase::Execute(
             {
                 this->RunReencodeChecked(reencConf);
             }
-            nanos = sw.Current();
-            tiReencChk.set(nanos);
+            tiReencChk.set(sw.Current());
         } catch (ErrorInfo & ei) {
             auto msg = ei.what();
             std::cerr << msg << std::endl;
@@ -402,8 +495,7 @@ TestInfos TestBase::Execute(
             {
                 this->RunDecode(decConf);
             }
-            nanos = sw.Current();
-            tiDec.set(nanos);
+            tiDec.set(sw.Current());
         } catch (ErrorInfo & ei) {
             auto msg = ei.what();
             std::cerr << msg << std::endl;
@@ -426,8 +518,7 @@ TestInfos TestBase::Execute(
             {
                 this->RunDecodeChecked(decConf);
             }
-            nanos = sw.Current();
-            tiDecChk.set(nanos);
+            tiDecChk.set(sw.Current());
         } catch (ErrorInfo & ei) {
             auto msg = ei.what();
             std::cerr << msg << std::endl;
@@ -435,7 +526,7 @@ TestInfos TestBase::Execute(
         }
     }
 
-    return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiArith, tiArithChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk);
+    return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk);
 }
 
 ScalarTest::~ScalarTest() {

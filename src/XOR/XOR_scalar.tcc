@@ -121,9 +121,9 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            template<typename func>
+            template<template<typename = void> class func>
             void impl() {
-                func functor;
+                func<> functor;
                 size_t numValues = test.template getNumValues();
                 size_t i = 0;
                 auto dataIn = test.bufEncoded.template begin<CS>();
@@ -156,19 +156,19 @@ namespace coding_benchmark {
             }
             void operator()(
                     ArithmeticConfiguration::Add) {
-                impl<add<>>();
+                impl<add>();
             }
             void operator()(
                     ArithmeticConfiguration::Sub) {
-                impl<sub<>>();
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
-                impl<mul<>>();
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
-                impl<div<>>();
+                impl<div>();
             }
         };
 
@@ -197,9 +197,9 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            template<typename func>
+            template<template<typename = void> class func>
             void impl() {
-                func functor;
+                func<> functor;
                 size_t numValues = test.template getNumValues();
                 size_t i = 0;
                 auto dataIn = test.bufEncoded.template begin<CS>();
@@ -249,19 +249,19 @@ namespace coding_benchmark {
             }
             void operator()(
                     ArithmeticConfiguration::Add) {
-                impl<add<>>();
+                impl<add>();
             }
             void operator()(
                     ArithmeticConfiguration::Sub) {
-                impl<sub<>>();
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
-                impl<mul<>>();
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
-                impl<div<>>();
+                impl<div>();
             }
         };
 

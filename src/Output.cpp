@@ -49,24 +49,56 @@ void printResults(
     std::string simd = results[0][0].simd;
     bool isEnc = results[0][0].encode.isExecuted;
     bool isCheck = results[0][0].check.isExecuted;
-    bool isArith = results[0][0].arithmetic.isExecuted;
-    bool isArithChk = results[0][0].arithmeticChecked.isExecuted;
+    bool isAdd = results[0][0].add.isExecuted;
+    bool isSub = results[0][0].sub.isExecuted;
+    bool isMul = results[0][0].mul.isExecuted;
+    bool isDiv = results[0][0].div.isExecuted;
+    bool isAddChk = results[0][0].addChecked.isExecuted;
+    bool isSubChk = results[0][0].subChecked.isExecuted;
+    bool isMulChk = results[0][0].mulChecked.isExecuted;
+    bool isDivChk = results[0][0].divChecked.isExecuted;
     bool isAggr = results[0][0].aggregate.isExecuted;
     bool isAggrChk = results[0][0].aggregateChecked.isExecuted;
     bool isReencChk = results[0][0].reencodeChecked.isExecuted;
     bool isDec = results[0][0].decode.isExecuted;
     bool isDecChk = results[0][0].decodeChecked.isExecuted;
-    size_t numEnc = isEnc, numCheck = isCheck, numArith = isArith, numArithChk = isArithChk, numAggr = isAggr, numAggrChk = isAggrChk, numReencChk = isReencChk, numDec = isDec, numDecChk = isDecChk;
+    size_t numEnc = isEnc;
+    size_t numCheck = isCheck;
+    size_t numAdd = isAdd;
+    size_t numSub = isSub;
+    size_t numMul = isMul;
+    size_t numDiv = isDiv;
+    size_t numAddChk = isAddChk;
+    size_t numSubChk = isSubChk;
+    size_t numMulChk = isMulChk;
+    size_t numDivChk = isDivChk;
+    size_t numAggr = isAggr;
+    size_t numAggrChk = isAggrChk;
+    size_t numReencChk = isReencChk;
+    size_t numDec = isDec;
+    size_t numDecChk = isDecChk;
     for (size_t i = 1; i < numResults; ++i) {
         auto & ti = results[i][0];
         isEnc |= ti.encode.isExecuted;
         numEnc += ti.encode.isExecuted;
         isCheck |= ti.check.isExecuted;
         numCheck += ti.check.isExecuted;
-        isArith |= ti.arithmetic.isExecuted;
-        numArith += ti.arithmetic.isExecuted;
-        isArithChk |= ti.arithmeticChecked.isExecuted;
-        numArithChk += ti.arithmeticChecked.isExecuted;
+        isAdd |= ti.add.isExecuted;
+        isSub |= ti.sub.isExecuted;
+        isMul |= ti.mul.isExecuted;
+        isDiv |= ti.div.isExecuted;
+        numAdd += ti.add.isExecuted;
+        numSub += ti.sub.isExecuted;
+        numMul += ti.mul.isExecuted;
+        numDiv += ti.div.isExecuted;
+        isAddChk |= ti.addChecked.isExecuted;
+        isSubChk |= ti.subChecked.isExecuted;
+        isMulChk |= ti.mulChecked.isExecuted;
+        isDivChk |= ti.divChecked.isExecuted;
+        numAddChk += ti.addChecked.isExecuted;
+        numSubChk += ti.subChecked.isExecuted;
+        numMulChk += ti.mulChecked.isExecuted;
+        numDivChk += ti.divChecked.isExecuted;
         isAggr |= ti.aggregate.isExecuted;
         numAggr += ti.aggregate.isExecuted;
         isAggrChk |= ti.aggregateChecked.isExecuted;
@@ -83,19 +115,43 @@ void printResults(
     size_t num = 0;
     if (isEnc) {
         ++num;
-        std::cout << '|' << std::setw(log10NumTests) << "enc";
+        std::cout << '|' << std::setw(log10NumTests) << " enc";
     }
     if (isCheck) {
         ++num;
-        std::cout << '|' << std::setw(log10NumTests) << "chk";
+        std::cout << '|' << std::setw(log10NumTests) << " chk";
     }
-    if (isArith) {
+    if (isAdd) {
         ++num;
-        std::cout << '|' << std::setw(log10NumTests) << "ari";
+        std::cout << '|' << std::setw(log10NumTests) << " add";
     }
-    if (isArithChk) {
+    if (isSub) {
         ++num;
-        std::cout << '|' << std::setw(log10NumTests) << "arC";
+        std::cout << '|' << std::setw(log10NumTests) << " sub";
+    }
+    if (isMul) {
+        ++num;
+        std::cout << '|' << std::setw(log10NumTests) << " mul";
+    }
+    if (isDiv) {
+        ++num;
+        std::cout << '|' << std::setw(log10NumTests) << " div";
+    }
+    if (isAddChk) {
+        ++num;
+        std::cout << '|' << std::setw(log10NumTests) << "addC";
+    }
+    if (isSubChk) {
+        ++num;
+        std::cout << '|' << std::setw(log10NumTests) << "subC";
+    }
+    if (isMulChk) {
+        ++num;
+        std::cout << '|' << std::setw(log10NumTests) << "mulC";
+    }
+    if (isDivChk) {
+        ++num;
+        std::cout << '|' << std::setw(log10NumTests) << "divC";
     }
     if (isAggr) {
         ++num;
@@ -103,19 +159,19 @@ void printResults(
     }
     if (isAggrChk) {
         ++num;
-        std::cout << '|' << std::setw(log10NumTests) << "agC";
+        std::cout << '|' << std::setw(log10NumTests) << "aggC";
     }
     if (isReencChk) {
         ++num;
-        std::cout << '|' << std::setw(log10NumTests) << "reC";
+        std::cout << '|' << std::setw(log10NumTests) << "renC";
     }
     if (isDec) {
         ++num;
-        std::cout << '|' << std::setw(log10NumTests) << "dec";
+        std::cout << '|' << std::setw(log10NumTests) << " dec";
     }
     if (isDecChk) {
         ++num;
-        std::cout << '|' << std::setw(log10NumTests) << "deC";
+        std::cout << '|' << std::setw(log10NumTests) << "decC";
     }
     std::cout << "|\n#   " << std::setfill('-');
     for (size_t i = 0; i < num; ++i) {
@@ -125,9 +181,15 @@ void printResults(
     size_t id = 1;
     size_t datawidth = 0;
     size_t incCheck = isEnc ? numResults : 0;
-    size_t incArith = incCheck + (isCheck ? numResults : 0);
-    size_t incArithChk = incArith + (isArithChk ? numResults : 0);
-    size_t incAggr = incArithChk + (isAggr ? numResults : 0);
+    size_t incAdd = incCheck + (isAdd ? numResults : 0);
+    size_t incSub = incAdd + (isSub ? numResults : 0);
+    size_t incMul = incSub + (isMul ? numResults : 0);
+    size_t incDiv = incMul + (isDiv ? numResults : 0);
+    size_t incAddChk = incDiv + (isAddChk ? numResults : 0);
+    size_t incSubChk = incAddChk + (isSubChk ? numResults : 0);
+    size_t incMulChk = incSubChk + (isMulChk ? numResults : 0);
+    size_t incDivChk = incMulChk + (isDivChk ? numResults : 0);
+    size_t incAggr = incDivChk + (isAggr ? numResults : 0);
     size_t incAggrChk = incAggr + (isAggrChk ? numResults : 0);
     size_t incReencChk = incAggrChk + (isReencChk ? numResults : 0);
     size_t incDec = incReencChk + (isDec ? numResults : 0);
@@ -156,16 +218,58 @@ void printResults(
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
-        if (isArith) {
-            if (ti.arithmetic.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << (id + incArith);
+        if (isAdd) {
+            if (ti.add.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << (id + incAdd);
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
         }
-        if (isArithChk) {
-            if (ti.arithmeticChecked.isExecuted) {
-                std::cout << '|' << std::setw(log10NumTests) << (id + incArithChk);
+        if (isSub) {
+            if (ti.sub.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << (id + incSub);
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isMul) {
+            if (ti.mul.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << (id + incMul);
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isDiv) {
+            if (ti.div.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << (id + incDiv);
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isAddChk) {
+            if (ti.addChecked.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << (id + incAddChk);
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isSubChk) {
+            if (ti.subChecked.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << (id + incSubChk);
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isMulChk) {
+            if (ti.mulChecked.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << (id + incMulChk);
+            } else {
+                std::cout << '|' << std::setw(log10NumTests) << ' ';
+            }
+        }
+        if (isDivChk) {
+            if (ti.divChecked.isExecuted) {
+                std::cout << '|' << std::setw(log10NumTests) << (id + incDivChk);
             } else {
                 std::cout << '|' << std::setw(log10NumTests) << ' ';
             }
@@ -230,16 +334,64 @@ void printResults(
     i = 0;
     for (auto & v : results) {
         auto & ti = v[0];
-        if (isArith) {
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " arith");
+        if (isAdd) {
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " add");
         }
         ++i;
     }
     i = 0;
     for (auto & v : results) {
         auto & ti = v[0];
-        if (isArithChk) {
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " arithChk");
+        if (isSub) {
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " sub");
+        }
+        ++i;
+    }
+    i = 0;
+    for (auto & v : results) {
+        auto & ti = v[0];
+        if (isMul) {
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " mul");
+        }
+        ++i;
+    }
+    i = 0;
+    for (auto & v : results) {
+        auto & ti = v[0];
+        if (isDiv) {
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " div");
+        }
+        ++i;
+    }
+    i = 0;
+    for (auto & v : results) {
+        auto & ti = v[0];
+        if (isAddChk) {
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " addChk");
+        }
+        ++i;
+    }
+    i = 0;
+    for (auto & v : results) {
+        auto & ti = v[0];
+        if (isSubChk) {
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " subChk");
+        }
+        ++i;
+    }
+    i = 0;
+    for (auto & v : results) {
+        auto & ti = v[0];
+        if (isMulChk) {
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " mulChk");
+        }
+        ++i;
+    }
+    i = 0;
+    for (auto & v : results) {
+        auto & ti = v[0];
+        if (isDivChk) {
+            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " divChk");
         }
         ++i;
     }
@@ -326,35 +478,137 @@ void printResults(
             }
         }
         for (auto & v : results) {
-            if (isArith) {
+            if (isAdd) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].arithmetic.isExecuted && v[pos].arithmetic.error.empty()) {
+                if (pos < v.size() && v[pos].add.isExecuted && v[pos].add.error.empty()) {
                     auto & x = v[pos];
                     if (doRelative) {
                         if (x.reference) {
-                            std::cout << (static_cast<double>(v[pos].arithmetic.nanos) / x.reference->arithmetic.nanos);
+                            std::cout << (static_cast<double>(v[pos].add.nanos) / x.reference->add.nanos);
                         } else {
                             std::cout << 1.0L;
                         }
                     } else {
-                        std::cout << v[pos].arithmetic.nanos;
+                        std::cout << v[pos].add.nanos;
                     }
                 }
             }
         }
         for (auto & v : results) {
-            if (isArithChk) {
+            if (isSub) {
                 std::cout << ',';
-                if (pos < v.size() && v[pos].arithmeticChecked.isExecuted && v[pos].arithmeticChecked.error.empty()) {
+                if (pos < v.size() && v[pos].sub.isExecuted && v[pos].sub.error.empty()) {
                     auto & x = v[pos];
                     if (doRelative) {
                         if (x.reference) {
-                            std::cout << (static_cast<double>(v[pos].arithmeticChecked.nanos) / x.reference->arithmeticChecked.nanos);
+                            std::cout << (static_cast<double>(v[pos].sub.nanos) / x.reference->sub.nanos);
                         } else {
                             std::cout << 1.0L;
                         }
                     } else {
-                        std::cout << v[pos].arithmeticChecked.nanos;
+                        std::cout << v[pos].sub.nanos;
+                    }
+                }
+            }
+        }
+        for (auto & v : results) {
+            if (isMul) {
+                std::cout << ',';
+                if (pos < v.size() && v[pos].mul.isExecuted && v[pos].mul.error.empty()) {
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].mul.nanos) / x.reference->mul.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
+                        std::cout << v[pos].mul.nanos;
+                    }
+                }
+            }
+        }
+        for (auto & v : results) {
+            if (isDiv) {
+                std::cout << ',';
+                if (pos < v.size() && v[pos].div.isExecuted && v[pos].div.error.empty()) {
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].div.nanos) / x.reference->div.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
+                        std::cout << v[pos].div.nanos;
+                    }
+                }
+            }
+        }
+        for (auto & v : results) {
+            if (isAddChk) {
+                std::cout << ',';
+                if (pos < v.size() && v[pos].addChecked.isExecuted && v[pos].addChecked.error.empty()) {
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].addChecked.nanos) / x.reference->addChecked.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
+                        std::cout << v[pos].addChecked.nanos;
+                    }
+                }
+            }
+        }
+        for (auto & v : results) {
+            if (isSubChk) {
+                std::cout << ',';
+                if (pos < v.size() && v[pos].subChecked.isExecuted && v[pos].subChecked.error.empty()) {
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].subChecked.nanos) / x.reference->subChecked.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
+                        std::cout << v[pos].subChecked.nanos;
+                    }
+                }
+            }
+        }
+        for (auto & v : results) {
+            if (isMulChk) {
+                std::cout << ',';
+                if (pos < v.size() && v[pos].mulChecked.isExecuted && v[pos].mulChecked.error.empty()) {
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].mulChecked.nanos) / x.reference->mulChecked.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
+                        std::cout << v[pos].mulChecked.nanos;
+                    }
+                }
+            }
+        }
+        for (auto & v : results) {
+            if (isDivChk) {
+                std::cout << ',';
+                if (pos < v.size() && v[pos].divChecked.isExecuted && v[pos].divChecked.error.empty()) {
+                    auto & x = v[pos];
+                    if (doRelative) {
+                        if (x.reference) {
+                            std::cout << (static_cast<double>(v[pos].divChecked.nanos) / x.reference->divChecked.nanos);
+                        } else {
+                            std::cout << 1.0L;
+                        }
+                    } else {
+                        std::cout << v[pos].divChecked.nanos;
                     }
                 }
             }

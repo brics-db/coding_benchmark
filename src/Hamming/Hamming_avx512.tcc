@@ -127,8 +127,9 @@ public AVX2Test {
             config(config),
             iteration(iteration) {
             }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
+            template<template<typename = void> class func>
+            void impl() {
+                func<> functor;
                 const size_t VALUES_PER_VECTOR = sizeof(__m512i) / sizeof (DATAIN);
                 const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
                 const size_t numValues = test.getNumValues();
@@ -138,28 +139,35 @@ public AVX2Test {
                 auto dataOut = test.bufResult.template begin<hamming_avx2_t>();
                 while (i <= VALUES_PER_UNROLL) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
-                        dataOut->store(SIMD<__m512i, DATAIN>::add(dataIn->data, mmOperand));
+                        dataOut->store(mm_op<__m512i, DATAIN, func>::compute(dataIn->data, mmOperand));
                     }
                 }
                 for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
-                    dataOut->store(SIMD<__m512i, DATAIN>::add(dataIn->data, mmOperand));
+                    dataOut->store(mm_op<__m512i, DATAIN, func>::compute(dataIn->data, mmOperand));
                 }
                 if (i < numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
                     auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
                     for (; i < numValues; ++i, ++dataIn2, ++dataOut2) {
-                        dataOut2->store(dataIn2->data + config.operand);
+                        dataOut2->store(functor(dataIn2->data, config.operand));
                     }
                 }
             }
             void operator()(
+                    ArithmeticConfiguration::Add) {
+                impl<add>();
+            }
+            void operator()(
                     ArithmeticConfiguration::Sub) {
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
+                impl<div>();
             }
         };
 
@@ -190,8 +198,9 @@ public AVX2Test {
             config(config),
             iteration(iteration) {
             }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
+            template<template<typename = void> class func>
+            void impl() {
+                func<> functor;
                 const size_t VALUES_PER_VECTOR = sizeof(__m512i) / sizeof (DATAIN);
                 const size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
                 const size_t numValues = test.getNumValues();
@@ -205,7 +214,7 @@ public AVX2Test {
                         if (!dataIn->isValid()) {
                             throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                         }
-                        dataOut->store(SIMD<__m512i, DATAIN>::add(tmp, mmOperand));
+                        dataOut->store(mm_op<__m512i, DATAIN, func>::compute(tmp, mmOperand));
                     }
                 }
                 for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
@@ -213,7 +222,7 @@ public AVX2Test {
                     if (!dataIn->isValid()) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
-                    dataOut->store(SIMD<__m512i, DATAIN>::add(tmp, mmOperand));
+                    dataOut->store(mm_op<__m512i, DATAIN, func>::compute(tmp, mmOperand));
                 }
                 if (i < numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
@@ -223,18 +232,25 @@ public AVX2Test {
                         if (!dataIn2->isValid()) {
                             throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                         }
-                        dataOut2->store(tmp + config.operand);
+                        dataOut2->store(functor(tmp, config.operand));
                     }
                 }
             }
             void operator()(
+                    ArithmeticConfiguration::Add) {
+                impl<add>();
+            }
+            void operator()(
                     ArithmeticConfiguration::Sub) {
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
+                impl<div>();
             }
         };
 

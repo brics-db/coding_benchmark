@@ -23,6 +23,7 @@
 #include <Test.hpp>
 #include <Hamming/Hamming_base.hpp>
 #include <Util/ErrorInfo.hpp>
+#include <Util/Functors.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Util/AggregateSelector.hpp>
 #include <Util/Helpers.hpp>
@@ -105,31 +106,39 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
+            template<template<typename = void> class func>
+            void impl() {
+                func<> functor;
                 const size_t numValues = test.getNumValues();
                 auto data = test.bufEncoded.template begin<hamming_scalar_t>();
                 auto dataEnd = data + numValues;
                 auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        auto tmp = data->data + config.operand;
+                        auto tmp = functor(data->data, config.operand);
                         dataOut->store(tmp);
                     }
                 }
                 for (; data < dataEnd; ++data, ++dataOut) {
-                    auto tmp = data->data + config.operand;
+                    auto tmp = functor(data->data, config.operand);
                     dataOut->store(tmp);
                 }
             }
             void operator()(
+                    ArithmeticConfiguration::Add) {
+                impl<add>();
+            }
+            void operator()(
                     ArithmeticConfiguration::Sub) {
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
+                impl<div>();
             }
         };
 
@@ -159,8 +168,9 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
+            template<template<typename = void> class func>
+            void impl() {
+                func<> functor;
                 const size_t numValues = test.getNumValues();
                 auto data = test.bufEncoded.template begin<hamming_scalar_t>();
                 auto dataEnd = data + numValues;
@@ -172,7 +182,7 @@ namespace coding_benchmark {
                         if (!data->isValid()) {
                             throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                         }
-                        dataOut->store(tmp + config.operand);
+                        dataOut->store(functor(tmp, config.operand));
                     }
                 }
                 for (; data < dataEnd; ++data, ++dataOut) {
@@ -180,17 +190,24 @@ namespace coding_benchmark {
                     if (!data->isValid()) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
-                    dataOut->store(tmp + config.operand);
+                    dataOut->store(functor(tmp, config.operand));
                 }
             }
             void operator()(
+                    ArithmeticConfiguration::Add) {
+                impl<add>();
+            }
+            void operator()(
                     ArithmeticConfiguration::Sub) {
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
+                impl<div>();
             }
         };
 

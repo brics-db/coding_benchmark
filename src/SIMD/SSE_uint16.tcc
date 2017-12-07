@@ -493,11 +493,11 @@ namespace coding_benchmark {
             static inline __m128i div(
                     __m128i a,
                     __m128i b) {
-                auto mm1 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(a)), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(b)));
-                auto mm2 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(a, 8))), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(b, 8))));
-                auto mx1 = _mm_cvtepi32_epi8(_mm_cvtps_epi32(mm1));
-                auto mx2 = _mm_shuffle_epi8(_mm_cvtepi32_epi8(_mm_cvtps_epi32(mm2)), _mm_set_epi64x(0x0D0C090805040100, 0xFFFFFFFFFFFFFFFF));
-                return _mm_or_si128(mx1, mx2);
+                auto mm0 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(a)), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(b)));
+                auto mm1 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(a, 8))), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(b, 8))));
+                auto mx0 = _mm_cvtps_pi16(mm0);
+                auto mx1 = _mm_cvtps_pi16(mm1);
+                return _mm_set_epi64(mx1, mx0);
             }
         };
 

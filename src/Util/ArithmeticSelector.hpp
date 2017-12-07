@@ -30,14 +30,14 @@ struct ArithmeticSelector {
     }
     bool operator()(
             ArithmeticConfiguration::Sub) {
-        return false;
+        return true;
     }
     bool operator()(
             ArithmeticConfiguration::Mul) {
-        return false;
+        return true;
     }
     bool operator()(
             ArithmeticConfiguration::Div) {
-        return false;
+        return true;
     }
 };

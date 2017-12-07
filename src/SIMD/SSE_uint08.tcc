@@ -401,15 +401,15 @@ namespace coding_benchmark {
             static inline __m128i div(
                     __m128i a,
                     __m128i b) {
-                auto mm1 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi8_epi32(a)), _mm_cvtepi32_ps(_mm_cvtepi8_epi32(b)));
-                auto mm2 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(a, 4))), _mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(b, 4))));
-                auto mm3 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(a, 8))), _mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(b, 8))));
-                auto mm4 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(a, 12))), _mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(b, 12))));
-                auto mx1 = _mm_cvtepi32_epi8(_mm_cvtps_epi32(mm1));
-                auto mx2 = _mm_shuffle_epi8(_mm_cvtepi32_epi8(_mm_cvtps_epi32(mm2)), _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0C080400FFFFFFFF));
-                auto mx3 = _mm_shuffle_epi8(_mm_cvtepi32_epi8(_mm_cvtps_epi32(mm3)), _mm_set_epi64x(0xFFFFFFFF0C080400, 0xFFFFFFFFFFFFFFFF));
-                auto mx4 = _mm_shuffle_epi8(_mm_cvtepi32_epi8(_mm_cvtps_epi32(mm4)), _mm_set_epi64x(0x0C080400FFFFFFFF, 0xFFFFFFFFFFFFFFFF));
-                return _mm_or_si128(_mm_or_si128(mx1, mx2), _mm_or_si128(mx3, mx4));
+                auto mm0 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi8_epi32(a)), _mm_cvtepi32_ps(_mm_cvtepi8_epi32(b)));
+                auto mm1 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(a, 4))), _mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(b, 4))));
+                auto mm2 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(a, 8))), _mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(b, 8))));
+                auto mm3 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(a, 12))), _mm_cvtepi32_ps(_mm_cvtepi8_epi32(_mm_srli_si128(b, 12))));
+                auto mx0 = _m_to_int(_mm_cvtps_pi8(mm0));
+                auto mx1 = _m_to_int(_mm_cvtps_pi8(mm1));
+                auto mx2 = _m_to_int(_mm_cvtps_pi8(mm2));
+                auto mx3 = _m_to_int(_mm_cvtps_pi8(mm3));
+                return _mm_set_epi32(mx3, mx2, mx1, mx0);
             }
         };
 

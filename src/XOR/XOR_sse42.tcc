@@ -180,20 +180,20 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            template<typename func>
+            template<template<typename = void> class func>
             void impl() {
-                // TODO use func
-                func functor;
+                func<> functor;
                 const constexpr size_t NUM_VALUES_PER_VECTOR = sizeof(__m128i) /sizeof (DATA);
                 const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
                 size_t numValues = test.template getNumValues();
                 size_t i = 0;
                 auto data128In = test.bufEncoded.template begin<__m128i >();
                 auto data128Out = test.bufResult.template begin<__m128i >();
+                auto mmOperand = simd::mm<__m128i, DATA>::set1(config.operand);
                 while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
                     __m128i checksum = _mm_setzero_si128();
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                        auto mmTmp = _mm_add_epi16(_mm_lddqu_si128(data128In++), _mm_set1_epi16(config.operand)); // TODO this is only for 16-bit values!
+                        auto mmTmp = simd::mm_op<__m128i, DATA, func>::compute(_mm_lddqu_si128(data128In++), mmOperand);
                         checksum = _mm_xor_si128(checksum, mmTmp);
                         _mm_storeu_si128(data128Out++, mmTmp);
                     }
@@ -207,7 +207,7 @@ namespace coding_benchmark {
                 if (i <= (numValues - NUM_VALUES_PER_VECTOR)) {
                     __m128i checksum = _mm_setzero_si128();
                     do {
-                        auto mmTmp = _mm_add_epi16(_mm_lddqu_si128(data128In++), _mm_set1_epi16(config.operand)); // TODO this is only for 16-bit values!
+                        auto mmTmp = simd::mm_op<__m128i, DATA, func>::compute(_mm_lddqu_si128(data128In++), mmOperand);
                         checksum = _mm_xor_si128(checksum, mmTmp);
                         _mm_storeu_si128(data128Out++, mmTmp);
                         i += NUM_VALUES_PER_VECTOR;
@@ -232,19 +232,19 @@ namespace coding_benchmark {
             }
             void operator()(
                     ArithmeticConfiguration::Add) {
-                impl<add<>>();
+                impl<add>();
             }
             void operator()(
                     ArithmeticConfiguration::Sub) {
-                impl<sub<>>();
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
-                impl<mul<>>();
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
-                impl<div<>>();
+                impl<div>();
             }
         };
 
@@ -273,22 +273,23 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            template<typename func>
+            template<template<typename = void> class func>
             void impl() {
-                func functor;
+                func<> functor;
                 const constexpr size_t NUM_VALUES_PER_VECTOR = sizeof(__m128i) /sizeof (DATA);
                 const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
                 size_t numValues = test.template getNumValues();
                 size_t i = 0;
                 auto data128In = test.bufEncoded.template begin<__m128i >();
                 auto data128Out = test.bufResult.template begin<__m128i >();
+                auto mmOperand = simd::mm<__m128i, DATA>::set1(config.operand);
                 while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
                     __m128i oldChecksum = _mm_setzero_si128();
                     __m128i newChecksum = _mm_setzero_si128();
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                        auto mmTmp = _mm_lddqu_si128(data128In++); // TODO this is only for 16-bit values!
+                        auto mmTmp = _mm_lddqu_si128(data128In++);
                         oldChecksum = _mm_xor_si128(oldChecksum, mmTmp);
-                        mmTmp = _mm_add_epi16(mmTmp, _mm_set1_epi16(config.operand));
+                        mmTmp = simd::mm_op<__m128i, DATA, func>::compute(mmTmp, mmOperand);
                         newChecksum = _mm_xor_si128(newChecksum, mmTmp);
                         _mm_storeu_si128(data128Out++, mmTmp);
                     }
@@ -308,9 +309,9 @@ namespace coding_benchmark {
                     __m128i oldChecksum = _mm_setzero_si128();
                     __m128i newChecksum = _mm_setzero_si128();
                     do {
-                        auto mmTmp = _mm_lddqu_si128(data128In++); // TODO this is only for 16-bit values!
+                        auto mmTmp = _mm_lddqu_si128(data128In++);
                         oldChecksum = _mm_xor_si128(oldChecksum, mmTmp);
-                        mmTmp = _mm_add_epi16(mmTmp, _mm_set1_epi16(config.operand));
+                        mmTmp = simd::mm_op<__m128i, DATA, func>::compute(mmTmp, mmOperand);
                         newChecksum = _mm_xor_si128(newChecksum, mmTmp);
                         _mm_storeu_si128(data128Out++, mmTmp);
                         i += NUM_VALUES_PER_VECTOR;
@@ -347,16 +348,19 @@ namespace coding_benchmark {
             }
             void operator()(
                     ArithmeticConfiguration::Add) {
-                impl<add<>>();
+                impl<add>();
             }
             void operator()(
                     ArithmeticConfiguration::Sub) {
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
+                impl<div>();
             }
         };
 

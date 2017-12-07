@@ -23,6 +23,9 @@
 
 #include <AN/ANTest.hpp>
 #include <Util/ArithmeticSelector.hpp>
+#include <SIMD/AVX2.hpp>
+
+using namespace coding_benchmark::simd;
 
 namespace coding_benchmark {
 
@@ -87,38 +90,46 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
+            template<template<typename = void> class func>
+            void impl() {
+                func<> functor;
                 auto *mmData = test.bufEncoded.template begin<__m256i >();
                 auto * const mmDataEnd = test.bufEncoded.template end<__m256i >();
                 auto *mmOut = test.bufResult.template begin<__m256i >();
                 DATAENC operandEnc = config.operand * test.A;
-                auto mmOperandEnc = _mm256_set1_epi32(operandEnc);
+                auto mmOperandEnc = mm<__m256i, DATAENC>::set1(operandEnc);
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        _mm256_storeu_si256(mmOut++, _mm256_add_epi32(_mm256_lddqu_si256(mmData++), mmOperandEnc));
+                        _mm256_storeu_si256(mmOut++, mm_op<__m256i, DATAENC, func>::compute(_mm256_lddqu_si256(mmData++), mmOperandEnc));
                     }
                 }
                 // remaining numbers
                 while (mmData <= (mmDataEnd - 1)) {
-                    _mm256_storeu_si256(mmOut++, _mm256_add_epi32(_mm256_lddqu_si256(mmData++), mmOperandEnc));
+                    _mm256_storeu_si256(mmOut++, mm_op<__m256i, DATAENC, func>::compute(_mm256_lddqu_si256(mmData++), mmOperandEnc));
                 }
                 if (mmData < mmDataEnd) {
                     auto data32End = reinterpret_cast<DATAENC*>(mmDataEnd);
                     auto out32 = reinterpret_cast<DATAENC*>(mmOut);
                     for (auto data32 = reinterpret_cast<DATAENC*>(mmData); data32 < data32End; ++data32, ++out32)
-                        *out32 = *data32 + operandEnc;
+                        *out32 = functor(*data32, operandEnc);
                 }
             }
             void operator()(
+                    ArithmeticConfiguration::Add) {
+                impl<add>();
+            }
+            void operator()(
                     ArithmeticConfiguration::Sub) {
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
+                impl<div>();
             }
         };
 

@@ -167,7 +167,7 @@ namespace coding_benchmark {
                         __m256i a) {
                     uint64_t mask = 0x0101010101010101;
                     auto shuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFF0F07, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFF0F07);
-                    auto popcount8 = SIMD<__m256i, uint8_t>::popcount2(a);
+                    auto popcount8 = mm<__m256i, uint8_t>::popcount2(a);
                     auto temp = _mm256_shuffle_epi8(
                             _mm256_set_epi64x(static_cast<uint64_t>(_mm256_extract_epi64(popcount8, 3)) * mask, static_cast<uint64_t>(_mm256_extract_epi64(popcount8, 2)) * mask,
                                     static_cast<uint64_t>(_mm256_extract_epi64(popcount8, 1)) * mask, static_cast<uint64_t>(_mm256_extract_epi64(popcount8, 0)) * mask), shuffle);

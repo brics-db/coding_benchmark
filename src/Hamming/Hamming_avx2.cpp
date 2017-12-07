@@ -29,6 +29,8 @@
  * Credit also goes to the book "Hacker's Delight" 2nd Edition, by Henry S. Warren, Jr., published at Addison-Wesley
  */
 
+using namespace coding_benchmark::simd;
+
 namespace coding_benchmark {
 
     template struct hamming_t<uint16_t, __m256i > ;
@@ -61,7 +63,7 @@ namespace coding_benchmark {
         tmp1 = _mm_and_si128(tmp1, mask);
         tmp2 = _mm_xor_si128(tmp2, tmp1);
         hamming = _mm_or_si128(hamming, _mm_slli_epi16(tmp1, 5));
-        tmp1 = _mm_add_epi8(mm<__m256i, uint16_t>::popcount(std::forward < __m256i > (data)), tmp2);
+        tmp1 = _mm_add_epi8(mm<__m256i, uint16_t>::popcount(std::forward<__m256i >(data)), tmp2);
         tmp1 = _mm_and_si128(tmp1, mask);
         hamming = _mm_or_si128(hamming, tmp1);
         return hamming;
@@ -94,7 +96,7 @@ namespace coding_benchmark {
         tmp1 = _mm_and_si128(tmp1, mask);
         tmp2 = _mm_xor_si128(tmp2, tmp1);
         hamming = _mm_or_si128(hamming, _mm_slli_epi16(tmp1, 5));
-        tmp1 = _mm_add_epi8(mm<__m256i, uint16_t>::popcount2(std::forward < __m256i > (data)), tmp2);
+        tmp1 = _mm_add_epi8(mm<__m256i, uint16_t>::popcount2(std::forward<__m256i >(data)), tmp2);
         tmp1 = _mm_and_si128(tmp1, mask);
         hamming = _mm_or_si128(hamming, tmp1);
         return hamming;
@@ -127,7 +129,7 @@ namespace coding_benchmark {
         tmp1 = _mm_and_si128(tmp1, mask);
         tmp2 = _mm_xor_si128(tmp2, tmp1);
         hamming = _mm_or_si128(hamming, _mm_slli_epi16(tmp1, 5));
-        tmp1 = _mm_add_epi8(mm<__m256i, uint16_t>::popcount3(std::forward < __m256i > (data)), tmp2);
+        tmp1 = _mm_add_epi8(mm<__m256i, uint16_t>::popcount3(std::forward<__m256i >(data)), tmp2);
         tmp1 = _mm_and_si128(tmp1, mask);
         hamming = _mm_or_si128(hamming, tmp1);
         return hamming;
@@ -194,7 +196,7 @@ namespace coding_benchmark {
         tmp1 = mm<__m256i, uint32_t>::popcount(_mm256_and_si256(data, pattern6)) & 0x0101010101010101;
         tmp2 ^= tmp1;
         hamming |= tmp1 << 6;
-        hamming |= (mm<__m256i, uint32_t>::popcount(std::forward < __m256i > (data)) + tmp2) & 0x0101010101010101;
+        hamming |= (mm<__m256i, uint32_t>::popcount(std::forward<__m256i >(data)) + tmp2) & 0x0101010101010101;
         return hamming;
     }
 
@@ -226,7 +228,7 @@ namespace coding_benchmark {
         tmp1 = mm<__m256i, uint32_t>::popcount2(_mm256_and_si256(data, pattern6)) & 0x0101010101010101;
         tmp2 ^= tmp1;
         hamming |= tmp1 << 6;
-        hamming |= (mm<__m256i, uint32_t>::popcount2(std::forward < __m256i > (data)) + tmp2) & 0x0101010101010101;
+        hamming |= (mm<__m256i, uint32_t>::popcount2(std::forward<__m256i >(data)) + tmp2) & 0x0101010101010101;
         return hamming;
     }
 
@@ -258,7 +260,7 @@ namespace coding_benchmark {
         tmp1 = mm<__m256i, uint32_t>::popcount3(_mm256_and_si256(data, pattern6)) & 0x0101010101010101;
         tmp2 ^= tmp1;
         hamming |= tmp1 << 6;
-        hamming |= (mm<__m256i, uint32_t>::popcount3(std::forward < __m256i > (data)) + tmp2) & 0x0101010101010101;
+        hamming |= (mm<__m256i, uint32_t>::popcount3(std::forward<__m256i >(data)) + tmp2) & 0x0101010101010101;
         return hamming;
     }
 

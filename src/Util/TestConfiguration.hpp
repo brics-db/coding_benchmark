@@ -153,6 +153,25 @@ struct ArithmeticConfiguration :
     }
 };
 
+struct ArithmeticConfigurationModeName {
+    const char * operator()(
+            ArithmeticConfiguration::Add) {
+        return "add";
+    }
+    const char * operator()(
+            ArithmeticConfiguration::Sub) {
+        return "sub";
+    }
+    const char * operator()(
+            ArithmeticConfiguration::Mul) {
+        return "mul";
+    }
+    const char * operator()(
+            ArithmeticConfiguration::Div) {
+        return "div";
+    }
+};
+
 struct AggregateConfiguration :
         public BasicTestConfiguration {
     struct Sum {

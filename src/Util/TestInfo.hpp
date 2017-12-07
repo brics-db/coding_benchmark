@@ -61,8 +61,14 @@ struct TestInfos {
     std::string simd;
     TestInfo encode;
     TestInfo check;
-    TestInfo arithmetic;
-    TestInfo arithmeticChecked;
+    TestInfo add;
+    TestInfo sub;
+    TestInfo mul;
+    TestInfo div;
+    TestInfo addChecked;
+    TestInfo subChecked;
+    TestInfo mulChecked;
+    TestInfo divChecked;
     TestInfo aggregate;
     TestInfo aggregateChecked;
     TestInfo reencodeChecked;
@@ -81,8 +87,14 @@ struct TestInfos {
             const std::string & simd,
             TestInfo & encode,
             TestInfo & check,
-            TestInfo & arithmetic,
-            TestInfo & arithmeticChecked,
+            TestInfo & add,
+            TestInfo & sub,
+            TestInfo & mul,
+            TestInfo & div,
+            TestInfo & addChecked,
+            TestInfo & subChecked,
+            TestInfo & mulChecked,
+            TestInfo & divChecked,
             TestInfo & aggregate,
             TestInfo & aggregateChecked,
             TestInfo & reencodeChecked,
@@ -95,8 +107,14 @@ struct TestInfos {
             const std::string & simd,
             TestInfo & encode,
             TestInfo & check,
-            TestInfo & arithmetic,
-            TestInfo & arithmeticChecked,
+            TestInfo & add,
+            TestInfo & sub,
+            TestInfo & mul,
+            TestInfo & div,
+            TestInfo & addChecked,
+            TestInfo & subChecked,
+            TestInfo & mulChecked,
+            TestInfo & divChecked,
             TestInfo & aggregate,
             TestInfo & aggregateChecked,
             TestInfo & reencodeChecked,

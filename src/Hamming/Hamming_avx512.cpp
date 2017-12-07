@@ -19,7 +19,7 @@
  * Created on 15-08-2017 16:16
  */
 
-#ifdef __AVX2__
+#ifdef __AVX512F__
 
 #include <Hamming/Hamming_avx2.hpp>
 
@@ -31,8 +31,8 @@
 
 namespace coding_benchmark {
 
-    template struct hamming_t<uint16_t, __m512i > ;
-    template struct hamming_t<uint32_t, __m512i > ;
+    template struct hamming_t<uint16_t, __m512i >;
+    template struct hamming_t<uint32_t, __m512i >;
 
     template<>
     __m128i hamming_t<uint16_t, __m512i >::computeHamming(
@@ -296,50 +296,50 @@ namespace coding_benchmark {
     }
 
     template
-    struct Hamming_avx2_16<1> ;
+    struct Hamming_avx2_16<1>;
     template
-    struct Hamming_avx2_16<2> ;
+    struct Hamming_avx2_16<2>;
     template
-    struct Hamming_avx2_16<4> ;
+    struct Hamming_avx2_16<4>;
     template
-    struct Hamming_avx2_16<8> ;
+    struct Hamming_avx2_16<8>;
     template
-    struct Hamming_avx2_16<16> ;
+    struct Hamming_avx2_16<16>;
     template
-    struct Hamming_avx2_16<32> ;
+    struct Hamming_avx2_16<32>;
     template
-    struct Hamming_avx2_16<64> ;
+    struct Hamming_avx2_16<64>;
     template
-    struct Hamming_avx2_16<128> ;
+    struct Hamming_avx2_16<128>;
     template
-    struct Hamming_avx2_16<256> ;
+    struct Hamming_avx2_16<256>;
     template
-    struct Hamming_avx2_16<512> ;
+    struct Hamming_avx2_16<512>;
     template
-    struct Hamming_avx2_16<1024> ;
+    struct Hamming_avx2_16<1024>;
 
     template
-    struct Hamming_avx2_32<1> ;
+    struct Hamming_avx2_32<1>;
     template
-    struct Hamming_avx2_32<2> ;
+    struct Hamming_avx2_32<2>;
     template
-    struct Hamming_avx2_32<4> ;
+    struct Hamming_avx2_32<4>;
     template
-    struct Hamming_avx2_32<8> ;
+    struct Hamming_avx2_32<8>;
     template
-    struct Hamming_avx2_32<16> ;
+    struct Hamming_avx2_32<16>;
     template
-    struct Hamming_avx2_32<32> ;
+    struct Hamming_avx2_32<32>;
     template
-    struct Hamming_avx2_32<64> ;
+    struct Hamming_avx2_32<64>;
     template
-    struct Hamming_avx2_32<128> ;
+    struct Hamming_avx2_32<128>;
     template
-    struct Hamming_avx2_32<256> ;
+    struct Hamming_avx2_32<256>;
     template
-    struct Hamming_avx2_32<512> ;
+    struct Hamming_avx2_32<512>;
     template
-    struct Hamming_avx2_32<1024> ;
+    struct Hamming_avx2_32<1024>;
 
 }
 
