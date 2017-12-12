@@ -489,8 +489,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int16_t, coding_benchmark::and_is> :
-                    private Private08::_mm128op<int16_t, coding_benchmark::and_is> {
-                typedef Private08::_mm128op<int16_t, coding_benchmark::and_is> BASE;
+                    private Private16::_mm128op<int16_t, coding_benchmark::and_is> {
+                typedef Private16::_mm128op<int16_t, coding_benchmark::and_is> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -498,8 +498,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int16_t, coding_benchmark::or_is> :
-                    private Private08::_mm128op<int16_t, coding_benchmark::or_is> {
-                typedef Private08::_mm128op<int16_t, coding_benchmark::or_is> BASE;
+                    private Private16::_mm128op<int16_t, coding_benchmark::or_is> {
+                typedef Private16::_mm128op<int16_t, coding_benchmark::or_is> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -507,32 +507,32 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int16_t, coding_benchmark::add> :
-                    private Private08::_mm128op<int16_t, coding_benchmark::add> {
-                typedef Private08::_mm128op<int16_t, coding_benchmark::add> BASE;
+                    private Private16::_mm128op<int16_t, coding_benchmark::add> {
+                typedef Private16::_mm128op<int16_t, coding_benchmark::add> BASE;
                 using BASE::add;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<int16_t, coding_benchmark::sub> :
-                    private Private08::_mm128op<int16_t, coding_benchmark::sub> {
-                typedef Private08::_mm128op<int16_t, coding_benchmark::sub> BASE;
+                    private Private16::_mm128op<int16_t, coding_benchmark::sub> {
+                typedef Private16::_mm128op<int16_t, coding_benchmark::sub> BASE;
                 using BASE::sub;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<int16_t, coding_benchmark::mul> :
-                    private Private08::_mm128op<int16_t, coding_benchmark::mul> {
-                typedef Private08::_mm128op<int16_t, coding_benchmark::mul> BASE;
+                    private Private16::_mm128op<int16_t, coding_benchmark::mul> {
+                typedef Private16::_mm128op<int16_t, coding_benchmark::mul> BASE;
                 using BASE::mullo;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<int16_t, coding_benchmark::div> :
-                    private Private08::_mm128op<int16_t, coding_benchmark::div> {
-                typedef Private08::_mm128op<int16_t, coding_benchmark::div> BASE;
+                    private Private16::_mm128op<int16_t, coding_benchmark::div> {
+                typedef Private16::_mm128op<int16_t, coding_benchmark::div> BASE;
                 using BASE::div;
                 using BASE::compute;
             };
@@ -616,8 +616,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint16_t, coding_benchmark::and_is> :
-                    private Private08::_mm128op<uint16_t, coding_benchmark::and_is> {
-                typedef Private08::_mm128op<uint16_t, coding_benchmark::and_is> BASE;
+                    private Private16::_mm128op<uint16_t, coding_benchmark::and_is> {
+                typedef Private16::_mm128op<uint16_t, coding_benchmark::and_is> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -625,8 +625,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint16_t, coding_benchmark::or_is> :
-                    private Private08::_mm128op<uint16_t, coding_benchmark::or_is> {
-                typedef Private08::_mm128op<uint16_t, coding_benchmark::or_is> BASE;
+                    private Private16::_mm128op<uint16_t, coding_benchmark::or_is> {
+                typedef Private16::_mm128op<uint16_t, coding_benchmark::or_is> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -634,32 +634,32 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint16_t, coding_benchmark::add> :
-                    private Private08::_mm128op<uint16_t, coding_benchmark::add> {
-                typedef Private08::_mm128op<uint16_t, coding_benchmark::add> BASE;
+                    private Private16::_mm128op<uint16_t, coding_benchmark::add> {
+                typedef Private16::_mm128op<uint16_t, coding_benchmark::add> BASE;
                 using BASE::add;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<uint16_t, coding_benchmark::sub> :
-                    private Private08::_mm128op<uint16_t, coding_benchmark::sub> {
-                typedef Private08::_mm128op<uint16_t, coding_benchmark::sub> BASE;
+                    private Private16::_mm128op<uint16_t, coding_benchmark::sub> {
+                typedef Private16::_mm128op<uint16_t, coding_benchmark::sub> BASE;
                 using BASE::sub;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<uint16_t, coding_benchmark::mul> :
-                    private Private08::_mm128op<uint16_t, coding_benchmark::mul> {
-                typedef Private08::_mm128op<uint16_t, coding_benchmark::mul> BASE;
+                    private Private16::_mm128op<uint16_t, coding_benchmark::mul> {
+                typedef Private16::_mm128op<uint16_t, coding_benchmark::mul> BASE;
                 using BASE::mullo;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<uint16_t, coding_benchmark::div> :
-                    private Private08::_mm128op<uint16_t, coding_benchmark::div> {
-                typedef Private08::_mm128op<uint16_t, coding_benchmark::div> BASE;
+                    private Private16::_mm128op<uint16_t, coding_benchmark::div> {
+                typedef Private16::_mm128op<uint16_t, coding_benchmark::div> BASE;
                 using BASE::div;
                 using BASE::compute;
             };

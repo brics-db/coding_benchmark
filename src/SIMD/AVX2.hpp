@@ -31,11 +31,11 @@
 #include <Util/Functors.hpp>
 
 #include <SIMD/SSE.hpp>
-#include <AVX2_base.tcc>
-#include <AVX2_int08.tcc>
-#include <AVX2_int16.tcc>
-#include <AVX2_int32.tcc>
-#include <AVX2_int64.tcc>
+#include <SIMD/AVX2_base.tcc>
+#include <SIMD/AVX2_int08.tcc>
+#include <SIMD/AVX2_int16.tcc>
+#include <SIMD/AVX2_int32.tcc>
+#include <SIMD/AVX2_int64.tcc>
 
 namespace coding_benchmark {
     namespace simd {

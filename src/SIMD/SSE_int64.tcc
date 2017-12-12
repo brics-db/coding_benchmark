@@ -391,8 +391,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128<int64_t> :
-                    public Private16::_mm128<int64_t> {
-                typedef Private16::_mm128<int64_t> BASE;
+                    public Private64::_mm128<int64_t> {
+                typedef Private64::_mm128<int64_t> BASE;
                 using BASE::mask_t;
                 using BASE::popcnt_t;
                 using BASE::set1;
@@ -414,8 +414,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int64_t, std::greater_equal> :
-                    private Private16::_mm128op<int64_t, std::greater_equal> {
-                typedef Private16::_mm128op<int64_t, std::greater_equal> BASE;
+                    private Private64::_mm128op<int64_t, std::greater_equal> {
+                typedef Private64::_mm128op<int64_t, std::greater_equal> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -423,8 +423,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int64_t, std::greater> :
-                    private Private16::_mm128op<int64_t, std::greater> {
-                typedef Private16::_mm128op<int64_t, std::greater> BASE;
+                    private Private64::_mm128op<int64_t, std::greater> {
+                typedef Private64::_mm128op<int64_t, std::greater> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -432,8 +432,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int64_t, std::less_equal> :
-                    private Private16::_mm128op<int64_t, std::less_equal> {
-                typedef Private16::_mm128op<int64_t, std::less_equal> BASE;
+                    private Private64::_mm128op<int64_t, std::less_equal> {
+                typedef Private64::_mm128op<int64_t, std::less_equal> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -441,8 +441,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int64_t, std::less> :
-                    private Private16::_mm128op<int64_t, std::less> {
-                typedef Private16::_mm128op<int64_t, std::less> BASE;
+                    private Private64::_mm128op<int64_t, std::less> {
+                typedef Private64::_mm128op<int64_t, std::less> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -450,8 +450,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int64_t, std::equal_to> :
-                    private Private16::_mm128op<int64_t, std::equal_to> {
-                typedef Private16::_mm128op<int64_t, std::equal_to> BASE;
+                    private Private64::_mm128op<int64_t, std::equal_to> {
+                typedef Private64::_mm128op<int64_t, std::equal_to> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -459,8 +459,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int64_t, std::not_equal_to> :
-                    private Private16::_mm128op<int64_t, std::not_equal_to> {
-                typedef Private16::_mm128op<int64_t, std::not_equal_to> BASE;
+                    private Private64::_mm128op<int64_t, std::not_equal_to> {
+                typedef Private64::_mm128op<int64_t, std::not_equal_to> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -468,8 +468,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int64_t, coding_benchmark::and_is> :
-                    private Private08::_mm128op<int64_t, coding_benchmark::and_is> {
-                typedef Private08::_mm128op<int64_t, coding_benchmark::and_is> BASE;
+                    private Private64::_mm128op<int64_t, coding_benchmark::and_is> {
+                typedef Private64::_mm128op<int64_t, coding_benchmark::and_is> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -477,8 +477,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int64_t, coding_benchmark::or_is> :
-                    private Private08::_mm128op<int64_t, coding_benchmark::or_is> {
-                typedef Private08::_mm128op<int64_t, coding_benchmark::or_is> BASE;
+                    private Private64::_mm128op<int64_t, coding_benchmark::or_is> {
+                typedef Private64::_mm128op<int64_t, coding_benchmark::or_is> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -486,40 +486,40 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<int64_t, coding_benchmark::add> :
-                    private Private08::_mm128op<int64_t, coding_benchmark::add> {
-                typedef Private08::_mm128op<int64_t, coding_benchmark::add> BASE;
+                    private Private64::_mm128op<int64_t, coding_benchmark::add> {
+                typedef Private64::_mm128op<int64_t, coding_benchmark::add> BASE;
                 using BASE::add;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<int64_t, coding_benchmark::sub> :
-                    private Private08::_mm128op<int64_t, coding_benchmark::sub> {
-                typedef Private08::_mm128op<int64_t, coding_benchmark::sub> BASE;
+                    private Private64::_mm128op<int64_t, coding_benchmark::sub> {
+                typedef Private64::_mm128op<int64_t, coding_benchmark::sub> BASE;
                 using BASE::sub;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<int64_t, coding_benchmark::mul> :
-                    private Private08::_mm128op<int64_t, coding_benchmark::mul> {
-                typedef Private08::_mm128op<int64_t, coding_benchmark::mul> BASE;
+                    private Private64::_mm128op<int64_t, coding_benchmark::mul> {
+                typedef Private64::_mm128op<int64_t, coding_benchmark::mul> BASE;
                 using BASE::mullo;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<int64_t, coding_benchmark::div> :
-                    private Private08::_mm128op<int64_t, coding_benchmark::div> {
-                typedef Private08::_mm128op<int64_t, coding_benchmark::div> BASE;
+                    private Private64::_mm128op<int64_t, coding_benchmark::div> {
+                typedef Private64::_mm128op<int64_t, coding_benchmark::div> BASE;
                 using BASE::div;
                 using BASE::compute;
             };
 
             template<>
             struct mm128<uint64_t> :
-                    public Private16::_mm128<uint64_t> {
-                typedef Private16::_mm128<uint64_t> BASE;
+                    public Private64::_mm128<uint64_t> {
+                typedef Private64::_mm128<uint64_t> BASE;
                 using BASE::mask_t;
                 using BASE::popcnt_t;
                 using BASE::set1;
@@ -541,8 +541,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint64_t, std::greater_equal> :
-                    private Private16::_mm128op<uint64_t, std::greater_equal> {
-                typedef Private16::_mm128op<uint64_t, std::greater_equal> BASE;
+                    private Private64::_mm128op<uint64_t, std::greater_equal> {
+                typedef Private64::_mm128op<uint64_t, std::greater_equal> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -550,8 +550,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint64_t, std::greater> :
-                    private Private16::_mm128op<uint64_t, std::greater> {
-                typedef Private16::_mm128op<uint64_t, std::greater> BASE;
+                    private Private64::_mm128op<uint64_t, std::greater> {
+                typedef Private64::_mm128op<uint64_t, std::greater> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -559,8 +559,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint64_t, std::less_equal> :
-                    private Private16::_mm128op<uint64_t, std::less_equal> {
-                typedef Private16::_mm128op<uint64_t, std::less_equal> BASE;
+                    private Private64::_mm128op<uint64_t, std::less_equal> {
+                typedef Private64::_mm128op<uint64_t, std::less_equal> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -568,8 +568,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint64_t, std::less> :
-                    private Private16::_mm128op<uint64_t, std::less> {
-                typedef Private16::_mm128op<uint64_t, std::less> BASE;
+                    private Private64::_mm128op<uint64_t, std::less> {
+                typedef Private64::_mm128op<uint64_t, std::less> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -577,8 +577,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint64_t, std::equal_to> :
-                    private Private16::_mm128op<uint64_t, std::equal_to> {
-                typedef Private16::_mm128op<uint64_t, std::equal_to> BASE;
+                    private Private64::_mm128op<uint64_t, std::equal_to> {
+                typedef Private64::_mm128op<uint64_t, std::equal_to> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -586,8 +586,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint64_t, std::not_equal_to> :
-                    private Private16::_mm128op<uint64_t, std::not_equal_to> {
-                typedef Private16::_mm128op<uint64_t, std::not_equal_to> BASE;
+                    private Private64::_mm128op<uint64_t, std::not_equal_to> {
+                typedef Private64::_mm128op<uint64_t, std::not_equal_to> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -595,8 +595,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint64_t, coding_benchmark::and_is> :
-                    private Private08::_mm128op<uint64_t, coding_benchmark::and_is> {
-                typedef Private08::_mm128op<uint64_t, coding_benchmark::and_is> BASE;
+                    private Private64::_mm128op<uint64_t, coding_benchmark::and_is> {
+                typedef Private64::_mm128op<uint64_t, coding_benchmark::and_is> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -604,8 +604,8 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint64_t, coding_benchmark::or_is> :
-                    private Private08::_mm128op<uint64_t, coding_benchmark::or_is> {
-                typedef Private08::_mm128op<uint64_t, coding_benchmark::or_is> BASE;
+                    private Private64::_mm128op<uint64_t, coding_benchmark::or_is> {
+                typedef Private64::_mm128op<uint64_t, coding_benchmark::or_is> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
@@ -613,32 +613,32 @@ namespace coding_benchmark {
 
             template<>
             struct mm128op<uint64_t, coding_benchmark::add> :
-                    private Private08::_mm128op<uint64_t, coding_benchmark::add> {
-                typedef Private08::_mm128op<uint64_t, coding_benchmark::add> BASE;
+                    private Private64::_mm128op<uint64_t, coding_benchmark::add> {
+                typedef Private64::_mm128op<uint64_t, coding_benchmark::add> BASE;
                 using BASE::add;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<uint64_t, coding_benchmark::sub> :
-                    private Private08::_mm128op<uint64_t, coding_benchmark::sub> {
-                typedef Private08::_mm128op<uint64_t, coding_benchmark::sub> BASE;
+                    private Private64::_mm128op<uint64_t, coding_benchmark::sub> {
+                typedef Private64::_mm128op<uint64_t, coding_benchmark::sub> BASE;
                 using BASE::sub;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<uint64_t, coding_benchmark::mul> :
-                    private Private08::_mm128op<uint64_t, coding_benchmark::mul> {
-                typedef Private08::_mm128op<uint64_t, coding_benchmark::mul> BASE;
+                    private Private64::_mm128op<uint64_t, coding_benchmark::mul> {
+                typedef Private64::_mm128op<uint64_t, coding_benchmark::mul> BASE;
                 using BASE::mullo;
                 using BASE::compute;
             };
 
             template<>
             struct mm128op<uint64_t, coding_benchmark::div> :
-                    private Private08::_mm128op<uint64_t, coding_benchmark::div> {
-                typedef Private08::_mm128op<uint64_t, coding_benchmark::div> BASE;
+                    private Private64::_mm128op<uint64_t, coding_benchmark::div> {
+                typedef Private64::_mm128op<uint64_t, coding_benchmark::div> BASE;
                 using BASE::div;
                 using BASE::compute;
             };
