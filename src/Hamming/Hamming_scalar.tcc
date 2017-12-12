@@ -255,12 +255,59 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Min) {
+                const size_t numValues = test.getNumValues();
+                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+                auto dataEnd = data + numValues;
+                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+                larger_t tmp[2] {std::numeric_limits<larger_t>::max(), 0};
+                while (data <= (dataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
+                        tmp[1] = data->data;
+                        tmp[0] = tmp[tmp[0] > data->data]; // conditional access
+                    }
+                }
+                for (; data < dataEnd; ++data) {
+                    tmp[1] = data->data;
+                    tmp[0] = tmp[tmp[0] > data->data]; // conditional access
+                }
+                dataOut->store(tmp[0]);
             }
             void operator()(
                     AggregateConfiguration::Max) {
+                const size_t numValues = test.getNumValues();
+                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+                auto dataEnd = data + numValues;
+                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+                larger_t tmp[2] {std::numeric_limits<larger_t>::min(), 0};
+                while (data <= (dataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
+                        tmp[1] = data->data;
+                        tmp[0] = tmp[tmp[0] < data->data]; // conditional access
+                    }
+                }
+                for (; data < dataEnd; ++data) {
+                    tmp[1] = data->data;
+                    tmp[0] = tmp[tmp[0] < data->data]; // conditional access
+                }
+                dataOut->store(tmp[0]);
             }
             void operator()(
                     AggregateConfiguration::Avg) {
+                // Our simple assumption for here is that we can add up all values into the next larger data type
+                const size_t numValues = test.getNumValues();
+                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+                auto dataEnd = data + numValues;
+                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+                larger_t tmp(0);
+                while (data <= (dataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
+                        tmp += data->data;
+                    }
+                }
+                for (; data < dataEnd; ++data) {
+                    tmp += data->data;
+                }
+                dataOut->store(tmp / (dataEnd - data));
             }
         };
 
@@ -299,31 +346,103 @@ namespace coding_benchmark {
                 auto dataEnd = data + numValues;
                 auto dataOut = test.bufResult.template begin<hamming_larger_t>();
                 larger_t tmp(0);
-                size_t i = 0;
                 while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++i) {
-                        if (!data->isValid()) {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
+                        if (data->isValid()) {
+                            tmp += data->data;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
                         }
-                        tmp += data->data;
                     }
                 }
-                for (; data < dataEnd; ++data, ++i) {
-                    if (!data->isValid()) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                for (; data < dataEnd; ++data) {
+                    if (data->isValid()) {
+                        tmp += data->data;
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
                     }
-                    tmp += data->data;
                 }
                 dataOut->store(tmp);
             }
             void operator()(
                     AggregateConfiguration::Min) {
+                const size_t numValues = test.getNumValues();
+                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+                auto dataEnd = data + numValues;
+                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+                larger_t tmp[2] {std::numeric_limits<larger_t>::max(), 0};
+                while (data <= (dataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
+                        if (data->isValid()) {
+                            tmp[1] = data->data;
+                            tmp[0] = tmp[tmp[0] > data->data]; // conditional access
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                        }
+                    }
+                }
+                for (; data < dataEnd; ++data) {
+                    if (data->isValid()) {
+                        tmp[1] = data->data;
+                        tmp[0] = tmp[tmp[0] > data->data]; // conditional access
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                    }
+                }
+                dataOut->store(tmp[0]);
             }
             void operator()(
                     AggregateConfiguration::Max) {
+                const size_t numValues = test.getNumValues();
+                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+                auto dataEnd = data + numValues;
+                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+                larger_t tmp[2] {std::numeric_limits<larger_t>::min(), 0};
+                while (data <= (dataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
+                        if (data->isValid()) {
+                            tmp[1] = data->data;
+                            tmp[0] = tmp[tmp[0] < data->data]; // conditional access
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                        }
+                    }
+                }
+                for (; data < dataEnd; ++data) {
+                    if (data->isValid()) {
+                        tmp[1] = data->data;
+                        tmp[0] = tmp[tmp[0] < data->data]; // conditional access
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                    }
+                }
+                dataOut->store(tmp[0]);
             }
             void operator()(
                     AggregateConfiguration::Avg) {
+                // Our simple assumption for here is that we can add up all values into the next larger data type
+                const size_t numValues = test.getNumValues();
+                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
+                auto dataEnd = data + numValues;
+                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+                larger_t tmp(0);
+                while (data <= (dataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
+                        if (data->isValid()) {
+                            tmp += data->data;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                        }
+                    }
+                }
+                for (; data < dataEnd; ++data) {
+                    if (data->isValid()) {
+                        tmp += data->data;
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                    }
+                }
+                dataOut->store(tmp / (dataEnd - data));
             }
         };
 

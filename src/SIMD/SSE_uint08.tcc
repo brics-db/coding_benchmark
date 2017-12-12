@@ -90,7 +90,7 @@ namespace coding_benchmark {
 
                 static inline __m128i set_inc(
                         uint8_t v0,
-                        uint16_t inc) {
+                        uint8_t inc) {
                     return _mm_set_epi8(v0 + 15 * inc, v0 + 14 * inc, v0 + 13 * inc, v0 + 12 * inc, v0 + 11 * inc, v0 + 10 * inc, v0 + 9 * inc, v0 + 8 * inc, v0 + 7 * inc, v0 + 6 * inc, v0 + 5 * inc,
                             v0 + 4 * inc, v0 + 3 * inc, v0 + 2 * inc, v0 + inc, v0);
                 }
@@ -191,6 +191,72 @@ namespace coding_benchmark {
             private:
                 static const uint64_t * const SHUFFLE_TABLE_L;
                 static const uint64_t * const SHUFFLE_TABLE_H;
+            };
+
+            template<>
+            struct mm128<int8_t> :
+                    public mm128<uint8_t> {
+
+                typedef uint16_t mask_t;
+                typedef __m128i popcnt_t;
+
+                static inline __m128i set1(
+                        int8_t value) {
+                    return _mm_set1_epi8(value);
+                }
+
+                static inline __m128i set(
+                        int8_t v15,
+                        int8_t v14,
+                        int8_t v13,
+                        int8_t v12,
+                        int8_t v11,
+                        int8_t v10,
+                        int8_t v9,
+                        int8_t v8,
+                        int8_t v7,
+                        int8_t v6,
+                        int8_t v5,
+                        int8_t v4,
+                        int8_t v3,
+                        int8_t v2,
+                        int8_t v1,
+                        int8_t v0) {
+                    return _mm_set_epi8(v15, v14, v13, v12, v11, v10, v9, v8, v7, v6, v5, v4, v3, v2, v1, v0);
+                }
+
+                static inline __m128i set_inc(
+                        int8_t v0) {
+                    return _mm_set_epi8(v0 + 15, v0 + 14, v0 + 13, v0 + 12, v0 + 11, v0 + 10, v0 + 9, v0 + 8, v0 + 7, v0 + 6, v0 + 5, v0 + 4, v0 + 3, v0 + 2, v0 + 1, v0);
+                }
+
+                static inline __m128i set_inc(
+                        int8_t v0,
+                        int8_t inc) {
+                    return _mm_set_epi8(v0 + 15 * inc, v0 + 14 * inc, v0 + 13 * inc, v0 + 12 * inc, v0 + 11 * inc, v0 + 10 * inc, v0 + 9 * inc, v0 + 8 * inc, v0 + 7 * inc, v0 + 6 * inc, v0 + 5 * inc,
+                            v0 + 4 * inc, v0 + 3 * inc, v0 + 2 * inc, v0 + inc, v0);
+                }
+
+                using mm128<uint8_t>::min;
+                using mm128<uint8_t>::max;
+                using mm128<uint8_t>::add;
+                using mm128<uint8_t>::sum;
+                using mm128<uint8_t>::mullo;
+                using mm128<uint8_t>::pack_right;
+
+                static inline void pack_right2(
+                        int8_t * & result,
+                        __m128i a,
+                        mask_t mask) {
+                    mm128 < uint8_t > ::pack_right2(reinterpret_cast<uint8_t*&>(result), a, mask);
+                }
+
+                using mm128<uint8_t>::popcount;
+                using mm128<uint8_t>::popcount2;
+                using mm128<uint8_t>::popcount3;
+                using mm128<uint8_t>::cvt_larger_hi;
+                using mm128<uint8_t>::cvt_larger_lo;
+
             };
 
         }
