@@ -29,20 +29,39 @@ namespace coding_benchmark {
     namespace simd {
         namespace sse {
 
-            namespace Private {
+            namespace Private32 {
 
                 template<size_t current = 0>
-                inline void pack_right2_uint32(
+                inline void pack_right2_int32(
+                        int32_t * & result,
+                        __m128i & a,
+                        uint8_t mask) {
+                    *result = reinterpret_cast<int32_t*>(&a)[current];
+                    result += (mask >> current) & 0x1;
+                    pack_right2_int32<current + 1>(result, a, mask);
+                }
+
+                template<>
+                inline void pack_right2_int32<3>(
+                        int32_t * & result,
+                        __m128i & a,
+                        uint8_t mask) {
+                    *result = reinterpret_cast<int32_t*>(&a)[3];
+                    result += (mask >> 3) & 0x1;
+                }
+
+                template<size_t current = 0>
+                inline void pack_right2_int32(
                         uint32_t * & result,
                         __m128i & a,
                         uint8_t mask) {
                     *result = reinterpret_cast<uint32_t*>(&a)[current];
                     result += (mask >> current) & 0x1;
-                    pack_right2_uint32<current + 1>(result, a, mask);
+                    pack_right2_int32<current + 1>(result, a, mask);
                 }
 
                 template<>
-                inline void pack_right2_uint32<3>(
+                inline void pack_right2_int32<3>(
                         uint32_t * & result,
                         __m128i & a,
                         uint8_t mask) {
@@ -50,116 +69,581 @@ namespace coding_benchmark {
                     result += (mask >> 3) & 0x1;
                 }
 
-            }
+                template<typename T>
+                struct _mm128 {
+
+                    typedef uint8_t mask_t;
+                    typedef uint32_t popcnt_t;
+
+                    static inline __m128i set1(
+                            T value) {
+                        return _mm_set1_epi32(value);
+                    }
+
+                    static inline __m128i set(
+                            T v3,
+                            T v2,
+                            T v1,
+                            T v0) {
+                        return _mm_set_epi32(v3, v2, v1, v0);
+                    }
+
+                    static inline __m128i set_inc(
+                            T v0) {
+                        return _mm_set_epi32(v0 + 3, v0 + 2, v0 + 1, v0);
+                    }
+
+                    static inline __m128i set_inc(
+                            T v0,
+                            T inc) {
+                        return _mm_set_epi32(v0 + 3 * inc, v0 + 2 * inc, v0 + inc, v0);
+                    }
+
+                    static inline __m128i min(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_min_epu32(a, b);
+                    }
+
+                    static inline __m128i max(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_max_epu32(a, b);
+                    }
+
+                    static inline __m128i add(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_add_epi32(a, b);
+                    }
+
+                    static inline T sum(
+                            __m128i a) {
+                        auto mm = _mm_add_epi32(a, _mm_srli_si128(a, 8));
+                        mm = _mm_add_epi32(mm, _mm_srli_si128(mm, 4));
+                        return static_cast<T>(_mm_extract_epi32(mm, 0));
+                    }
+
+                    static inline __m128i mullo(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_mullo_epi32(a, b);
+                    }
+
+                    static inline __m128i pack_right(
+                            __m128i a,
+                            mask_t mask) {
+                        return _mm_shuffle_epi8(a, SHUFFLE_TABLE[mask]);
+                    }
+
+                    static inline void pack_right2(
+                            T * & result,
+                            __m128i a,
+                            mask_t mask) {
+                        pack_right2_int32(result, a, mask);
+                    }
+
+                    static inline popcnt_t popcount(
+                            __m128i a) {
+                        auto mask = _mm_set1_epi32(0x01010101);
+                        auto shuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
+                        auto popcount8 = mm128<uint8_t>::popcount(a);
+                        return _mm_extract_epi32(_mm_shuffle_epi8(_mm_mullo_epi32(popcount8, mask), shuffle), 0);
+                    }
+
+                    static inline popcnt_t popcount2(
+                            __m128i a) {
+                        auto mask = _mm_set1_epi32(0x01010101);
+                        auto shuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
+                        auto popcount8 = mm128<uint8_t>::popcount2(a);
+                        return _mm_extract_epi32(_mm_shuffle_epi8(_mm_mullo_epi32(popcount8, mask), shuffle), 0);
+                    }
+
+                    static inline popcnt_t popcount3(
+                            __m128i a) {
+                        return (_mm_popcnt_u32(_mm_extract_epi32(a, 3) << 24) | (_mm_popcnt_u32(_mm_extract_epi32(a, 2)) << 16) | (_mm_popcnt_u32(_mm_extract_epi32(a, 1)) << 8)
+                                | _mm_popcnt_u32(_mm_extract_epi32(a, 0)));
+                    }
+
+                    static inline __m128i cvt_larger_lo(
+                            __m128i a) {
+                        return _mm_cvtepi16_epi32(a);
+                    }
+
+                    static inline __m128i cvt_larger_hi(
+                            __m128i a) {
+                        return _mm_cvtepi16_epi32(_mm_srli_si128(a, 8));
+                    }
+
+                private:
+                    static const __m128i * const SHUFFLE_TABLE;
+                };
+
+                template<typename T, template<typename > class Op>
+                struct _mm128op;
+
+                template<typename T>
+                struct _mm128op<T, std::greater> {
+
+                    typedef typename _mm128<T>::mask_t mask_t;
+
+                    static inline __m128i cmp(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_cmpgt_epi32(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m128i a,
+                            __m128i b) {
+                        return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, std::greater_equal> {
+
+                    typedef typename _mm128<T>::mask_t mask_t;
+
+                    static inline __m128i cmp(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_cmpeq_epi32(a, _mm128<T>::max(a, b));
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m128i a,
+                            __m128i b) {
+                        return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, std::less> {
+
+                    typedef typename _mm128<T>::mask_t mask_t;
+
+                    static inline __m128i cmp(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_cmplt_epi32(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m128i a,
+                            __m128i b) {
+                        return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, std::less_equal> {
+
+                    typedef typename _mm128<T>::mask_t mask_t;
+
+                    static inline __m128i cmp(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_cmpeq_epi32(a, _mm128<T>::min(a, b));
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m128i a,
+                            __m128i b) {
+                        return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, std::equal_to> {
+
+                    typedef typename _mm128<T>::mask_t mask_t;
+
+                    static inline __m128i cmp(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_cmpeq_epi32(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m128i a,
+                            __m128i b) {
+                        return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, std::not_equal_to> {
+
+                    typedef typename _mm128<T>::mask_t mask_t;
+
+                    static inline __m128i cmp(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_or_si128(_mm_cmplt_epi32(a, b), _mm_cmpgt_epi32(a, b));
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m128i a,
+                            __m128i b) {
+                        return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, coding_benchmark::and_is> {
+
+                    typedef typename _mm128<T>::mask_t mask_t;
+
+                    static inline __m128i cmp(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_and_si128(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m128i a,
+                            __m128i b) {
+                        return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, coding_benchmark::or_is> {
+
+                    typedef typename _mm128<T>::mask_t mask_t;
+
+                    static inline __m128i cmp(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_or_si128(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m128i a,
+                            __m128i b) {
+                        return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, coding_benchmark::add> {
+
+                    static inline __m128i compute(
+                            __m128i a,
+                            __m128i b) {
+                        return add(a, b);
+                    }
+
+                    static inline __m128i add(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_add_epi32(a, b);
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, coding_benchmark::sub> {
+
+                    static inline __m128i compute(
+                            __m128i a,
+                            __m128i b) {
+                        return sub(a, b);
+                    }
+
+                    static inline __m128i sub(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_sub_epi32(a, b);
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, coding_benchmark::mul> {
+
+                    static inline __m128i compute(
+                            __m128i a,
+                            __m128i b) {
+                        return mullo(a, b);
+                    }
+
+                    static inline __m128i mullo(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm128<T>::mullo(a, b);
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, coding_benchmark::div> {
+
+                    static inline __m128i compute(
+                            __m128i a,
+                            __m128i b) {
+                        return div(a, b);
+                    }
+
+                    static inline __m128i div(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_cvtps_epi32(_mm_div_ps(_mm_cvtepi32_ps(a), _mm_cvtepi32_ps(b)));
+                    }
+                };
+
+            } /* Private32 */
 
             template<>
-            struct mm128<uint32_t> {
+            struct mm128<int32_t> :
+                    public Private16::_mm128<int32_t> {
+                typedef Private16::_mm128<int32_t> BASE;
+                using BASE::mask_t;
+                using BASE::popcnt_t;
+                using BASE::set1;
+                using BASE::set;
+                using BASE::set_inc;
+                using BASE::min;
+                using BASE::max;
+                using BASE::add;
+                using BASE::sum;
+                using BASE::mullo;
+                using BASE::pack_right;
+                using BASE::pack_right2;
+                using BASE::popcount;
+                using BASE::popcount2;
+                using BASE::popcount3;
+                using BASE::cvt_larger_hi;
+                using BASE::cvt_larger_lo;
+            };
 
-                typedef uint8_t mask_t;
-                typedef uint32_t popcnt_t;
+            template<>
+            struct mm128op<int32_t, std::greater_equal> :
+                    private Private16::_mm128op<int32_t, std::greater_equal> {
+                typedef Private16::_mm128op<int32_t, std::greater_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline __m128i set1(
-                        uint32_t value) {
-                    return _mm_set1_epi32(value);
-                }
+            template<>
+            struct mm128op<int32_t, std::greater> :
+                    private Private16::_mm128op<int32_t, std::greater> {
+                typedef Private16::_mm128op<int32_t, std::greater> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline __m128i set(
-                        uint32_t v3,
-                        uint32_t v2,
-                        uint32_t v1,
-                        uint32_t v0) {
-                    return _mm_set_epi32(v3, v2, v1, v0);
-                }
+            template<>
+            struct mm128op<int32_t, std::less_equal> :
+                    private Private16::_mm128op<int32_t, std::less_equal> {
+                typedef Private16::_mm128op<int32_t, std::less_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline __m128i set_inc(
-                        uint32_t v0) {
-                    return _mm_set_epi32(v0 + 3, v0 + 2, v0 + 1, v0);
-                }
+            template<>
+            struct mm128op<int32_t, std::less> :
+                    private Private16::_mm128op<int32_t, std::less> {
+                typedef Private16::_mm128op<int32_t, std::less> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline __m128i set_inc(
-                        uint32_t v0,
-                        uint32_t inc) {
-                    return _mm_set_epi32(v0 + 3 * inc, v0 + 2 * inc, v0 + inc, v0);
-                }
+            template<>
+            struct mm128op<int32_t, std::equal_to> :
+                    private Private16::_mm128op<int32_t, std::equal_to> {
+                typedef Private16::_mm128op<int32_t, std::equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline __m128i min(
-                        __m128i a,
-                        __m128i b) {
-                    return _mm_min_epu32(a, b);
-                }
+            template<>
+            struct mm128op<int32_t, std::not_equal_to> :
+                    private Private16::_mm128op<int32_t, std::not_equal_to> {
+                typedef Private16::_mm128op<int32_t, std::not_equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline __m128i max(
-                        __m128i a,
-                        __m128i b) {
-                    return _mm_max_epu32(a, b);
-                }
+            template<>
+            struct mm128op<int32_t, coding_benchmark::and_is> :
+                    private Private08::_mm128op<int32_t, coding_benchmark::and_is> {
+                typedef Private08::_mm128op<int32_t, coding_benchmark::and_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline __m128i add(
-                        __m128i a,
-                        __m128i b) {
-                    return _mm_add_epi32(a, b);
-                }
+            template<>
+            struct mm128op<int32_t, coding_benchmark::or_is> :
+                    private Private08::_mm128op<int32_t, coding_benchmark::or_is> {
+                typedef Private08::_mm128op<int32_t, coding_benchmark::or_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline uint32_t sum(
-                        __m128i a) {
-                    auto mm = _mm_add_epi32(a, _mm_srli_si128(a, 8));
-                    mm = _mm_add_epi32(mm, _mm_srli_si128(mm, 4));
-                    return static_cast<uint32_t>(_mm_extract_epi32(mm, 0));
-                }
+            template<>
+            struct mm128op<int32_t, coding_benchmark::add> :
+                    private Private08::_mm128op<int32_t, coding_benchmark::add> {
+                typedef Private08::_mm128op<int32_t, coding_benchmark::add> BASE;
+                using BASE::add;
+                using BASE::compute;
+            };
 
-                static inline __m128i mullo(
-                        __m128i a,
-                        __m128i b) {
-                    return _mm_mullo_epi32(a, b);
-                }
+            template<>
+            struct mm128op<int32_t, coding_benchmark::sub> :
+                    private Private08::_mm128op<int32_t, coding_benchmark::sub> {
+                typedef Private08::_mm128op<int32_t, coding_benchmark::sub> BASE;
+                using BASE::sub;
+                using BASE::compute;
+            };
 
-                static inline __m128i pack_right(
-                        __m128i a,
-                        mask_t mask) {
-                    return _mm_shuffle_epi8(a, SHUFFLE_TABLE[mask]);
-                }
+            template<>
+            struct mm128op<int32_t, coding_benchmark::mul> :
+                    private Private08::_mm128op<int32_t, coding_benchmark::mul> {
+                typedef Private08::_mm128op<int32_t, coding_benchmark::mul> BASE;
+                using BASE::mullo;
+                using BASE::compute;
+            };
 
-                static inline void pack_right2(
-                        uint32_t * & result,
-                        __m128i a,
-                        mask_t mask) {
-                    Private::pack_right2_uint32(result, a, mask);
-                }
+            template<>
+            struct mm128op<int32_t, coding_benchmark::div> :
+                    private Private08::_mm128op<int32_t, coding_benchmark::div> {
+                typedef Private08::_mm128op<int32_t, coding_benchmark::div> BASE;
+                using BASE::div;
+                using BASE::compute;
+            };
 
-                static inline popcnt_t popcount(
-                        __m128i a) {
-                    auto mask = _mm_set1_epi32(0x01010101);
-                    auto shuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
-                    auto popcount8 = mm128 < uint8_t > ::popcount(a);
-                    return _mm_extract_epi32(_mm_shuffle_epi8(_mm_mullo_epi32(popcount8, mask), shuffle), 0);
-                }
+            template<>
+            struct mm128<uint32_t> :
+                    public Private16::_mm128<uint32_t> {
+                typedef Private16::_mm128<uint32_t> BASE;
+                using BASE::mask_t;
+                using BASE::popcnt_t;
+                using BASE::set1;
+                using BASE::set;
+                using BASE::set_inc;
+                using BASE::min;
+                using BASE::max;
+                using BASE::add;
+                using BASE::sum;
+                using BASE::mullo;
+                using BASE::pack_right;
+                using BASE::pack_right2;
+                using BASE::popcount;
+                using BASE::popcount2;
+                using BASE::popcount3;
+                using BASE::cvt_larger_hi;
+                using BASE::cvt_larger_lo;
+            };
 
-                static inline popcnt_t popcount2(
-                        __m128i a) {
-                    auto mask = _mm_set1_epi32(0x01010101);
-                    auto shuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
-                    auto popcount8 = mm128 < uint8_t > ::popcount2(a);
-                    return _mm_extract_epi32(_mm_shuffle_epi8(_mm_mullo_epi32(popcount8, mask), shuffle), 0);
-                }
+            template<>
+            struct mm128op<uint32_t, std::greater_equal> :
+                    private Private16::_mm128op<uint32_t, std::greater_equal> {
+                typedef Private16::_mm128op<uint32_t, std::greater_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline popcnt_t popcount3(
-                        __m128i a) {
-                    return (_mm_popcnt_u32(_mm_extract_epi32(a, 3) << 24) | (_mm_popcnt_u32(_mm_extract_epi32(a, 2)) << 16) | (_mm_popcnt_u32(_mm_extract_epi32(a, 1)) << 8)
-                            | _mm_popcnt_u32(_mm_extract_epi32(a, 0)));
-                }
+            template<>
+            struct mm128op<uint32_t, std::greater> :
+                    private Private16::_mm128op<uint32_t, std::greater> {
+                typedef Private16::_mm128op<uint32_t, std::greater> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline __m128i cvt_larger_lo(
-                        __m128i a) {
-                    return _mm_cvtepi16_epi32(a);
-                }
+            template<>
+            struct mm128op<uint32_t, std::less_equal> :
+                    private Private16::_mm128op<uint32_t, std::less_equal> {
+                typedef Private16::_mm128op<uint32_t, std::less_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-                static inline __m128i cvt_larger_hi(
-                        __m128i a) {
-                    return _mm_cvtepi16_epi32(_mm_srli_si128(a, 8));
-                }
+            template<>
+            struct mm128op<uint32_t, std::less> :
+                    private Private16::_mm128op<uint32_t, std::less> {
+                typedef Private16::_mm128op<uint32_t, std::less> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
 
-            private:
-                static const __m128i * const SHUFFLE_TABLE;
+            template<>
+            struct mm128op<uint32_t, std::equal_to> :
+                    private Private16::_mm128op<uint32_t, std::equal_to> {
+                typedef Private16::_mm128op<uint32_t, std::equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm128op<uint32_t, std::not_equal_to> :
+                    private Private16::_mm128op<uint32_t, std::not_equal_to> {
+                typedef Private16::_mm128op<uint32_t, std::not_equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm128op<uint32_t, coding_benchmark::and_is> :
+                    private Private08::_mm128op<uint32_t, coding_benchmark::and_is> {
+                typedef Private08::_mm128op<uint32_t, coding_benchmark::and_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm128op<uint32_t, coding_benchmark::or_is> :
+                    private Private08::_mm128op<uint32_t, coding_benchmark::or_is> {
+                typedef Private08::_mm128op<uint32_t, coding_benchmark::or_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm128op<uint32_t, coding_benchmark::add> :
+                    private Private08::_mm128op<uint32_t, coding_benchmark::add> {
+                typedef Private08::_mm128op<uint32_t, coding_benchmark::add> BASE;
+                using BASE::add;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm128op<uint32_t, coding_benchmark::sub> :
+                    private Private08::_mm128op<uint32_t, coding_benchmark::sub> {
+                typedef Private08::_mm128op<uint32_t, coding_benchmark::sub> BASE;
+                using BASE::sub;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm128op<uint32_t, coding_benchmark::mul> :
+                    private Private08::_mm128op<uint32_t, coding_benchmark::mul> {
+                typedef Private08::_mm128op<uint32_t, coding_benchmark::mul> BASE;
+                using BASE::mullo;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm128op<uint32_t, coding_benchmark::div> :
+                    private Private08::_mm128op<uint32_t, coding_benchmark::div> {
+                typedef Private08::_mm128op<uint32_t, coding_benchmark::div> BASE;
+                using BASE::div;
+                using BASE::compute;
             };
 
             template<>
@@ -278,214 +762,5 @@ namespace coding_benchmark {
             };
 
         }
-
-        template<>
-        struct mm_op<__m128i, uint32_t, std::greater> {
-
-            typedef uint8_t mask_t;
-
-            static inline __m128i cmp(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_cmpgt_epi32(a, b);
-            }
-
-            static inline mask_t cmp_mask(
-                    __m128i a,
-                    __m128i b) {
-                return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, std::greater_equal> {
-
-            typedef uint8_t mask_t;
-
-            static inline __m128i cmp(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_cmpeq_epi32(a, sse::mm128<uint32_t>::max(a, b));
-            }
-
-            static inline mask_t cmp_mask(
-                    __m128i a,
-                    __m128i b) {
-                return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, std::less> {
-
-            typedef uint8_t mask_t;
-
-            static inline __m128i cmp(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_cmplt_epi32(a, b);
-            }
-
-            static inline mask_t cmp_mask(
-                    __m128i a,
-                    __m128i b) {
-                return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, std::less_equal> {
-
-            typedef uint8_t mask_t;
-
-            static inline __m128i cmp(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_cmpeq_epi32(a, sse::mm128<uint32_t>::min(a, b));
-            }
-
-            static inline mask_t cmp_mask(
-                    __m128i a,
-                    __m128i b) {
-                return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, std::equal_to> {
-
-            typedef uint8_t mask_t;
-
-            static inline __m128i cmp(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_cmpeq_epi32(a, b);
-            }
-
-            static inline mask_t cmp_mask(
-                    __m128i a,
-                    __m128i b) {
-                return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, std::not_equal_to> {
-
-            typedef uint8_t mask_t;
-
-            static inline __m128i cmp(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_or_si128(_mm_cmplt_epi32(a, b), _mm_cmpgt_epi32(a, b));
-            }
-
-            static inline mask_t cmp_mask(
-                    __m128i a,
-                    __m128i b) {
-                return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, coding_benchmark::and_is> {
-
-            typedef uint8_t mask_t;
-
-            static inline __m128i cmp(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_and_si128(a, b);
-            }
-
-            static inline mask_t cmp_mask(
-                    __m128i a,
-                    __m128i b) {
-                return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, coding_benchmark::or_is> {
-
-            typedef uint8_t mask_t;
-
-            static inline __m128i cmp(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_or_si128(a, b);
-            }
-
-            static inline mask_t cmp_mask(
-                    __m128i a,
-                    __m128i b) {
-                return static_cast<mask_t>(_mm_movemask_ps(_mm_castsi128_ps(cmp(a, b))));
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, coding_benchmark::add> {
-
-            static inline __m128i compute(
-                    __m128i a,
-                    __m128i b) {
-                return add(a, b);
-            }
-
-            static inline __m128i add(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_add_epi32(a, b);
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, coding_benchmark::sub> {
-
-            static inline __m128i compute(
-                    __m128i a,
-                    __m128i b) {
-                return sub(a, b);
-            }
-
-            static inline __m128i sub(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_sub_epi32(a, b);
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, coding_benchmark::mul> {
-
-            static inline __m128i compute(
-                    __m128i a,
-                    __m128i b) {
-                return mullo(a, b);
-            }
-
-            static inline __m128i mullo(
-                    __m128i a,
-                    __m128i b) {
-                return sse::mm128<uint32_t>::mullo(a, b);
-            }
-        };
-
-        template<>
-        struct mm_op<__m128i, uint32_t, coding_benchmark::div> {
-
-            static inline __m128i compute(
-                    __m128i a,
-                    __m128i b) {
-                return div(a, b);
-            }
-
-            static inline __m128i div(
-                    __m128i a,
-                    __m128i b) {
-                return _mm_cvtps_epi32(_mm_div_ps(_mm_cvtepi32_ps(a), _mm_cvtepi32_ps(b)));
-            }
-        };
-
     }
 }

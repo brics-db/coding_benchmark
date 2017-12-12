@@ -32,6 +32,9 @@ namespace coding_benchmark {
             template<typename ...Types>
             struct mm128;
 
+            template<typename T, template<typename > class Op>
+            struct mm128op;
+
         }
     }
 }

@@ -32,10 +32,10 @@
 
 #include <SIMD/SSE.hpp>
 #include <AVX2_base.tcc>
-#include <AVX2_uint08.tcc>
-#include <AVX2_uint16.tcc>
-#include <AVX2_uint32.tcc>
-#include <AVX2_uint64.tcc>
+#include <AVX2_int08.tcc>
+#include <AVX2_int16.tcc>
+#include <AVX2_int32.tcc>
+#include <AVX2_int64.tcc>
 
 namespace coding_benchmark {
     namespace simd {

@@ -27,14 +27,27 @@ namespace coding_benchmark {
     namespace simd {
         namespace sse {
 
-            const uint64_t * const mm128<uint8_t>::SHUFFLE_TABLE_L = nullptr;
-            const uint64_t * const mm128<uint8_t>::SHUFFLE_TABLE_H = nullptr;
+            namespace Private08 {
+                template<> const uint64_t * const _mm128<int8_t>::SHUFFLE_TABLE_L = nullptr;
+                template<> const uint64_t * const _mm128<int8_t>::SHUFFLE_TABLE_H = nullptr;
+                template<> const uint64_t * const _mm128<uint8_t>::SHUFFLE_TABLE_L = nullptr;
+                template<> const uint64_t * const _mm128<uint8_t>::SHUFFLE_TABLE_H = nullptr;
+            }
 
-            const __m128i * const mm128<uint16_t>::SHUFFLE_TABLE = nullptr;
+            namespace Private16 {
+                template<> const __m128i * const _mm128<int16_t>::SHUFFLE_TABLE = nullptr;
+                template<> const __m128i * const _mm128<uint16_t>::SHUFFLE_TABLE = nullptr;
+            }
 
-            const __m128i * const mm128<uint32_t>::SHUFFLE_TABLE = nullptr;
+            namespace Private32 {
+                template<> const __m128i * const _mm128<int32_t>::SHUFFLE_TABLE = nullptr;
+                template<> const __m128i * const _mm128<uint32_t>::SHUFFLE_TABLE = nullptr;
+            }
 
-            const __m128i * const mm128<uint64_t>::SHUFFLE_TABLE = nullptr;
+            namespace Private64 {
+                template<> const __m128i * const _mm128<int64_t>::SHUFFLE_TABLE = nullptr;
+                template<> const __m128i * const _mm128<uint64_t>::SHUFFLE_TABLE = nullptr;
+            }
 
         }
     }

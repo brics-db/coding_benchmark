@@ -23,12 +23,6 @@
 
 #define LIB_COLUMN_OPERATORS_SIMD_AVX512_HPP_
 
-#if defined(AHEAD_AVX512) or ( defined(__AVX512CD__) and defined(__AVX512ER__) and defined(__AVX512F__) and defined(__AVX512PF__) )
-#ifndef AHEAD_AVX512
-#define AHEAD_AVX512
-#endif /* AHEAD_AVX512 */
-#endif
-
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
@@ -37,11 +31,11 @@
 #include <Util/Functors.hpp>
 
 #include <SIMD/SIMD.hpp>
-#include <AVX512_base.tcc>
-#include <AVX512_uint08.tcc>
-#include <AVX512_uint16.tcc>
-#include <AVX512_uint32.tcc>
-#include <AVX512_uint64.tcc>
+#include <SIMD/AVX512_base.tcc>
+#include <SIMD/AVX512_int08.tcc>
+#include <SIMD/AVX512_int16.tcc>
+#include <SIMD/AVX512_int32.tcc>
+#include <SIMD/AVX512_int64.tcc>
 
 namespace coding_benchmark {
     namespace simd {
