@@ -42,7 +42,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm<__m128i, T> :
-                private sse::mm128<T> {
+                public sse::mm128<T> {
 
             typedef sse::mm128<T> BASE;
 
@@ -79,7 +79,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, std::greater_equal> :
-                private sse::mm128op<T, std::greater_equal> {
+                public sse::mm128op<T, std::greater_equal> {
             typedef sse::mm128op<T, std::greater_equal> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -88,7 +88,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, std::greater> :
-                private sse::mm128op<T, std::greater> {
+                public sse::mm128op<T, std::greater> {
             typedef sse::mm128op<T, std::greater> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -97,7 +97,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, std::less_equal> :
-                private sse::mm128op<T, std::less_equal> {
+                public sse::mm128op<T, std::less_equal> {
             typedef sse::mm128op<T, std::less_equal> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -106,7 +106,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, std::less> :
-                private sse::mm128op<T, std::less> {
+                public sse::mm128op<T, std::less> {
             typedef sse::mm128op<T, std::less> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -115,7 +115,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, std::equal_to> :
-                private sse::mm128op<T, std::less> {
+                public sse::mm128op<T, std::less> {
             typedef sse::mm128op<T, std::less> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -124,7 +124,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, std::not_equal_to> :
-                private sse::mm128op<T, std::less> {
+                public sse::mm128op<T, std::less> {
             typedef sse::mm128op<T, std::less> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -133,7 +133,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::and_is> :
-                private sse::mm128op<T, coding_benchmark::and_is> {
+                public sse::mm128op<T, coding_benchmark::and_is> {
             typedef sse::mm128op<T, coding_benchmark::and_is> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -142,7 +142,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::or_is> :
-                private sse::mm128op<T, coding_benchmark::or_is> {
+                public sse::mm128op<T, coding_benchmark::or_is> {
             typedef sse::mm128op<T, coding_benchmark::or_is> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -151,7 +151,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::add> :
-                private sse::mm128op<T, coding_benchmark::add> {
+                public sse::mm128op<T, coding_benchmark::add> {
             typedef sse::mm128op<T, coding_benchmark::add> BASE;
             using BASE::add;
             using BASE::compute;
@@ -159,7 +159,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::sub> :
-                private sse::mm128op<T, coding_benchmark::sub> {
+                public sse::mm128op<T, coding_benchmark::sub> {
             typedef sse::mm128op<T, coding_benchmark::sub> BASE;
             using BASE::sub;
             using BASE::compute;
@@ -167,7 +167,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::mul> :
-                private sse::mm128op<T, coding_benchmark::mul> {
+                public sse::mm128op<T, coding_benchmark::mul> {
             typedef sse::mm128op<T, coding_benchmark::mul> BASE;
             using BASE::mullo;
             using BASE::compute;
@@ -175,7 +175,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::div> :
-                private sse::mm128op<T, coding_benchmark::div> {
+                public sse::mm128op<T, coding_benchmark::div> {
             typedef sse::mm128op<T, coding_benchmark::div> BASE;
             using BASE::div;
             using BASE::compute;

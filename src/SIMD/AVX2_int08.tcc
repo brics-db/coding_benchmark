@@ -238,7 +238,7 @@ namespace coding_benchmark {
                             T * & result,
                             __m256i a,
                             mask_t mask) {
-                        typedef mm<__m128i, T>::mask_t sse_mask_t;
+                        typedef typename mm<__m128i, T>::mask_t sse_mask_t;
                         auto maskLow = static_cast<sse_mask_t>(mask);
                         _mm_storeu_si128(reinterpret_cast<__m128i *>(result), mm<__m128i, T>::pack_right(_mm256_extracti128_si256(a, 0), maskLow));
                         result += __builtin_popcount(maskLow);

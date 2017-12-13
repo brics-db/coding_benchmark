@@ -38,11 +38,17 @@ namespace coding_benchmark {
             inline __m256i _mm256_shuffle256_epi8(
                     const __m256i & value,
                     const __m256i & shuffle) {
-                const __m256i K0 = _mm256_setr_epi8(0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
-                        0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0);
+                const __m256i K0 = _mm256_setr_epi8(static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70),
+                        static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70),
+                        static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0),
+                        static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0),
+                        static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0));
 
-                const __m256i K1 = _mm256_setr_epi8(0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70,
-                        0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70, 0x70);
+                const __m256i K1 = _mm256_setr_epi8(static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0),
+                        static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0),
+                        static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0xF0), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70),
+                        static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70),
+                        static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70), static_cast<char>(0x70));
 
                 return _mm256_or_si256(_mm256_shuffle_epi8(value, _mm256_add_epi8(shuffle, K0)), _mm256_shuffle_epi8(_mm256_permute4x64_epi64(value, 0x4E), _mm256_add_epi8(shuffle, K1)));
             }

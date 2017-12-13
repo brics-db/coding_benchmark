@@ -14,19 +14,19 @@
 
 #pragma once
 
-#include <XOR/XOR_base.hpp>
 #include <Test.hpp>
-#include <SIMD/SIMD.hpp>
+#include <XOR/XOR_base.hpp>
+#include <SIMD/AVX2.hpp>
 #include <Util/ErrorInfo.hpp>
+#include <Util/Functors.hpp>
 #include <Util/ArithmeticSelector.hpp>
 
 namespace coding_benchmark {
 
     template<>
     struct XOR<__m256i, __m256i> {
-    static __m256i
-    computeFinalChecksum(
-            __m256i & checksum);
+        static __m256i computeFinalChecksum(
+                __m256i & checksum);
 };
 
     template<>

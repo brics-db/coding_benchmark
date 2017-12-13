@@ -42,7 +42,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm<__m256i, T> :
-                private avx2::mm256<T> {
+                public avx2::mm256<T> {
 
             typedef avx2::mm256<T> BASE;
 
@@ -74,7 +74,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, std::greater_equal> :
-                private avx2::mm256op<T, std::greater_equal> {
+                public avx2::mm256op<T, std::greater_equal> {
             typedef avx2::mm256op<T, std::greater_equal> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -83,7 +83,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, std::greater> :
-                private avx2::mm256op<T, std::greater> {
+                public avx2::mm256op<T, std::greater> {
             typedef avx2::mm256op<T, std::greater> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -92,7 +92,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, std::less_equal> :
-                private avx2::mm256op<T, std::less_equal> {
+                public avx2::mm256op<T, std::less_equal> {
             typedef avx2::mm256op<T, std::less_equal> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -101,7 +101,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, std::less> :
-                private avx2::mm256op<T, std::less> {
+                public avx2::mm256op<T, std::less> {
             typedef avx2::mm256op<T, std::less> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -110,7 +110,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, std::equal_to> :
-                private avx2::mm256op<T, std::less> {
+                public avx2::mm256op<T, std::less> {
             typedef avx2::mm256op<T, std::less> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -119,7 +119,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, std::not_equal_to> :
-                private avx2::mm256op<T, std::less> {
+                public avx2::mm256op<T, std::less> {
             typedef avx2::mm256op<T, std::less> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -128,7 +128,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, coding_benchmark::and_is> :
-                private avx2::mm256op<T, coding_benchmark::and_is> {
+                public avx2::mm256op<T, coding_benchmark::and_is> {
             typedef avx2::mm256op<T, coding_benchmark::and_is> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -137,7 +137,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, coding_benchmark::or_is> :
-                private avx2::mm256op<T, coding_benchmark::or_is> {
+                public avx2::mm256op<T, coding_benchmark::or_is> {
             typedef avx2::mm256op<T, coding_benchmark::or_is> BASE;
             using BASE::mask_t;
             using BASE::cmp;
@@ -146,7 +146,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, coding_benchmark::add> :
-                private avx2::mm256op<T, coding_benchmark::add> {
+                public avx2::mm256op<T, coding_benchmark::add> {
             typedef avx2::mm256op<T, coding_benchmark::add> BASE;
             using BASE::add;
             using BASE::compute;
@@ -154,7 +154,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, coding_benchmark::sub> :
-                private avx2::mm256op<T, coding_benchmark::sub> {
+                public avx2::mm256op<T, coding_benchmark::sub> {
             typedef avx2::mm256op<T, coding_benchmark::sub> BASE;
             using BASE::sub;
             using BASE::compute;
@@ -162,7 +162,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, coding_benchmark::mul> :
-                private avx2::mm256op<T, coding_benchmark::mul> {
+                public avx2::mm256op<T, coding_benchmark::mul> {
             typedef avx2::mm256op<T, coding_benchmark::mul> BASE;
             using BASE::mullo;
             using BASE::compute;
@@ -170,7 +170,7 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m256i, T, coding_benchmark::div> :
-                private avx2::mm256op<T, coding_benchmark::div> {
+                public avx2::mm256op<T, coding_benchmark::div> {
             typedef avx2::mm256op<T, coding_benchmark::div> BASE;
             using BASE::div;
             using BASE::compute;
