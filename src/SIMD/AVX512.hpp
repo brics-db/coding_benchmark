@@ -42,10 +42,12 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm<__m512i, T> :
-                public avx512::mm512<T> {
+                private avx512::mm512<T> {
+
             typedef avx512::mm512<T> BASE;
 
             using BASE::mask_t;
+            using BASE::popcnt_t;
 
             using BASE::set;
             using BASE::set1;

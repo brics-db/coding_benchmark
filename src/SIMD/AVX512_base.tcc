@@ -32,6 +32,9 @@ namespace coding_benchmark {
             template<typename T>
             struct mm512;
 
+            template<typename T, template<typename > class Op>
+            struct mm512op;
+
         }
     }
 }
