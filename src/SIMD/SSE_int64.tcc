@@ -111,21 +111,9 @@ namespace coding_benchmark {
                                 std::max(static_cast<T>(_mm_extract_epi64(a, 0)), static_cast<T>(_mm_extract_epi64(b, 0))));
                     }
 
-                    static inline __m128i add(
-                            __m128i a,
-                            __m128i b) {
-                        return _mm_add_epi64(a, b);
-                    }
-
                     static inline T sum(
                             __m128i a) {
                         return static_cast<T>(_mm_extract_epi64(a, 0)) + static_cast<T>(_mm_extract_epi64(a, 1));
-                    }
-
-                    static inline __m128i mullo(
-                            __m128i a,
-                            __m128i b) {
-                        return _mm_set_epi64x(_mm_extract_epi64(a, 1) * _mm_extract_epi64(b, 1), _mm_extract_epi64(a, 0) * _mm_extract_epi64(b, 0));
                     }
 
                     static inline __m128i pack_right(
@@ -367,7 +355,7 @@ namespace coding_benchmark {
                     static inline __m128i mullo(
                             __m128i a,
                             __m128i b) {
-                        return _mm128<T>::mullo(a, b);
+                        return _mm_set_epi64x(_mm_extract_epi64(a, 1) * _mm_extract_epi64(b, 1), _mm_extract_epi64(a, 0) * _mm_extract_epi64(b, 0));
                     }
                 };
 
@@ -400,9 +388,7 @@ namespace coding_benchmark {
                 using BASE::set_inc;
                 using BASE::min;
                 using BASE::max;
-                using BASE::add;
                 using BASE::sum;
-                using BASE::mullo;
                 using BASE::pack_right;
                 using BASE::pack_right2;
                 using BASE::popcount;
@@ -527,9 +513,7 @@ namespace coding_benchmark {
                 using BASE::set_inc;
                 using BASE::min;
                 using BASE::max;
-                using BASE::add;
                 using BASE::sum;
-                using BASE::mullo;
                 using BASE::pack_right;
                 using BASE::pack_right2;
                 using BASE::popcount;

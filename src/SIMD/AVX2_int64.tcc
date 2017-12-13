@@ -111,31 +111,6 @@ namespace coding_benchmark {
                         return _mm256_max_epi64(a, b);
                     }
 
-                    static inline __m256i add(
-                            __m256i a,
-                            __m256i b) {
-                        return _mm256_add_epi64(a, b);
-                    }
-
-                    static inline __m256i mullo(
-                            __m256i a,
-                            __m256i b) {
-                        return _mm256_mullo_epi64(a, b);
-                    }
-
-                    static inline __m256i geq(
-                            __m256i a,
-                            __m256i b) {
-                        auto mm = max(a, b);
-                        return _mm256_cmpeq_epi64(a, mm);
-                    }
-
-                    static inline uint8_t geq_mask(
-                            __m256i a,
-                            __m256i b) {
-                        return static_cast<uint8_t>(_mm256_movemask_pd(_mm256_castsi256_pd(geq(a, b))));
-                    }
-
                     static inline T sum(
                             __m256i a) {
                         auto mm = _mm256_add_epi64(a, _mm256_srli_si256(a, 8));
@@ -397,8 +372,12 @@ namespace coding_benchmark {
                     static inline __m256i mullo(
                             __m256i a,
                             __m256i b) {
+#if defined(AVX512VL) and defined(AVX512DQ)
+                        return _mm256_mullo_epi64(a, b);
+#else
                         return _mm256_set_epi64x(_mm256_extract_epi64(a, 3) * _mm256_extract_epi64(b, 3), _mm256_extract_epi64(a, 2) * _mm256_extract_epi64(b, 2),
                                 _mm256_extract_epi64(a, 1) * _mm256_extract_epi64(b, 1), _mm256_extract_epi64(a, 0) * _mm256_extract_epi64(b, 0));
+#endif
                     }
                 };
 
@@ -432,9 +411,7 @@ namespace coding_benchmark {
                 using BASE::set_inc;
                 using BASE::min;
                 using BASE::max;
-                using BASE::add;
                 using BASE::sum;
-                using BASE::mullo;
                 using BASE::pack_right;
                 using BASE::pack_right2;
                 using BASE::popcount;
@@ -557,9 +534,7 @@ namespace coding_benchmark {
                 using BASE::set_inc;
                 using BASE::min;
                 using BASE::max;
-                using BASE::add;
                 using BASE::sum;
-                using BASE::mullo;
                 using BASE::pack_right;
                 using BASE::pack_right2;
                 using BASE::popcount;

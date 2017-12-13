@@ -113,7 +113,6 @@ namespace coding_benchmark {
                         __m512i b) {
 #define MASK(idx) ((mask & idx) ? 0xFFFFFFFF : 0)
                     __mmask8 mask = geq_mask(a, b);
-                    const uint64_t ONES = 0xFFFFFFFFFFFFFFFFull;
                     return set(MASK(0x80), MASK(0x40), MASK(0x20), MASK(0x10), MASK(0x08), MASK(0x04), MASK(0x02), MASK(0x01));
 #undef MASK
                 }

@@ -25,6 +25,8 @@
 #error "This file must not be included by client code!"
 #endif
 
+#include <type_traits>
+
 namespace coding_benchmark {
     namespace simd {
 

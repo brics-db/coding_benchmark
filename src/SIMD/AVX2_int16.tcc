@@ -124,18 +124,6 @@ namespace coding_benchmark {
                         return _mm256_max_epu16(a, b);
                     }
 
-                    static inline __m256i add(
-                            __m256i a,
-                            __m256i b) {
-                        return _mm256_add_epi16(a, b);
-                    }
-
-                    static inline __m256i mullo(
-                            __m256i a,
-                            __m256i b) {
-                        return _mm256_mullo_epi16(a, b);
-                    }
-
                     static inline T sum(
                             __m256i a) {
                         auto mm1 = _mm256_cvtepi16_epi32(_mm256_extractf128_si256(a, 0));
@@ -255,6 +243,16 @@ namespace coding_benchmark {
                                 _mm_popcnt_u32(_mm256_extract_epi16(a, 6)), _mm_popcnt_u32(_mm256_extract_epi16(a, 5)), _mm_popcnt_u32(_mm256_extract_epi16(a, 4)),
                                 _mm_popcnt_u32(_mm256_extract_epi16(a, 3)), _mm_popcnt_u32(_mm256_extract_epi16(a, 2)), _mm_popcnt_u32(_mm256_extract_epi16(a, 1)),
                                 _mm_popcnt_u32(_mm256_extract_epi16(a, 0)));
+                    }
+
+                    static inline __m256i cvt_larger_lo(
+                            __m256i a) {
+                        return _mm256_cvtepi16_epi32(_mm256_extractf128_si256(a, 0));
+                    }
+
+                    static inline __m256i cvt_larger_hi(
+                            __m256i a) {
+                        return _mm256_cvtepi16_epi32(_mm256_extractf128_si256(a, 1));
                     }
 
                 private:
@@ -495,14 +493,14 @@ namespace coding_benchmark {
                 using BASE::set_inc;
                 using BASE::min;
                 using BASE::max;
-                using BASE::add;
                 using BASE::sum;
-                using BASE::mullo;
                 using BASE::pack_right;
                 using BASE::pack_right2;
                 using BASE::popcount;
                 using BASE::popcount2;
                 using BASE::popcount3;
+                using BASE::cvt_larger_lo;
+                using BASE::cvt_larger_hi;
             };
 
             template<>
@@ -620,14 +618,14 @@ namespace coding_benchmark {
                 using BASE::set_inc;
                 using BASE::min;
                 using BASE::max;
-                using BASE::add;
                 using BASE::sum;
-                using BASE::mullo;
                 using BASE::pack_right;
                 using BASE::pack_right2;
                 using BASE::popcount;
                 using BASE::popcount2;
                 using BASE::popcount3;
+                using BASE::cvt_larger_lo;
+                using BASE::cvt_larger_hi;
             };
 
             template<>

@@ -30,7 +30,7 @@
 #include <Util/Intrinsics.hpp>
 #include <Util/Functors.hpp>
 
-#include <SIMD/SIMD.hpp>
+#include <SIMD/SSE.hpp>
 #include <SIMD/AVX512_base.tcc>
 #include <SIMD/AVX512_int08.tcc>
 #include <SIMD/AVX512_int16.tcc>
@@ -70,6 +70,110 @@ namespace coding_benchmark {
                     __m512i src) {
                 _mm512_storeu_si512(dst, src);
             }
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, std::greater_equal> :
+                public avx2::mm512op<T, std::greater_equal> {
+            typedef avx2::mm512op<T, std::greater_equal> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, std::greater> :
+                public avx2::mm512op<T, std::greater> {
+            typedef avx2::mm512op<T, std::greater> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, std::less_equal> :
+                public avx2::mm512op<T, std::less_equal> {
+            typedef avx2::mm512op<T, std::less_equal> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, std::less> :
+                public avx2::mm512op<T, std::less> {
+            typedef avx2::mm512op<T, std::less> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, std::equal_to> :
+                public avx2::mm512op<T, std::less> {
+            typedef avx2::mm512op<T, std::less> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, std::not_equal_to> :
+                public avx2::mm512op<T, std::less> {
+            typedef avx2::mm512op<T, std::less> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, coding_benchmark::and_is> :
+                public avx2::mm512op<T, coding_benchmark::and_is> {
+            typedef avx2::mm512op<T, coding_benchmark::and_is> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, coding_benchmark::or_is> :
+                public avx2::mm512op<T, coding_benchmark::or_is> {
+            typedef avx2::mm512op<T, coding_benchmark::or_is> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, coding_benchmark::add> :
+                public avx2::mm512op<T, coding_benchmark::add> {
+            typedef avx2::mm512op<T, coding_benchmark::add> BASE;
+            using BASE::add;
+            using BASE::compute;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, coding_benchmark::sub> :
+                public avx2::mm512op<T, coding_benchmark::sub> {
+            typedef avx2::mm512op<T, coding_benchmark::sub> BASE;
+            using BASE::sub;
+            using BASE::compute;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, coding_benchmark::mul> :
+                public avx2::mm512op<T, coding_benchmark::mul> {
+            typedef avx2::mm512op<T, coding_benchmark::mul> BASE;
+            using BASE::mullo;
+            using BASE::compute;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, coding_benchmark::div> :
+                public avx2::mm512op<T, coding_benchmark::div> {
+            typedef avx2::mm512op<T, coding_benchmark::div> BASE;
+            using BASE::div;
+            using BASE::compute;
         };
 
     }

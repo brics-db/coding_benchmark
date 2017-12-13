@@ -124,27 +124,12 @@ namespace coding_benchmark {
                         return _mm_max_epu8(a, b);
                     }
 
-                    static inline __m128i add(
-                            __m128i a,
-                            __m128i b) {
-                        return _mm_add_epi8(a, b);
-                    }
-
                     static inline T sum(
                             __m128i a) {
                         auto mm = _mm_add_epi8(a, _mm_srli_si128(a, 8));
                         mm = _mm_add_epi8(mm, _mm_srli_si128(mm, 4));
                         mm = _mm_add_epi8(mm, _mm_srli_si128(mm, 2));
                         return static_cast<uint16_t>(_mm_extract_epi8(mm, 0));
-                    }
-
-                    static inline __m128i mullo(
-                            __m128i a,
-                            __m128i b) {
-                        auto mm1 = _mm_shuffle_epi8(_mm_mullo_epi16(_mm_cvtepi8_epi16(a), _mm_cvtepi8_epi16(b)), _mm_set_epi64x(0xFFFFFFFFFFFFFFFFull, 0x0D0C090805040100ull));
-                        auto mm2 = _mm_shuffle_epi8(_mm_mullo_epi16(_mm_cvtepi8_epi16(_mm_srli_si128(a, 8)), _mm_cvtepi8_epi16(_mm_srli_si128(b, 8))),
-                                _mm_set_epi64x(0x0D0C090805040100ull, 0xFFFFFFFFFFFFFFFFull));
-                        return _mm_and_si128(mm1, mm2);
                     }
 
                     static inline __m128i pack_right(
@@ -204,11 +189,6 @@ namespace coding_benchmark {
                             __m128i a) {
                         return _mm_cvtepi8_epi16(_mm_srli_si128(a, 8));
                     }
-
-                    template<template<typename > class Op>
-                    static inline __m128i cmp(
-                            __m128i a,
-                            __m128i b);
 
                 private:
                     static const uint64_t * const SHUFFLE_TABLE_L;
@@ -408,7 +388,10 @@ namespace coding_benchmark {
                     static inline __m128i mullo(
                             __m128i a,
                             __m128i b) {
-                        return sse::mm128<T>::mullo(a, b);
+                        auto mm1 = _mm_shuffle_epi8(_mm_mullo_epi16(_mm_cvtepi8_epi16(a), _mm_cvtepi8_epi16(b)), _mm_set_epi64x(0xFFFFFFFFFFFFFFFFull, 0x0D0C090805040100ull));
+                        auto mm2 = _mm_shuffle_epi8(_mm_mullo_epi16(_mm_cvtepi8_epi16(_mm_srli_si128(a, 8)), _mm_cvtepi8_epi16(_mm_srli_si128(b, 8))),
+                                _mm_set_epi64x(0x0D0C090805040100ull, 0xFFFFFFFFFFFFFFFFull));
+                        return _mm_and_si128(mm1, mm2);
                     }
                 };
 
@@ -449,9 +432,7 @@ namespace coding_benchmark {
                 using BASE::set_inc;
                 using BASE::min;
                 using BASE::max;
-                using BASE::add;
                 using BASE::sum;
-                using BASE::mullo;
                 using BASE::pack_right;
                 using BASE::pack_right2;
                 using BASE::popcount;
@@ -576,9 +557,7 @@ namespace coding_benchmark {
                 using BASE::set_inc;
                 using BASE::min;
                 using BASE::max;
-                using BASE::add;
                 using BASE::sum;
-                using BASE::mullo;
                 using BASE::pack_right;
                 using BASE::pack_right2;
                 using BASE::popcount;

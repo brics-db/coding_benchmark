@@ -115,31 +115,6 @@ namespace coding_benchmark {
                         return _mm256_max_epu32(a, b);
                     }
 
-                    static inline __m256i add(
-                            __m256i a,
-                            __m256i b) {
-                        return _mm256_add_epi32(a, b);
-                    }
-
-                    static inline __m256i mullo(
-                            __m256i a,
-                            __m256i b) {
-                        return _mm256_mullo_epi32(a, b);
-                    }
-
-                    static inline __m256i geq(
-                            __m256i a,
-                            __m256i b) {
-                        auto mm = max(a, b);
-                        return _mm256_cmpeq_epi32(a, mm);
-                    }
-
-                    static inline uint8_t geq_mask(
-                            __m256i a,
-                            __m256i b) {
-                        return static_cast<uint8_t>(_mm256_movemask_ps(_mm256_castsi256_ps(geq(a, b))));
-                    }
-
                     static inline T sum(
                             __m256i a) {
                         auto mm = _mm256_add_epi32(a, _mm256_srli_si256(a, 8));
@@ -204,6 +179,16 @@ namespace coding_benchmark {
                                 | (static_cast<uint64_t>(_mm_popcnt_u32(_mm256_extract_epi32(a, 5))) << 40) | (static_cast<uint64_t>(_mm_popcnt_u32(_mm256_extract_epi32(a, 4))) << 32)
                                 | (static_cast<uint64_t>(_mm_popcnt_u32(_mm256_extract_epi32(a, 3))) << 24) | (static_cast<uint64_t>(_mm_popcnt_u32(_mm256_extract_epi32(a, 2))) << 16)
                                 | (static_cast<uint64_t>(_mm_popcnt_u32(_mm256_extract_epi32(a, 1))) << 8) | static_cast<uint64_t>(_mm_popcnt_u32(_mm256_extract_epi32(a, 0)));
+                    }
+
+                    static inline __m256i cvt_larger_lo(
+                            __m256i a) {
+                        return _mm256_cvtepi32_epi64(_mm256_extractf128_si256(a, 0));
+                    }
+
+                    static inline __m256i cvt_larger_hi(
+                            __m256i a) {
+                        return _mm256_cvtepi32_epi64(_mm256_extractf128_si256(a, 1));
                     }
 
                 private:
@@ -443,14 +428,14 @@ namespace coding_benchmark {
                 using BASE::set_inc;
                 using BASE::min;
                 using BASE::max;
-                using BASE::add;
                 using BASE::sum;
-                using BASE::mullo;
                 using BASE::pack_right;
                 using BASE::pack_right2;
                 using BASE::popcount;
                 using BASE::popcount2;
                 using BASE::popcount3;
+                using BASE::cvt_larger_lo;
+                using BASE::cvt_larger_hi;
             };
 
             template<>
@@ -568,14 +553,14 @@ namespace coding_benchmark {
                 using BASE::set_inc;
                 using BASE::min;
                 using BASE::max;
-                using BASE::add;
                 using BASE::sum;
-                using BASE::mullo;
                 using BASE::pack_right;
                 using BASE::pack_right2;
                 using BASE::popcount;
                 using BASE::popcount2;
                 using BASE::popcount3;
+                using BASE::cvt_larger_lo;
+                using BASE::cvt_larger_hi;
             };
 
             template<>
