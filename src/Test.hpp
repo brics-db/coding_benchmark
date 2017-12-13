@@ -3,9 +3,9 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -53,7 +53,7 @@ struct TestBase0 {
     virtual ~TestBase0() {
     }
 
-    virtual const std::string & getSIMDtypeName() = 0;
+    const virtual std::string & getSIMDtypeName() = 0;
 
     virtual bool HasCapabilities() = 0;
 };
@@ -200,7 +200,7 @@ struct ScalarTest :
 
     virtual ~ScalarTest();
 
-    virtual const std::string & getSIMDtypeName() override;
+    const virtual std::string & getSIMDtypeName() override;
 
     virtual bool HasCapabilities() override;
 };
@@ -210,7 +210,7 @@ struct SSE42Test :
 
     virtual ~SSE42Test();
 
-    virtual const std::string & getSIMDtypeName() override;
+    const virtual std::string & getSIMDtypeName() override;
 
     virtual bool HasCapabilities() override;
 };
@@ -220,7 +220,7 @@ struct AVX2Test :
 
     virtual ~AVX2Test();
 
-    virtual const std::string & getSIMDtypeName() override;
+    const virtual std::string & getSIMDtypeName() override;
 
     virtual bool HasCapabilities() override;
 };
@@ -230,10 +230,52 @@ struct AVX512Test :
 
     virtual ~AVX512Test();
 
-    virtual const std::string & getSIMDtypeName() override;
+    const virtual std::string & getSIMDtypeName() override;
 
     virtual bool HasCapabilities() override;
 };
+
+template<typename V>
+struct SIMDTest;
+
+#ifdef __SSE4_2__
+
+template<>
+struct SIMDTest<__m128i> : public SSE42Test {
+
+    virtual ~SIMDTest() {};
+
+    using SSE42Test::getSIMDtypeName;
+    using SSE42Test::HasCapabilities;
+};
+
+#endif
+
+#ifdef __AVX2__
+
+template<>
+struct SIMDTest<__m256i> : public AVX2Test {
+
+    virtual ~SIMDTest() {};
+
+    using AVX2Test::getSIMDtypeName;
+    using AVX2Test::HasCapabilities;
+};
+
+#endif
+
+#ifdef __AVX512F__
+
+template<>
+struct SIMDTest<__m512i> : public AVX512Test {
+
+    virtual ~SIMDTest() {};
+
+    using AVX512Test::getSIMDtypeName;
+    using AVX512Test::HasCapabilities;
+};
+
+#endif
 
 template<typename DATARAW, typename DATAENC>
 struct Test :

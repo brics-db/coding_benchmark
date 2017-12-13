@@ -21,7 +21,7 @@
 
 #ifdef __AVX512F__
 
-#include <Hamming/Hamming_avx2.hpp>
+#include <Hamming/Hamming_simd.hpp>
 
 /*
  * For the following algorithms, see
@@ -31,18 +31,18 @@
 
 namespace coding_benchmark {
 
-    template struct hamming_t<uint16_t, __m512i >;
-    template struct hamming_t<uint32_t, __m512i >;
+    template struct hamming_t<uint16_t, __m512i > ;
+    template struct hamming_t<uint32_t, __m512i > ;
 
     template<>
     __m128i hamming_t<uint16_t, __m512i >::computeHamming(
             __m512i data) {
-        static auto pattern1 = _mm256_set1_epi16(static_cast<int16_t>(0xAD5B));
-        static auto pattern2 = _mm256_set1_epi16(static_cast<int16_t>(0x366D));
-        static auto pattern3 = _mm256_set1_epi16(static_cast<int16_t>(0xC78E));
-        static auto pattern4 = _mm256_set1_epi16(static_cast<int16_t>(0x07F0));
-        static auto pattern5 = _mm256_set1_epi16(static_cast<int16_t>(0xF800));
-        static auto mask = _mm_set1_epi8(0x01);
+        auto pattern1 = _mm256_set1_epi16(static_cast<int16_t>(0xAD5B));
+        auto pattern2 = _mm256_set1_epi16(static_cast<int16_t>(0x366D));
+        auto pattern3 = _mm256_set1_epi16(static_cast<int16_t>(0xC78E));
+        auto pattern4 = _mm256_set1_epi16(static_cast<int16_t>(0x07F0));
+        auto pattern5 = _mm256_set1_epi16(static_cast<int16_t>(0xF800));
+        auto mask = _mm_set1_epi8(0x01);
         __m128i tmp2 = mm<__m512i, uint16_t>::popcount(_mm256_and_si256(data, pattern1));
         __m128i hamming = _mm_slli_epi16(_mm_and_si128(tmp2, mask), 1);
         __m128i tmp1 = mm<__m512i, uint16_t>::popcount(_mm256_and_si256(data, pattern2));
@@ -296,50 +296,50 @@ namespace coding_benchmark {
     }
 
     template
-    struct Hamming_avx2_16<1>;
+    struct Hamming_avx2_16<1> ;
     template
-    struct Hamming_avx2_16<2>;
+    struct Hamming_avx2_16<2> ;
     template
-    struct Hamming_avx2_16<4>;
+    struct Hamming_avx2_16<4> ;
     template
-    struct Hamming_avx2_16<8>;
+    struct Hamming_avx2_16<8> ;
     template
-    struct Hamming_avx2_16<16>;
+    struct Hamming_avx2_16<16> ;
     template
-    struct Hamming_avx2_16<32>;
+    struct Hamming_avx2_16<32> ;
     template
-    struct Hamming_avx2_16<64>;
+    struct Hamming_avx2_16<64> ;
     template
-    struct Hamming_avx2_16<128>;
+    struct Hamming_avx2_16<128> ;
     template
-    struct Hamming_avx2_16<256>;
+    struct Hamming_avx2_16<256> ;
     template
-    struct Hamming_avx2_16<512>;
+    struct Hamming_avx2_16<512> ;
     template
-    struct Hamming_avx2_16<1024>;
+    struct Hamming_avx2_16<1024> ;
 
     template
-    struct Hamming_avx2_32<1>;
+    struct Hamming_avx2_32<1> ;
     template
-    struct Hamming_avx2_32<2>;
+    struct Hamming_avx2_32<2> ;
     template
-    struct Hamming_avx2_32<4>;
+    struct Hamming_avx2_32<4> ;
     template
-    struct Hamming_avx2_32<8>;
+    struct Hamming_avx2_32<8> ;
     template
-    struct Hamming_avx2_32<16>;
+    struct Hamming_avx2_32<16> ;
     template
-    struct Hamming_avx2_32<32>;
+    struct Hamming_avx2_32<32> ;
     template
-    struct Hamming_avx2_32<64>;
+    struct Hamming_avx2_32<64> ;
     template
-    struct Hamming_avx2_32<128>;
+    struct Hamming_avx2_32<128> ;
     template
-    struct Hamming_avx2_32<256>;
+    struct Hamming_avx2_32<256> ;
     template
-    struct Hamming_avx2_32<512>;
+    struct Hamming_avx2_32<512> ;
     template
-    struct Hamming_avx2_32<1024>;
+    struct Hamming_avx2_32<1024> ;
 
 }
 

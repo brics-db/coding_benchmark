@@ -78,6 +78,23 @@ namespace coding_benchmark {
 };
 #endif
 
+#ifdef __AVX512F__
+    template<>
+    struct hamming_typehelper_t<uint16_t, __m512i> {
+    typedef __m128i code_t;
+};
+
+    template<>
+    struct hamming_typehelper_t<uint32_t, __m512i> {
+    typedef uint64_t code_t;
+};
+
+    template<>
+    struct hamming_typehelper_t<uint64_t, __m512i> {
+    typedef uint32_t code_t;
+};
+#endif
+
     template<typename data_t, typename granularity_t>
     struct hamming_t {
         typedef typename hamming_typehelper_t<data_t, granularity_t>::code_t code_t;

@@ -23,8 +23,7 @@
 
 #include <Test.hpp>
 #include <Hamming/Hamming_scalar.hpp>
-#include <Hamming/Hamming_sse42.hpp>
-#include <Hamming/Hamming_avx2.hpp>
+#include <Hamming/Hamming_simd.hpp>
 
 namespace coding_benchmark {
 

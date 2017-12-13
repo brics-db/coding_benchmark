@@ -65,10 +65,7 @@
 #endif
 
 #include <Hamming/Hamming_scalar.hpp>
-#include <Hamming/Hamming_sse42.hpp>
-#ifdef __AVX2__
-#include <Hamming/Hamming_avx2.hpp>
-#endif
+#include <Hamming/Hamming_simd.hpp>
 
 #include <Output.hpp>
 

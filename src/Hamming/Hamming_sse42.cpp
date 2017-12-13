@@ -19,9 +19,9 @@
  * Created on 15-08-2017 16:32
  */
 
-#include <Hamming/Hamming_sse42.hpp>
-
 #ifdef __SSE4_2__
+
+#include <Hamming/Hamming_simd.hpp>
 
 /*
  * For the following algorithms, see

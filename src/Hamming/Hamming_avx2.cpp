@@ -21,15 +21,13 @@
 
 #ifdef __AVX2__
 
-#include <Hamming/Hamming_avx2.hpp>
+#include <Hamming/Hamming_simd.hpp>
 
 /*
  * For the following algorithms, see
  * https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
  * Credit also goes to the book "Hacker's Delight" 2nd Edition, by Henry S. Warren, Jr., published at Addison-Wesley
  */
-
-using namespace coding_benchmark::simd;
 
 namespace coding_benchmark {
 
@@ -39,12 +37,12 @@ namespace coding_benchmark {
     template<>
     __m128i hamming_t<uint16_t, __m256i >::computeHamming(
             __m256i data) {
-        static auto pattern1 = _mm256_set1_epi16(static_cast<int16_t>(0xAD5B));
-        static auto pattern2 = _mm256_set1_epi16(static_cast<int16_t>(0x366D));
-        static auto pattern3 = _mm256_set1_epi16(static_cast<int16_t>(0xC78E));
-        static auto pattern4 = _mm256_set1_epi16(static_cast<int16_t>(0x07F0));
-        static auto pattern5 = _mm256_set1_epi16(static_cast<int16_t>(0xF800));
-        static auto mask = _mm_set1_epi8(0x01);
+        auto pattern1 = _mm256_set1_epi16(static_cast<int16_t>(0xAD5B));
+        auto pattern2 = _mm256_set1_epi16(static_cast<int16_t>(0x366D));
+        auto pattern3 = _mm256_set1_epi16(static_cast<int16_t>(0xC78E));
+        auto pattern4 = _mm256_set1_epi16(static_cast<int16_t>(0x07F0));
+        auto pattern5 = _mm256_set1_epi16(static_cast<int16_t>(0xF800));
+        auto mask = _mm_set1_epi8(0x01);
         __m128i tmp2 = mm<__m256i, uint16_t>::popcount(_mm256_and_si256(data, pattern1));
         __m128i hamming = _mm_slli_epi16(_mm_and_si128(tmp2, mask), 1);
         __m128i tmp1 = mm<__m256i, uint16_t>::popcount(_mm256_and_si256(data, pattern2));
