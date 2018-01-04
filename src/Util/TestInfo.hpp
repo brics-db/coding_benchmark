@@ -69,12 +69,18 @@ struct TestInfos {
     TestInfo subChecked;
     TestInfo mulChecked;
     TestInfo divChecked;
-    TestInfo aggregate;
-    TestInfo aggregateChecked;
+    TestInfo sum;
+    TestInfo min;
+    TestInfo max;
+    TestInfo avg;
+    TestInfo sumChecked;
+    TestInfo minChecked;
+    TestInfo maxChecked;
+    TestInfo avgChecked;
     TestInfo reencodeChecked;
     TestInfo decode;
     TestInfo decodeChecked;
-    const TestInfos * reference;
+    const TestInfos * const reference;
 
     TestInfos(
             const size_t datawidth,
@@ -95,8 +101,14 @@ struct TestInfos {
             TestInfo & subChecked,
             TestInfo & mulChecked,
             TestInfo & divChecked,
-            TestInfo & aggregate,
-            TestInfo & aggregateChecked,
+            TestInfo & sum,
+            TestInfo & min,
+            TestInfo & max,
+            TestInfo & avg,
+            TestInfo & sumChecked,
+            TestInfo & minChecked,
+            TestInfo & maxChecked,
+            TestInfo & avgChecked,
             TestInfo & reencodeChecked,
             TestInfo & decode,
             TestInfo & checkAndDecode);
@@ -115,12 +127,18 @@ struct TestInfos {
             TestInfo & subChecked,
             TestInfo & mulChecked,
             TestInfo & divChecked,
-            TestInfo & aggregate,
-            TestInfo & aggregateChecked,
+            TestInfo & sum,
+            TestInfo & min,
+            TestInfo & max,
+            TestInfo & avg,
+            TestInfo & sumChecked,
+            TestInfo & minChecked,
+            TestInfo & maxChecked,
+            TestInfo & avgChecked,
             TestInfo & reencodeChecked,
             TestInfo & decode,
             TestInfo & checkAndDecode,
-            const TestInfos * reference);
+            const TestInfos * const reference);
 
     TestInfos(
             const TestInfos &) = default;

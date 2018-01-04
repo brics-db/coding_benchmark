@@ -25,7 +25,7 @@
 #include <iostream>
 #include <vector>
 
-#include <Test.hpp>
+#include <Util/Test.hpp>
 #include <Util/AlignedBlock.hpp>
 
 template<template<size_t BlockSize> class TestType, size_t start, size_t end>

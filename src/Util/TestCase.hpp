@@ -25,7 +25,7 @@
 #include <vector>
 #include <iomanip>
 
-#include <Test.hpp>
+#include <Util/Test.hpp>
 #include <Util/ComputeNumRuns.hpp>
 #include <Util/ExpandTest.hpp>
 

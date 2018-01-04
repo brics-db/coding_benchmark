@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include <Test.hpp>
 #include <Hamming/Hamming_base.hpp>
+#include <Util/Test.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/Functors.hpp>
 #include <Util/ArithmeticSelector.hpp>

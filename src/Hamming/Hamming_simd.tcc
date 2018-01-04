@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <Test.hpp>
+#include <Util/Test.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Util/AggregateSelector.hpp>
@@ -308,13 +308,13 @@ namespace coding_benchmark {
                 auto mmTmp = mm<V, larger_t>::set1(0);
                 while (i <= (numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        mmTmp = mm<V, larger_t>::add(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                        mmTmp = mm<V, larger_t>::add(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
+                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
                     }
                 }
                 for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    mmTmp = mm<V, larger_t>::add(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                    mmTmp = mm<V, larger_t>::add(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                    mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
+                    mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
                 }
                 auto tmp = mm<V, larger_t>::sum(mmTmp);
                 if (i < numValues) {
@@ -374,13 +374,13 @@ namespace coding_benchmark {
                 auto mmTmp = mm<V, larger_t>::set1(0);
                 while (i <= (numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        mmTmp = mm<V, larger_t>::add(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                        mmTmp = mm<V, larger_t>::add(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
+                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
                     }
                 }
                 for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++dataIn) {
-                    mmTmp = mm<V, larger_t>::add(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                    mmTmp = mm<V, larger_t>::add(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                    mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
+                    mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
                 }
                 auto tmp = mm<V, larger_t>::sum(mmTmp);
                 if (i < numValues) {

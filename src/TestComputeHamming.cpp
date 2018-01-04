@@ -32,10 +32,9 @@
 #include <Util/ComputeNumRuns.hpp>
 #include <Util/ExpandTest.hpp>
 #include <Util/TestCase.hpp>
+#include <Util/Output.hpp>
 
 #include <Hamming/Hamming_compute.hpp>
-
-#include <Output.hpp>
 
 using namespace coding_benchmark;
 

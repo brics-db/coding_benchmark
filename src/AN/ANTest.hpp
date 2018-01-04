@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <Test.hpp>
+#include <Util/Test.hpp>
 
 namespace coding_benchmark {
 

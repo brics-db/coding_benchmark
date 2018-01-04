@@ -3,9 +3,9 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,10 +21,10 @@
 #include <omp.h>
 #endif
 
-#include "Test.hpp"
-#include "Util/CPU.hpp"
-#include "Util/ErrorInfo.hpp"
-#include "Util/Stopwatch.hpp"
+#include <Util/Test.hpp>
+#include <Util/CPU.hpp>
+#include <Util/ErrorInfo.hpp>
+#include <Util/Stopwatch.hpp>
 
 TestBase::TestBase(
         size_t datawidth,
@@ -191,20 +191,38 @@ void TestBase::RunDecodeChecked(
 }
 
 template<typename Conf, size_t max, size_t num = 1>
-struct VariantExecutor {
+struct ConfigurationModeExecutor {
+    static void run(
+            Conf & conf,
+            std::function<void(
+                    Conf &)> & lambda) {
+        conf.mode = typename std::variant_alternative<num - 1, typename Conf::Mode>::type();
+        lambda(conf);
+        ConfigurationModeExecutor<Conf, max, num + 1>::run(conf, std::function<void(
+                Conf &)>(lambda));
+    }
+
     static void run(
             Conf & conf,
             std::function<void(
                     Conf &)> && lambda) {
         conf.mode = typename std::variant_alternative<num - 1, typename Conf::Mode>::type();
         lambda(conf);
-        VariantExecutor<Conf, max, num + 1>::run(conf, std::forward<std::function<void(
+        ConfigurationModeExecutor<Conf, max, num + 1>::run(conf, std::forward<std::function<void(
                 Conf &)>>(lambda));
     }
 };
 
 template<typename Conf, size_t max>
-struct VariantExecutor<Conf, max, max> {
+struct ConfigurationModeExecutor<Conf, max, max> {
+    static void run(
+            Conf & conf,
+            std::function<void(
+                    Conf &)> & lambda) {
+        conf.mode = typename std::variant_alternative<max - 1, typename Conf::Mode>::type();
+        lambda(conf);
+    }
+
     static void run(
             Conf & conf,
             std::function<void(
@@ -238,13 +256,13 @@ TestInfos TestBase::Execute(
 #endif
     ReencodeConfiguration reencConf(configTest, newA);
     DecodeConfiguration decConf(configTest);
-    AggregateConfiguration aggrSumConf(configTest, AggregateConfiguration::Mode(AggregateConfiguration::Sum()));
+    AggregateConfiguration aggrConf(configTest, AggregateConfiguration::Mode(AggregateConfiguration::Sum()));
     Stopwatch sw;
 
     // Start test:
     this->PreEncode(encConf);
 
-    TestInfo tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk;
+    TestInfo tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk, tiMaxChk, tiAvgChk, tiReencChk, tiDec, tiDecChk;
 
     std::clog << "encode" << std::flush;
     sw.Reset();
@@ -290,13 +308,12 @@ TestInfos TestBase::Execute(
     }
 
     if (configTest.enableArithmetic) {
-        VariantExecutor<ArithmeticConfiguration, std::variant_size<typename ArithmeticConfiguration::Mode>::value>::run(arithConf,
-                [this,&sw,&tiAdd,&tiSub,&tiMul,&tiDiv] (ArithmeticConfiguration & conf) {
-                    if (DoArithmetic(conf)) {
-                        PreArithmetic(conf);
-                        std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode);
-                        sw.Reset();
-                        try {
+        auto func = [this,&sw,&tiAdd,&tiSub,&tiMul,&tiDiv] (ArithmeticConfiguration & conf) {
+            if (DoArithmetic(conf)) {
+                PreArithmetic(conf);
+                std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode);
+                sw.Reset();
+                try {
 #ifdef OMP
 #ifdef OMPNUMTHREADS
 #pragma omp parallel num_threads(OMPNUMTHREADS)
@@ -347,17 +364,17 @@ TestInfos TestBase::Execute(
                 };
             }
         }
-    });
+    }   ;
+        ConfigurationModeExecutor<ArithmeticConfiguration, std::variant_size_v<typename ArithmeticConfiguration::Mode>>::run(arithConf, func);
     }
 
     if (configTest.enableArithmeticChk) {
-        VariantExecutor<ArithmeticConfiguration, std::variant_size<typename ArithmeticConfiguration::Mode>::value>::run(arithConf,
-                [this,&sw,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (ArithmeticConfiguration & conf) {
-                    if (DoArithmeticChecked(conf)) {
-                        PreArithmeticChecked(conf);
-                        std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode) << " checked";
-                        sw.Reset();
-                        try {
+        auto func = [this,&sw,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (ArithmeticConfiguration & conf) {
+            if (DoArithmeticChecked(conf)) {
+                PreArithmeticChecked(conf);
+                std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode) << " checked";
+                sw.Reset();
+                try {
 #ifdef OMP
 #ifdef OMPNUMTHREADS
 #pragma omp parallel num_threads(OMPNUMTHREADS)
@@ -408,14 +425,17 @@ TestInfos TestBase::Execute(
                 };
             }
         }
-    });
+    }   ;
+        ConfigurationModeExecutor<ArithmeticConfiguration, std::variant_size_v<typename ArithmeticConfiguration::Mode>>::run(arithConf, func);
     }
 
-    if (configTest.enableAggregate && this->DoAggregate(aggrSumConf)) {
-        this->PreAggregate(aggrSumConf);
-        std::clog << ", aggregate" << std::flush;
-        sw.Reset();
-        try {
+    if (configTest.enableAggregate) {
+        auto func = [this,&sw,&tiSum,&tiMin,&tiMax,&tiAvg] (AggregateConfiguration & conf) {
+            if (DoAggregate(conf)) {
+                PreAggregate(conf);
+                std::clog << ", " << std::visit(AggregateConfigurationModeName(), conf.mode);
+                sw.Reset();
+                try {
 #ifdef OMP
 #ifdef OMPNUMTHREADS
 #pragma omp parallel num_threads(OMPNUMTHREADS)
@@ -423,22 +443,60 @@ TestInfos TestBase::Execute(
 #pragma omp parallel
 #endif
 #endif
-            {
-                this->RunAggregate(aggrSumConf);
+                {
+                    RunAggregate(conf);
+                }
+                auto nanos = sw.Current();
+                try {
+                    std::get<AggregateConfiguration::Sum>(conf.mode);
+                    tiSum.set(nanos);
+                } catch (const std::bad_variant_access&) {
+                    try {
+                        std::get<AggregateConfiguration::Min>(conf.mode);
+                        tiMin.set(nanos);
+                    } catch (const std::bad_variant_access&) {
+                        try {
+                            std::get<AggregateConfiguration::Max>(conf.mode);
+                            tiMax.set(nanos);
+                        } catch (const std::bad_variant_access&) {
+                            std::get<AggregateConfiguration::Avg>(conf.mode);
+                            tiAvg.set(nanos);
+                        }
+                    }
+                };
+            } catch (ErrorInfo & ei) {
+                auto msg = ei.what();
+                std::cerr << msg << std::endl;
+                try {
+                    std::get<AggregateConfiguration::Sum>(conf.mode);
+                    tiSum.set(msg);
+                } catch (const std::bad_variant_access&) {
+                    try {
+                        std::get<AggregateConfiguration::Min>(conf.mode);
+                        tiMin.set(msg);
+                    } catch (const std::bad_variant_access&) {
+                        try {
+                            std::get<AggregateConfiguration::Max>(conf.mode);
+                            tiMax.set(msg);
+                        } catch (const std::bad_variant_access&) {
+                            std::get<AggregateConfiguration::Avg>(conf.mode);
+                            tiAvg.set(msg);
+                        }
+                    }
+                };
             }
-            tiAggr.set(sw.Current());
-        } catch (ErrorInfo & ei) {
-            auto msg = ei.what();
-            std::cerr << msg << std::endl;
-            tiAggr.set(msg);
         }
+    }   ;
+        ConfigurationModeExecutor<AggregateConfiguration, std::variant_size_v<typename AggregateConfiguration::Mode>>::run(aggrConf, func);
     }
 
-    if (configTest.enableAggregateChk && this->DoAggregateChecked(aggrSumConf)) {
-        this->PreAggregateChecked(aggrSumConf);
-        std::clog << ", aggregate checked" << std::flush;
-        sw.Reset();
-        try {
+    if (configTest.enableAggregateChk) {
+        auto func = [this,&sw,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (AggregateConfiguration & conf) {
+            if (DoAggregateChecked(conf)) {
+                PreAggregateChecked(conf);
+                std::clog << ", " << std::visit(AggregateConfigurationModeName(conf), conf.mode) << " checked";
+                sw.Reset();
+                try {
 #ifdef OMP
 #ifdef OMPNUMTHREADS
 #pragma omp parallel num_threads(OMPNUMTHREADS)
@@ -446,15 +504,50 @@ TestInfos TestBase::Execute(
 #pragma omp parallel
 #endif
 #endif
-            {
-                this->RunAggregateChecked(aggrSumConf);
+                {
+                    RunAggregateChecked(conf);
+                }
+                auto nanos = sw.Current();
+                try {
+                    std::get<AggregateConfiguration::Sum>(conf.mode);
+                    tiSumChk.set(nanos);
+                } catch (const std::bad_variant_access&) {
+                    try {
+                        std::get<AggregateConfiguration::Min>(conf.mode);
+                        tiMinChk.set(nanos);
+                    } catch (const std::bad_variant_access&) {
+                        try {
+                            std::get<AggregateConfiguration::Max>(conf.mode);
+                            tiMaxChk.set(nanos);
+                        } catch (const std::bad_variant_access&) {
+                            std::get<AggregateConfiguration::Avg>(conf.mode);
+                            tiAvgChk.set(nanos);
+                        }
+                    }
+                };
+            } catch (ErrorInfo & ei) {
+                auto msg = ei.what();
+                std::cerr << msg << std::endl;
+                try {
+                    std::get<AggregateConfiguration::Sum>(conf.mode);
+                    tiSumChk.set(msg);
+                } catch (const std::bad_variant_access&) {
+                    try {
+                        std::get<AggregateConfiguration::Min>(conf.mode);
+                        tiMinChk.set(msg);
+                    } catch (const std::bad_variant_access&) {
+                        try {
+                            std::get<AggregateConfiguration::Max>(conf.mode);
+                            tiMaxChk.set(msg);
+                        } catch (const std::bad_variant_access&) {
+                            std::get<AggregateConfiguration::Avg>(conf.mode);
+                            tiAvgChk.set(msg);
+                        }
+                    }
+                };
             }
-            tiAggrChk.set(sw.Current());
-        } catch (ErrorInfo & ei) {
-            auto msg = ei.what();
-            std::cerr << msg << std::endl;
-            tiAggrChk.set(msg);
         }
+    }   ;
     }
 
     if (configTest.enableReencodeChk && this->DoReencodeChecked()) {
@@ -526,7 +619,8 @@ TestInfos TestBase::Execute(
         }
     }
 
-    return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiAggr, tiAggrChk, tiReencChk, tiDec, tiDecChk);
+    return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk,
+            tiMaxChk, tiAvgChk, tiReencChk, tiDec, tiDecChk);
 }
 
 ScalarTest::~ScalarTest() {

@@ -26,6 +26,7 @@ ADD_DEFINITIONS(-Wall)
 ADD_DEFINITIONS(-pedantic)
 ADD_DEFINITIONS(-march=native)
 #ADD_DEFINITIONS(-mavx2)
+#ADD_DEFINITIONS(-march=knl)
 ADD_DEFINITIONS(-Wno-ignored-attributes)
 ADD_DEFINITIONS(-Weffc++)
 
@@ -50,15 +51,15 @@ MACRO(append_target_property arg_target arg_property arg_setting)
 	SET_TARGET_PROPERTIES(${arg_target} PROPERTIES ${arg_property} ${TEMP})
 ENDMACRO(append_target_property)
 
-add_algorithm(benchmark "src/Main.cpp src/Test.cpp src/Output.cpp \
+add_algorithm(benchmark "src/Main.cpp src/Util/Test.cpp src/Util/Output.cpp \
 src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp \
 src/XOR/XOR_base.cpp src/XOR/XOR_scalar.cpp src/XOR/XOR_sse42.cpp src/XOR/XOR_avx2.cpp \
 src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp")
-add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Test.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Output.cpp \
+add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Util/Test.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/Util/Output.cpp \
 src/AN/AN_scalar.cpp")
 
-add_algorithm(benchmark_novec "src/Main.cpp src/Test.cpp src/Output.cpp \
+add_algorithm(benchmark_novec "src/Main.cpp src/Util/Test.cpp src/Util/Output.cpp \
 src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp \
 src/XOR/XOR_base.cpp src/XOR/XOR_scalar.cpp src/XOR/XOR_sse42.cpp src/XOR/XOR_avx2.cpp \
@@ -67,7 +68,7 @@ TARGET_COMPILE_OPTIONS(benchmark_novec PRIVATE "-fno-tree-vectorize")
 
 FIND_PACKAGE(OpenMP)
 IF(OPENMP_FOUND)
-	add_algorithm(benchmarkOMP2 "src/Main.cpp src/Test.cpp src/Output.cpp \
+	add_algorithm(benchmarkOMP2 "src/Main.cpp src/Util/Test.cpp src/Util/Output.cpp \
 src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp \
 src/XOR/XOR_base.cpp src/XOR/XOR_scalar.cpp src/XOR/XOR_sse42.cpp src/XOR/XOR_avx2.cpp \
@@ -76,7 +77,7 @@ src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp")
 	append_target_property(benchmarkOMP2 "COMPILE_FLAGS" "${OpenMP_CXX_FLAGS}")
 	append_target_property(benchmarkOMP2 "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
 
-	add_algorithm(benchmarkOMP "src/Main.cpp src/Test.cpp src/Output.cpp \
+	add_algorithm(benchmarkOMP "src/Main.cpp src/Util/Test.cpp src/Util/Output.cpp \
 src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp \
 src/XOR/XOR_base.cpp src/XOR/XOR_scalar.cpp src/XOR/XOR_sse42.cpp src/XOR/XOR_avx2.cpp \
@@ -86,12 +87,17 @@ src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp")
 	append_target_property(benchmarkOMP "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
 ENDIF(OPENMP_FOUND)
 
-add_algorithm(TestModuloInverseComputation "src/TestModuloInverseComputation.cpp src/Util/Stopwatch.cpp")
-add_algorithm(TestModuloInverseComputation2 "src/TestModuloInverseComputation2.cpp src/Util/Stopwatch.cpp")
+FIND_PACKAGE(Boost)
+IF(Boost_FOUND)
+    add_algorithm(TestModuloInverseComputation "src/TestModuloInverseComputation.cpp src/Util/Stopwatch.cpp")
+    add_algorithm(TestModuloInverseComputation2 "src/TestModuloInverseComputation2.cpp src/Util/Stopwatch.cpp")
+ELSE(Boost_FOUND)
+    MESSAGE(WARNING "Boost not found, NOT generating targets 'TestModuloInverseComputation' and 'TestModuloInverseComputation2'")
+ENDIF(Boost_FOUND)
 
-add_algorithm(TestComputeHamming "src/TestComputeHamming.cpp src/Test.cpp src/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
+add_algorithm(TestComputeHamming "src/TestComputeHamming.cpp src/Util/Test.cpp src/Util/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp src/Hamming/Hamming_compute.cpp")
 
-add_algorithm(TestComputeHamming_novec "src/TestComputeHamming.cpp src/Test.cpp src/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
+add_algorithm(TestComputeHamming_novec "src/TestComputeHamming.cpp src/Util/Test.cpp src/Util/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp src/Hamming/Hamming_compute.cpp")
 TARGET_COMPILE_OPTIONS(TestComputeHamming_novec PRIVATE "-fno-tree-vectorize")

@@ -25,11 +25,11 @@
 #include <Util/ComputeNumRuns.hpp>
 #include <Util/ExpandTest.hpp>
 #include <Util/TestCase.hpp>
+#include <Util/Test.hpp>
+#include <Util/Output.hpp>
 
-#include <Test.hpp>
-#include <CopyTest.hpp>
-#include <CopyTest2.hpp>
-#include <Output.hpp>
+#include <Copy/CopyTest.hpp>
+#include <Copy/CopyTest2.hpp>
 
 #include <AN/AN_scalar.hpp>
 

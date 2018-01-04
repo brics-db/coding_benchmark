@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <Test.hpp>
+#include <Util/Test.hpp>
 #include <Hamming/Hamming_scalar.hpp>
 #include <Hamming/Hamming_simd.hpp>
 
@@ -154,8 +154,8 @@ namespace coding_benchmark {
         typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
         typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
 
-        static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
+    static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
+    static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
 
         using Test<DATAIN, hamming_sse42_t>::Test;
 

@@ -12,7 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Main.hpp>
+#include <string>
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <algorithm>
+
+#ifdef _MSC_VER
+// disable stupid diamond-inheritance warnings (the compiler does not see that there is only a single implementation for each of the functions)
+#pragma warning(disable: 4250)
+#endif
+
+#include <Util/Test.hpp>
+#include <Util/AlignedBlock.hpp>
+#include <Util/TestInfo.hpp>
+#include <Util/ErrorInfo.hpp>
+#include <Util/VFunc.hpp>
+#include <Util/Euclidean.hpp>
+#include <Util/Intrinsics.hpp>
+#include <Util/ComputeNumRuns.hpp>
+#include <Util/ExpandTest.hpp>
+#include <Util/TestCase.hpp>
+#include <Util/Output.hpp>
+
+#include <Copy/CopyTest.hpp>
+
+#include <XOR/XOR_scalar.hpp>
+#include <XOR/XOR_sse42.hpp>
+#ifdef __AVX2__
+#include <XOR/XOR_avx2.hpp>
+#endif
+
+#include <AN/AN_scalar.hpp>
+#include <AN/AN_sse42_8x16_8x32_u_inv.hpp>
+#include <AN/AN_sse42_8x16_8x32_u_divmod.hpp>
+#include <AN/AN_sse42_8x16_8x32_s_inv.hpp>
+#include <AN/AN_sse42_8x16_8x32_s_divmod.hpp>
+#ifdef __AVX2__
+#include <AN/AN_avx2_16x16_16x32_u_inv.hpp>
+#include <AN/AN_avx2_16x16_16x32_u_divmod.hpp>
+#include <AN/AN_avx2_16x16_16x32_s_inv.hpp>
+#include <AN/AN_avx2_16x16_16x32_s_divmod.hpp>
+#endif
+
+#include <Hamming/Hamming_scalar.hpp>
+#include <Hamming/Hamming_simd.hpp>
 
 using namespace coding_benchmark;
 

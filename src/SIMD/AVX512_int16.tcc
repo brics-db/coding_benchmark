@@ -527,18 +527,9 @@ namespace coding_benchmark {
                         return sub(a, b);
                     }
 
-                    static inline __m512i sub(
+                    static __m512i sub(
                             __m512i a,
-                            __m512i b) {
-#ifdef __AVX512BW__
-                        return _mm512_sub_epi16(a, b);
-#else
-                        auto mm256 = coding_benchmark::simd::mm_op<__m256i, T, coding_benchmark::sub>::sub(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0));
-                        auto mm = _mm512_castps256_ps512(mm256);
-                        mm256 = coding_benchmark::simd::mm_op<__m256i, T, coding_benchmark::sub>::sub(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1));
-                        return _mm512_inserti64x4(mm, mm256, 1);
-#endif
-                    }
+                            __m512i b);
                 };
 
                 template<typename T>
@@ -590,6 +581,16 @@ namespace coding_benchmark {
                         return _mm512_insertf64x4(c, mm1, 1);
                     }
                 };
+
+                template<typename T>
+                inline __m512i _mm512op<T, coding_benchmark::sub>::sub(
+                        __m512i a,
+                        __m512i b) {
+                    auto mm256 = coding_benchmark::simd::mm_op<__m256i, T, coding_benchmark::sub>::sub(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0));
+                    auto mm = _mm512_castps256_ps512(mm256);
+                    mm256 = coding_benchmark::simd::mm_op<__m256i, T, coding_benchmark::sub>::sub(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1));
+                    return _mm512_inserti64x4(mm, mm256, 1);
+                }
 
             }
 

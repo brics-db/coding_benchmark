@@ -192,6 +192,25 @@ struct AggregateConfiguration :
     }
 };
 
+struct AggregateConfigurationModeName {
+    const char * operator()(
+            AggregateConfiguration::Sum) {
+        return "sum";
+    }
+    const char * operator()(
+            AggregateConfiguration::Min) {
+        return "min";
+    }
+    const char * operator()(
+            AggregateConfiguration::Max) {
+        return "max";
+    }
+    const char * operator()(
+            AggregateConfiguration::Avg) {
+        return "avg";
+    }
+};
+
 struct ReencodeConfiguration :
         public BasicTestConfiguration {
     size_t newA;

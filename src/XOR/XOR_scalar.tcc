@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <Test.hpp>
+#include <Util/Test.hpp>
 #include <XOR/XOR_base.hpp>
 #include <Util/Intrinsics.hpp>
 #include <Util/ErrorInfo.hpp>
