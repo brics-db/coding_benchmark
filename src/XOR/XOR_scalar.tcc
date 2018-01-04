@@ -325,8 +325,7 @@ namespace coding_benchmark {
                     }
                     i += BLOCKSIZE;
                     dataIn = reinterpret_cast<CS*>(dataIn2);
-                    if (XORdiff<CS>::checksumsDiffer(*dataIn, XOR<DATA, CS>::computeFinalChecksum(checksum))) // third, test checksum
-                            {
+                    if (XORdiff<CS>::checksumsDiffer(*dataIn, XOR<DATA, CS>::computeFinalChecksum(checksum))) { // third, test checksum
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     dataIn++;
@@ -341,8 +340,7 @@ namespace coding_benchmark {
                         *dataOut++ = tmp;
                     }
                     dataIn = reinterpret_cast<CS*>(dataIn2);
-                    if (XORdiff<CS>::checksumsDiffer(*dataIn, XOR<DATA, CS>::computeFinalChecksum(checksum))) // third, test checksum
-                            {
+                    if (XORdiff<CS>::checksumsDiffer(*dataIn, XOR<DATA, CS>::computeFinalChecksum(checksum))) { // third, test checksum
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }

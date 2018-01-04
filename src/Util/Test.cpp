@@ -190,18 +190,8 @@ void TestBase::RunDecodeChecked(
         const DecodeConfiguration & config) {
 }
 
-template<typename Conf, size_t max, size_t num = 1>
+template<typename Conf, size_t max = std::variant_size_v<typename Conf::Mode>, size_t num = 1>
 struct ConfigurationModeExecutor {
-    static void run(
-            Conf & conf,
-            std::function<void(
-                    Conf &)> & lambda) {
-        conf.mode = typename std::variant_alternative<num - 1, typename Conf::Mode>::type();
-        lambda(conf);
-        ConfigurationModeExecutor<Conf, max, num + 1>::run(conf, std::function<void(
-                Conf &)>(lambda));
-    }
-
     static void run(
             Conf & conf,
             std::function<void(
@@ -218,17 +208,102 @@ struct ConfigurationModeExecutor<Conf, max, max> {
     static void run(
             Conf & conf,
             std::function<void(
-                    Conf &)> & lambda) {
-        conf.mode = typename std::variant_alternative<max - 1, typename Conf::Mode>::type();
-        lambda(conf);
-    }
-
-    static void run(
-            Conf & conf,
-            std::function<void(
                     Conf &)> && lambda) {
         conf.mode = typename std::variant_alternative<max - 1, typename Conf::Mode>::type();
         lambda(conf);
+    }
+};
+
+template<typename PreFunc, typename RunFunc>
+void InternalExecute(
+        Stopwatch & sw,
+        TestInfo & ti,
+        PreFunc preFunc,
+        RunFunc runFunc) {
+    try {
+        preFunc();
+        sw.Reset();
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+        {
+            runFunc();
+        }
+#else
+#pragma omp parallel
+        {
+            runFunc();
+        }
+#endif
+#else
+        runFunc();
+#endif
+        ti.set(sw.Current());
+    } catch (ErrorInfo & ei) {
+        auto msg = ei.what();
+        std::cerr << msg << std::endl;
+        ti.set(msg);
+    }
+}
+
+template<typename PreFunc, typename RunFunc, typename SetTimeInfoFunc, typename CatchErrorInfoFunc>
+void InternalExecuteMode(
+        Stopwatch & sw,
+        PreFunc preFunc,
+        RunFunc runFunc,
+        SetTimeInfoFunc setTimeInfoFunc,
+        CatchErrorInfoFunc catchErrorInfoFunc) {
+    try {
+        preFunc();
+        sw.Reset();
+#ifdef OMP
+#ifdef OMPNUMTHREADS
+#pragma omp parallel num_threads(OMPNUMTHREADS)
+        {
+            runFunc();
+        }
+#else
+#pragma omp parallel
+        {
+            runFunc();
+        }
+#endif
+#else
+        runFunc();
+#endif
+        auto nanos = sw.Current();
+        setTimeInfoFunc(nanos);
+    } catch (ErrorInfo & ei) {
+        auto msg = ei.what();
+        std::cerr << msg << std::endl;
+        catchErrorInfoFunc(msg);
+    }
+}
+
+template<typename Conf, typename T, size_t max = std::variant_size_v<typename Conf::Mode>, size_t num = 1>
+struct SetForMode {
+    static void run(
+            Conf & conf,
+            T data,
+            std::array<TestInfo*, max> && arrayTI) {
+        try {
+            std::get<std::variant_alternative_t<num - 1, typename Conf::Mode>>(conf.mode);
+            std::get<num - 1>(arrayTI)->set(data);
+        } catch (const std::bad_variant_access&) {
+            SetForMode<Conf, T, max, num + 1>::run(conf, data, std::forward<std::array<TestInfo*, max>>(arrayTI));
+        }
+    }
+};
+
+template<typename Conf, typename T, size_t max>
+struct SetForMode<Conf, T, max, max> {
+    static void run(
+            Conf & conf,
+            T data,
+            std::array<TestInfo*, max> && arrayTI) {
+        std::get<std::variant_alternative_t<max - 1, typename Conf::Mode>>(conf.mode);
+        std::get<max - 1>(arrayTI)->set(data);
+        // if we get an std::bad_variant_access error here, don't catch it here!
     }
 };
 
@@ -259,364 +334,117 @@ TestInfos TestBase::Execute(
     AggregateConfiguration aggrConf(configTest, AggregateConfiguration::Mode(AggregateConfiguration::Sum()));
     Stopwatch sw;
 
-    // Start test:
-    this->PreEncode(encConf);
-
     TestInfo tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk, tiMaxChk, tiAvgChk, tiReencChk, tiDec, tiDecChk;
 
     std::clog << "encode" << std::flush;
-    sw.Reset();
-    try {
-#ifdef OMP
-#ifdef OMPNUMTHREADS
-#pragma omp parallel num_threads(OMPNUMTHREADS)
-#else
-#pragma omp parallel
-#endif
-#endif
-        {
-            this->RunEncode(encConf);
-        }
-        tiEnc.set(sw.Current());
-    } catch (ErrorInfo & ei) {
-        auto msg = ei.what();
-        std::cerr << msg << std::endl;
-        tiEnc.set(msg);
-    }
+    InternalExecute(sw, tiEnc, [this,&encConf] {this->PreEncode(encConf);}, [this,&encConf] {this->RunEncode(encConf);});
 
     if (configTest.enableCheck && this->DoCheck()) {
-        this->PreCheck(chkConf);
         std::clog << ", check" << std::flush;
-        sw.Reset();
-        try {
-#ifdef OMP
-#ifdef OMPNUMTHREADS
-#pragma omp parallel num_threads(OMPNUMTHREADS)
-#else
-#pragma omp parallel
-#endif
-#endif
-            {
-                this->RunCheck(chkConf);
-            }
-            tiCheck.set(sw.Current());
-        } catch (ErrorInfo & ei) {
-            auto msg = ei.what();
-            std::cerr << msg << std::endl;
-            tiCheck.set(msg);
-        }
+        InternalExecute(sw, tiCheck, [this,&chkConf] {this->PreCheck(chkConf);}, [this,&chkConf] {this->RunCheck(chkConf);});
     }
 
     if (configTest.enableArithmetic) {
         auto func = [this,&sw,&tiAdd,&tiSub,&tiMul,&tiDiv] (ArithmeticConfiguration & conf) {
             if (DoArithmetic(conf)) {
-                PreArithmetic(conf);
                 std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode);
-                sw.Reset();
-                try {
-#ifdef OMP
-#ifdef OMPNUMTHREADS
-#pragma omp parallel num_threads(OMPNUMTHREADS)
-#else
-#pragma omp parallel
-#endif
-#endif
-                {
+                auto preFunc = [this,&conf] {
+                    PreArithmetic(conf);
+                };
+                auto runFunc = [this,&conf] {
                     RunArithmetic(conf);
-                }
-                auto nanos = sw.Current();
-                try {
-                    std::get<ArithmeticConfiguration::Add>(conf.mode);
-                    tiAdd.set(nanos);
-                } catch (const std::bad_variant_access&) {
-                    try {
-                        std::get<ArithmeticConfiguration::Sub>(conf.mode);
-                        tiSub.set(nanos);
-                    } catch (const std::bad_variant_access&) {
-                        try {
-                            std::get<ArithmeticConfiguration::Mul>(conf.mode);
-                            tiMul.set(nanos);
-                        } catch (const std::bad_variant_access&) {
-                            std::get<ArithmeticConfiguration::Div>(conf.mode);
-                            tiDiv.set(nanos);
-                        }
-                    }
                 };
-            } catch (ErrorInfo & ei) {
-                auto msg = ei.what();
-                std::cerr << msg << std::endl;
-                try {
-                    std::get<ArithmeticConfiguration::Add>(conf.mode);
-                    tiAdd.set(msg);
-                } catch (const std::bad_variant_access&) {
-                    try {
-                        std::get<ArithmeticConfiguration::Sub>(conf.mode);
-                        tiSub.set(msg);
-                    } catch (const std::bad_variant_access&) {
-                        try {
-                            std::get<ArithmeticConfiguration::Mul>(conf.mode);
-                            tiMul.set(msg);
-                        } catch (const std::bad_variant_access&) {
-                            std::get<ArithmeticConfiguration::Div>(conf.mode);
-                            tiDiv.set(msg);
-                        }
-                    }
+                auto setFunc = [&conf,&tiAdd,&tiSub,&tiMul,&tiDiv] (int64_t nanos) {
+                    SetForMode<ArithmeticConfiguration, int64_t>::run(conf, nanos, {&tiAdd,&tiSub,&tiMul,&tiDiv});
                 };
-            }
-        }
-    }   ;
-        ConfigurationModeExecutor<ArithmeticConfiguration, std::variant_size_v<typename ArithmeticConfiguration::Mode>>::run(arithConf, func);
+                auto catchFunc = [&conf,&tiAdd,&tiSub,&tiMul,&tiDiv] (const char * msg) {
+                    SetForMode<ArithmeticConfiguration, const char *>::run(conf, msg, {&tiAdd,&tiSub,&tiMul,&tiDiv});
+                };
+                InternalExecuteMode(sw, preFunc, runFunc, setFunc, catchFunc);
+            };
+        };
+        ConfigurationModeExecutor<ArithmeticConfiguration>::run(arithConf, func);
     }
 
     if (configTest.enableArithmeticChk) {
         auto func = [this,&sw,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (ArithmeticConfiguration & conf) {
             if (DoArithmeticChecked(conf)) {
-                PreArithmeticChecked(conf);
                 std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode) << " checked";
-                sw.Reset();
-                try {
-#ifdef OMP
-#ifdef OMPNUMTHREADS
-#pragma omp parallel num_threads(OMPNUMTHREADS)
-#else
-#pragma omp parallel
-#endif
-#endif
-                {
+                auto preFunc = [this,&conf] {
+                    PreArithmeticChecked(conf);
+                };
+                auto runFunc = [this,&conf] {
                     RunArithmeticChecked(conf);
-                }
-                auto nanos = sw.Current();
-                try {
-                    std::get<ArithmeticConfiguration::Add>(conf.mode);
-                    tiAddChk.set(nanos);
-                } catch (const std::bad_variant_access&) {
-                    try {
-                        std::get<ArithmeticConfiguration::Sub>(conf.mode);
-                        tiSubChk.set(nanos);
-                    } catch (const std::bad_variant_access&) {
-                        try {
-                            std::get<ArithmeticConfiguration::Mul>(conf.mode);
-                            tiMulChk.set(nanos);
-                        } catch (const std::bad_variant_access&) {
-                            std::get<ArithmeticConfiguration::Div>(conf.mode);
-                            tiDivChk.set(nanos);
-                        }
-                    }
                 };
-            } catch (ErrorInfo & ei) {
-                auto msg = ei.what();
-                std::cerr << msg << std::endl;
-                try {
-                    std::get<ArithmeticConfiguration::Add>(conf.mode);
-                    tiAddChk.set(msg);
-                } catch (const std::bad_variant_access&) {
-                    try {
-                        std::get<ArithmeticConfiguration::Sub>(conf.mode);
-                        tiSubChk.set(msg);
-                    } catch (const std::bad_variant_access&) {
-                        try {
-                            std::get<ArithmeticConfiguration::Mul>(conf.mode);
-                            tiMulChk.set(msg);
-                        } catch (const std::bad_variant_access&) {
-                            std::get<ArithmeticConfiguration::Div>(conf.mode);
-                            tiDivChk.set(msg);
-                        }
-                    }
+                auto setFunc = [&conf,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (int64_t nanos) {
+                    SetForMode<ArithmeticConfiguration, int64_t>::run(conf, nanos, {&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk});
                 };
+                auto catchFunc = [&conf,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (const char * msg) {
+                    SetForMode<ArithmeticConfiguration, const char *>::run(conf, msg, {&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk});
+                };
+                InternalExecuteMode(sw, preFunc, runFunc, setFunc, catchFunc);
             }
-        }
-    }   ;
-        ConfigurationModeExecutor<ArithmeticConfiguration, std::variant_size_v<typename ArithmeticConfiguration::Mode>>::run(arithConf, func);
+        };
+        ConfigurationModeExecutor<ArithmeticConfiguration>::run(arithConf, func);
     }
 
     if (configTest.enableAggregate) {
         auto func = [this,&sw,&tiSum,&tiMin,&tiMax,&tiAvg] (AggregateConfiguration & conf) {
             if (DoAggregate(conf)) {
-                PreAggregate(conf);
                 std::clog << ", " << std::visit(AggregateConfigurationModeName(), conf.mode);
-                sw.Reset();
-                try {
-#ifdef OMP
-#ifdef OMPNUMTHREADS
-#pragma omp parallel num_threads(OMPNUMTHREADS)
-#else
-#pragma omp parallel
-#endif
-#endif
-                {
+                auto preFunc = [this,&conf] {
+                    PreAggregate(conf);
+                };
+                auto runFunc = [this,&conf] {
                     RunAggregate(conf);
-                }
-                auto nanos = sw.Current();
-                try {
-                    std::get<AggregateConfiguration::Sum>(conf.mode);
-                    tiSum.set(nanos);
-                } catch (const std::bad_variant_access&) {
-                    try {
-                        std::get<AggregateConfiguration::Min>(conf.mode);
-                        tiMin.set(nanos);
-                    } catch (const std::bad_variant_access&) {
-                        try {
-                            std::get<AggregateConfiguration::Max>(conf.mode);
-                            tiMax.set(nanos);
-                        } catch (const std::bad_variant_access&) {
-                            std::get<AggregateConfiguration::Avg>(conf.mode);
-                            tiAvg.set(nanos);
-                        }
-                    }
                 };
-            } catch (ErrorInfo & ei) {
-                auto msg = ei.what();
-                std::cerr << msg << std::endl;
-                try {
-                    std::get<AggregateConfiguration::Sum>(conf.mode);
-                    tiSum.set(msg);
-                } catch (const std::bad_variant_access&) {
-                    try {
-                        std::get<AggregateConfiguration::Min>(conf.mode);
-                        tiMin.set(msg);
-                    } catch (const std::bad_variant_access&) {
-                        try {
-                            std::get<AggregateConfiguration::Max>(conf.mode);
-                            tiMax.set(msg);
-                        } catch (const std::bad_variant_access&) {
-                            std::get<AggregateConfiguration::Avg>(conf.mode);
-                            tiAvg.set(msg);
-                        }
-                    }
+                auto setFunc = [&conf,&tiSum,&tiMin,&tiMax,&tiAvg] (int64_t nanos) {
+                    SetForMode<AggregateConfiguration, int64_t>::run(conf, nanos, {&tiSum,&tiMin,&tiMax,&tiAvg});
                 };
+                auto catchFunc = [&conf,&tiSum,&tiMin,&tiMax,&tiAvg] (const char * msg) {
+                    SetForMode<AggregateConfiguration, const char *>::run(conf, msg, {&tiSum,&tiMin,&tiMax,&tiAvg});
+                };
+                InternalExecuteMode(sw, preFunc, runFunc, setFunc, catchFunc);
             }
-        }
-    }   ;
-        ConfigurationModeExecutor<AggregateConfiguration, std::variant_size_v<typename AggregateConfiguration::Mode>>::run(aggrConf, func);
+        };
+        ConfigurationModeExecutor<AggregateConfiguration>::run(aggrConf, func);
     }
 
     if (configTest.enableAggregateChk) {
         auto func = [this,&sw,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (AggregateConfiguration & conf) {
             if (DoAggregateChecked(conf)) {
-                PreAggregateChecked(conf);
-                std::clog << ", " << std::visit(AggregateConfigurationModeName(conf), conf.mode) << " checked";
-                sw.Reset();
-                try {
-#ifdef OMP
-#ifdef OMPNUMTHREADS
-#pragma omp parallel num_threads(OMPNUMTHREADS)
-#else
-#pragma omp parallel
-#endif
-#endif
-                {
+                std::clog << ", " << std::visit(AggregateConfigurationModeName(), conf.mode) << " checked";
+                auto preFunc = [this,&conf] {
+                    PreAggregateChecked(conf);
+                };
+                auto runFunc = [this,&conf] {
                     RunAggregateChecked(conf);
-                }
-                auto nanos = sw.Current();
-                try {
-                    std::get<AggregateConfiguration::Sum>(conf.mode);
-                    tiSumChk.set(nanos);
-                } catch (const std::bad_variant_access&) {
-                    try {
-                        std::get<AggregateConfiguration::Min>(conf.mode);
-                        tiMinChk.set(nanos);
-                    } catch (const std::bad_variant_access&) {
-                        try {
-                            std::get<AggregateConfiguration::Max>(conf.mode);
-                            tiMaxChk.set(nanos);
-                        } catch (const std::bad_variant_access&) {
-                            std::get<AggregateConfiguration::Avg>(conf.mode);
-                            tiAvgChk.set(nanos);
-                        }
-                    }
                 };
-            } catch (ErrorInfo & ei) {
-                auto msg = ei.what();
-                std::cerr << msg << std::endl;
-                try {
-                    std::get<AggregateConfiguration::Sum>(conf.mode);
-                    tiSumChk.set(msg);
-                } catch (const std::bad_variant_access&) {
-                    try {
-                        std::get<AggregateConfiguration::Min>(conf.mode);
-                        tiMinChk.set(msg);
-                    } catch (const std::bad_variant_access&) {
-                        try {
-                            std::get<AggregateConfiguration::Max>(conf.mode);
-                            tiMaxChk.set(msg);
-                        } catch (const std::bad_variant_access&) {
-                            std::get<AggregateConfiguration::Avg>(conf.mode);
-                            tiAvgChk.set(msg);
-                        }
-                    }
+                auto setFunc = [&conf,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (int64_t nanos) {
+                    SetForMode<AggregateConfiguration, int64_t>::run(conf, nanos, {&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk});
                 };
+                auto catchFunc = [&conf,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (const char * msg) {
+                    SetForMode<AggregateConfiguration, const char *>::run(conf, msg, {&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk});
+                };
+                InternalExecuteMode(sw, preFunc, runFunc, setFunc, catchFunc);
             }
-        }
-    }   ;
+        };
+        ConfigurationModeExecutor<AggregateConfiguration>::run(aggrConf, func);
     }
 
     if (configTest.enableReencodeChk && this->DoReencodeChecked()) {
-        this->PreReencodeChecked(reencConf);
         std::clog << ", reencode checked" << std::flush;
-        sw.Reset();
-        try {
-#ifdef OMP
-#ifdef OMPNUMTHREADS
-#pragma omp parallel num_threads(OMPNUMTHREADS)
-#else
-#pragma omp parallel
-#endif
-#endif
-            {
-                this->RunReencodeChecked(reencConf);
-            }
-            tiReencChk.set(sw.Current());
-        } catch (ErrorInfo & ei) {
-            auto msg = ei.what();
-            std::cerr << msg << std::endl;
-            tiReencChk.set(msg);
-        }
+        InternalExecute(sw, tiReencChk, [this,&reencConf] {this->PreReencodeChecked(reencConf);}, [this,&reencConf] {this->RunReencodeChecked(reencConf);});
     }
 
     if (configTest.enableDecode && this->DoDecode()) {
-        this->PreDecode(decConf);
         std::clog << ", decode" << std::flush;
-        sw.Reset();
-        try {
-#ifdef OMP
-#ifdef OMPNUMTHREADS
-#pragma omp parallel num_threads(OMPNUMTHREADS)
-#else
-#pragma omp parallel
-#endif
-#endif
-            {
-                this->RunDecode(decConf);
-            }
-            tiDec.set(sw.Current());
-        } catch (ErrorInfo & ei) {
-            auto msg = ei.what();
-            std::cerr << msg << std::endl;
-            tiDec.set(msg);
-        }
+        InternalExecute(sw, tiDec, [this,&decConf] {this->PreDecode(decConf);}, [this,&decConf] {this->RunDecode(decConf);});
     }
 
     if (configTest.enableDecodeChk && this->DoDecodeChecked()) {
-        this->PreDecodeChecked(decConf);
         std::clog << ", decode checked" << std::flush;
-        sw.Reset();
-        try {
-#ifdef OMP
-#ifdef OMPNUMTHREADS
-#pragma omp parallel num_threads(OMPNUMTHREADS)
-#else
-#pragma omp parallel
-#endif
-#endif
-            {
-                this->RunDecodeChecked(decConf);
-            }
-            tiDecChk.set(sw.Current());
-        } catch (ErrorInfo & ei) {
-            auto msg = ei.what();
-            std::cerr << msg << std::endl;
-            tiDecChk.set(msg);
-        }
+        InternalExecute(sw, tiDecChk, [this,&decConf] {this->PreDecodeChecked(decConf);}, [this,&decConf] {this->RunDecodeChecked(decConf);});
     }
 
     return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk,

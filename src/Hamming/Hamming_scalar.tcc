@@ -307,7 +307,7 @@ namespace coding_benchmark {
                 for (; data < dataEnd; ++data) {
                     tmp += data->data;
                 }
-                dataOut->store(tmp / (dataEnd - data));
+                dataOut->store(tmp / numValues);
             }
         };
 
@@ -442,7 +442,7 @@ namespace coding_benchmark {
                         throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
                     }
                 }
-                dataOut->store(tmp / (dataEnd - data));
+                dataOut->store(tmp / numValues);
             }
         };
 
@@ -463,17 +463,47 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
-                size_t i = 0;
                 auto data = this->bufEncoded.template begin<hamming_scalar_t>();
+                auto dataEnd = data + numValues;
                 auto dataOut = this->bufResult.template begin<DATAIN>();
-                while (i <= (numValues - UNROLL)) {
+                while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                         *dataOut = data->data;
                     }
-                    i += UNROLL;
                 }
-                for (; i < numValues; ++i, ++data, ++dataOut) {
+                for (; data < dataEnd; ++data, ++dataOut) {
                     *dataOut = data->data;
+                }
+            }
+        }
+
+        bool DoDecodeChecked() override {
+            return true;
+        }
+
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                size_t numValues = this->getNumValues();
+                auto data = this->bufEncoded.template begin<hamming_scalar_t>();
+                auto dataEnd = data + numValues;
+                auto dataOut = this->bufResult.template begin<DATAIN>();
+                while (data <= (dataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
+                        if (data->isValid()) {
+                            *dataOut = data->data;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                        }
+                    }
+                }
+                for (; data < dataEnd; ++data, ++dataOut) {
+                    if (data->isValid()) {
+                        *dataOut = data->data;
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                    }
                 }
             }
         }

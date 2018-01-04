@@ -16,14 +16,14 @@ struct AggregateSelector {
     }
     bool operator()(
             AggregateConfiguration::Min) {
-        return false;
+        return true;
     }
     bool operator()(
             AggregateConfiguration::Max) {
-        return false;
+        return true;
     }
     bool operator()(
             AggregateConfiguration::Avg) {
-        return false;
+        return true;
     }
 };

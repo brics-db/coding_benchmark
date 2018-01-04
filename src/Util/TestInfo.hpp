@@ -80,7 +80,7 @@ struct TestInfos {
     TestInfo reencodeChecked;
     TestInfo decode;
     TestInfo decodeChecked;
-    const TestInfos * const reference;
+    const TestInfos * reference;
 
     TestInfos(
             const size_t datawidth,

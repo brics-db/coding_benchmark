@@ -56,6 +56,16 @@ struct Larger<int32_t> {
     typedef int64_t larger_t;
 };
 
+template<>
+struct Larger<uint64_t> {
+    typedef uint64_t larger_t; // TODO we have to assume for now that we do not get above 64 bits... :-(
+};
+
+template<>
+struct Larger<int64_t> {
+    typedef int64_t larger_t; // TODO we have to assume for now that we do not get above 64 bits... :-(
+};
+
 template<typename T>
 struct Smaller;
 

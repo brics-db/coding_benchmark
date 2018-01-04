@@ -92,12 +92,30 @@ struct CopyTest :
         }
         void operator()(
                 ArithmeticConfiguration::Sub) {
+            auto beg = ct.bufEncoded.template begin<DATA>();
+            auto end = ct.bufEncoded.template end<DATA>();
+            auto out = ct.bufResult.template begin<DATA>();
+            for (; beg < end; ++beg) {
+                *out = *beg - config.operand;
+            }
         }
         void operator()(
                 ArithmeticConfiguration::Mul) {
+            auto beg = ct.bufEncoded.template begin<DATA>();
+            auto end = ct.bufEncoded.template end<DATA>();
+            auto out = ct.bufResult.template begin<DATA>();
+            for (; beg < end; ++beg) {
+                *out = *beg * config.operand;
+            }
         }
         void operator()(
                 ArithmeticConfiguration::Div) {
+            auto beg = ct.bufEncoded.template begin<DATA>();
+            auto end = ct.bufEncoded.template end<DATA>();
+            auto out = ct.bufResult.template begin<DATA>();
+            for (; beg < end; ++beg) {
+                *out = *beg / config.operand;
+            }
         }
     };
 
@@ -138,15 +156,6 @@ struct CopyTest :
                 : ct(ct) {
         }
         void operator()(
-                AggregateConfiguration::Min) {
-        }
-        void operator()(
-                AggregateConfiguration::Max) {
-        }
-        void operator()(
-                AggregateConfiguration::Avg) {
-        }
-        void operator()(
                 AggregateConfiguration::Sum) {
             DATA sum = DATA(0);
             auto beg = ct.bufEncoded.template begin<DATA>();
@@ -156,6 +165,39 @@ struct CopyTest :
                 sum += *beg;
             }
             *out = sum;
+        }
+        void operator()(
+                AggregateConfiguration::Min) {
+            DATA min(std::numeric_limits<DATA>::max());
+            auto beg = ct.bufEncoded.template begin<DATA>();
+            auto end = ct.bufEncoded.template end<DATA>();
+            auto out = ct.bufResult.template begin<DATA>();
+            for (; beg < end; ++beg) {
+                min = std::min(min, *beg);
+            }
+            *out = min;
+        }
+        void operator()(
+                AggregateConfiguration::Max) {
+            DATA max(std::numeric_limits<DATA>::min());
+            auto beg = ct.bufEncoded.template begin<DATA>();
+            auto end = ct.bufEncoded.template end<DATA>();
+            auto out = ct.bufResult.template begin<DATA>();
+            for (; beg < end; ++beg) {
+                max = std::max(max, *beg);
+            }
+            *out = max;
+        }
+        void operator()(
+                AggregateConfiguration::Avg) {
+            DATA sum = DATA(0);
+            auto beg = ct.bufEncoded.template begin<DATA>();
+            auto end = ct.bufEncoded.template end<DATA>();
+            auto out = ct.bufResult.template begin<DATA>();
+            for (; beg < end; ++beg) {
+                sum += *beg;
+            }
+            *out = sum / ct.getNumValues();
         }
     };
 

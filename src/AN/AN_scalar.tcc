@@ -23,7 +23,10 @@
 
 #include <AN/ANTest.hpp>
 #include <Util/Euclidean.hpp>
+#include <Util/Functors.hpp>
 #include <Util/ArithmeticSelector.hpp>
+#include <Util/AggregateSelector.hpp>
+#include <Util/Helpers.hpp>
 
 namespace coding_benchmark {
 
@@ -72,33 +75,38 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
+            template<template<typename = void> class func>
+            void impl() {
+                func<> functor;
                 const size_t numValues = test.template getNumValues();
                 size_t i = 0;
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
                 auto dataOut = test.bufResult.template begin<DATAENC>();
                 DATAENC operandEnc = config.operand * test.A;
-                while (i <= (numValues - UNROLL)) {
-                    // let the compiler unroll the loop
+                for (; i <= (numValues - UNROLL); i += UNROLL) {
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        *dataOut++ = *dataIn++ + operandEnc;
+                        *dataOut++ = functor(*dataIn++, operandEnc);
                     }
-                    i += UNROLL;
                 }
-                // remaining numbers
                 for (; i < numValues; ++i) {
-                    *dataOut++ = *dataIn++ + operandEnc;
+                    *dataOut++ = functor(*dataIn++, operandEnc);
                 }
+            }
+            void operator()(
+                    ArithmeticConfiguration::Add) {
+                impl<add>();
             }
             void operator()(
                     ArithmeticConfiguration::Sub) {
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
+                impl<div>();
             }
         };
 
@@ -107,6 +115,106 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 std::visit(Arithmetor(*this, config), config.mode);
+            }
+        }
+
+        bool DoAggregate(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct Aggregator {
+            typedef typename Larger<DATAENC>::larger_t larger_t;
+            AN_scalar & test;
+            const AggregateConfiguration & config;
+            Aggregator(
+                    AN_scalar & test,
+                    const AggregateConfiguration & config)
+                    : test(test),
+                      config(config) {
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                const size_t numValues = test.template getNumValues();
+                auto dataIn = test.bufEncoded.template begin<DATAENC>();
+                auto dataInEnd = dataIn + numValues;
+                auto dataOut = test.bufResult.template begin<larger_t>();
+                // DATAENC operandEnc = config.operand * test.A;
+                larger_t tmp(0);
+                while (dataIn <= (dataInEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        tmp += *dataIn++;
+                    }
+                }
+                while (dataIn < dataInEnd) {
+                    tmp += *dataIn++;
+                }
+                *dataOut = tmp;
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                const size_t numValues = test.template getNumValues();
+                auto dataIn = test.bufEncoded.template begin<DATAENC>();
+                auto dataInEnd = dataIn + numValues;
+                auto dataOut = test.bufResult.template begin<DATAENC>();
+                // DATAENC operandEnc = config.operand * test.A;
+                DATAENC minimum = std::numeric_limits<DATAENC>::max();
+                while (dataIn <= (dataInEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        auto tmp = *dataIn++;
+                        minimum = (tmp < minimum) ? tmp : minimum;
+                    }
+                }
+                while (dataIn < dataInEnd) {
+                    auto tmp = *dataIn++;
+                    minimum = (tmp < minimum) ? tmp : minimum;
+                }
+                *dataOut = minimum;
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                const size_t numValues = test.template getNumValues();
+                auto dataIn = test.bufEncoded.template begin<DATAENC>();
+                auto dataInEnd = dataIn + numValues;
+                auto dataOut = test.bufResult.template begin<DATAENC>();
+                // DATAENC operandEnc = config.operand * test.A;
+                DATAENC maximum = std::numeric_limits<DATAENC>::min();
+                while (dataIn <= (dataInEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        auto tmp = *dataIn++;
+                        maximum = (tmp > maximum) ? tmp : maximum;
+                    }
+                }
+                while (dataIn < dataInEnd) {
+                    auto tmp = *dataIn++;
+                    maximum = (tmp > maximum) ? tmp : maximum;
+                }
+                *dataOut = maximum;
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                const size_t numValues = test.template getNumValues();
+                auto dataIn = test.bufEncoded.template begin<DATAENC>();
+                auto dataInEnd = dataIn + numValues;
+                auto dataOut = test.bufResult.template begin<larger_t>();
+                larger_t tmp(0);
+                while (dataIn <= (dataInEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        tmp += *dataIn++;
+                    }
+                }
+                while (dataIn < dataInEnd) {
+                    tmp += *dataIn++;
+                }
+                *dataOut = (tmp / (numValues * test.A)) * test.A; // TODO for division, decode all encoded values and encode afterwards again!
+            }
+        };
+
+        void RunAggregate(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(Aggregator(*this, config), config.mode);
             }
         }
 
