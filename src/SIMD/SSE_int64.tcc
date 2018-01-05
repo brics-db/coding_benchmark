@@ -97,11 +97,25 @@ namespace coding_benchmark {
                         return _mm_set_epi64x(v0 + inc, v0);
                     }
 
+                    static inline T min(
+                            __m128i a) {
+                        T x0 = _mm_extract_epi64(a, 0);
+                        T x1 = _mm_extract_epi64(a, 1);
+                        return x0 < x1 ? x0 : x1;
+                    }
+
                     static inline __m128i min(
                             __m128i a,
                             __m128i b) {
                         return _mm_set_epi64x(std::min(static_cast<T>(_mm_extract_epi64(a, 1)), static_cast<T>(_mm_extract_epi64(b, 1))),
                                 std::min(static_cast<T>(_mm_extract_epi64(a, 0)), static_cast<T>(_mm_extract_epi64(b, 0))));
+                    }
+
+                    static inline T max(
+                            __m128i a) {
+                        T x0 = _mm_extract_epi64(a, 0);
+                        T x1 = _mm_extract_epi64(a, 1);
+                        return x0 > x1 ? x0 : x1;
                     }
 
                     static inline __m128i max(
@@ -132,14 +146,14 @@ namespace coding_benchmark {
                     static inline popcnt_t popcount(
                             __m128i a) {
                         uint64_t pattern = 0x0101010101010101ull;
-                        auto popcount8 = mm128<uint8_t>::popcount(a);
+                        auto popcount8 = mm128 < uint8_t > ::popcount(a);
                         return (static_cast<uint16_t>((_mm_extract_epi64(popcount8, 1) * pattern) >> 57) << 8) | static_cast<uint16_t>((_mm_extract_epi64(popcount8, 0) * pattern) >> 57);
                     }
 
                     static inline popcnt_t popcount2(
                             __m128i a) {
                         uint64_t pattern = 0x0101010101010101ull;
-                        auto popcount8 = mm128<uint8_t>::popcount2(a);
+                        auto popcount8 = mm128 < uint8_t > ::popcount2(a);
                         return (static_cast<uint16_t>((_mm_extract_epi64(popcount8, 1) * pattern) >> 57) << 8) | static_cast<uint16_t>((_mm_extract_epi64(popcount8, 0) * pattern) >> 57);
                     }
 

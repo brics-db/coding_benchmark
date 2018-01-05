@@ -31,6 +31,126 @@ namespace coding_benchmark {
 
             namespace Private08 {
 
+                template<typename T, size_t current = 1>
+                struct min_max_helper {
+                    static inline void min(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi8(a, current));
+                        if (x < result) {
+                            result = x;
+                        }
+                        min_max_helper<T, current + 1>::min(result, a);
+                    }
+
+                    static inline void max(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi8(a, current));
+                        if (x > result) {
+                            result = x;
+                        }
+                        min_max_helper<T, current + 1>::max(result, a);
+                    }
+                };
+
+                template<typename T>
+                struct min_max_helper<T, 15> {
+                    static inline void min(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi8(a, 15));
+                        if (x < result) {
+                            result = x;
+                        }
+                    }
+
+                    static inline void max(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi8(a, 15));
+                        if (x > result) {
+                            result = x;
+                        }
+                    }
+                };
+
+                template<typename T>
+                inline T get_min_int8(
+                        __m128i & a) {
+                    T result = static_cast<T>(_mm_extract_epi8(a, 0));
+                    min_max_helper<T>::min(result, a);
+                    return result;
+                }
+
+                template<>
+                inline int8_t get_min_int8(
+                        __m128i & a) {
+                    auto x1 = _mm_cvtepi8_epi16(a);
+                    auto x2 = _mm_cvtepi8_epi16(_mm_srli_si128(a, 8));
+                    auto mmMin = _mm_set1_epi16(std::numeric_limits < int16_t > ::min());
+                    auto min1 = _mm_minpos_epu16(_mm_add_epi16(x1, mmMin));
+                    auto min2 = _mm_minpos_epu16(_mm_add_epi16(x2, mmMin));
+                    if (min1 < min2) {
+                        return static_cast<int8_t>(min1 - std::numeric_limits < int16_t > ::min());
+                    } else {
+                        return static_cast<int8_t>(min2 - std::numeric_limits < int16_t > ::min());
+                    }
+                }
+
+                template<>
+                inline uint8_t get_min_int8(
+                        __m128i & a) {
+                    auto x1 = _mm_cvtepi8_epi16(a);
+                    auto x2 = _mm_cvtepi8_epi16(_mm_srli_si128(a, 8));
+                    auto min1 = _mm_minpos_epu16(x1);
+                    auto min2 = _mm_minpos_epu16(x2);
+                    if (min1 < min2) {
+                        return static_cast<uint8_t>(min1);
+                    } else {
+                        return static_cast<uint8_t>(min2);
+                    }
+                }
+
+                template<typename T>
+                inline T get_max_int8(
+                        __m128i & a) {
+                    T result = static_cast<T>(_mm_extract_epi8(a, 0));
+                    min_max_helper<T>::max(result, a);
+                    return result;
+                }
+
+                template<>
+                inline int8_t get_max_int8(
+                        __m128i & a) {
+                    auto a2 = _mm_sub_epi8(_mm_setzero_si128(), a);
+                    auto x1 = _mm_cvtepi8_epi16(a2);
+                    auto x2 = _mm_cvtepi8_epi16(_mm_srli_si128(a2, 8));
+                    auto mmMin = _mm_set1_epi16(std::numeric_limits < int16_t > ::min());
+                    auto min1 = _mm_minpos_epu16(_mm_add_epi16(x1, mmMin));
+                    auto min2 = _mm_minpos_epu16(_mm_add_epi16(x2, mmMin));
+                    if (min1 < min2) {
+                        return static_cast<int8_t>(-(min1 + std::numeric_limits < int16_t > ::min()));
+                    } else {
+                        return static_cast<int8_t>(-(min2 + std::numeric_limits < int16_t > ::min()));
+                    }
+                }
+
+                template<>
+                inline uint8_t get_max_int8(
+                        __m128i & a) {
+                    auto a2 = _mm_sub_epi8(_mm_set1_epi8(std::numeric_limits < uint8_t > ::max()), a);
+                    auto x1 = _mm_cvtepi8_epi16(a2);
+                    auto x2 = _mm_cvtepi8_epi16(_mm_srli_si128(a2, 8));
+                    auto min1 = _mm_minpos_epu16(x1);
+                    auto min2 = _mm_minpos_epu16(x2);
+                    if (min1 < min2) {
+                        return static_cast<uint8_t>(std::numeric_limits < uint8_t > ::max() - min1);
+                    } else {
+                        return static_cast<uint8_t>(std::numeric_limits < uint8_t > ::max() - min2);
+                    }
+                }
+
                 template<size_t current = 0>
                 inline void pack_right2_int8(
                         int8_t * & result,
@@ -113,9 +233,19 @@ namespace coding_benchmark {
                     }
 
                     static inline __m128i min(
+                            __m128i a) {
+                        return get_min_int8<T>(a);
+                    }
+
+                    static inline __m128i min(
                             __m128i a,
                             __m128i b) {
                         return _mm_min_epu8(a, b);
+                    }
+
+                    static inline __m128i max(
+                            __m128i a) {
+                        return get_max_int8<T>(a);
                     }
 
                     static inline __m128i max(
@@ -224,7 +354,7 @@ namespace coding_benchmark {
                     static inline __m128i cmp(
                             __m128i a,
                             __m128i b) {
-                        auto mm = mm128<T>::max(a, b);
+                        auto mm = mm128 < T > ::max(a, b);
                         return _mm_cmpeq_epi8(a, mm);
                     }
 
@@ -261,7 +391,7 @@ namespace coding_benchmark {
                     static inline __m128i cmp(
                             __m128i a,
                             __m128i b) {
-                        auto mm = sse::mm128<T>::min(a, b);
+                        auto mm = sse::mm128 < T > ::min(a, b);
                         return _mm_cmpeq_epi8(a, mm);
                     }
 

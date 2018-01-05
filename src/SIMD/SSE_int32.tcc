@@ -31,6 +31,66 @@ namespace coding_benchmark {
 
             namespace Private32 {
 
+                template<typename T, size_t current = 1>
+                struct min_max_helper {
+                    static inline void min(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi32(a, current));
+                        if (x < result) {
+                            result = x;
+                        }
+                        min_max_helper<T, current + 1>::min(result, a);
+                    }
+
+                    static inline void max(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi32(a, current));
+                        if (x > result) {
+                            result = x;
+                        }
+                        min_max_helper<T, current + 1>::max(result, a);
+                    }
+                };
+
+                template<typename T>
+                struct min_max_helper<T, 3> {
+                    static inline void min(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi32(a, 3));
+                        if (x < result) {
+                            result = x;
+                        }
+                    }
+
+                    static inline void max(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi32(a, 3));
+                        if (x > result) {
+                            result = x;
+                        }
+                    }
+                };
+
+                template<typename T>
+                inline T get_min_int32(
+                        __m128i & a) {
+                    T result = static_cast<T>(_mm_extract_epi32(a, 0));
+                    min_max_helper<T>::min(result, a);
+                    return result;
+                }
+
+                template<typename T>
+                inline T get_max_int32(
+                        __m128i & a) {
+                    T result = static_cast<T>(_mm_extract_epi32(a, 0));
+                    min_max_helper<T>::max(result, a);
+                    return result;
+                }
+
                 template<size_t current = 0>
                 inline void pack_right2_int32(
                         int32_t * & result,
@@ -99,10 +159,20 @@ namespace coding_benchmark {
                         return _mm_set_epi32(v0 + 3 * inc, v0 + 2 * inc, v0 + inc, v0);
                     }
 
+                    static inline T min(
+                            __m128i a) {
+                        return get_min_int32<T>(a);
+                    }
+
                     static inline __m128i min(
                             __m128i a,
                             __m128i b) {
                         return _mm_min_epu32(a, b);
+                    }
+
+                    static inline T max(
+                            __m128i a) {
+                        return get_max_int32<T>(a);
                     }
 
                     static inline __m128i max(
@@ -135,7 +205,7 @@ namespace coding_benchmark {
                             __m128i a) {
                         auto mask = _mm_set1_epi32(0x01010101);
                         auto shuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
-                        auto popcount8 = mm128<uint8_t>::popcount(a);
+                        auto popcount8 = mm128 < uint8_t > ::popcount(a);
                         return _mm_extract_epi32(_mm_shuffle_epi8(_mm_mullo_epi32(popcount8, mask), shuffle), 0);
                     }
 
@@ -143,7 +213,7 @@ namespace coding_benchmark {
                             __m128i a) {
                         auto mask = _mm_set1_epi32(0x01010101);
                         auto shuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
-                        auto popcount8 = mm128<uint8_t>::popcount2(a);
+                        auto popcount8 = mm128 < uint8_t > ::popcount2(a);
                         return _mm_extract_epi32(_mm_shuffle_epi8(_mm_mullo_epi32(popcount8, mask), shuffle), 0);
                     }
 

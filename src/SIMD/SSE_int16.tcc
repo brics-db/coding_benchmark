@@ -31,6 +31,80 @@ namespace coding_benchmark {
 
             namespace Private16 {
 
+                template<typename T, size_t current = 1>
+                struct min_max_helper {
+                    static inline void min(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi16(a, current));
+                        if (x < result) {
+                            result = x;
+                        }
+                        min_max_helper<T, current + 1>::min(result, a);
+                    }
+
+                    static inline void max(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi16(a, current));
+                        if (x > result) {
+                            result = x;
+                        }
+                        min_max_helper<T, current + 1>::max(result, a);
+                    }
+                };
+
+                template<typename T>
+                struct min_max_helper<T, 7> {
+                    static inline void min(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi16(a, 7));
+                        if (x < result) {
+                            result = x;
+                        }
+                    }
+
+                    static inline void max(
+                            T & result,
+                            __m128i a) {
+                        T x = static_cast<T>(_mm_extract_epi16(a, 7));
+                        if (x > result) {
+                            result = x;
+                        }
+                    }
+                };
+
+                template<typename T>
+                inline T get_min_int16(
+                        __m128i & a) {
+                    T result = static_cast<T>(_mm_extract_epi16(a, 0));
+                    min_max_helper<T>::min(result, a);
+                    return result;
+                }
+
+                template<>
+                inline int16_t get_min_int16<int16_t>(
+                        __m128i & a) {
+                    auto mmMin = _mm_set1_epi16(std::numeric_limits < int16_t > ::min());
+                    auto min = _mm_minpos_epu16(_mm_add_epi16(a, mmMin));
+                    return min - std::numeric_limits < int16_t > ::min();
+                }
+
+                template<>
+                inline uint16_t get_min_int16<uint16_t>(
+                        __m128i & a) {
+                    return _mm_minpos_epu16(a);
+                }
+
+                template<typename T>
+                inline T get_max_int16(
+                        __m128i & a) {
+                    T result = static_cast<T>(_mm_extract_epi16(a, 0));
+                    min_max_helper<T>::max(result, a);
+                    return result;
+                }
+
                 template<size_t current = 0>
                 inline void pack_right2_int16(
                         int16_t * & result,
@@ -103,10 +177,20 @@ namespace coding_benchmark {
                         return _mm_set_epi16(v0 + 7 * inc, v0 + 6 * inc, v0 + 5 * inc, v0 + 4 * inc, v0 + 3 * inc, v0 + 2 * inc, v0 + inc, v0);
                     }
 
+                    static inline T min(
+                            __m128i a) {
+                        return get_min_int16<T>(a);
+                    }
+
                     static inline __m128i min(
                             __m128i a,
                             __m128i b) {
                         return _mm_min_epu16(a, b);
+                    }
+
+                    static inline T max(
+                            __m128i a) {
+                        return get_max_int16<T>(a);
                     }
 
                     static inline __m128i max(
@@ -140,7 +224,7 @@ namespace coding_benchmark {
                             __m128i a) {
                         auto mask = _mm_set1_epi16(0x0101);
                         auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301);
-                        auto popcount8 = mm128<uint8_t>::popcount(a);
+                        auto popcount8 = mm128 < uint8_t > ::popcount(a);
                         return _mm_extract_epi64(_mm_shuffle_epi8(_mm_mullo_epi16(popcount8, mask), shuffle), 0);
                     }
 
@@ -148,7 +232,7 @@ namespace coding_benchmark {
                             __m128i a) {
                         auto mask = _mm_set1_epi16(0x0101);
                         auto shuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301);
-                        auto popcount8 = mm128<uint8_t>::popcount2(a);
+                        auto popcount8 = mm128 < uint8_t > ::popcount2(a);
                         return _mm_extract_epi64(_mm_shuffle_epi8(_mm_mullo_epi16(popcount8, mask), shuffle), 0);
                     }
 
@@ -208,7 +292,7 @@ namespace coding_benchmark {
                     static inline __m128i cmp(
                             __m128i a,
                             __m128i b) {
-                        auto mm = sse::mm128<T>::max(a, b);
+                        auto mm = sse::mm128 < T > ::max(a, b);
                         return _mm_cmpeq_epi16(a, mm);
                     }
 
@@ -245,7 +329,7 @@ namespace coding_benchmark {
                     static inline __m128i cmp(
                             __m128i a,
                             __m128i b) {
-                        auto mm = sse::mm128<T>::min(a, b);
+                        auto mm = sse::mm128 < T > ::min(a, b);
                         return _mm_cmpeq_epi16(a, mm);
                     }
 

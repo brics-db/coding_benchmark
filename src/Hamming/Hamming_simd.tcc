@@ -46,12 +46,12 @@ namespace coding_benchmark {
     extern template struct hamming_t<uint32_t, __m128i > ;
 #endif
 #ifdef __AVX2__
-    extern template struct hamming_t<uint16_t, __m256i > ;
-    extern template struct hamming_t<uint32_t, __m256i > ;
+    extern template struct hamming_t<uint16_t, __m256i >;
+    extern template struct hamming_t<uint32_t, __m256i >;
 #endif
 #ifdef __AVX512F__
-    extern template struct hamming_t<uint16_t, __m512i > ;
-    extern template struct hamming_t<uint32_t, __m512i > ;
+    extern template struct hamming_t<uint16_t, __m512i >;
+    extern template struct hamming_t<uint32_t, __m512i >;
 #endif
 
     template<typename DATAIN, typename V, size_t UNROLL>
@@ -332,28 +332,22 @@ namespace coding_benchmark {
                 size_t i = 0;
                 auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
                 auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
-                auto mmTmp1 = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
-                auto mmTmp2 = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
+                auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
                 while (i <= (numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        mmTmp1 = mm<V, DATAIN>::min(mmTmp1, dataIn->data);
-                        mmTmp2 = mm<V, DATAIN>::min(mmTmp2, dataIn->data);
+                        mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
                     }
                 }
                 for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    mmTmp1 = mm<V, DATAIN>::min(mmTmp1, dataIn->data);
-                    mmTmp2 = mm<V, DATAIN>::min(mmTmp2, dataIn->data);
+                    mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
                 }
-                auto tmp128 = mm<V, DATAIN>::min(mmTmp1, mmTmp2);
-                DATAIN * pTmp = reinterpret_cast<DATAIN*>(&tmp128);
-                DATAIN minimum = pTmp[0];
-                for (size_t i = 1; i < VALUES_PER_VECTOR; ++i) {
-                    minimum = (pTmp[i] < minimum) ? pTmp[i] : minimum;
-                }
+                DATAIN minimum = mm<V, DATAIN>::min(mmTmp);
                 if (i < numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
                     for (; i < numValues; ++i, ++dataIn2) {
-                        minimum = (dataIn2->data < minimum) ? dataIn2->data : minimum;
+                        if (dataIn2->data < minimum) {
+                            minimum = dataIn2->data;
+                        }
                     }
                 }
                 dataOut->store(minimum);
@@ -364,28 +358,22 @@ namespace coding_benchmark {
                 size_t i = 0;
                 auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
                 auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
-                auto mmTmp1 = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
-                auto mmTmp2 = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
+                auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
                 while (i <= (numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        mmTmp1 = mm<V, DATAIN>::max(mmTmp1, dataIn->data);
-                        mmTmp2 = mm<V, DATAIN>::max(mmTmp2, dataIn->data);
+                        mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
                     }
                 }
                 for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    mmTmp1 = mm<V, DATAIN>::max(mmTmp1, dataIn->data);
-                    mmTmp2 = mm<V, DATAIN>::max(mmTmp2, dataIn->data);
+                    mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
                 }
-                auto tmp128 = mm<V, DATAIN>::max(mmTmp1, mmTmp2);
-                DATAIN * pTmp = reinterpret_cast<DATAIN*>(&tmp128);
-                DATAIN maximum = pTmp[0];
-                for (size_t i = 1; i < VALUES_PER_VECTOR; ++i) {
-                    maximum = (pTmp[i] > maximum) ? pTmp[i] : maximum;
-                }
+                DATAIN maximum = mm<V, DATAIN>::max(mmTmp);
                 if (i < numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
                     for (; i < numValues; ++i, ++dataIn2) {
-                        maximum = (dataIn2->data > maximum) ? dataIn2->data : maximum;
+                        if (dataIn2->data > maximum) {
+                            maximum = dataIn2->data;
+                        }
                     }
                 }
                 dataOut->store(maximum);
@@ -491,13 +479,11 @@ namespace coding_benchmark {
                 size_t i = 0;
                 auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
                 auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
-                auto mmTmp1 = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
-                auto mmTmp2 = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
+                auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
                 while (i <= (numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                         if (dataIn->isValid()) {
-                            mmTmp1 = mm<V, DATAIN>::min(mmTmp1, dataIn->data);
-                            mmTmp2 = mm<V, DATAIN>::min(mmTmp2, dataIn->data);
+                            mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, i + k, iteration);
                         }
@@ -505,18 +491,12 @@ namespace coding_benchmark {
                 }
                 for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                     if (dataIn->isValid()) {
-                        mmTmp1 = mm<V, DATAIN>::min(mmTmp1, dataIn->data);
-                        mmTmp2 = mm<V, DATAIN>::min(mmTmp2, dataIn->data);
+                        mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
-                auto tmp128 = mm<V, DATAIN>::min(mmTmp1, mmTmp2);
-                DATAIN * pTmp = reinterpret_cast<DATAIN*>(&tmp128);
-                DATAIN minimum = pTmp[0];
-                for (size_t i = 1; i < VALUES_PER_VECTOR; ++i) {
-                    minimum = (pTmp[i] < minimum) ? pTmp[i] : minimum;
-                }
+                DATAIN minimum = mm<V, DATAIN>::min(mmTmp);
                 if (i < numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
                     for (; i < numValues; ++i, ++dataIn2) {
@@ -535,13 +515,11 @@ namespace coding_benchmark {
                 size_t i = 0;
                 auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
                 auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
-                auto mmTmp1 = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
-                auto mmTmp2 = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
+                auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
                 while (i <= (numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                         if (dataIn->isValid()) {
-                            mmTmp1 = mm<V, DATAIN>::max(mmTmp1, dataIn->data);
-                            mmTmp2 = mm<V, DATAIN>::max(mmTmp2, dataIn->data);
+                            mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, i + k, iteration);
                         }
@@ -549,18 +527,12 @@ namespace coding_benchmark {
                 }
                 for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                     if (dataIn->isValid()) {
-                        mmTmp1 = mm<V, DATAIN>::max(mmTmp1, dataIn->data);
-                        mmTmp2 = mm<V, DATAIN>::max(mmTmp2, dataIn->data);
+                        mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
-                auto tmp128 = mm<V, DATAIN>::max(mmTmp1, mmTmp2);
-                DATAIN * pTmp = reinterpret_cast<DATAIN*>(&tmp128);
-                DATAIN maximum = pTmp[0];
-                for (size_t i = 1; i < VALUES_PER_VECTOR; ++i) {
-                    maximum = (pTmp[i] > maximum) ? pTmp[i] : maximum;
-                }
+                DATAIN maximum = mm<V, DATAIN>::max(mmTmp);
                 if (i < numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
                     for (; i < numValues; ++i, ++dataIn2) {
