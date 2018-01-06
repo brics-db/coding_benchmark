@@ -89,8 +89,8 @@ namespace coding_benchmark {
                     auto x1 = _mm_cvtepi8_epi16(a);
                     auto x2 = _mm_cvtepi8_epi16(_mm_srli_si128(a, 8));
                     auto mmMin = _mm_set1_epi16(std::numeric_limits < int16_t > ::min());
-                    auto min1 = _mm_minpos_epu16(_mm_add_epi16(x1, mmMin));
-                    auto min2 = _mm_minpos_epu16(_mm_add_epi16(x2, mmMin));
+                    auto min1 = _mm_extract_epi16(_mm_minpos_epu16(_mm_add_epi16(x1, mmMin)), 0);
+                    auto min2 = _mm_extract_epi16(_mm_minpos_epu16(_mm_add_epi16(x2, mmMin)), 0);
                     if (min1 < min2) {
                         return static_cast<int8_t>(min1 - std::numeric_limits < int16_t > ::min());
                     } else {
@@ -103,8 +103,8 @@ namespace coding_benchmark {
                         __m128i & a) {
                     auto x1 = _mm_cvtepi8_epi16(a);
                     auto x2 = _mm_cvtepi8_epi16(_mm_srli_si128(a, 8));
-                    auto min1 = _mm_minpos_epu16(x1);
-                    auto min2 = _mm_minpos_epu16(x2);
+                    auto min1 = _mm_extract_epi16(_mm_minpos_epu16(x1), 0);
+                    auto min2 = _mm_extract_epi16(_mm_minpos_epu16(x2), 0);
                     if (min1 < min2) {
                         return static_cast<uint8_t>(min1);
                     } else {
@@ -127,8 +127,8 @@ namespace coding_benchmark {
                     auto x1 = _mm_cvtepi8_epi16(a2);
                     auto x2 = _mm_cvtepi8_epi16(_mm_srli_si128(a2, 8));
                     auto mmMin = _mm_set1_epi16(std::numeric_limits < int16_t > ::min());
-                    auto min1 = _mm_minpos_epu16(_mm_add_epi16(x1, mmMin));
-                    auto min2 = _mm_minpos_epu16(_mm_add_epi16(x2, mmMin));
+                    auto min1 = _mm_extract_epi16(_mm_minpos_epu16(_mm_add_epi16(x1, mmMin)), 0);
+                    auto min2 = _mm_extract_epi16(_mm_minpos_epu16(_mm_add_epi16(x2, mmMin)), 0);
                     if (min1 < min2) {
                         return static_cast<int8_t>(-(min1 + std::numeric_limits < int16_t > ::min()));
                     } else {
@@ -142,8 +142,8 @@ namespace coding_benchmark {
                     auto a2 = _mm_sub_epi8(_mm_set1_epi8(std::numeric_limits < uint8_t > ::max()), a);
                     auto x1 = _mm_cvtepi8_epi16(a2);
                     auto x2 = _mm_cvtepi8_epi16(_mm_srli_si128(a2, 8));
-                    auto min1 = _mm_minpos_epu16(x1);
-                    auto min2 = _mm_minpos_epu16(x2);
+                    auto min1 = _mm_extract_epi16(_mm_minpos_epu16(x1), 0);
+                    auto min2 = _mm_extract_epi16(_mm_minpos_epu16(x2), 0);
                     if (min1 < min2) {
                         return static_cast<uint8_t>(std::numeric_limits < uint8_t > ::max() - min1);
                     } else {
@@ -240,7 +240,11 @@ namespace coding_benchmark {
                     static inline __m128i min(
                             __m128i a,
                             __m128i b) {
-                        return _mm_min_epu8(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm_min_epi8(a, b);
+                        } else {
+                            return _mm_min_epu8(a, b);
+                        }
                     }
 
                     static inline __m128i max(
@@ -251,7 +255,11 @@ namespace coding_benchmark {
                     static inline __m128i max(
                             __m128i a,
                             __m128i b) {
-                        return _mm_max_epu8(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm_max_epi8(a, b);
+                        } else {
+                            return _mm_max_epu8(a, b);
+                        }
                     }
 
                     static inline T sum(

@@ -37,22 +37,24 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
-                size_t i = 0;
                 auto data = this->bufEncoded.template begin<DATAENC>();
-                while (i <= (numValues - UNROLL)) {
+                auto const dataEnd = data + numValues;
+                while (data <= (dataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        if ((*data % this->A) != 0) {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        if ((*data % this->A) == 0) {
+                            ++data;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration);
                         }
-                        ++data;
                     }
-                    i += UNROLL;
                 }
                 // remaining numbers
-                for (; i < numValues; ++i, ++data) {
-                    if ((*data % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                while (data < dataEnd) {
+                    if ((*data % this->A) == 0) {
+                        ++data;
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration);
                     }
                 }
             }
@@ -75,30 +77,35 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
+            template<template<typename = void> class func>
+            void impl() {
+                func<> functor;
                 const size_t numValues = test.template getNumValues();
-                size_t i = 0;
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
+                auto const dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<DATAENC>();
                 DATAENC operandEnc = config.operand * test.A;
-                while (i <= (numValues - UNROLL)) {
+                while (dataIn <= (dataInEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        if ((*dataIn % test.A) != 0) {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        if ((*dataIn % test.A) == 0) {
+                            *dataOut++ = functor(*dataIn++, operandEnc);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
-                        *dataOut++ = *dataIn++ + operandEnc;
                     }
-                    i += UNROLL;
                 }
                 // remaining numbers
-                for (; i < numValues; ++i) {
-                    if ((*dataIn % test.A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                while (dataIn < dataInEnd) {
+                    if ((*dataIn % test.A) == 0) {
+                        *dataOut++ = functor(*dataIn++, operandEnc);
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<DATAENC>(), iteration);
                     }
-                    *dataOut++ = *dataIn++ + operandEnc;
                 }
+            }
+            void operator()(
+                    ArithmeticConfiguration::Add) {
             }
             void operator()(
                     ArithmeticConfiguration::Sub) {
@@ -119,6 +126,128 @@ namespace coding_benchmark {
             }
         }
 
+        bool DoAggregateChecked(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct AggregatorChecked {
+            typedef typename Larger<DATAENC>::larger_t larger_t;
+            AN_scalar_divmod & test;
+            const AggregateConfiguration & config;
+            const size_t iteration;
+            AggregatorChecked(
+                    AN_scalar_divmod & test,
+                    const AggregateConfiguration & config,
+                    size_t iteration)
+                    : test(test),
+                      config(config),
+                      iteration(iteration) {
+            }
+            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            void impl(
+                    Initializer & funcInit,
+                    Kernel & funcKernel,
+                    Finalizer & funcFinal) {
+                const size_t numValues = test.template getNumValues();
+                auto dataIn = test.bufEncoded.template begin<DATAENC>();
+                auto const dataInEnd = dataIn + numValues;
+                auto dataOut = test.bufResult.template begin<Tout>();
+                Tout value = funcInit();
+                while (dataIn <= (dataInEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        if ((*dataIn % test.A) == 0) {
+                            value = funcKernel(value, *dataIn++);
+                        } else {
+                            std::stringstream ss;
+                            ss << "A=" << test.A << ", A^-1=" << test.A_INV;
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<DATAENC>(), iteration);
+                        }
+                    }
+                }
+                while (dataIn < dataInEnd) {
+                    if ((*dataIn % test.A) == 0) {
+                        value = funcKernel(value, *dataIn++);
+                    } else {
+                        std::stringstream ss;
+                        ss << "A=" << test.A << ", A^-1=" << test.A_INV;
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<DATAENC>(), iteration);
+                    }
+                }
+                *dataOut = funcFinal(value, numValues);
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                auto funcInit = [] () -> larger_t {
+                    return (larger_t) 0;
+                };
+                auto funcKernel = [] (larger_t sum, DATAENC dataIn) -> larger_t {
+                    return sum + dataIn;
+                };
+                auto funcFinal = [] (larger_t sum, const size_t numValues) -> larger_t {
+                    return sum;
+                };
+                impl<larger_t>(funcInit, funcKernel, funcFinal);
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                auto funcInit = [] () -> DATAENC {
+                    return (DATAENC) 0;
+                };
+                auto funcKernel = [] (DATAENC minimum, DATAENC dataIn) -> DATAENC {
+                    auto tmp = dataIn;
+                    if (tmp < minimum) {
+                        return tmp;
+                    } else {
+                        return minimum;
+                    }
+                };
+                auto funcFinal = [] (DATAENC minimum, const size_t numValues) -> DATAENC {
+                    return minimum;
+                };
+                impl<DATAENC>(funcInit, funcKernel, funcFinal);
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                auto funcInit = [] () -> DATAENC {
+                    return (DATAENC) 0;
+                };
+                auto funcKernel = [] (DATAENC maximum, DATAENC dataIn) -> DATAENC {
+                    auto tmp = dataIn;
+                    if (tmp > maximum) {
+                        return tmp;
+                    } else {
+                        return maximum;
+                    }
+                };
+                auto funcFinal = [] (DATAENC & maximum, const size_t numValues) -> DATAENC {
+                    return maximum;
+                };
+                impl<DATAENC>(funcInit, funcKernel, funcFinal);
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                auto funcInit = [] () -> larger_t {
+                    return (larger_t) 0;
+                };
+                auto funcKernel = [] (larger_t sum, DATAENC dataIn) -> larger_t {
+                    return sum + dataIn;
+                };
+                auto funcFinal = [this] (larger_t sum, const size_t numValues) -> larger_t {
+                    return (sum / (numValues * test.A)) * test.A;
+                };
+                impl<larger_t>(funcInit, funcKernel, funcFinal);
+            }
+        };
+
+        void RunAggregateChecked(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(AggregatorChecked(*this, config, iteration), config.mode);
+            }
+        }
+
         bool DoDecode() override {
             return true;
         }
@@ -128,18 +257,17 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
-                size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<DATAENC>();
+                auto const dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufResult.template begin<DATARAW>();
-                for (; i <= (numValues - UNROLL); i += UNROLL) {
-                    // let the compiler unroll the loop
-                    for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                        *dataOut = *dataIn / this->A;
+                while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
+                    for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                        *dataOut++ = *dataIn++ / this->A;
                     }
                 }
                 // remaining numbers
-                for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                    *dataOut = *dataIn / this->A;
+                while (dataIn < dataInEnd) {
+                    *dataOut++ = *dataIn++ / this->A;
                 }
             }
         }
@@ -153,24 +281,26 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
-                size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<DATAENC>();
+                auto const dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufResult.template begin<DATARAW>();
-                for (; i <= (numValues - UNROLL); i += UNROLL) {
+                while (dataIn <= (dataInEnd - UNROLL)) {
                     // let the compiler unroll the loop
-                    for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                        if ((*dataIn % this->A) != 0) {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                        if ((*dataIn % this->A) == 0) {
+                            *dataOut++ = *dataIn++ / this->A;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration);
                         }
-                        *dataOut = *dataIn / this->A;
                     }
                 }
                 // remaining numbers
-                for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                    if ((*dataIn % this->A) != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                while (dataIn < dataInEnd) {
+                    if ((*dataIn % this->A) == 0) {
+                        *dataOut++ = *dataIn++ / this->A;
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration);
                     }
-                    *dataOut = *dataIn / this->A;
                 }
             }
         }

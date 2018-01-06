@@ -87,14 +87,14 @@ namespace coding_benchmark {
                 inline int16_t get_min_int16<int16_t>(
                         __m128i & a) {
                     auto mmMin = _mm_set1_epi16(std::numeric_limits < int16_t > ::min());
-                    auto min = _mm_minpos_epu16(_mm_add_epi16(a, mmMin));
+                    auto min = _mm_extract_epi16(_mm_minpos_epu16(_mm_add_epi16(a, mmMin)), 0);
                     return min - std::numeric_limits < int16_t > ::min();
                 }
 
                 template<>
                 inline uint16_t get_min_int16<uint16_t>(
                         __m128i & a) {
-                    return _mm_minpos_epu16(a);
+                    return _mm_extract_epi16(_mm_minpos_epu16(a), 0);
                 }
 
                 template<typename T>
@@ -185,7 +185,11 @@ namespace coding_benchmark {
                     static inline __m128i min(
                             __m128i a,
                             __m128i b) {
-                        return _mm_min_epu16(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm_min_epi16(a, b);
+                        } else {
+                            return _mm_min_epu16(a, b);
+                        }
                     }
 
                     static inline T max(
@@ -196,7 +200,11 @@ namespace coding_benchmark {
                     static inline __m128i max(
                             __m128i a,
                             __m128i b) {
-                        return _mm_max_epu16(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm_max_epi16(a, b);
+                        } else {
+                            return _mm_max_epu16(a, b);
+                        }
                     }
 
                     static inline T sum(

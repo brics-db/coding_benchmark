@@ -52,25 +52,28 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
-                size_t i = 0;
                 auto data = this->bufEncoded.template begin<DATAENC>();
-                DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-                for (; i <= (numValues - UNROLL); i += UNROLL) {
+                auto dataEnd = data + numValues;
+                constexpr const DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+                while (data <= (dataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
                         DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
-                        if (dec > dMax) {
+                        if (dec <= dMax) {
+                            ++data;
+                        } else {
                             std::stringstream ss;
                             ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                             throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
                         }
-                        ++data;
                     }
                 }
                 // remaining numbers
-                for (; i < numValues; ++i, ++data) {
+                while (data < dataEnd) {
                     DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
-                    if (dec > dMax) {
+                    if (dec <= dMax) {
+                        ++data;
+                    } else {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                         throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
@@ -96,45 +99,54 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
+            template<template<typename = void> class func>
+            void impl() {
+                func<> functor;
                 const size_t numValues = test.template getNumValues();
-                size_t i = 0;
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
+                auto dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<DATAENC>();
-                DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-                DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
+                constexpr const DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
                 DATAENC operandEnc = config.operand * test.A;
-                for (; i <= (numValues - UNROLL); i += UNROLL) { // let the compiler unroll the loop
+                while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
                         DATAENC dec = static_cast<DATAENC>(*dataIn * test.A_INV);
-                        if (dec < dMin || dec > dMax) {
+                        if (dec <= dMax) {
+                            *dataOut++ = functor(*dataIn++, operandEnc);
+                        } else {
                             std::stringstream ss;
                             ss << "A=" << test.A << ", A^-1=" << test.A_INV;
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
-                        *dataOut++ = *dataIn++ + operandEnc;
                     }
                 }
                 // remaining numbers
-                for (; i < numValues; ++i) {
+                while (dataIn < dataInEnd) {
                     DATAENC dec = static_cast<DATAENC>(*dataIn * test.A_INV);
-                    if (dec < dMin || dec > dMax) {
+                    if (dec <= dMax) {
+                        *dataOut++ = functor(*dataIn++, operandEnc);
+                    } else {
                         std::stringstream ss;
                         ss << "A=" << test.A << ", A^-1=" << test.A_INV;
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<DATAENC>(), iteration);
                     }
-                    *dataOut++ = *dataIn++ + operandEnc;
                 }
             }
             void operator()(
+                    ArithmeticConfiguration::Add) {
+                impl<add>();
+            }
+            void operator()(
                     ArithmeticConfiguration::Sub) {
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
+                impl<div>();
             }
         };
 
@@ -143,6 +155,131 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
+            }
+        }
+
+        bool DoAggregateChecked(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct AggregatorChecked {
+            typedef typename Larger<DATAENC>::larger_t larger_t;
+            AN_scalar_u_inv & test;
+            const AggregateConfiguration & config;
+            const size_t iteration;
+            AggregatorChecked(
+                    AN_scalar_u_inv & test,
+                    const AggregateConfiguration & config,
+                    const size_t iteration)
+                    : test(test),
+                      config(config),
+                      iteration(iteration) {
+            }
+            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            void impl(
+                    Initializer & funcInit,
+                    Kernel & funcKernel,
+                    Finalizer & funcFinal) {
+                const size_t numValues = test.template getNumValues();
+                auto dataIn = test.bufEncoded.template begin<DATAENC>();
+                auto dataInEnd = dataIn + numValues;
+                auto dataOut = test.bufResult.template begin<Tout>();
+                constexpr const DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+                Tout value = funcInit();
+                while (dataIn <= (dataInEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        DATAENC dec = static_cast<DATAENC>(*dataIn * test.A_INV);
+                        if (dec <= dMax) {
+                            value = funcKernel(value, *dataIn++);
+                        } else {
+                            std::stringstream ss;
+                            ss << "A=" << test.A << ", A^-1=" << test.A_INV;
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<DATAENC>(), iteration);
+                        }
+                    }
+                }
+                while (dataIn < dataInEnd) {
+                    DATAENC dec = static_cast<DATAENC>(*dataIn * test.A_INV);
+                    if (dec <= dMax) {
+                        value = funcKernel(value, *dataIn++);
+                    } else {
+                        std::stringstream ss;
+                        ss << "A=" << test.A << ", A^-1=" << test.A_INV;
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<DATAENC>(), iteration);
+                    }
+                }
+                *dataOut = funcFinal(value, numValues);
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                auto funcInit = [] () -> larger_t {
+                    return (larger_t) 0;
+                };
+                auto funcKernel = [] (larger_t sum, DATAENC dataIn) -> larger_t {
+                    return sum + dataIn;
+                };
+                auto funcFinal = [] (larger_t sum, const size_t numValues) -> larger_t {
+                    return sum;
+                };
+                impl<larger_t>(funcInit, funcKernel, funcFinal);
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                auto funcInit = [] () -> DATAENC {
+                    return (DATAENC) 0;
+                };
+                auto funcKernel = [] (DATAENC minimum, DATAENC dataIn) -> DATAENC {
+                    auto tmp = dataIn;
+                    if (tmp < minimum) {
+                        return tmp;
+                    } else {
+                        return minimum;
+                    }
+                };
+                auto funcFinal = [] (DATAENC minimum, const size_t numValues) -> DATAENC {
+                    return minimum;
+                };
+                impl<DATAENC>(funcInit, funcKernel, funcFinal);
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                auto funcInit = [] () -> DATAENC {
+                    return (DATAENC) 0;
+                };
+                auto funcKernel = [] (DATAENC maximum, DATAENC dataIn) -> DATAENC {
+                    auto tmp = dataIn;
+                    if (tmp > maximum) {
+                        return tmp;
+                    } else {
+                        return maximum;
+                    }
+                };
+                auto funcFinal = [] (DATAENC & maximum, const size_t numValues) -> DATAENC {
+                    return maximum;
+                };
+                impl<DATAENC>(funcInit, funcKernel, funcFinal);
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                auto funcInit = [] () -> larger_t {
+                    return (larger_t) 0;
+                };
+                auto funcKernel = [] (larger_t sum, DATAENC dataIn) -> larger_t {
+                    return sum + dataIn;
+                };
+                auto funcFinal = [this] (larger_t sum, const size_t numValues) -> larger_t {
+                    return (sum / (numValues * test.A)) * test.A;
+                };
+                impl<larger_t>(funcInit, funcKernel, funcFinal);
+            }
+        };
+
+        void RunAggregateChecked(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(AggregatorChecked(*this, config, iteration), config.mode);
             }
         }
 
@@ -155,32 +292,33 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
-                size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<DATAENC>();
+                auto const dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufResult.template begin<DATAENC>();
-                DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+                constexpr const DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
                 const DATAENC reenc = this->A_INV * config.newA;
-                for (; i <= (numValues - UNROLL); i += UNROLL) {
-                    // let the compiler unroll the loop
-                    for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataIn, ++dataOut) {
+                while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
+                    for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
-                        if (dec > dMax) {
+                        if (dec <= dMax) {
+                            *dataOut++ = static_cast<DATAENC>(*dataIn++ * reenc);
+                        } else {
                             std::stringstream ss;
                             ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                             throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
                         }
-                        *dataOut = static_cast<DATAENC>(*dataIn * reenc);
                     }
                 }
                 // remaining numbers
-                for (; i < numValues; ++i, ++dataIn, ++dataOut) {
+                while (dataIn < dataInEnd) {
                     DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
-                    if (dec > dMax) {
+                    if (dec <= dMax) {
+                        *dataOut++ = static_cast<DATAENC>(*dataIn++ * reenc);
+                    } else {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                         throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
                     }
-                    *dataOut = static_cast<DATAENC>(*dataIn * reenc);
                 }
                 this->A = static_cast<DATAENC>(config.newA);
                 this->A_INV = ext_euclidean(this->A, sizeof(DATAENC) * CHAR_BIT);
@@ -196,32 +334,31 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
-                size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<DATAENC>();
+                auto const dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufResult.template begin<DATARAW>();
-                DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-                for (; i <= (numValues - UNROLL); i += UNROLL) {
-                    // let the compiler unroll the loop
-                    for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                        DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
-                        if (dec > dMax) {
+                constexpr const DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+                while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
+                    for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                        DATAENC dec = static_cast<DATAENC>(*dataIn++ * this->A_INV);
+                        if (dec <= dMax) {
+                            *dataOut++ = static_cast<DATARAW>(dec);
+                        } else {
                             std::stringstream ss;
                             ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                             throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
-                        } else {
-                            *dataOut = static_cast<DATARAW>(dec);
                         }
                     }
                 }
                 // remaining numbers
-                for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                    DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
-                    if (dec > dMax) {
+                while (dataIn < dataInEnd) {
+                    DATAENC dec = static_cast<DATAENC>(*dataIn++ * this->A_INV);
+                    if (dec <= dMax) {
+                        *dataOut++ = static_cast<DATARAW>(dec);
+                    } else {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
                         throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
-                    } else {
-                        *dataOut = static_cast<DATARAW>(dec);
                     }
                 }
             }

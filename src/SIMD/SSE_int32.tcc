@@ -167,7 +167,11 @@ namespace coding_benchmark {
                     static inline __m128i min(
                             __m128i a,
                             __m128i b) {
-                        return _mm_min_epu32(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm_min_epi32(a, b);
+                        } else {
+                            return _mm_min_epu32(a, b);
+                        }
                     }
 
                     static inline T max(
@@ -178,7 +182,11 @@ namespace coding_benchmark {
                     static inline __m128i max(
                             __m128i a,
                             __m128i b) {
-                        return _mm_max_epu32(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm_max_epi32(a, b);
+                        } else {
+                            return _mm_max_epu32(a, b);
+                        }
                     }
 
                     static inline T sum(

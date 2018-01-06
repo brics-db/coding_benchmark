@@ -45,18 +45,17 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
-                size_t i = 0;
                 auto dataIn = this->bufRaw.template begin<DATARAW>();
+                auto const dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufEncoded.template begin<DATAENC>();
-                for (; i <= (numValues - UNROLL); i += UNROLL) {
-                    // let the compiler unroll the loop
-                    for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                        *dataOut = static_cast<DATAENC>(static_cast<DATAENC>(*dataIn) * this->A);
+                while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
+                    for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                        *dataOut++ = static_cast<DATAENC>(static_cast<DATAENC>(*dataIn++) * this->A);
                     }
                 }
                 // remaining numbers
-                for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                    *dataOut = static_cast<DATAENC>(static_cast<DATAENC>(*dataIn) * this->A);
+                while (dataIn < dataInEnd) {
+                    *dataOut++ = static_cast<DATAENC>(static_cast<DATAENC>(*dataIn++) * this->A);
                 }
             }
         }
@@ -79,16 +78,16 @@ namespace coding_benchmark {
             void impl() {
                 func<> functor;
                 const size_t numValues = test.template getNumValues();
-                size_t i = 0;
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
+                auto const dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<DATAENC>();
                 DATAENC operandEnc = config.operand * test.A;
-                for (; i <= (numValues - UNROLL); i += UNROLL) {
-                    for (size_t k = 0; k < UNROLL; ++k) {
+                while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
+                    for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         *dataOut++ = functor(*dataIn++, operandEnc);
                     }
                 }
-                for (; i < numValues; ++i) {
+                while (dataIn < dataInEnd) {
                     *dataOut++ = functor(*dataIn++, operandEnc);
                 }
             }
@@ -133,80 +132,87 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            void operator()(
-                    AggregateConfiguration::Sum) {
+            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            void impl(
+                    Initializer & funcInit,
+                    Kernel & funcKernel,
+                    Finalizer & funcFinal) {
                 const size_t numValues = test.template getNumValues();
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                auto dataInEnd = dataIn + numValues;
-                auto dataOut = test.bufResult.template begin<larger_t>();
-                // DATAENC operandEnc = config.operand * test.A;
-                larger_t tmp(0);
+                auto const dataInEnd = dataIn + numValues;
+                auto dataOut = test.bufResult.template begin<Tout>();
+                Tout value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        tmp += *dataIn++;
+                        value = funcKernel(value, *dataIn++);
                     }
                 }
                 while (dataIn < dataInEnd) {
-                    tmp += *dataIn++;
+                    value = funcKernel(value, *dataIn++);
                 }
-                *dataOut = tmp;
+                *dataOut = funcFinal(value, numValues);
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                auto funcInit = [] () -> larger_t {
+                    return (larger_t) 0;
+                };
+                auto funcKernel = [] (larger_t sum, DATAENC dataIn) -> larger_t {
+                    return sum + dataIn;
+                };
+                auto funcFinal = [] (larger_t sum, const size_t numValues) -> larger_t {
+                    return sum;
+                };
+                impl<larger_t>(funcInit, funcKernel, funcFinal);
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                const size_t numValues = test.template getNumValues();
-                auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                auto dataInEnd = dataIn + numValues;
-                auto dataOut = test.bufResult.template begin<DATAENC>();
-                // DATAENC operandEnc = config.operand * test.A;
-                DATAENC minimum = std::numeric_limits<DATAENC>::max();
-                while (dataIn <= (dataInEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k) {
-                        auto tmp = *dataIn++;
-                        minimum = (tmp < minimum) ? tmp : minimum;
+                auto funcInit = [] () -> DATAENC {
+                    return (DATAENC) 0;
+                };
+                auto funcKernel = [] (DATAENC minimum, DATAENC dataIn) -> DATAENC {
+                    auto tmp = dataIn;
+                    if (tmp < minimum) {
+                        return tmp;
+                    } else {
+                        return minimum;
                     }
-                }
-                while (dataIn < dataInEnd) {
-                    auto tmp = *dataIn++;
-                    minimum = (tmp < minimum) ? tmp : minimum;
-                }
-                *dataOut = minimum;
+                };
+                auto funcFinal = [] (DATAENC minimum, const size_t numValues) -> DATAENC {
+                    return minimum;
+                };
+                impl<DATAENC>(funcInit, funcKernel, funcFinal);
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                const size_t numValues = test.template getNumValues();
-                auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                auto dataInEnd = dataIn + numValues;
-                auto dataOut = test.bufResult.template begin<DATAENC>();
-                // DATAENC operandEnc = config.operand * test.A;
-                DATAENC maximum = std::numeric_limits<DATAENC>::min();
-                while (dataIn <= (dataInEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k) {
-                        auto tmp = *dataIn++;
-                        maximum = (tmp > maximum) ? tmp : maximum;
+                auto funcInit = [] () -> DATAENC {
+                    return (DATAENC) 0;
+                };
+                auto funcKernel = [] (DATAENC maximum, DATAENC dataIn) -> DATAENC {
+                    auto tmp = dataIn;
+                    if (tmp > maximum) {
+                        return tmp;
+                    } else {
+                        return maximum;
                     }
-                }
-                while (dataIn < dataInEnd) {
-                    auto tmp = *dataIn++;
-                    maximum = (tmp > maximum) ? tmp : maximum;
-                }
-                *dataOut = maximum;
+                };
+                auto funcFinal = [] (DATAENC & maximum, const size_t numValues) -> DATAENC {
+                    return maximum;
+                };
+                impl<DATAENC>(funcInit, funcKernel, funcFinal);
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                const size_t numValues = test.template getNumValues();
-                auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                auto dataInEnd = dataIn + numValues;
-                auto dataOut = test.bufResult.template begin<larger_t>();
-                larger_t tmp(0);
-                while (dataIn <= (dataInEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k) {
-                        tmp += *dataIn++;
-                    }
-                }
-                while (dataIn < dataInEnd) {
-                    tmp += *dataIn++;
-                }
-                *dataOut = (tmp / (numValues * test.A)) * test.A; // TODO for division, decode all encoded values and encode afterwards again!
+                auto funcInit = [] () -> larger_t {
+                    return (larger_t) 0;
+                };
+                auto funcKernel = [] (larger_t sum, DATAENC dataIn) -> larger_t {
+                    return sum + dataIn;
+                };
+                auto funcFinal = [this] (larger_t sum, const size_t numValues) -> larger_t {
+                    return (sum / (numValues * test.A)) * test.A;
+                };
+                impl<larger_t>(funcInit, funcKernel, funcFinal);
             }
         };
 
@@ -227,21 +233,21 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
-                size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<DATAENC>();
+                auto const dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufResult.template begin<DATARAW>();
-                for (; i <= (numValues - UNROLL); i += UNROLL) {
-                    // let the compiler unroll the loop
-                    for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataOut, ++dataIn) {
-                        *dataOut = static_cast<DATARAW>(*dataIn * this->A_INV);
+                while (dataIn <= (dataInEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        *dataOut++ = static_cast<DATARAW>(*dataIn++ * this->A_INV);
                     }
                 }
                 // remaining numbers
-                for (; i < numValues; ++i, ++dataOut, ++dataIn) {
-                    *dataOut = static_cast<DATARAW>(*dataIn * this->A_INV);
+                while (dataIn < dataInEnd) {
+                    *dataOut++ = static_cast<DATARAW>(*dataIn++ * this->A_INV);
                 }
             }
         }
-    };
+    }
+    ;
 
 }
