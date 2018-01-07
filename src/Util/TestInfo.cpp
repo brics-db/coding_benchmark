@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "TestInfo.hpp"
-
 #include <exception>
 #include <sstream>
+
+#include <Util/TestInfo.hpp>
 
 TestInfo::TestInfo()
         : isExecuted(false),

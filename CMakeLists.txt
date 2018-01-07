@@ -22,6 +22,12 @@ ELSE()
     PROJECT(CodingBenchmark LANGUAGES CXX)
 ENDIF()
 
+SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+SET(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+MESSAGE(STATUS "PROJECT_INCLUDE_DIR = ${PROJECT_INCLUDE_DIR}")
+INCLUDE_DIRECTORIES("${PROJECT_INCLUDE_DIR}")
+
 ADD_DEFINITIONS(-Wall)
 ADD_DEFINITIONS(-pedantic)
 ADD_DEFINITIONS(-march=native)
@@ -83,9 +89,20 @@ MACRO(append_target_property arg_target arg_property arg_setting)
 ENDMACRO(append_target_property)
 
 add_static_lib(benchbase "src/Util/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
-src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_avx2.cpp src/Hamming/Hamming_compute.cpp \
-src/XOR/XOR_base.cpp src/XOR/XOR_scalar.cpp src/XOR/XOR_sse42.cpp src/XOR/XOR_avx2.cpp \
-src/AN/AN_scalar.cpp src/AN/AN_sse42.cpp src/AN/AN_avx2.cpp" "")
+src/Hamming/Hamming_compute.cpp \
+src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_scalar_16.cpp src/Hamming/Hamming_scalar_32.cpp \
+src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_sse42_16.cpp src/Hamming/Hamming_sse42_32.cpp \
+src/Hamming/Hamming_avx2.cpp src/Hamming/Hamming_avx2_16.cpp src/Hamming/Hamming_avx2_32.cpp \
+src/Hamming/Hamming_avx512.cpp src/Hamming/Hamming_avx512_16.cpp src/Hamming/Hamming_avx512_16.cpp \
+src/XOR/XOR_base.cpp \
+src/XOR/XOR_scalar_16_16.cpp src/XOR/XOR_scalar_16_8.cpp src/XOR/XOR_scalar_32_32.cpp src/XOR/XOR_scalar_32_8.cpp \
+src/XOR/XOR_sse42.cpp src/XOR/XOR_sse42_4x32_32.cpp src/XOR/XOR_sse42_4x32_4x32.cpp src/XOR/XOR_sse42_8x16_16.cpp src/XOR/XOR_sse42_8x16_8x16.cpp \
+src/XOR/XOR_avx2.cpp src/XOR/XOR_avx2_16x16_16.cpp src/XOR/XOR_avx2_16x16_16x16.cpp src/XOR/XOR_avx2_8x32_32.cpp src/XOR/XOR_avx2_8x32_8x32.cpp \
+src/AN/AN_scalar_8_16_u_inv.cpp src/AN/AN_scalar_8_16_s_inv.cpp \
+src/AN/AN_scalar_16_32_s_divmod.cpp src/AN/AN_scalar_16_32_s_inv.cpp src/AN/AN_scalar_16_32_u_divmod.cpp src/AN/AN_scalar_16_32_u_inv.cpp \
+src/AN/AN_scalar_32_64_s_inv.cpp src/AN/AN_scalar_32_64_u_inv.cpp \
+src/AN/AN_sse42_8x16_8x32_s_divmod.cpp src/AN/AN_sse42_8x16_8x32_s_inv.cpp src/AN/AN_sse42_8x16_8x32_u_divmod.cpp src/AN/AN_sse42_8x16_8x32_u_inv.cpp \
+src/AN/AN_avx2_16x16_16x32_s_divmod.cpp src/AN/AN_avx2_16x16_16x32_s_inv.cpp src/AN/AN_avx2_16x16_16x32_u_divmod.cpp src/AN/AN_avx2_16x16_16x32_u_inv.cpp" "")
 
 add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Util/Test.cpp" benchbase)
 

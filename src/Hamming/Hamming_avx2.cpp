@@ -31,8 +31,8 @@
 
 namespace coding_benchmark {
 
-    template struct hamming_t<uint16_t, __m256i > ;
-    template struct hamming_t<uint32_t, __m256i > ;
+    template struct hamming_t<uint16_t, __m256i >;
+    template struct hamming_t<uint32_t, __m256i >;
 
     template<>
     __m128i hamming_t<uint16_t, __m256i >::computeHamming(
@@ -294,52 +294,6 @@ namespace coding_benchmark {
         _mm256_storeu_si256(&this->data, data);
         this->code = computeHamming3(data);
     }
-
-    template
-    struct Hamming_avx2_16<1> ;
-    template
-    struct Hamming_avx2_16<2> ;
-    template
-    struct Hamming_avx2_16<4> ;
-    template
-    struct Hamming_avx2_16<8> ;
-    template
-    struct Hamming_avx2_16<16> ;
-    template
-    struct Hamming_avx2_16<32> ;
-    template
-    struct Hamming_avx2_16<64> ;
-    template
-    struct Hamming_avx2_16<128> ;
-    template
-    struct Hamming_avx2_16<256> ;
-    template
-    struct Hamming_avx2_16<512> ;
-    template
-    struct Hamming_avx2_16<1024> ;
-
-    template
-    struct Hamming_avx2_32<1> ;
-    template
-    struct Hamming_avx2_32<2> ;
-    template
-    struct Hamming_avx2_32<4> ;
-    template
-    struct Hamming_avx2_32<8> ;
-    template
-    struct Hamming_avx2_32<16> ;
-    template
-    struct Hamming_avx2_32<32> ;
-    template
-    struct Hamming_avx2_32<64> ;
-    template
-    struct Hamming_avx2_32<128> ;
-    template
-    struct Hamming_avx2_32<256> ;
-    template
-    struct Hamming_avx2_32<512> ;
-    template
-    struct Hamming_avx2_32<1024> ;
 
 }
 
