@@ -24,9 +24,9 @@
 #include <Util/Test.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/Functors.hpp>
+#include <Util/Helpers.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Util/AggregateSelector.hpp>
-#include <Util/Helpers.hpp>
 
 namespace coding_benchmark {
 
@@ -52,7 +52,7 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 auto data = this->bufRaw.template begin<DATAIN>();
-                auto dataEnd = this->bufRaw.template end<DATAIN>();
+                auto const dataEnd = this->bufRaw.template end<DATAIN>();
                 auto dataOut = this->bufEncoded.template begin<hamming_scalar_t>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
@@ -73,19 +73,20 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t numValues = this->getNumValues();
-                size_t i = 0;
                 auto data = this->bufEncoded.template begin<hamming_scalar_t>();
-                while (i <= (numValues - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++i, ++data) {
-                        if (!data->isValid()) {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                auto const dataEnd = this->bufEncoded.template end<hamming_scalar_t>();
+                while (data <= (dataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
+                        if (data->isValid()) {
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), iteration);
                         }
                     }
                 }
-                for (; i < numValues; ++i, ++data) {
-                    if (!data->isValid()) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                for (; data < dataEnd; ++data) {
+                    if (data->isValid()) {
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), iteration);
                     }
                 }
             }
@@ -179,18 +180,20 @@ namespace coding_benchmark {
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut, ++i) {
                         auto tmp = data->data;
-                        if (!data->isValid()) {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        if (data->isValid()) {
+                            dataOut->store(functor(tmp, config.operand));
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, data - test.bufEncoded.template begin<hamming_scalar_t>(), iteration);
                         }
-                        dataOut->store(functor(tmp, config.operand));
                     }
                 }
                 for (; data < dataEnd; ++data, ++dataOut) {
                     auto tmp = data->data;
-                    if (!data->isValid()) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    if (data->isValid()) {
+                        dataOut->store(functor(tmp, config.operand));
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, data - test.bufEncoded.template begin<hamming_scalar_t>(), iteration);
                     }
-                    dataOut->store(functor(tmp, config.operand));
                 }
             }
             void operator()(
@@ -236,78 +239,47 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            void operator()(
-                    AggregateConfiguration::Sum) {
-                const size_t numValues = test.getNumValues();
-                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-                larger_t tmp(0);
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
-                        tmp += data->data;
+            template<typename Hout, typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            void impl(
+                    Initializer && funcInit,
+                    Kernel && funcKernel,
+                    Finalizer && funcFinal) {
+                const size_t numValues = test.template getNumValues();
+                auto dataIn = test.bufEncoded.template begin<hamming_scalar_t>();
+                auto const dataInEnd = dataIn + numValues;
+                auto dataOut = test.bufResult.template begin<Hout>();
+                Tout value = funcInit();
+                while (dataIn <= (dataInEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        value = funcKernel(value, *dataIn++);
                     }
                 }
-                for (; data < dataEnd; ++data) {
-                    tmp += data->data;
+                while (dataIn < dataInEnd) {
+                    value = funcKernel(value, *dataIn++);
                 }
-                dataOut->store(tmp);
+                dataOut->store(funcFinal(value, numValues));
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                impl<hamming_larger_t, larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
+                        [] (larger_t sum, const size_t numValues) {return sum;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                const size_t numValues = test.getNumValues();
-                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-                larger_t tmp[2] {std::numeric_limits<larger_t>::max(), 0};
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
-                        tmp[1] = data->data;
-                        tmp[0] = tmp[tmp[0] > data->data]; // conditional access
-                    }
-                }
-                for (; data < dataEnd; ++data) {
-                    tmp[1] = data->data;
-                    tmp[0] = tmp[tmp[0] > data->data]; // conditional access
-                }
-                dataOut->store(tmp[0]);
+                impl<hamming_scalar_t, DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::max();},
+                        [] (DATAIN minimum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < minimum ? dataIn.data : minimum;},
+                        [] (DATAIN minimum, const size_t numValues) {return minimum;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                const size_t numValues = test.getNumValues();
-                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-                larger_t tmp[2] {std::numeric_limits<larger_t>::min(), 0};
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
-                        tmp[1] = data->data;
-                        tmp[0] = tmp[tmp[0] < data->data]; // conditional access
-                    }
-                }
-                for (; data < dataEnd; ++data) {
-                    tmp[1] = data->data;
-                    tmp[0] = tmp[tmp[0] < data->data]; // conditional access
-                }
-                dataOut->store(tmp[0]);
+                impl<hamming_scalar_t, DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::min();},
+                        [] (DATAIN maximum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < maximum ? dataIn.data : maximum;},
+                        [] (DATAIN maximum, const size_t numValues) {return maximum;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                // Our simple assumption for here is that we can add up all values into the next larger data type
-                const size_t numValues = test.getNumValues();
-                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-                larger_t tmp(0);
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
-                        tmp += data->data;
-                    }
-                }
-                for (; data < dataEnd; ++data) {
-                    tmp += data->data;
-                }
-                dataOut->store(tmp / numValues);
+                impl<hamming_larger_t, larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
+                        [] (larger_t sum, const size_t numValues) {return sum / numValues;});
             }
         };
 
@@ -339,110 +311,55 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            void operator()(
-                    AggregateConfiguration::Sum) {
-                const size_t numValues = test.getNumValues();
-                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-                larger_t tmp(0);
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
-                        if (data->isValid()) {
-                            tmp += data->data;
+            template<typename Hout, typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            void impl(
+                    Initializer && funcInit,
+                    Kernel && funcKernel,
+                    Finalizer && funcFinal) {
+                const size_t numValues = test.template getNumValues();
+                auto dataIn = test.bufEncoded.template begin<hamming_scalar_t>();
+                auto const dataInEnd = dataIn + numValues;
+                auto dataOut = test.bufResult.template begin<Hout>();
+                Tout value = funcInit();
+                while (dataIn <= (dataInEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        if (dataIn->isValid()) {
+                            value = funcKernel(value, *dataIn++);
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<hamming_scalar_t>(), iteration);
                         }
                     }
                 }
-                for (; data < dataEnd; ++data) {
-                    if (data->isValid()) {
-                        tmp += data->data;
+                while (dataIn < dataInEnd) {
+                    if (dataIn->isValid()) {
+                        value = funcKernel(value, *dataIn++);
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<hamming_scalar_t>(), iteration);
                     }
                 }
-                dataOut->store(tmp);
+                dataOut->store(funcFinal(value, numValues));
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                impl<hamming_larger_t, larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
+                        [] (larger_t sum, const size_t numValues) {return sum;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                const size_t numValues = test.getNumValues();
-                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-                larger_t tmp[2] {std::numeric_limits<larger_t>::max(), 0};
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
-                        if (data->isValid()) {
-                            tmp[1] = data->data;
-                            tmp[0] = tmp[tmp[0] > data->data]; // conditional access
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
-                        }
-                    }
-                }
-                for (; data < dataEnd; ++data) {
-                    if (data->isValid()) {
-                        tmp[1] = data->data;
-                        tmp[0] = tmp[tmp[0] > data->data]; // conditional access
-                    } else {
-                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
-                    }
-                }
-                dataOut->store(tmp[0]);
+                impl<hamming_scalar_t, DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::max();},
+                        [] (DATAIN minimum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < minimum ? dataIn.data : minimum;},
+                        [] (DATAIN minimum, const size_t numValues) {return minimum;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                const size_t numValues = test.getNumValues();
-                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-                larger_t tmp[2] {std::numeric_limits<larger_t>::min(), 0};
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
-                        if (data->isValid()) {
-                            tmp[1] = data->data;
-                            tmp[0] = tmp[tmp[0] < data->data]; // conditional access
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
-                        }
-                    }
-                }
-                for (; data < dataEnd; ++data) {
-                    if (data->isValid()) {
-                        tmp[1] = data->data;
-                        tmp[0] = tmp[tmp[0] < data->data]; // conditional access
-                    } else {
-                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
-                    }
-                }
-                dataOut->store(tmp[0]);
+                impl<hamming_scalar_t, DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::min();},
+                        [] (DATAIN maximum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < maximum ? dataIn.data : maximum;},
+                        [] (DATAIN maximum, const size_t numValues) {return maximum;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                // Our simple assumption for here is that we can add up all values into the next larger data type
-                const size_t numValues = test.getNumValues();
-                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
-                larger_t tmp(0);
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data) {
-                        if (data->isValid()) {
-                            tmp += data->data;
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
-                        }
-                    }
-                }
-                for (; data < dataEnd; ++data) {
-                    if (data->isValid()) {
-                        tmp += data->data;
-                    } else {
-                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
-                    }
-                }
-                dataOut->store(tmp / numValues);
+                impl<hamming_larger_t, larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
+                        [] (larger_t sum, const size_t numValues) {return sum / numValues;});
             }
         };
 

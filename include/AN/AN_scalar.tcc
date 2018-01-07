@@ -134,9 +134,9 @@ namespace coding_benchmark {
             }
             template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
             void impl(
-                    Initializer & funcInit,
-                    Kernel & funcKernel,
-                    Finalizer & funcFinal) {
+                    Initializer && funcInit,
+                    Kernel && funcKernel,
+                    Finalizer && funcFinal) {
                 const size_t numValues = test.template getNumValues();
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
                 auto const dataInEnd = dataIn + numValues;
@@ -154,65 +154,22 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                auto funcInit = [] () -> larger_t {
-                    return (larger_t) 0;
-                };
-                auto funcKernel = [] (larger_t sum, DATAENC dataIn) -> larger_t {
-                    return sum + dataIn;
-                };
-                auto funcFinal = [] (larger_t sum, const size_t numValues) -> larger_t {
-                    return sum;
-                };
-                impl<larger_t>(funcInit, funcKernel, funcFinal);
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, DATAENC dataIn) -> larger_t {return sum + dataIn;}, [] (larger_t sum, const size_t numValues) {return sum;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                auto funcInit = [] () -> DATAENC {
-                    return (DATAENC) 0;
-                };
-                auto funcKernel = [] (DATAENC minimum, DATAENC dataIn) -> DATAENC {
-                    auto tmp = dataIn;
-                    if (tmp < minimum) {
-                        return tmp;
-                    } else {
-                        return minimum;
-                    }
-                };
-                auto funcFinal = [] (DATAENC minimum, const size_t numValues) -> DATAENC {
-                    return minimum;
-                };
-                impl<DATAENC>(funcInit, funcKernel, funcFinal);
+                impl<DATAENC>([] {return (DATAENC) std::numeric_limits<DATAENC>::max();}, [] (DATAENC minimum, DATAENC dataIn) -> DATAENC {return dataIn < minimum ? dataIn : minimum;},
+                        [] (DATAENC minimum, const size_t numValues) {return minimum;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                auto funcInit = [] () -> DATAENC {
-                    return (DATAENC) 0;
-                };
-                auto funcKernel = [] (DATAENC maximum, DATAENC dataIn) -> DATAENC {
-                    auto tmp = dataIn;
-                    if (tmp > maximum) {
-                        return tmp;
-                    } else {
-                        return maximum;
-                    }
-                };
-                auto funcFinal = [] (DATAENC & maximum, const size_t numValues) -> DATAENC {
-                    return maximum;
-                };
-                impl<DATAENC>(funcInit, funcKernel, funcFinal);
+                impl<DATAENC>([] {return (DATAENC) std::numeric_limits<DATAENC>::min();}, [] (DATAENC maximum, DATAENC dataIn) -> DATAENC {return dataIn > maximum ? dataIn : maximum;},
+                        [] (DATAENC maximum, const size_t numValues) {return maximum;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                auto funcInit = [] () -> larger_t {
-                    return (larger_t) 0;
-                };
-                auto funcKernel = [] (larger_t sum, DATAENC dataIn) -> larger_t {
-                    return sum + dataIn;
-                };
-                auto funcFinal = [this] (larger_t sum, const size_t numValues) -> larger_t {
-                    return (sum / (numValues * test.A)) * test.A;
-                };
-                impl<larger_t>(funcInit, funcKernel, funcFinal);
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, DATAENC dataIn) -> larger_t {return sum + dataIn;},
+                        [this] (larger_t sum, const size_t numValues) -> larger_t {return (sum / (numValues * test.A)) * test.A;});
             }
         };
 

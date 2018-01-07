@@ -19,7 +19,9 @@
 #include <Util/Intrinsics.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/Functors.hpp>
+#include <Util/Helpers.hpp>
 #include <Util/ArithmeticSelector.hpp>
+#include <Util/AggregateSelector.hpp>
 
 namespace coding_benchmark {
 
@@ -86,7 +88,7 @@ namespace coding_benchmark {
                     data = reinterpret_cast<CS*>(data2); // second, advance data2 up to the checksum
                     if (XORdiff<CS>::checksumsDiffer(*data, XOR<DATA, CS>::computeFinalChecksum(checksum))) // third, test checksum
                             {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<CS>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     ++data; // fourth, advance after the checksum to the next block of values
                 }
@@ -101,7 +103,7 @@ namespace coding_benchmark {
                     data = reinterpret_cast<CS*>(data2); // second, advance data2 up to the checksum
                     if (XORdiff<CS>::checksumsDiffer(*data, XOR<DATA, CS>::computeFinalChecksum(checksum))) // third, test checksum
                             {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<CS>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
             }
@@ -219,7 +221,7 @@ namespace coding_benchmark {
                     const auto finalOLdChecksum = XOR<DATA, CS>::computeFinalChecksum(oldChecksum);
                     const auto finalNewChecksum = XOR<DATA, CS>::computeFinalChecksum(newChecksum);
                     if (XORdiff<CS>::checksumsDiffer(*dataIn++, finalOLdChecksum)) {
-                        throw ErrorInfo(__FILE__, __LINE__, i + BLOCKSIZE, iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     auto chkOut = reinterpret_cast<CS*>(dataOut);
                     *chkOut++ = finalNewChecksum;
@@ -275,6 +277,164 @@ namespace coding_benchmark {
 
         virtual bool DoDecode() override {
             return true;
+        }
+
+        bool DoAggregate(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct Aggregator {
+            typedef typename Larger<DATA>::larger_t larger_t;
+            XOR_scalar & test;
+            const AggregateConfiguration & config;
+            Aggregator(
+                    XOR_scalar & test,
+                    const AggregateConfiguration & config)
+                    : test(test),
+                      config(config) {
+            }
+            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            void impl(
+                    Initializer && funcInit,
+                    Kernel && funcKernel,
+                    Finalizer && funcFinal) {
+                size_t numValues = test.template getNumValues();
+                size_t i = 0;
+                auto dataIn = test.bufEncoded.template begin<CS>();
+                auto dataOut = test.bufResult.template begin<Tout>();
+                Tout value = funcInit();
+                while (i <= (numValues - BLOCKSIZE)) {
+                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
+                    for (size_t k = 0; k < BLOCKSIZE; ++k) {
+                        value = funcKernel(value, *dataIn2++);
+                    }
+                    dataIn = reinterpret_cast<CS*>(dataIn2);
+                    ++dataIn; // here, simply jump over the checksum
+                    i += BLOCKSIZE;
+                }
+                for (; i < numValues; ++i) {
+                    value = funcKernel(value, *dataIn++);
+                }
+                auto final = funcFinal(value, numValues);
+                *dataOut++ = final;
+                *dataOut++ = final; // the "checksum"
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, DATA dataIn) -> larger_t {return sum + dataIn;}, [] (larger_t sum, const size_t numValues) -> larger_t {return sum;});
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                impl<DATA>([] () {return std::numeric_limits<DATA>::max();}, [] (DATA minimum, DATA dataIn) {return dataIn < minimum ? dataIn : minimum;},
+                        [] (DATA minimum, const size_t numValues) {return minimum;});
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                impl<DATA>([] {return std::numeric_limits<DATA>::min();}, [] (DATA maximum, DATA dataIn) {return dataIn < maximum ? dataIn : maximum;},
+                        [] (DATA maximum, const size_t numValues) {return maximum;});
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, DATA dataIn) -> larger_t {return sum + dataIn;},
+                        [] (larger_t sum, const size_t numValues) -> larger_t {return sum / numValues;});
+            }
+        };
+
+        void RunAggregate(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(Aggregator(*this, config), config.mode);
+            }
+        }
+
+        bool DoAggregateChecked(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct AggregatorChecked {
+            typedef typename Larger<DATA>::larger_t larger_t;
+            XOR_scalar & test;
+            const AggregateConfiguration & config;
+            const size_t iteration;
+            AggregatorChecked(
+                    XOR_scalar & test,
+                    const AggregateConfiguration & config,
+                    size_t iteration)
+                    : test(test),
+                      config(config),
+                      iteration(iteration) {
+            }
+            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            void impl(
+                    Initializer && funcInit,
+                    Kernel && funcKernel,
+                    Finalizer && funcFinal) {
+                size_t numValues = test.template getNumValues();
+                size_t i = 0;
+                auto dataIn = test.bufEncoded.template begin<CS>();
+                auto dataOut = test.bufResult.template begin<Tout>();
+                Tout value = funcInit();
+                while (i <= (numValues - BLOCKSIZE)) {
+                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
+                    CS checksum_computed(0);
+                    for (size_t k = 0; k < BLOCKSIZE; ++k) {
+                        checksum_computed ^= *dataIn2;
+                        value = funcKernel(value, *dataIn2++);
+                    }
+                    dataIn = reinterpret_cast<CS*>(dataIn2);
+                    CS checksum_read = *dataIn++;
+                    if (XORdiff<CS>::checksumsDiffer(checksum_read, checksum_computed)) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    i += BLOCKSIZE;
+                }
+                if (i < numValues) {
+                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
+                    CS checksum_computed(0);
+                    for (; i < numValues; ++i) {
+                        checksum_computed ^= *dataIn2;
+                        value = funcKernel(value, *dataIn2++);
+                    }
+                    dataIn = reinterpret_cast<CS*>(dataIn2);
+                    CS checksum_read = *dataIn++;
+                    if (XORdiff<CS>::checksumsDiffer(checksum_read, checksum_computed)) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                }
+                auto final = funcFinal(value, numValues);
+                *dataOut++ = final;
+                *dataOut++ = final; // the "checksum"
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, DATA dataIn) -> larger_t {return sum + dataIn;}, [] (larger_t sum, const size_t numValues) -> larger_t {return sum;});
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                impl<DATA>([] () {return std::numeric_limits<DATA>::max();}, [] (DATA minimum, DATA dataIn) {return dataIn < minimum ? dataIn : minimum;},
+                        [] (DATA minimum, const size_t numValues) {return minimum;});
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                impl<DATA>([] {return std::numeric_limits<DATA>::min();}, [] (DATA maximum, DATA dataIn) {return dataIn < maximum ? dataIn : maximum;},
+                        [] (DATA maximum, const size_t numValues) {return maximum;});
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, DATA dataIn) -> larger_t {return sum + dataIn;},
+                        [] (larger_t sum, const size_t numValues) -> larger_t {return sum / numValues;});
+            }
+        };
+
+        void RunAggregateChecked(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(Aggregator(*this, config), config.mode);
+            }
         }
 
         void RunDecode(
