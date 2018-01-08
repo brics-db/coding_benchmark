@@ -80,11 +80,11 @@ namespace coding_benchmark {
         }
 
         struct ArithmetorChecked {
-            AN_avx2_16x16_16x32_s_divmod & test;
+            AN_avx2_16x16_16x32_divmod & test;
             const ArithmeticConfiguration & config;
             const size_t iteration;
             ArithmetorChecked(
-                    AN_avx2_16x16_16x32_s_divmod & test,
+                    AN_avx2_16x16_16x32_divmod & test,
                     const ArithmeticConfiguration & config,
                     const size_t iteration)
                     : test(test),

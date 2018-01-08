@@ -136,10 +136,24 @@ namespace coding_benchmark {
                         return _mm256_min_epu8(a, b);
                     }
 
+                    static T min(
+                            __m256i a) {
+                        auto x1 = mm<__m128i, T>::min(_mm256_extractf128_si256(a, 0));
+                        auto x2 = mm<__m128i, T>::min(_mm256_extractf128_si256(a, 1));
+                        return x1 < x2 ? x1 : x2;
+                    }
+
                     static inline __m256i max(
                             __m256i a,
                             __m256i b) {
                         return _mm256_max_epu8(a, b);
+                    }
+
+                    static T max(
+                            __m256i a) {
+                        auto x1 = mm<__m128i, T>::max(_mm256_extractf128_si256(a, 0));
+                        auto x2 = mm<__m128i, T>::max(_mm256_extractf128_si256(a, 1));
+                        return x1 > x2 ? x1 : x2;
                     }
 
                     static inline T sum(
