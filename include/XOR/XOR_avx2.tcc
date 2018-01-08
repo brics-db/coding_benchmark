@@ -23,7 +23,9 @@
 #include <SIMD/AVX2.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/Functors.hpp>
+#include <Util/Helpers.hpp>
 #include <Util/ArithmeticSelector.hpp>
+#include <Util/AggregateSelector.hpp>
 
 namespace coding_benchmark {
 
@@ -61,6 +63,9 @@ namespace coding_benchmark {
     template<typename DATA, typename CS, size_t BLOCKSIZE>
     struct XOR_avx2 :
             public Test<DATA, CS> {
+
+        static const constexpr size_t NUM_VALUES_PER_VECTOR = 32 / sizeof(DATA); // sizeof(__m256i) / sizeof (DATA);
+        static const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
 
         using Test<DATA, CS>::Test;
 
@@ -294,8 +299,7 @@ namespace coding_benchmark {
                         _mm256_storeu_si256(data256Out++, mmTmp);
                     }
                     auto storedChecksum = reinterpret_cast<CS*>(data256In);
-                    if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<__m256i, CS>::computeFinalChecksum(oldChecksum))) // test checksum
-                            {
+                    if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<__m256i, CS>::computeFinalChecksum(oldChecksum))) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     data256In = reinterpret_cast<__m256i *>(storedChecksum + 1);
@@ -317,8 +321,7 @@ namespace coding_benchmark {
                         i += NUM_VALUES_PER_VECTOR;
                     } while (i <= (numValues - NUM_VALUES_PER_VECTOR));
                     auto storedChecksum = reinterpret_cast<CS*>(data256In);
-                    if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<__m256i, CS>::computeFinalChecksum(oldChecksum))) // test checksum
-                            {
+                    if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<__m256i, CS>::computeFinalChecksum(oldChecksum))) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     data256In = reinterpret_cast<__m256i *>(storedChecksum + 1);
@@ -339,8 +342,7 @@ namespace coding_benchmark {
                         newChecksum ^= tmp;
                         *dataOut++ = tmp;
                     }
-                    if (XORdiff<DATA>::checksumsDiffer(*dataIn, XOR<DATA, DATA>::computeFinalChecksum(oldChecksum))) // test checksum
-                            {
+                    if (XORdiff<DATA>::checksumsDiffer(*dataIn, XOR<DATA, DATA>::computeFinalChecksum(oldChecksum))) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                     *dataOut = XOR<DATA, DATA>::computeFinalChecksum(newChecksum);
@@ -369,6 +371,205 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
+            }
+        }
+
+        bool DoAggregate(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct Aggregator {
+            XOR_avx2 & test;
+            const AggregateConfiguration & config;
+            Aggregator(
+                    XOR_avx2 & test,
+                    const AggregateConfiguration & config)
+                    : test(test),
+                      config(config) {
+            }
+            template<typename Aggregate, typename InitializeVector, typename KernelVector, typename KernelScalar, typename VectorToScalar, typename Finalize>
+            void impl(
+                    InitializeVector && funcInitVector,
+                    KernelVector && funcKernelVector,
+                    VectorToScalar && funcVectorToScalar,
+                    KernelScalar && funcKernelScalar,
+                    Finalize && funcFinal) {
+                size_t numValues = test.template getNumValues();
+                size_t i = 0;
+                auto data256In = test.bufEncoded.template begin<__m256i >();
+                auto mmValue = funcInitVector(); // simd::mm<__m256i, DATA>::set1(config.operand);
+                while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
+                    for (size_t k = 0; k < BLOCKSIZE; ++k) {
+                        auto mmTmp = _mm256_lddqu_si256(data256In++);
+                        mmValue = funcKernelVector(mmValue, mmTmp);
+                    }
+                    data256In = reinterpret_cast<__m256i *>(reinterpret_cast<CS*>(data256In) + 1);
+                    i += NUM_VALUES_PER_BLOCK;
+                }
+                // checksum remaining values which do not fit in the block size
+                if (i <= (numValues - NUM_VALUES_PER_VECTOR)) {
+                    do {
+                        auto mmTmp = _mm256_lddqu_si256(data256In++);
+                        mmValue = funcKernelVector(mmValue, mmTmp);
+                        i += NUM_VALUES_PER_VECTOR;
+                    } while (i <= (numValues - NUM_VALUES_PER_VECTOR));
+                    data256In = reinterpret_cast<__m256i *>(reinterpret_cast<CS*>(data256In) + 1);
+                }
+                Aggregate value = funcVectorToScalar(mmValue);
+                // checksum remaining integers which do not fit in the SIMD register, so we do it on the actual data width denoted by template parameter IN
+                if (i < numValues) {
+                    auto dataIn = reinterpret_cast<DATA*>(data256In);
+                    for (; i < numValues; ++i) {
+                        const DATA tmp = *dataIn++;
+                        value = funcKernelScalar(value, tmp);
+                    }
+                }
+                auto dataOut = test.bufResult.template begin<Aggregate>();
+                Aggregate final = funcFinal(value, numValues);
+                *dataOut++ = final;
+                *dataOut++ = final; // "XOR checksum"
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                impl<DATA>([] {return simd::mm<__m256i, DATA>::set1(0);}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm_op<__m256i, DATA, add>::compute(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATA>::sum(mmValue);}, [](DATA value, DATA tmp) {return value + tmp;}, [](DATA value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                impl<DATA>([] {return simd::mm<__m256i, DATA>::set1(std::numeric_limits<DATA>::max());}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm<__m256i, DATA>::min(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATA>::min(mmValue);}, [](DATA value, DATA tmp) {return value < tmp ? value : tmp;},
+                        [](DATA value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                impl<DATA>([] {return simd::mm<__m256i, DATA>::set1(std::numeric_limits<DATA>::min());}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm<__m256i, DATA>::max(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATA>::max(mmValue);}, [](DATA value, DATA tmp) {return value > tmp ? value : tmp;},
+                        [](DATA value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                impl<DATA>([] {return simd::mm<__m256i, DATA>::set1(0);}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm_op<__m256i, DATA, add>::compute(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATA>::sum(mmValue);}, [](DATA value, DATA tmp) {return value + tmp;},
+                        [](DATA value, size_t numValues) {return value / numValues;});
+            }
+        };
+
+        void RunAggregate(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(Aggregator(*this, config), config.mode);
+            }
+        }
+
+        bool DoAggregateChecked(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct AggregatorChecked {
+            XOR_avx2 & test;
+            const AggregateConfiguration & config;
+            size_t iteration;
+            AggregatorChecked(
+                    XOR_avx2 & test,
+                    const AggregateConfiguration & config,
+                    size_t iteration)
+                    : test(test),
+                      config(config),
+                      iteration(iteration) {
+            }
+            template<typename Aggregate, typename InitializeVector, typename KernelVector, typename KernelScalar, typename VectorToScalar, typename Finalize>
+            void impl(
+                    InitializeVector && funcInitVector,
+                    KernelVector && funcKernelVector,
+                    VectorToScalar && funcVectorToScalar,
+                    KernelScalar && funcKernelScalar,
+                    Finalize && funcFinal) {
+                size_t numValues = test.template getNumValues();
+                size_t i = 0;
+                auto data256In = test.bufEncoded.template begin<__m256i >();
+                auto mmValue = funcInitVector(); // simd::mm<__m256i, DATA>::set1(config.operand);
+                while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
+                    __m256i checksum = _mm256_setzero_si256();
+                    for (size_t k = 0; k < BLOCKSIZE; ++k) {
+                        auto mmTmp = _mm256_lddqu_si256(data256In++);
+                        checksum = _mm256_xor_si256(checksum, mmTmp);
+                        mmValue = funcKernelVector(mmValue, mmTmp);
+                    }
+                    CS storedChecksum = *reinterpret_cast<CS*>(data256In);
+                    data256In = reinterpret_cast<__m256i *>(reinterpret_cast<CS*>(data256In) + 1);
+                    if (XORdiff<CS>::checksumsDiffer(storedChecksum, XOR<__m256i, CS>::computeFinalChecksum(checksum))) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    i += NUM_VALUES_PER_BLOCK;
+                }
+                // checksum remaining values which do not fit in the block size
+                if (i <= (numValues - NUM_VALUES_PER_VECTOR)) {
+                    __m256i checksum = _mm256_setzero_si256();
+                    do {
+                        auto mmTmp = _mm256_lddqu_si256(data256In++);
+                        checksum = _mm256_xor_si256(checksum, mmTmp);
+                        mmValue = funcKernelVector(mmValue, mmTmp);
+                        i += NUM_VALUES_PER_VECTOR;
+                    } while (i <= (numValues - NUM_VALUES_PER_VECTOR));
+                    CS storedChecksum = *reinterpret_cast<CS*>(data256In);
+                    data256In = reinterpret_cast<__m256i *>(reinterpret_cast<CS*>(data256In) + 1);
+                    if (XORdiff<CS>::checksumsDiffer(storedChecksum, XOR<__m256i, CS>::computeFinalChecksum(checksum))) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                }
+                Aggregate value = funcVectorToScalar(mmValue);
+                // checksum remaining integers which do not fit in the SIMD register, so we do it on the actual data width denoted by template parameter IN
+                if (i < numValues) {
+                    DATA checksum = 0;
+                    auto dataIn = reinterpret_cast<DATA*>(data256In);
+                    for (; i < numValues; ++i) {
+                        const DATA tmp = *dataIn++;
+                        checksum ^= tmp;
+                        value = funcKernelScalar(value, tmp);
+                    }
+                    DATA storedChecksum = *dataIn;
+                    if (XORdiff<DATA>::checksumsDiffer(storedChecksum, XOR<DATA, DATA>::computeFinalChecksum(checksum))) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                }
+                auto dataOut = test.bufResult.template begin<Aggregate>();
+                Aggregate final = funcFinal(value, numValues);
+                *dataOut++ = final;
+                *dataOut++ = final; // "XOR checksum"
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                impl<DATA>([] {return simd::mm<__m256i, DATA>::set1(0);}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm_op<__m256i, DATA, add>::compute(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATA>::sum(mmValue);}, [](DATA value, DATA tmp) {return value + tmp;}, [](DATA value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                impl<DATA>([] {return simd::mm<__m256i, DATA>::set1(std::numeric_limits<DATA>::max());}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm<__m256i, DATA>::min(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATA>::min(mmValue);}, [](DATA value, DATA tmp) {return value < tmp ? value : tmp;},
+                        [](DATA value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                impl<DATA>([] {return simd::mm<__m256i, DATA>::set1(std::numeric_limits<DATA>::min());}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm<__m256i, DATA>::max(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATA>::max(mmValue);}, [](DATA value, DATA tmp) {return value > tmp ? value : tmp;},
+                        [](DATA value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                impl<DATA>([] {return simd::mm<__m256i, DATA>::set1(0);}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm_op<__m256i, DATA, add>::compute(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATA>::sum(mmValue);}, [](DATA value, DATA tmp) {return value + tmp;},
+                        [](DATA value, size_t numValues) {return value / numValues;});
+            }
+        };
+
+        void RunAggregateChecked(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(AggregatorChecked(*this, config, iteration), config.mode);
             }
         }
 
