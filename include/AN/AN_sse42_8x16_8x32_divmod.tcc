@@ -110,7 +110,7 @@ namespace coding_benchmark {
                                 && (_mm_extract_epi32(mmIn, 3) % test.A == 0)) {
                             _mm_storeu_si128(mmOut++, mm_op<__m128i, DATAENC, Functor>::compute(mmIn, mmOperandEnc));
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -121,7 +121,7 @@ namespace coding_benchmark {
                             && (_mm_extract_epi32(mmIn, 3) % test.A == 0)) {
                         _mm_storeu_si128(mmOut++, mm_op<__m128i, DATAENC, Functor>::compute(mmIn, mmOperandEnc));
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
                     }
                 }
                 if (mmData < mmDataEnd) {
@@ -163,6 +163,104 @@ namespace coding_benchmark {
             }
         }
 
+        bool DoAggregateChecked(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct AggregatorChecked {
+            typedef typename Larger<DATAENC>::larger_t larger_t;
+            AN_sse42_8x16_8x32_divmod & test;
+            const AggregateConfiguration & config;
+            size_t iteration;
+            AggregatorChecked(
+                    AN_sse42_8x16_8x32_divmod & test,
+                    const AggregateConfiguration & config,
+                    size_t iteration)
+                    : test(test),
+                      config(config),
+                      iteration(iteration) {
+            }
+            template<typename Aggregate, typename InitializeVector, typename KernelVector, typename KernelScalar, typename VectorToScalar, typename Finalize>
+            void impl(
+                    InitializeVector && funcInitVector,
+                    KernelVector && funcKernelVector,
+                    VectorToScalar && funcVectorToScalar,
+                    KernelScalar && funcKernelScalar,
+                    Finalize && funcFinal) {
+                const size_t numValues = test.template getNumValues();
+                auto *mmData = test.bufEncoded.template begin<__m128i >();
+                auto * const mmDataEnd = test.bufEncoded.template end<__m128i >();
+                auto mmValue = funcInitVector();
+                while (mmData <= (mmDataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        auto mmIn = _mm_lddqu_si128(mmData++);
+                        if ((_mm_extract_epi32(mmIn, 0) % test.A == 0) && (_mm_extract_epi32(mmIn, 1) % test.A == 0) && (_mm_extract_epi32(mmIn, 2) % test.A == 0)
+                                && (_mm_extract_epi32(mmIn, 3) % test.A == 0)) {
+                            mmValue = funcKernelVector(mmValue, mmIn);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                        }
+                    }
+                }
+                while (mmData <= (mmDataEnd - 1)) {
+                    auto mmIn = _mm_lddqu_si128(mmData++);
+                    if ((_mm_extract_epi32(mmIn, 0) % test.A == 0) && (_mm_extract_epi32(mmIn, 1) % test.A == 0) && (_mm_extract_epi32(mmIn, 2) % test.A == 0)
+                            && (_mm_extract_epi32(mmIn, 3) % test.A == 0)) {
+                        mmValue = funcKernelVector(mmValue, mmIn);
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                    }
+                }
+                Aggregate value = funcVectorToScalar(mmValue);
+                if (mmData < mmDataEnd) {
+                    auto data = reinterpret_cast<DATAENC*>(mmData);
+                    auto const dataEnd = reinterpret_cast<DATAENC*>(mmDataEnd);
+                    while (data < dataEnd) {
+                        if ((*data % test.A) == 0) {
+                            value = funcKernelScalar(value, *data++);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, data - test.bufEncoded.template begin<DATAENC>(), iteration);
+                        }
+                    }
+                }
+                auto dataOut = test.bufResult.template begin<Aggregate>();
+                *dataOut = funcFinal(value, numValues);
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                impl<DATAENC>([] {return simd::mm<__m128i, DATAENC>::set1(0);}, [](__m128i mmValue, __m128i mmTmp) {return simd::mm_op<__m128i, DATAENC, add>::compute(mmValue, mmTmp);},
+                        [](__m128i mmValue) {return simd::mm<__m128i, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;},
+                        [](DATAENC value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                impl<DATAENC>([] {return simd::mm<__m128i, DATAENC>::set1(std::numeric_limits<DATAENC>::max());},
+                        [](__m128i mmValue, __m128i mmTmp) {return simd::mm<__m128i, DATAENC>::min(mmValue, mmTmp);}, [](__m128i mmValue) {return simd::mm<__m128i, DATAENC>::min(mmValue);},
+                        [](DATAENC value, DATAENC tmp) {return value < tmp ? value : tmp;}, [](DATAENC value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                impl<DATAENC>([] {return simd::mm<__m128i, DATAENC>::set1(std::numeric_limits<DATAENC>::min());},
+                        [](__m128i mmValue, __m128i mmTmp) {return simd::mm<__m128i, DATAENC>::max(mmValue, mmTmp);}, [](__m128i mmValue) {return simd::mm<__m128i, DATAENC>::max(mmValue);},
+                        [](DATAENC value, DATAENC tmp) {return value > tmp ? value : tmp;}, [](DATAENC value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                impl<DATAENC>([] {return simd::mm<__m128i, DATAENC>::set1(0);}, [](__m128i mmValue, __m128i mmTmp) {return simd::mm_op<__m128i, DATAENC, add>::compute(mmValue, mmTmp);},
+                        [](__m128i mmValue) {return simd::mm<__m128i, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;},
+                        [this](DATAENC value, size_t numValues) {return (value / (numValues * test.A)) * test.A;});
+            }
+        };
+
+        void RunAggregateChecked(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(AggregatorChecked(*this, config, iteration), config.mode);
+            }
+        }
+
         bool DoDecode() override {
             return true;
         }
@@ -174,7 +272,7 @@ namespace coding_benchmark {
                 size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<__m128i >();
                 auto dataOut = this->bufResult.template begin<int64_t>();
-                auto mm_A = _mm_set1_pd(static_cast<double>(this->A_INV));
+                auto mm_A = _mm_set1_pd(static_cast<double>(this->A));
                 auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0B0A0908, 0x03020100);
                 for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
@@ -204,10 +302,74 @@ namespace coding_benchmark {
                     *dataOut++ = _mm_extract_epi64(tmp, 0);
                 }
                 if (i < numValues) {
-                    auto out16 = reinterpret_cast<DATARAW*>(dataOut);
-                    auto in32 = reinterpret_cast<DATAENC*>(dataIn);
-                    for (; i < numValues; ++i, ++in32, ++out16) {
-                        *out16 = *in32 * this->A_INV;
+                    auto out = reinterpret_cast<DATARAW*>(dataOut);
+                    auto in = reinterpret_cast<DATAENC*>(dataIn);
+                    for (; i < numValues; ++i) {
+                        *out++ = static_cast<DATARAW>(*in++ / this->A);
+                    }
+                }
+            }
+        }
+
+        bool DoDecodeChecked() override {
+            return true;
+        }
+
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+                size_t i = 0;
+                auto dataIn = this->bufEncoded.template begin<__m128i >();
+                auto dataOut = this->bufResult.template begin<int64_t>();
+                auto mm_A = _mm_set1_pd(static_cast<double>(this->A));
+                auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0B0A0908, 0x03020100);
+                for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) { // let the compiler unroll the loop
+                    for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                        auto tmp = _mm_lddqu_si128(dataIn++);
+                        if ((_mm_extract_epi32(tmp, 0) % this->A == 0) && (_mm_extract_epi32(tmp, 1) % this->A == 0) && (_mm_extract_epi32(tmp, 2) % this->A == 0)
+                                && (_mm_extract_epi32(tmp, 3) % this->A == 0)) {
+                            auto tmp1 = _mm_cvtepi32_pd(tmp);
+                            auto tmp2 = _mm_cvtepi32_pd(_mm_srli_si128(tmp, 8));
+                            tmp1 = _mm_div_pd(tmp1, mm_A);
+                            tmp2 = _mm_div_pd(tmp2, mm_A);
+                            auto tmp3 = _mm_cvtpd_epi32(tmp1);
+                            auto tmp4 = _mm_cvtpd_epi32(tmp2);
+                            tmp = _mm_unpacklo_epi16(tmp3, tmp4);
+                            tmp = _mm_shuffle_epi8(tmp, mmShuffle);
+                            *dataOut++ = _mm_extract_epi64(tmp, 0);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(dataIn - 1) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                        }
+                    }
+                }
+                // remaining numbers
+                for (; i <= (numValues - VALUES_PER_SIMDREG); i += VALUES_PER_SIMDREG) {
+                    auto tmp = _mm_lddqu_si128(dataIn++);
+                    if ((_mm_extract_epi32(tmp, 0) % this->A == 0) && (_mm_extract_epi32(tmp, 1) % this->A == 0) && (_mm_extract_epi32(tmp, 2) % this->A == 0)
+                            && (_mm_extract_epi32(tmp, 3) % this->A == 0)) {
+                        auto tmp1 = _mm_cvtepi32_pd(tmp);
+                        auto tmp2 = _mm_cvtepi32_pd(_mm_srli_si128(tmp, 8));
+                        tmp1 = _mm_div_pd(tmp1, mm_A);
+                        tmp2 = _mm_div_pd(tmp2, mm_A);
+                        auto tmp3 = _mm_cvtpd_epi32(tmp1);
+                        auto tmp4 = _mm_cvtpd_epi32(tmp2);
+                        tmp = _mm_unpacklo_epi16(tmp3, tmp4);
+                        tmp = _mm_shuffle_epi8(tmp, mmShuffle);
+                        *dataOut++ = _mm_extract_epi64(tmp, 0);
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(dataIn - 1) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                    }
+                }
+                if (i < numValues) {
+                    auto out = reinterpret_cast<DATARAW*>(dataOut);
+                    auto in = reinterpret_cast<DATAENC*>(dataIn);
+                    for (; i < numValues; ++i) {
+                        if ((*in % this->A) == 0) {
+                            *out++ = static_cast<DATARAW>(*in++ / this->A);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, in - this->bufEncoded.template begin<DATAENC>(), iteration);
+                        }
                     }
                 }
             }

@@ -68,8 +68,8 @@ namespace coding_benchmark {
     struct XOR_sse42 :
             public Test<DATA, CS> {
 
-        static const constexpr size_t NUM_VALUES_PER_VECTOR = 16 / sizeof(DATA); // sizeof(__m128i) / sizeof (DATA);
-        static const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
+        static const constexpr size_t NUM_VALUES_PER_SIMDREG = 16 / sizeof(DATA); // sizeof(__m128i) / sizeof (DATA);
+        static const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_SIMDREG * BLOCKSIZE;
 
         using Test<DATA, CS>::Test;
 
@@ -129,8 +129,8 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                const size_t NUM_VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATA);
-                const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
+                const size_t NUM_VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (DATA);
+                const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_SIMDREG * BLOCKSIZE;
                 size_t numValues = this->getNumValues();
                 size_t i = 0;
                 auto data128 = this->bufEncoded.template begin<__m128i >();
@@ -148,12 +148,12 @@ namespace coding_benchmark {
                     i += NUM_VALUES_PER_BLOCK;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - NUM_VALUES_PER_VECTOR)) {
+                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
                     __m128i checksum = _mm_setzero_si128();
                     do {
                         checksum = _mm_xor_si128(checksum, _mm_lddqu_si128(data128++));
-                        i += NUM_VALUES_PER_VECTOR;
-                    } while (i <= (numValues - NUM_VALUES_PER_VECTOR));
+                        i += NUM_VALUES_PER_SIMDREG;
+                    } while (i <= (numValues - NUM_VALUES_PER_SIMDREG));
                     auto pChksum = reinterpret_cast<CS*>(data128);
                     if (XORdiff<CS>::checksumsDiffer(*pChksum, XOR<__m128i, CS>::computeFinalChecksum(checksum))) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -192,8 +192,8 @@ namespace coding_benchmark {
             template<template<typename = void> class func>
             void impl() {
                 func<> functor;
-                const constexpr size_t NUM_VALUES_PER_VECTOR = sizeof(__m128i) /sizeof (DATA);
-                const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
+                const constexpr size_t NUM_VALUES_PER_SIMDREG = sizeof(__m128i) /sizeof (DATA);
+                const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_SIMDREG * BLOCKSIZE;
                 size_t numValues = test.template getNumValues();
                 size_t i = 0;
                 auto data128In = test.bufEncoded.template begin<__m128i >();
@@ -213,14 +213,14 @@ namespace coding_benchmark {
                     i += NUM_VALUES_PER_BLOCK;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - NUM_VALUES_PER_VECTOR)) {
+                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
                     __m128i checksum = _mm_setzero_si128();
                     do {
                         auto mmTmp = simd::mm_op<__m128i, DATA, func>::compute(_mm_lddqu_si128(data128In++), mmOperand);
                         checksum = _mm_xor_si128(checksum, mmTmp);
                         _mm_storeu_si128(data128Out++, mmTmp);
-                        i += NUM_VALUES_PER_VECTOR;
-                    } while (i <= (numValues - NUM_VALUES_PER_VECTOR));
+                        i += NUM_VALUES_PER_SIMDREG;
+                    } while (i <= (numValues - NUM_VALUES_PER_SIMDREG));
                     auto pChkOut = reinterpret_cast<CS*>(data128Out);
                     *pChkOut++ = XOR<__m128i, CS>::computeFinalChecksum(checksum);
                     data128Out = reinterpret_cast<__m128i *>(pChkOut);
@@ -285,8 +285,8 @@ namespace coding_benchmark {
             template<template<typename = void> class func>
             void impl() {
                 func<> functor;
-                const constexpr size_t NUM_VALUES_PER_VECTOR = sizeof(__m128i) /sizeof (DATA);
-                const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_VECTOR * BLOCKSIZE;
+                const constexpr size_t NUM_VALUES_PER_SIMDREG = sizeof(__m128i) /sizeof (DATA);
+                const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_SIMDREG * BLOCKSIZE;
                 size_t numValues = test.template getNumValues();
                 size_t i = 0;
                 auto data128In = test.bufEncoded.template begin<__m128i >();
@@ -313,7 +313,7 @@ namespace coding_benchmark {
                     i += NUM_VALUES_PER_BLOCK;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - NUM_VALUES_PER_VECTOR)) {
+                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
                     __m128i oldChecksum = _mm_setzero_si128();
                     __m128i newChecksum = _mm_setzero_si128();
                     do {
@@ -322,8 +322,8 @@ namespace coding_benchmark {
                         mmTmp = simd::mm_op<__m128i, DATA, func>::compute(mmTmp, mmOperand);
                         newChecksum = _mm_xor_si128(newChecksum, mmTmp);
                         _mm_storeu_si128(data128Out++, mmTmp);
-                        i += NUM_VALUES_PER_VECTOR;
-                    } while (i <= (numValues - NUM_VALUES_PER_VECTOR));
+                        i += NUM_VALUES_PER_SIMDREG;
+                    } while (i <= (numValues - NUM_VALUES_PER_SIMDREG));
                     auto storedChecksum = reinterpret_cast<CS*>(data128In);
                     if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<__m128i, CS>::computeFinalChecksum(oldChecksum))) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -413,12 +413,12 @@ namespace coding_benchmark {
                     i += NUM_VALUES_PER_BLOCK;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - NUM_VALUES_PER_VECTOR)) {
+                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
                     do {
                         auto mmTmp = _mm_lddqu_si128(data128In++);
                         mmValue = funcKernelVector(mmValue, mmTmp);
-                        i += NUM_VALUES_PER_VECTOR;
-                    } while (i <= (numValues - NUM_VALUES_PER_VECTOR));
+                        i += NUM_VALUES_PER_SIMDREG;
+                    } while (i <= (numValues - NUM_VALUES_PER_SIMDREG));
                     data128In = reinterpret_cast<__m128i *>(reinterpret_cast<CS*>(data128In) + 1);
                 }
                 Aggregate value = funcVectorToScalar(mmValue);
@@ -511,14 +511,14 @@ namespace coding_benchmark {
                     i += NUM_VALUES_PER_BLOCK;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - NUM_VALUES_PER_VECTOR)) {
+                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
                     __m128i checksum = _mm_setzero_si128();
                     do {
                         auto mmTmp = _mm_lddqu_si128(data128In++);
                         checksum = _mm_xor_si128(checksum, mmTmp);
                         mmValue = funcKernelVector(mmValue, mmTmp);
-                        i += NUM_VALUES_PER_VECTOR;
-                    } while (i <= (numValues - NUM_VALUES_PER_VECTOR));
+                        i += NUM_VALUES_PER_SIMDREG;
+                    } while (i <= (numValues - NUM_VALUES_PER_SIMDREG));
                     CS storedChecksum = *reinterpret_cast<CS*>(data128In);
                     data128In = reinterpret_cast<__m128i *>(reinterpret_cast<CS*>(data128In) + 1);
                     if (XORdiff<CS>::checksumsDiffer(storedChecksum, XOR<__m128i, CS>::computeFinalChecksum(checksum))) {
@@ -586,13 +586,11 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                const size_t VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (DATA);
-                const size_t VALUES_PER_BLOCK = BLOCKSIZE * VALUES_PER_SIMDREG;
                 size_t numValues = this->getNumValues();
                 size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<CS>();
                 auto dataOut = this->bufResult.template begin<__m128i >();
-                for (; i <= (numValues - VALUES_PER_BLOCK); i += VALUES_PER_BLOCK, dataIn++) {
+                for (; i <= (numValues - NUM_VALUES_PER_BLOCK); i += NUM_VALUES_PER_BLOCK, dataIn++) {
                     auto dataIn2 = reinterpret_cast<__m128i *>(dataIn);
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
                         _mm_storeu_si128(dataOut++, _mm_lddqu_si128(dataIn2++));
@@ -600,9 +598,9 @@ namespace coding_benchmark {
                     dataIn = reinterpret_cast<CS*>(dataIn2);
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - VALUES_PER_SIMDREG)) {
+                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
                     auto dataIn2 = reinterpret_cast<__m128i *>(dataIn);
-                    for (; i <= (numValues - VALUES_PER_SIMDREG); i += VALUES_PER_SIMDREG) {
+                    for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
                         _mm_storeu_si128(dataOut++, _mm_lddqu_si128(dataIn2++));
                     }
                     dataIn = reinterpret_cast<CS*>(dataIn2);
@@ -614,6 +612,65 @@ namespace coding_benchmark {
                     auto dataOut2 = reinterpret_cast<DATA*>(dataOut);
                     for (; i < numValues; ++i) {
                         *dataOut2++ = *dataIn2++;
+                    }
+                }
+            }
+        }
+
+        bool DoDecodeChecked() override {
+            return true;
+        }
+
+        virtual void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                size_t numValues = this->getNumValues();
+                size_t i = 0;
+                auto dataIn = this->bufEncoded.template begin<CS>();
+                auto dataOut = this->bufResult.template begin<__m128i >();
+                for (; i <= (numValues - NUM_VALUES_PER_BLOCK); i += NUM_VALUES_PER_BLOCK, dataIn++) {
+                    __m128i checksum = _mm_setzero_si128();
+                    auto dataIn2 = reinterpret_cast<__m128i *>(dataIn);
+                    for (size_t k = 0; k < BLOCKSIZE; ++k) {
+                        auto mmTmp = _mm_lddqu_si128(dataIn2++);
+                        checksum = _mm_xor_si128(checksum, mmTmp);
+                        _mm_storeu_si128(dataOut++, mmTmp);
+                    }
+                    CS storedChecksum = *reinterpret_cast<CS*>(dataIn2);
+                    if (XORdiff<CS>::checksumsDiffer(storedChecksum, XOR<__m128i, CS>::computeFinalChecksum(checksum))) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    dataIn = reinterpret_cast<CS*>(dataIn2);
+                }
+                // checksum remaining values which do not fit in the block size
+                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
+                    __m128i checksum = _mm_setzero_si128();
+                    auto dataIn2 = reinterpret_cast<__m128i *>(dataIn);
+                    for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
+                        auto mmTmp = _mm_lddqu_si128(dataIn2++);
+                        checksum = _mm_xor_si128(checksum, mmTmp);
+                        _mm_storeu_si128(dataOut++, mmTmp);
+                    }
+                    CS storedChecksum = *reinterpret_cast<CS*>(dataIn2);
+                    if (XORdiff<CS>::checksumsDiffer(storedChecksum, XOR<__m128i, CS>::computeFinalChecksum(checksum))) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                    }
+                    dataIn = reinterpret_cast<CS*>(dataIn2) + 1;
+                }
+                // checksum remaining integers which do not fit in the SIMD register
+                if (i < numValues) {
+                    DATA checksum = 0;
+                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
+                    auto dataOut2 = reinterpret_cast<DATA*>(dataOut);
+                    for (; i < numValues; ++i) {
+                        const DATA tmp = *dataIn2++;
+                        checksum ^= tmp;
+                        *dataOut2++ = tmp;
+                    }
+                    DATA storedChecksum = *dataIn2;
+                    if (XORdiff<DATA>::checksumsDiffer(storedChecksum, XOR<DATA, DATA>::computeFinalChecksum(checksum))) {
+                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
             }
