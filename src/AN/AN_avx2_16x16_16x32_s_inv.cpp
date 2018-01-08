@@ -25,27 +25,27 @@
 
 namespace coding_benchmark {
 
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<1>;
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<2>;
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<4>;
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<8>;
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<16>;
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<32>;
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<64>;
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<128>;
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<256>;
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<512>;
-    extern template
+    template
     struct AN_avx2_16x16_16x32_s_inv<1024>;
 
 }

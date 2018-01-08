@@ -23,27 +23,27 @@
 
 namespace coding_benchmark {
 
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<1> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<2> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<4> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<8> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<16> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<32> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<64> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<128> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<256> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<512> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_u_inv<1024> ;
 
 }

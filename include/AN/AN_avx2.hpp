@@ -21,10 +21,9 @@
 
 #pragma once
 
+#include <AN/AN_avx2_16x16_16x32_divmod.tcc>
 #include <AN/AN_avx2_16x16_16x32_u_inv.hpp>
-#include <AN/AN_avx2_16x16_16x32_u_divmod.hpp>
 #include <AN/AN_avx2_16x16_16x32_s_inv.hpp>
-#include <AN/AN_avx2_16x16_16x32_s_divmod.hpp>
 
 namespace coding_benchmark {
 

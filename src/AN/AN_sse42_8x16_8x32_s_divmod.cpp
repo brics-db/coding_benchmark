@@ -23,27 +23,27 @@
 
 namespace coding_benchmark {
 
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<1> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<2> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<4> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<8> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<16> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<32> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<64> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<128> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<256> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<512> ;
-    extern template
+    template
     struct AN_sse42_8x16_8x32_s_divmod<1024> ;
 
 }

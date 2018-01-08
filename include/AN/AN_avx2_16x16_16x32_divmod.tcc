@@ -18,13 +18,13 @@
 
 namespace coding_benchmark {
 
-    template<size_t UNROLL>
-    struct AN_avx2_16x16_16x32_u_divmod :
-            public AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL> {
+    template<size_t UNROLL, typename DATARAW, typename DATAENC>
+    struct AN_avx2_16x16_16x32_divmod :
+            public AN_avx2_16x16_16x32<DATARAW, DATAENC, UNROLL> {
 
-        using AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL>::AN_avx2_16x16_16x32;
+        using AN_avx2_16x16_16x32<DATARAW, DATAENC, UNROLL>::AN_avx2_16x16_16x32;
 
-        virtual ~AN_avx2_16x16_16x32_u_divmod() {
+        virtual ~AN_avx2_16x16_16x32_divmod() {
         }
 
         virtual bool DoCheck() override {
@@ -44,7 +44,7 @@ namespace coding_benchmark {
                         if ((_mm256_extract_epi32(mmIn, 0) % this->A != 0) || (_mm256_extract_epi32(mmIn, 1) % this->A != 0) || (_mm256_extract_epi32(mmIn, 2) % this->A != 0)
                                 || (_mm256_extract_epi32(mmIn, 3) % this->A != 0) || (_mm256_extract_epi32(mmIn, 4) % this->A != 0) || (_mm256_extract_epi32(mmIn, 5) % this->A != 0)
                                 || (_mm256_extract_epi32(mmIn, 6) % this->A != 0) || (_mm256_extract_epi32(mmIn, 7) % this->A != 0)) {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mm_Data) - this->bufEncoded.template begin<uint32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mm_Data) - this->bufEncoded.template begin<DATAENC>(), iteration);
                         }
                         ++mm_Data;
                     }
@@ -55,15 +55,15 @@ namespace coding_benchmark {
                     if ((_mm256_extract_epi32(mmIn, 0) % this->A != 0) || (_mm256_extract_epi32(mmIn, 1) % this->A != 0) || (_mm256_extract_epi32(mmIn, 2) % this->A != 0)
                             || (_mm256_extract_epi32(mmIn, 3) % this->A != 0) || (_mm256_extract_epi32(mmIn, 4) % this->A != 0) || (_mm256_extract_epi32(mmIn, 5) % this->A != 0)
                             || (_mm256_extract_epi32(mmIn, 6) % this->A != 0) || (_mm256_extract_epi32(mmIn, 7) % this->A != 0)) {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mm_Data) - this->bufEncoded.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mm_Data) - this->bufEncoded.template begin<DATAENC>(), iteration);
                     }
                     ++mm_Data;
                 }
                 if (mm_Data < mm_DataEnd) {
-                    auto dataEnd2 = reinterpret_cast<uint32_t*>(mm_DataEnd);
-                    for (auto data2 = reinterpret_cast<uint32_t*>(mm_Data); data2 < dataEnd2; ++data2) {
+                    auto dataEnd2 = reinterpret_cast<DATAENC*>(mm_DataEnd);
+                    for (auto data2 = reinterpret_cast<DATAENC*>(mm_Data); data2 < dataEnd2; ++data2) {
                         if ((*data2 % this->A) != 0) {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data2) - this->bufEncoded.template begin<uint32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(data2) - this->bufEncoded.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -76,11 +76,11 @@ namespace coding_benchmark {
         }
 
         struct ArithmetorChecked {
-            AN_avx2_16x16_16x32_u_divmod & test;
+            AN_avx2_16x16_16x32_s_divmod & test;
             const ArithmeticConfiguration & config;
             const size_t iteration;
             ArithmetorChecked(
-                    AN_avx2_16x16_16x32_u_divmod & test,
+                    AN_avx2_16x16_16x32_s_divmod & test,
                     const ArithmeticConfiguration & config,
                     const size_t iteration)
                     : test(test),
@@ -92,7 +92,7 @@ namespace coding_benchmark {
                 auto mmData = test.bufEncoded.template begin<__m256i >();
                 const auto mmDataEnd = test.bufEncoded.template end<__m256i >();
                 auto mmOut = test.bufResult.template begin<__m256i >();
-                int32_t operandEnc = config.operand * test.A;
+                DATAENC operandEnc = config.operand * test.A;
                 auto mmOperandEnc = _mm256_set1_epi32(operandEnc);
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     // let the compiler unroll the loop
@@ -101,7 +101,7 @@ namespace coding_benchmark {
                         if ((_mm256_extract_epi32(mmIn, 0) % test.A != 0) || (_mm256_extract_epi32(mmIn, 1) % test.A != 0) || (_mm256_extract_epi32(mmIn, 2) % test.A != 0)
                                 || (_mm256_extract_epi32(mmIn, 3) % test.A != 0) || (_mm256_extract_epi32(mmIn, 4) % test.A != 0) || (_mm256_extract_epi32(mmIn, 5) % test.A != 0)
                                 || (_mm256_extract_epi32(mmIn, 6) % test.A != 0) || (_mm256_extract_epi32(mmIn, 7) % test.A != 0)) {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
                         _mm256_storeu_si256(mmOut++, _mm256_add_epi32(mmIn, mmOperandEnc));
                     }
@@ -112,16 +112,16 @@ namespace coding_benchmark {
                     if ((_mm256_extract_epi32(mmIn, 0) % test.A != 0) || (_mm256_extract_epi32(mmIn, 1) % test.A != 0) || (_mm256_extract_epi32(mmIn, 2) % test.A != 0)
                             || (_mm256_extract_epi32(mmIn, 3) % test.A != 0) || (_mm256_extract_epi32(mmIn, 4) % test.A != 0) || (_mm256_extract_epi32(mmIn, 5) % test.A != 0)
                             || (_mm256_extract_epi32(mmIn, 6) % test.A != 0) || (_mm256_extract_epi32(mmIn, 7) % test.A != 0)) {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - test.bufEncoded.template begin<DATAENC>(), iteration);
                     }
                     _mm256_storeu_si256(mmOut++, _mm256_add_epi32(mmIn, mmOperandEnc));
                 }
                 if (mmData < mmDataEnd) {
-                    auto data32End = reinterpret_cast<uint32_t*>(mmDataEnd);
-                    auto out32 = reinterpret_cast<uint32_t*>(mmOut);
-                    for (auto data32 = reinterpret_cast<uint32_t*>(mmData); data32 < data32End; ++data32, ++out32) {
+                    auto data32End = reinterpret_cast<DATAENC*>(mmDataEnd);
+                    auto out32 = reinterpret_cast<DATAENC*>(mmOut);
+                    for (auto data32 = reinterpret_cast<DATAENC*>(mmData); data32 < data32End; ++data32, ++out32) {
                         if (*data32 % test.A != 0) {
-                            throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<uint32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
                         *out32 = *data32 + operandEnc;
                     }
@@ -154,14 +154,14 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                const ssize_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (uint32_t);
+                const ssize_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (DATAENC);
                 const ssize_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
-                ssize_t numValues = this->bufRaw.template end<int16_t>() - this->bufRaw.template begin<int16_t>();
+                ssize_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
                 ssize_t i = 0;
                 auto mm_In = this->bufEncoded.template begin<__m128i >();
                 auto mm_Out = this->bufResult.template begin<int64_t>();
                 auto mmAinv = _mm256_set1_pd(static_cast<double>(this->A_INV));
-                auto mmShuffle = _mm_set_epi32(static_cast<int32_t>(0xFFFFFFFF), static_cast<int32_t>(0xFFFFFFFF), static_cast<int32_t>(0x0D0C0908), static_cast<int32_t>(0x05040100));
+                auto mmShuffle = _mm_set_epi32(static_cast<DATAENC>(0xFFFFFFFF), static_cast<DATAENC>(0xFFFFFFFF), static_cast<DATAENC>(0x0D0C0908), static_cast<DATAENC>(0x05040100));
                 for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
@@ -187,13 +187,31 @@ namespace coding_benchmark {
                     *mm_Out++ = _mm_extract_epi64(tmp4, 0);
                 }
                 if (i < numValues) {
-                    auto out16 = reinterpret_cast<uint16_t*>(mm_Out);
-                    auto in32 = reinterpret_cast<uint32_t*>(mm_In);
+                    auto out16 = reinterpret_cast<DATARAW*>(mm_Out);
+                    auto in32 = reinterpret_cast<DATAENC*>(mm_In);
                     for (; i < numValues; ++i, ++in32, ++out16) {
                         *out16 = *in32 * this->A_INV;
                     }
                 }
             }
+        }
+    };
+
+    template<size_t UNROLL>
+    struct AN_avx2_16x16_16x32_s_divmod :
+            public AN_avx2_16x16_16x32_divmod<UNROLL, int16_t, int32_t> {
+        using AN_avx2_16x16_16x32_divmod<UNROLL, int16_t, int32_t>::AN_avx2_16x16_16x32_divmod;
+
+        virtual ~AN_avx2_16x16_16x32_s_divmod() {
+        }
+    };
+
+    template<size_t UNROLL>
+    struct AN_avx2_16x16_16x32_u_divmod :
+            public AN_avx2_16x16_16x32_divmod<UNROLL, uint16_t, uint32_t> {
+        using AN_avx2_16x16_16x32_divmod<UNROLL, uint16_t, uint32_t>::AN_avx2_16x16_16x32_divmod;
+
+        virtual ~AN_avx2_16x16_16x32_u_divmod() {
         }
     };
 

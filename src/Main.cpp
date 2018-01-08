@@ -44,15 +44,9 @@
 #endif
 
 #include <AN/AN_scalar.hpp>
-#include <AN/AN_sse42_8x16_8x32_u_inv.hpp>
-#include <AN/AN_sse42_8x16_8x32_u_divmod.hpp>
-#include <AN/AN_sse42_8x16_8x32_s_inv.hpp>
-#include <AN/AN_sse42_8x16_8x32_s_divmod.hpp>
+#include <AN/AN_sse42.hpp>
 #ifdef __AVX2__
-#include <AN/AN_avx2_16x16_16x32_u_inv.hpp>
-#include <AN/AN_avx2_16x16_16x32_u_divmod.hpp>
-#include <AN/AN_avx2_16x16_16x32_s_inv.hpp>
-#include <AN/AN_avx2_16x16_16x32_s_divmod.hpp>
+#include <AN/AN_avx2.hpp>
 #endif
 
 #include <Hamming/Hamming_scalar.hpp>

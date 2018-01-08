@@ -21,10 +21,9 @@
 
 #pragma once
 
-#include <AN/AN_sse42_8x16_8x32_s_divmod.hpp>
-#include <AN/AN_sse42_8x16_8x32_u_divmod.hpp>
-#include <AN/AN_sse42_8x16_8x32_s_inv.hpp>
-#include <AN/AN_sse42_8x16_8x32_u_inv.hpp>
+#include <AN/AN_sse42_8x16_8x32_divmod.tcc>
+#include <AN/AN_sse42_8x16_8x32_s_inv.tcc>
+#include <AN/AN_sse42_8x16_8x32_u_inv.tcc>
 
 namespace coding_benchmark {
 
