@@ -21,7 +21,11 @@
 
 #pragma once
 
+#define HAMMING_SCALAR
+
 #include <Hamming/Hamming_scalar.tcc>
+
+#undef HAMMING_SCALAR
 
 namespace coding_benchmark {
 

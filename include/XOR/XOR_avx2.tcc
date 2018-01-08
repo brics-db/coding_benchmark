@@ -14,6 +14,10 @@
 
 #pragma once
 
+#ifndef XOR_AVX2
+#error "Clients must not include this file directly, but file <XOR/XOR_avx2.hpp>!"
+#endif
+
 #include <Util/Test.hpp>
 #include <XOR/XOR_base.hpp>
 #include <SIMD/AVX2.hpp>
@@ -27,36 +31,32 @@ namespace coding_benchmark {
     struct XOR<__m256i, __m256i> {
         static __m256i computeFinalChecksum(
                 __m256i & checksum);
-};
+    };
 
     template<>
     struct XOR<__m256i, uint32_t> {
-        static uint32_t
-        computeFinalChecksum(
+        static uint32_t computeFinalChecksum(
                 __m256i & checksum);
     };
 
     template<>
     struct XOR<__m256i, uint16_t> {
-        static uint16_t
-        computeFinalChecksum(
+        static uint16_t computeFinalChecksum(
                 __m256i & checksum);
     };
 
     template<>
     struct XOR<__m256i, uint8_t> {
-        static uint8_t
-        computeFinalChecksum(
+        static uint8_t computeFinalChecksum(
                 __m256i & checksum);
     };
 
     template<>
     struct XORdiff<__m256i> {
-    static bool
-    checksumsDiffer(
-            __m256i checksum1,
-            __m256i checksum2);
-};
+        static bool checksumsDiffer(
+                __m256i checksum1,
+                __m256i checksum2);
+    };
 
     template<typename DATA, typename CS, size_t BLOCKSIZE>
     struct XOR_avx2 :

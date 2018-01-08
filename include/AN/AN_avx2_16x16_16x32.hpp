@@ -21,6 +21,10 @@
 
 #pragma once
 
+#ifndef AN_AVX2
+#error "Clients must not include this file directly, but file <AN/AN_avx2.hpp>!"
+#endif
+
 #include <AN/ANTest.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <SIMD/AVX2.hpp>

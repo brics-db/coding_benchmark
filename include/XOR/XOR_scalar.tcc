@@ -14,6 +14,10 @@
 
 #pragma once
 
+#ifndef XOR_SCALAR
+#error "Clients must not include this file directly, but file <XOR/XOR_scalar.hpp>!"
+#endif
+
 #include <Util/Test.hpp>
 #include <XOR/XOR_base.hpp>
 #include <Util/Intrinsics.hpp>

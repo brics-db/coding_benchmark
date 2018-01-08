@@ -20,6 +20,10 @@
 
 #pragma once
 
+#ifndef HAMMING_SCALAR
+#error "Clients must not include this file directly, but file <Hamming/Hamming_scalar.hpp>!"
+#endif
+
 #include <Hamming/Hamming_base.hpp>
 #include <Util/Test.hpp>
 #include <Util/ErrorInfo.hpp>
@@ -52,7 +56,7 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 auto data = this->bufRaw.template begin<DATAIN>();
-                auto const dataEnd = this->bufRaw.template end<DATAIN>();
+                const auto dataEnd = this->bufRaw.template end<DATAIN>();
                 auto dataOut = this->bufEncoded.template begin<hamming_scalar_t>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
@@ -74,7 +78,7 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 auto data = this->bufEncoded.template begin<hamming_scalar_t>();
-                auto const dataEnd = this->bufEncoded.template end<hamming_scalar_t>();
+                const auto dataEnd = this->bufEncoded.template end<hamming_scalar_t>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data) {
                         if (data->isValid()) {
@@ -246,7 +250,7 @@ namespace coding_benchmark {
                     Finalizer && funcFinal) {
                 const size_t numValues = test.template getNumValues();
                 auto dataIn = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<Hout>();
                 Tout value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
@@ -318,7 +322,7 @@ namespace coding_benchmark {
                     Finalizer && funcFinal) {
                 const size_t numValues = test.template getNumValues();
                 auto dataIn = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<Hout>();
                 Tout value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {

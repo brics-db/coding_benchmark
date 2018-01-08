@@ -54,8 +54,6 @@ namespace coding_benchmark {
             using BASE::set_inc;
             using BASE::min;
             using BASE::max;
-            using BASE::add;
-            using BASE::mullo;
             using BASE::sum;
             using BASE::pack_right;
             using BASE::pack_right2;

@@ -21,6 +21,10 @@
 
 #pragma once
 
+#ifndef HAMMING_SIMD
+#error "Clients must not include this file directly, but file <Hamming/Hamming_simd.hpp>!"
+#endif
+
 #include <Util/Test.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/ArithmeticSelector.hpp>

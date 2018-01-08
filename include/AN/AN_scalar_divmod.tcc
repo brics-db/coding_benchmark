@@ -14,6 +14,10 @@
 
 #pragma once
 
+#ifndef AN_SCALAR
+#error "Clients must not include this file directly, but file <AN/AN_scalar.hpp>!"
+#endif
+
 #include <AN/AN_scalar.tcc>
 #include <Util/ArithmeticSelector.hpp>
 
@@ -38,7 +42,7 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
                 auto data = this->bufEncoded.template begin<DATAENC>();
-                auto const dataEnd = data + numValues;
+                const auto dataEnd = data + numValues;
                 while (data <= (dataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
@@ -82,7 +86,7 @@ namespace coding_benchmark {
                 func<> functor;
                 const size_t numValues = test.template getNumValues();
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<DATAENC>();
                 DATAENC operandEnc = config.operand * test.A;
                 while (dataIn <= (dataInEnd - UNROLL)) {
@@ -155,7 +159,7 @@ namespace coding_benchmark {
                     Finalizer && funcFinal) {
                 const size_t numValues = test.template getNumValues();
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<Tout>();
                 Tout value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
@@ -219,7 +223,7 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
                 auto dataIn = this->bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufResult.template begin<DATARAW>();
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
@@ -243,7 +247,7 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
                 auto dataIn = this->bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufResult.template begin<DATARAW>();
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     // let the compiler unroll the loop

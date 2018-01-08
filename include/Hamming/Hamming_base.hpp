@@ -21,6 +21,10 @@
 
 #pragma once
 
+#if not defined(HAMMING_SCALAR) and not defined(HAMMING_SIMD)
+#error "Clients must not include this file directly, but e.g. file <Hamming/Hamming_scalar.hpp> or <Hamming/Hamming_simd.hpp> or <Hamming/Hamming_compute.hpp>!"
+#endif
+
 #include <cstdint>
 #include <Util/Intrinsics.hpp>
 
@@ -64,35 +68,35 @@ namespace coding_benchmark {
 #ifdef __AVX2__
     template<>
     struct hamming_typehelper_t<uint16_t, __m256i> {
-    typedef __m128i code_t;
-};
+        typedef __m128i code_t;
+    };
 
     template<>
     struct hamming_typehelper_t<uint32_t, __m256i> {
-    typedef uint64_t code_t;
-};
+        typedef uint64_t code_t;
+    };
 
     template<>
     struct hamming_typehelper_t<uint64_t, __m256i> {
-    typedef uint32_t code_t;
-};
+        typedef uint32_t code_t;
+    };
 #endif
 
 #ifdef __AVX512F__
     template<>
     struct hamming_typehelper_t<uint16_t, __m512i> {
-    typedef __m128i code_t;
-};
+        typedef __m128i code_t;
+    };
 
     template<>
     struct hamming_typehelper_t<uint32_t, __m512i> {
-    typedef uint64_t code_t;
-};
+        typedef uint64_t code_t;
+    };
 
     template<>
     struct hamming_typehelper_t<uint64_t, __m512i> {
-    typedef uint32_t code_t;
-};
+        typedef uint32_t code_t;
+    };
 #endif
 
     template<typename data_t, typename granularity_t>

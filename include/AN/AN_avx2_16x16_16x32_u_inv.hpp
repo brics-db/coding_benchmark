@@ -14,6 +14,10 @@
 
 #pragma once
 
+#ifndef AN_AVX2
+#error "Clients must not include this file directly, but file <AN/AN_avx2.hpp>!"
+#endif
+
 #include <AN/AN_avx2_16x16_16x32.hpp>
 
 namespace coding_benchmark {

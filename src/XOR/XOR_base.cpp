@@ -19,7 +19,11 @@
  * Created on 15-08-2017 17:08
  */
 
+#define XOR_BASE
+
 #include <XOR/XOR_base.hpp>
+
+#undef XOR_BASE
 
 namespace coding_benchmark {
 

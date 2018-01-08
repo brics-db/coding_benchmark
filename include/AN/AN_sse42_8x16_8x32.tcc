@@ -21,6 +21,10 @@
 
 #pragma once
 
+#ifndef AN_SSE42
+#error "Clients must not include this file directly, but file <AN/AN_sse42.hpp>!"
+#endif
+
 #include <AN/ANTest.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <SIMD/SSE.hpp>

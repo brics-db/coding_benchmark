@@ -21,9 +21,13 @@
 
 #pragma once
 
+#define AN_SSE42
+
 #include <AN/AN_sse42_8x16_8x32_divmod.tcc>
 #include <AN/AN_sse42_8x16_8x32_s_inv.tcc>
 #include <AN/AN_sse42_8x16_8x32_u_inv.tcc>
+
+#undef AN_SSE42
 
 namespace coding_benchmark {
 

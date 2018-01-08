@@ -21,6 +21,10 @@
 
 #pragma once
 
+#ifndef AN_SCALAR
+#error "Clients must not include this file directly, but file <AN/AN_scalar.hpp>!"
+#endif
+
 #include <AN/AN_scalar.tcc>
 #include <Util/ArithmeticSelector.hpp>
 
@@ -53,9 +57,9 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
                 auto data = this->bufEncoded.template begin<DATAENC>();
-                auto const dataEnd = data + numValues;
-                constexpr const DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-                constexpr const DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
+                const auto dataEnd = data + numValues;
+                const constexpr DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+                const constexpr DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
                 while (data <= (dataEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
                         DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
@@ -104,10 +108,10 @@ namespace coding_benchmark {
                 func<> functor;
                 const size_t numValues = test.template getNumValues();
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<DATAENC>();
-                constexpr const DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-                constexpr const DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
+                const constexpr DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+                const constexpr DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
                 DATAENC operandEnc = config.operand * test.A;
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
@@ -184,10 +188,10 @@ namespace coding_benchmark {
                     Finalizer && funcFinal) {
                 const size_t numValues = test.template getNumValues();
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<Tout>();
-                constexpr const DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-                constexpr const DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
+                const constexpr DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+                const constexpr DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
                 Tout value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
@@ -252,10 +256,10 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
                 auto dataIn = this->bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufResult.template begin<DATAENC>();
-                constexpr const DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-                constexpr const DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
+                const constexpr DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+                const constexpr DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
                 const DATAENC reenc = this->A_INV * config.newA;
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
@@ -295,10 +299,10 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 const size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
                 auto dataIn = this->bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufResult.template begin<DATARAW>();
-                constexpr const DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
-                constexpr const DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
+                const constexpr DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
+                const constexpr DATAENC dMin = static_cast<DATAENC>(std::numeric_limits<DATARAW>::min());
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         DATAENC dec = static_cast<DATAENC>(*dataIn++ * this->A_INV);

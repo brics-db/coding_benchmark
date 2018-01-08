@@ -21,9 +21,13 @@
 
 #pragma once
 
+#define AN_AVX2
+
 #include <AN/AN_avx2_16x16_16x32_divmod.tcc>
 #include <AN/AN_avx2_16x16_16x32_u_inv.hpp>
 #include <AN/AN_avx2_16x16_16x32_s_inv.hpp>
+
+#undef AN_AVX2
 
 namespace coding_benchmark {
 

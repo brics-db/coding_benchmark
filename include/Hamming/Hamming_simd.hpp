@@ -21,7 +21,11 @@
 
 #pragma once
 
+#define HAMMING_SIMD
+
 #include <Hamming/Hamming_simd.tcc>
+
+#undef HAMMING_SIMD
 
 namespace coding_benchmark {
 
@@ -99,140 +103,128 @@ namespace coding_benchmark {
     template<size_t UNROLL>
     struct Hamming_avx2_16 :
             public Hamming_simd<uint16_t, __m256i, UNROLL> {
-
         using Hamming_simd<uint16_t, __m256i, UNROLL>::Hamming_simd;
-
         virtual ~Hamming_avx2_16() {
         }
-
     };
 
     template<size_t UNROLL>
     struct Hamming_avx2_32 :
             public Hamming_simd<uint32_t, __m256i, UNROLL> {
-
         using Hamming_simd<uint32_t, __m256i, UNROLL>::Hamming_simd;
-
         virtual ~Hamming_avx2_32() {
         }
-
     };
 
     extern template
-    struct Hamming_avx2_16<1> ;
+    struct Hamming_avx2_16<1>;
     extern template
-    struct Hamming_avx2_16<2> ;
+    struct Hamming_avx2_16<2>;
     extern template
-    struct Hamming_avx2_16<4> ;
+    struct Hamming_avx2_16<4>;
     extern template
-    struct Hamming_avx2_16<8> ;
+    struct Hamming_avx2_16<8>;
     extern template
-    struct Hamming_avx2_16<16> ;
+    struct Hamming_avx2_16<16>;
     extern template
-    struct Hamming_avx2_16<32> ;
+    struct Hamming_avx2_16<32>;
     extern template
-    struct Hamming_avx2_16<64> ;
+    struct Hamming_avx2_16<64>;
     extern template
-    struct Hamming_avx2_16<128> ;
+    struct Hamming_avx2_16<128>;
     extern template
-    struct Hamming_avx2_16<256> ;
+    struct Hamming_avx2_16<256>;
     extern template
-    struct Hamming_avx2_16<512> ;
+    struct Hamming_avx2_16<512>;
     extern template
-    struct Hamming_avx2_16<1024> ;
+    struct Hamming_avx2_16<1024>;
 
     extern template
-    struct Hamming_avx2_32<1> ;
+    struct Hamming_avx2_32<1>;
     extern template
-    struct Hamming_avx2_32<2> ;
+    struct Hamming_avx2_32<2>;
     extern template
-    struct Hamming_avx2_32<4> ;
+    struct Hamming_avx2_32<4>;
     extern template
-    struct Hamming_avx2_32<8> ;
+    struct Hamming_avx2_32<8>;
     extern template
-    struct Hamming_avx2_32<16> ;
+    struct Hamming_avx2_32<16>;
     extern template
-    struct Hamming_avx2_32<32> ;
+    struct Hamming_avx2_32<32>;
     extern template
-    struct Hamming_avx2_32<64> ;
+    struct Hamming_avx2_32<64>;
     extern template
-    struct Hamming_avx2_32<128> ;
+    struct Hamming_avx2_32<128>;
     extern template
-    struct Hamming_avx2_32<256> ;
+    struct Hamming_avx2_32<256>;
     extern template
-    struct Hamming_avx2_32<512> ;
+    struct Hamming_avx2_32<512>;
     extern template
-    struct Hamming_avx2_32<1024> ;
-#endif
+    struct Hamming_avx2_32<1024>;
+    #endif
 
 #ifdef __AVX512F__
     template<size_t UNROLL>
     struct Hamming_avx512_16 :
             public Hamming_simd<uint16_t, __m512i, UNROLL> {
-
         using Hamming_simd<uint16_t, __m512i, UNROLL>::Hamming_simd;
-
         virtual ~Hamming_avx512_16() {
         }
-
     };
 
     template<size_t UNROLL>
     struct Hamming_avx512_32 :
             public Hamming_simd<uint32_t, __m512i, UNROLL> {
-
         using Hamming_simd<uint32_t, __m512i, UNROLL>::Hamming_simd;
-
         virtual ~Hamming_avx512_32() {
         }
-
     };
 
     extern template
-    struct Hamming_avx512_16<1> ;
+    struct Hamming_avx512_16<1>;
     extern template
-    struct Hamming_avx512_16<2> ;
+    struct Hamming_avx512_16<2>;
     extern template
-    struct Hamming_avx512_16<4> ;
+    struct Hamming_avx512_16<4>;
     extern template
-    struct Hamming_avx512_16<8> ;
+    struct Hamming_avx512_16<8>;
     extern template
-    struct Hamming_avx512_16<16> ;
+    struct Hamming_avx512_16<16>;
     extern template
-    struct Hamming_avx512_16<32> ;
+    struct Hamming_avx512_16<32>;
     extern template
-    struct Hamming_avx512_16<64> ;
+    struct Hamming_avx512_16<64>;
     extern template
-    struct Hamming_avx512_16<128> ;
+    struct Hamming_avx512_16<128>;
     extern template
-    struct Hamming_avx512_16<256> ;
+    struct Hamming_avx512_16<256>;
     extern template
-    struct Hamming_avx512_16<512> ;
+    struct Hamming_avx512_16<512>;
     extern template
-    struct Hamming_avx512_16<1024> ;
+    struct Hamming_avx512_16<1024>;
 
     extern template
-    struct Hamming_avx512_32<1> ;
+    struct Hamming_avx512_32<1>;
     extern template
-    struct Hamming_avx512_32<2> ;
+    struct Hamming_avx512_32<2>;
     extern template
-    struct Hamming_avx512_32<4> ;
+    struct Hamming_avx512_32<4>;
     extern template
-    struct Hamming_avx512_32<8> ;
+    struct Hamming_avx512_32<8>;
     extern template
-    struct Hamming_avx512_32<16> ;
+    struct Hamming_avx512_32<16>;
     extern template
-    struct Hamming_avx512_32<32> ;
+    struct Hamming_avx512_32<32>;
     extern template
-    struct Hamming_avx512_32<64> ;
+    struct Hamming_avx512_32<64>;
     extern template
-    struct Hamming_avx512_32<128> ;
+    struct Hamming_avx512_32<128>;
     extern template
-    struct Hamming_avx512_32<256> ;
+    struct Hamming_avx512_32<256>;
     extern template
-    struct Hamming_avx512_32<512> ;
+    struct Hamming_avx512_32<512>;
     extern template
-    struct Hamming_avx512_32<1024> ;
+    struct Hamming_avx512_32<1024>;
 #endif
 
 }

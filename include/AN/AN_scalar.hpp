@@ -21,9 +21,13 @@
 
 #pragma once
 
+#define AN_SCALAR
+
 #include <AN/AN_scalar_s_inv.tcc>
 #include <AN/AN_scalar_u_inv.tcc>
 #include <AN/AN_scalar_divmod.tcc>
+
+#undef AN_SCALAR
 
 namespace coding_benchmark {
 

@@ -21,7 +21,11 @@
 
 #pragma once
 
+#define XOR_SCALAR
+
 #include <XOR/XOR_scalar.tcc>
+
+#undef XOR_SCALAR
 
 namespace coding_benchmark {
 

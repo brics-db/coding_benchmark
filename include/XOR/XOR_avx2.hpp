@@ -21,7 +21,11 @@
 
 #pragma once
 
+#define XOR_AVX2
+
 #include <XOR/XOR_avx2.tcc>
+
+#undef XOR_AVX2
 
 namespace coding_benchmark {
 

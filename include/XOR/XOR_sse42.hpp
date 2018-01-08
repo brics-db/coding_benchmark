@@ -21,7 +21,11 @@
 
 #pragma once
 
+#define XOR_SSE42
+
 #include <XOR/XOR_sse42.tcc>
+
+#undef XOR_SSE42
 
 namespace coding_benchmark {
 
