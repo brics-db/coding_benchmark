@@ -55,18 +55,20 @@ namespace coding_benchmark {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         auto mmInDec = _mm_mullo_epi32(_mm_lddqu_si128(mmData), mmAInv);
                         if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
+                            ++mmData;
+                        } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - this->bufEncoded.template begin<uint32_t>(), iteration);
                         }
-                        ++mmData;
                     }
                 }
                 // here follows the non-unrolled remainder
                 while (mmData <= (mmDataEnd - 1)) {
                     auto mmInDec = _mm_mullo_epi32(_mm_lddqu_si128(mmData), mmAInv);
                     if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
+                        ++mmData;
+                    } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - this->bufEncoded.template begin<uint32_t>(), iteration);
                     }
-                    ++mmData;
                 }
                 if (mmData < mmDataEnd) {
                     auto dataEnd2 = reinterpret_cast<uint32_t*>(mmDataEnd);

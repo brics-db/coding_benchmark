@@ -47,36 +47,41 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto mm_Data = this->bufEncoded.template begin<__m256i >();
-                auto mm_DataEnd = this->bufEncoded.template end<__m256i >();
+                auto mmData = this->bufEncoded.template begin<__m256i >();
+                auto mmDataEnd = this->bufEncoded.template end<__m256i >();
                 int32_t dMin = std::numeric_limits<int16_t>::min();
                 int32_t dMax = std::numeric_limits<int16_t>::max();
                 __m256i mmDMin = _mm256_set1_epi32(dMin); // we assume 16-bit input data
                 __m256i mmDMax = _mm256_set1_epi32(dMax); // we assume 16-bit input data
                 __m256i mmAinv = _mm256_set1_epi32(this->A_INV);
-                while (mm_Data <= (mm_DataEnd - UNROLL)) {
+                while (mmData <= (mmDataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(mm_Data), mmAinv);
-                        if (_mm256_movemask_epi8(_mm256_cmpgt_epi32(mmIn, mmDMax)) | _mm256_movemask_epi8(_mm256_cmpgt_epi32(mmDMin, mmIn))) {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mm_Data) - this->bufEncoded.template begin<int32_t>(), iteration);
+                        auto mmInDec = _mm256_mullo_epi32(_mm256_lddqu_si256(mmData), mmAinv);
+                        if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
+                            ++mmData;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - this->bufEncoded.template begin<int32_t>(), iteration);
                         }
-                        ++mm_Data;
                     }
                 }
                 // here follows the non-unrolled remainder
-                while (mm_Data <= (mm_DataEnd - 1)) {
-                    auto mmIn = _mm256_mullo_epi32(_mm256_lddqu_si256(mm_Data), mmAinv);
-                    if (_mm256_movemask_epi8(_mm256_cmpgt_epi32(mmIn, mmDMax)) | _mm256_movemask_epi8(_mm256_cmpgt_epi32(mmDMin, mmIn))) {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mm_Data) - this->bufEncoded.template begin<int32_t>(), iteration);
+                while (mmData <= (mmDataEnd - 1)) {
+                    auto mmInDec = _mm256_mullo_epi32(_mm256_lddqu_si256(mmData), mmAinv);
+                    if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
+                        ++mmData;
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - this->bufEncoded.template begin<int32_t>(), iteration);
                     }
-                    ++mm_Data;
                 }
-                if (mm_Data < mm_DataEnd) {
-                    auto dataEnd2 = reinterpret_cast<int32_t*>(mm_DataEnd);
-                    for (auto data2 = reinterpret_cast<int32_t*>(mm_Data); data2 < dataEnd2; ++data2) {
-                        auto data = *data2 * this->A_INV;
-                        if (data < dMin || data > dMax) {
+                if (mmData < mmDataEnd) {
+                    auto data2 = reinterpret_cast<int32_t*>(mmData);
+                    auto dataEnd2 = reinterpret_cast<int32_t*>(mmDataEnd);
+                    while (data2 < dataEnd2) {
+                        auto tmp = *data2 * this->A_INV;
+                        if ((tmp >= dMin) & (tmp <= dMax)) {
+                            ++data2;
+                        } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data2) - this->bufEncoded.template begin<int32_t>(), iteration);
                         }
                     }
@@ -118,8 +123,7 @@ namespace coding_benchmark {
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = _mm256_lddqu_si256(mmData++);
                         auto mmInDec = _mm256_mullo_epi32(mmIn, mmAinv);
-                        if ((simd::mm_op<__m256i, int32_t, std::less_equal>::cmp_mask(mmInDec, mmDMin) == simd::mm<__m256i, int32_t>::FULL_MASK)
-                                && (simd::mm_op<__m256i, int32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMax) == simd::mm<__m256i, int32_t>::FULL_MASK)) {
+                        if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
                             _mm256_storeu_si256(mmOut++, mm_op<__m256i, int32_t, Functor>::compute(mmIn, mmOperandEnc));
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
@@ -130,8 +134,7 @@ namespace coding_benchmark {
                 while (mmData <= (mmDataEnd - 1)) {
                     auto mmIn = _mm256_lddqu_si256(mmData++);
                     auto mmInDec = _mm256_mullo_epi32(mmIn, mmAinv);
-                    if ((simd::mm_op<__m256i, int32_t, std::less_equal>::cmp_mask(mmInDec, mmDMin) == simd::mm<__m256i, int32_t>::FULL_MASK)
-                            && (simd::mm_op<__m256i, int32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMax) == simd::mm<__m256i, int32_t>::FULL_MASK)) {
+                    if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
                         _mm256_storeu_si256(mmOut++, mm_op<__m256i, int32_t, Functor>::compute(mmIn, mmOperandEnc));
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
@@ -200,8 +203,7 @@ namespace coding_benchmark {
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = _mm256_lddqu_si256(mmData++);
                         auto mmInDec = _mm256_mullo_epi32(mmIn, mmAInv);
-                        if ((simd::mm_op<__m256i, int32_t, std::less_equal>::cmp_mask(mmInDec, mmDMin) == simd::mm<__m256i, int32_t>::FULL_MASK)
-                                && (simd::mm_op<__m256i, int32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMax) == simd::mm<__m256i, int32_t>::FULL_MASK)) {
+                        if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
                             _mm_storeu_si128(mmOut++, _mm256_extracti128_si256(_mm256_shuffle_epi8(mmInDec, mmShuffle), 0));
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - this->bufEncoded.template begin<int32_t>(), iteration);
@@ -212,8 +214,7 @@ namespace coding_benchmark {
                 for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
                     auto mmIn = _mm256_lddqu_si256(mmData++);
                     auto mmInDec = _mm256_mullo_epi32(mmIn, mmAInv);
-                    if ((simd::mm_op<__m256i, int32_t, std::less_equal>::cmp_mask(mmInDec, mmDMin) == simd::mm<__m256i, int32_t>::FULL_MASK)
-                            && (simd::mm_op<__m256i, int32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMax) == simd::mm<__m256i, int32_t>::FULL_MASK)) {
+                    if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
                         _mm_storeu_si128(mmOut++, _mm256_extracti128_si256(_mm256_shuffle_epi8(mmInDec, mmShuffle), 0));
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - this->bufEncoded.template begin<int32_t>(), iteration);

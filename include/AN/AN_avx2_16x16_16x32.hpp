@@ -26,8 +26,11 @@
 #endif
 
 #include <AN/ANTest.hpp>
-#include <Util/ArithmeticSelector.hpp>
 #include <SIMD/AVX2.hpp>
+#include <Util/Functors.hpp>
+#include <Util/Helpers.hpp>
+#include <Util/ArithmeticSelector.hpp>
+#include <Util/AggregateSelector.hpp>
 
 using namespace coding_benchmark::simd;
 
@@ -97,9 +100,8 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            template<template<typename = void> class func>
+            template<template<typename = void> class Functor>
             void impl() {
-                func<> functor;
                 auto *mmData = test.bufEncoded.template begin<__m256i >();
                 auto * const mmDataEnd = test.bufEncoded.template end<__m256i >();
                 auto *mmOut = test.bufResult.template begin<__m256i >();
@@ -108,14 +110,15 @@ namespace coding_benchmark {
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        _mm256_storeu_si256(mmOut++, mm_op<__m256i, DATAENC, func>::compute(_mm256_lddqu_si256(mmData++), mmOperandEnc));
+                        _mm256_storeu_si256(mmOut++, mm_op<__m256i, DATAENC, Functor>::compute(_mm256_lddqu_si256(mmData++), mmOperandEnc));
                     }
                 }
                 // remaining numbers
                 while (mmData <= (mmDataEnd - 1)) {
-                    _mm256_storeu_si256(mmOut++, mm_op<__m256i, DATAENC, func>::compute(_mm256_lddqu_si256(mmData++), mmOperandEnc));
+                    _mm256_storeu_si256(mmOut++, mm_op<__m256i, DATAENC, Functor>::compute(_mm256_lddqu_si256(mmData++), mmOperandEnc));
                 }
                 if (mmData < mmDataEnd) {
+                    Functor<> functor;
                     auto data32End = reinterpret_cast<DATAENC*>(mmDataEnd);
                     auto out32 = reinterpret_cast<DATAENC*>(mmOut);
                     for (auto data32 = reinterpret_cast<DATAENC*>(mmData); data32 < data32End; ++data32, ++out32)

@@ -22,11 +22,10 @@
 #pragma once
 
 #include <AN/ANTest.hpp>
-#include <Util/Euclidean.hpp>
 #include <Util/Functors.hpp>
+#include <Util/Helpers.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Util/AggregateSelector.hpp>
-#include <Util/Helpers.hpp>
 
 namespace coding_benchmark {
 

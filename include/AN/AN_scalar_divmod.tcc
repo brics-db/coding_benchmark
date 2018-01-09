@@ -19,7 +19,6 @@
 #endif
 
 #include <AN/AN_scalar.tcc>
-#include <Util/ArithmeticSelector.hpp>
 
 namespace coding_benchmark {
 

@@ -26,7 +26,6 @@
 #endif
 
 #include <AN/AN_scalar_inv.tcc>
-#include <Util/ArithmeticSelector.hpp>
 
 namespace coding_benchmark {
 

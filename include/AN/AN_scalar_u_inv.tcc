@@ -25,24 +25,17 @@
 #error "Clients must not include this file directly, but file <AN/AN_scalar.hpp>!"
 #endif
 
-#include <AN/AN_scalar.tcc>
-#include <Util/ArithmeticSelector.hpp>
+#include <AN/AN_scalar_inv.tcc>
 
 namespace coding_benchmark {
 
     template<typename DATARAW, typename DATAENC, size_t UNROLL>
     struct AN_scalar_u_inv :
-            public AN_scalar<DATARAW, DATAENC, UNROLL> {
+            public AN_scalar_inv<DATARAW, DATAENC, UNROLL> {
 
-        AN_scalar_u_inv(
-                const char* const name,
-                AlignedBlock & bufRaw,
-                AlignedBlock & bufEncoded,
-                AlignedBlock & bufResult,
-                DATAENC A,
-                DATAENC AInv)
-                : AN_scalar<DATARAW, DATAENC, UNROLL>(name, bufRaw, bufEncoded, bufResult, A, AInv) {
-        }
+        typedef AN_scalar_inv<DATARAW, DATAENC, UNROLL> BASE;
+
+        using BASE::AN_scalar_inv;
 
         virtual ~AN_scalar_u_inv() {
         }
