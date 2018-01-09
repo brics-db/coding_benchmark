@@ -26,10 +26,12 @@ namespace coding_benchmark {
     struct AN_sse42_8x16_8x32_divmod :
             public AN_sse42_8x16_8x32<DATARAW, DATAENC, UNROLL> {
 
-        static const constexpr size_t VALUES_PER_SIMDREG = 4; // sizeof(__m128i) / sizeof(DATAENC)
-        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
+        typedef AN_sse42_8x16_8x32<DATARAW, DATAENC, UNROLL> BASE;
 
-        using AN_sse42_8x16_8x32<DATARAW, DATAENC, UNROLL>::AN_sse42_8x16_8x32;
+        using BASE::NUM_VALUES_PER_SIMDREG;
+        using BASE::NUM_VALUES_PER_UNROLL;
+
+        using BASE::AN_sse42_8x16_8x32;
 
         virtual ~AN_sse42_8x16_8x32_divmod() {
         }
@@ -215,7 +217,7 @@ namespace coding_benchmark {
                 Aggregate value = funcVectorToScalar(mmValue);
                 if (mmData < mmDataEnd) {
                     auto data = reinterpret_cast<DATAENC*>(mmData);
-                    auto const dataEnd = reinterpret_cast<DATAENC*>(mmDataEnd);
+                    const auto dataEnd = reinterpret_cast<DATAENC*>(mmDataEnd);
                     while (data < dataEnd) {
                         if ((*data % test.A) == 0) {
                             value = funcKernelScalar(value, *data++);
@@ -274,7 +276,7 @@ namespace coding_benchmark {
                 auto dataOut = this->bufResult.template begin<int64_t>();
                 auto mm_A = _mm_set1_pd(static_cast<double>(this->A));
                 auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0B0A0908, 0x03020100);
-                for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) { // let the compiler unroll the loop
+                for (; i <= (numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto tmp = _mm_lddqu_si128(dataIn++);
                         auto tmp1 = _mm_cvtepi32_pd(tmp);
@@ -289,7 +291,7 @@ namespace coding_benchmark {
                     }
                 }
                 // remaining numbers
-                for (; i <= (numValues - VALUES_PER_SIMDREG); i += VALUES_PER_SIMDREG) {
+                for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
                     auto tmp = _mm_lddqu_si128(dataIn++);
                     auto tmp1 = _mm_cvtepi32_pd(tmp);
                     auto tmp2 = _mm_cvtepi32_pd(_mm_srli_si128(tmp, 8));
@@ -324,7 +326,7 @@ namespace coding_benchmark {
                 auto dataOut = this->bufResult.template begin<int64_t>();
                 auto mm_A = _mm_set1_pd(static_cast<double>(this->A));
                 auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0B0A0908, 0x03020100);
-                for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) { // let the compiler unroll the loop
+                for (; i <= (numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto tmp = _mm_lddqu_si128(dataIn++);
                         if ((_mm_extract_epi32(tmp, 0) % this->A == 0) && (_mm_extract_epi32(tmp, 1) % this->A == 0) && (_mm_extract_epi32(tmp, 2) % this->A == 0)
@@ -344,7 +346,7 @@ namespace coding_benchmark {
                     }
                 }
                 // remaining numbers
-                for (; i <= (numValues - VALUES_PER_SIMDREG); i += VALUES_PER_SIMDREG) {
+                for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
                     auto tmp = _mm_lddqu_si128(dataIn++);
                     if ((_mm_extract_epi32(tmp, 0) % this->A == 0) && (_mm_extract_epi32(tmp, 1) % this->A == 0) && (_mm_extract_epi32(tmp, 2) % this->A == 0)
                             && (_mm_extract_epi32(tmp, 3) % this->A == 0)) {

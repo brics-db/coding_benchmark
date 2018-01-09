@@ -33,10 +33,12 @@ namespace coding_benchmark {
     struct AN_sse42_8x16_8x32_inv :
             public AN_sse42_8x16_8x32<DATARAW, DATAENC, UNROLL> {
 
-        const size_t NUM_VALUES_PER_SIMDREG = 16 / sizeof(DATAENC); // sizeof(__m128i) / sizeof (DATAENC);
-        const size_t NUM_VALUES_PER_UNROLL = UNROLL * NUM_VALUES_PER_SIMDREG;
+        typedef AN_sse42_8x16_8x32<DATARAW, DATAENC, UNROLL> BASE;
 
-        using AN_sse42_8x16_8x32<DATARAW, DATAENC, UNROLL>::AN_sse42_8x16_8x32;
+        using BASE::NUM_VALUES_PER_SIMDREG;
+        using BASE::NUM_VALUES_PER_UNROLL;
+
+        using BASE::AN_sse42_8x16_8x32;
 
         virtual ~AN_sse42_8x16_8x32_inv() {
         }

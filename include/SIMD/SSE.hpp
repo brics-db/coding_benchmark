@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
+#include <type_traits>
 
 #include <Util/Intrinsics.hpp>
 #include <Util/Functors.hpp>
@@ -48,6 +49,7 @@ namespace coding_benchmark {
 
             using BASE::mask_t;
             using BASE::popcnt_t;
+            using BASE::FULL_MASK;
 
             using BASE::set;
             using BASE::set1;

@@ -75,6 +75,8 @@ namespace coding_benchmark {
                     typedef uint8_t mask_t;
                     typedef uint16_t popcnt_t;
 
+                    static const constexpr mask_t FULL_MASK = 0x3u;
+
                     static inline __m128i set1(
                             T value) {
                         return _mm_set1_epi64x(value);
@@ -397,6 +399,7 @@ namespace coding_benchmark {
                 typedef Private64::_mm128<int64_t> BASE;
                 using BASE::mask_t;
                 using BASE::popcnt_t;
+                using BASE::FULL_MASK;
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
@@ -522,6 +525,7 @@ namespace coding_benchmark {
                 typedef Private64::_mm128<uint64_t> BASE;
                 using BASE::mask_t;
                 using BASE::popcnt_t;
+                using BASE::FULL_MASK;
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;

@@ -135,6 +135,8 @@ namespace coding_benchmark {
                     typedef uint8_t mask_t;
                     typedef uint32_t popcnt_t;
 
+                    static const constexpr mask_t FULL_MASK = 0xFu;
+
                     static inline __m128i set1(
                             T value) {
                         return _mm_set1_epi32(value);
@@ -242,7 +244,7 @@ namespace coding_benchmark {
                     }
 
                 private:
-                    static const __m128i * const SHUFFLE_TABLE;
+            static const __m128i * const SHUFFLE_TABLE;
                 };
 
                 template<typename T, template<typename > class Op>
@@ -464,6 +466,7 @@ namespace coding_benchmark {
                 typedef Private32::_mm128<int32_t> BASE;
                 using BASE::mask_t;
                 using BASE::popcnt_t;
+                using BASE::FULL_MASK;
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
@@ -589,6 +592,7 @@ namespace coding_benchmark {
                 typedef Private32::_mm128<uint32_t> BASE;
                 using BASE::mask_t;
                 using BASE::popcnt_t;
+                using BASE::FULL_MASK;
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;

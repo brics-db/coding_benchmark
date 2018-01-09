@@ -26,10 +26,15 @@ namespace coding_benchmark {
     struct AN_sse42_8x16_8x32_s_inv :
             public AN_sse42_8x16_8x32_inv<int16_t, int32_t, UNROLL> {
 
-        using AN_sse42_8x16_8x32_inv<int16_t, int32_t, UNROLL>::NUM_VALUES_PER_UNROLL;
-        using AN_sse42_8x16_8x32_inv<int16_t, int32_t, UNROLL>::NUM_VALUES_PER_SIMDREG;
+        typedef AN_sse42_8x16_8x32_inv<int16_t, int32_t, UNROLL> BASE;
+        typedef simd::mm<__m128i, int32_t> mmEnc;
+        typedef simd::mm_op<__m128i, int32_t, std::less_equal> mmEncLE;
+        typedef simd::mm_op<__m128i, int32_t, std::greater_equal> mmEncGE;
 
-        using AN_sse42_8x16_8x32_inv<int16_t, int32_t, UNROLL>::AN_sse42_8x16_8x32_inv;
+        using BASE::NUM_VALUES_PER_UNROLL;
+        using BASE::NUM_VALUES_PER_SIMDREG;
+
+        using BASE::AN_sse42_8x16_8x32_inv;
 
         virtual ~AN_sse42_8x16_8x32_s_inv() {
         }
@@ -51,26 +56,31 @@ namespace coding_benchmark {
                 while (data <= (dataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mmAInv);
-                        if (_mm_movemask_epi8(_mm_cmplt_epi32(mmIn, mmDMin)) | _mm_movemask_epi8(_mm_cmpgt_epi32(mmIn, mmDMax))) {
+                        auto mmInDec = _mm_mullo_epi32(_mm_lddqu_si128(data), mmAInv);
+                        if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
+                            ++data;
+                        } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data) - this->bufEncoded.template begin<int32_t>(), iteration);
                         }
-                        ++data;
                     }
                 }
                 // here follows the non-unrolled remainder
                 while (data <= (dataEnd - 1)) {
-                    auto mmIn = _mm_mullo_epi32(_mm_lddqu_si128(data), mmAInv);
-                    if (_mm_movemask_epi8(_mm_cmplt_epi32(mmIn, mmDMin)) | _mm_movemask_epi8(_mm_cmpgt_epi32(mmIn, mmDMax))) {
+                    auto mmInDec = _mm_mullo_epi32(_mm_lddqu_si128(data), mmAInv);
+                    if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
+                        ++data;
+                    } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data) - this->bufEncoded.template begin<int32_t>(), iteration);
                     }
-                    ++data;
                 }
                 if (data < dataEnd) {
                     auto dataEnd2 = reinterpret_cast<int32_t*>(dataEnd);
-                    for (auto data2 = reinterpret_cast<int32_t*>(data); data2 < dataEnd2; ++data2) {
+                    auto data2 = reinterpret_cast<int32_t*>(data);
+                    while (data2 < dataEnd2) {
                         auto data = *data2 * this->A_INV;
-                        if (data < dMin || data > dMax) {
+                        if ((data >= dMin) && (data <= dMax)) {
+                            ++data2;
+                        } else {
                             throw ErrorInfo(__FILE__, __LINE__, data2 - this->bufEncoded.template begin<int32_t>(), iteration);
                         }
                     }
@@ -103,7 +113,7 @@ namespace coding_benchmark {
                 __m128i mmDMax = mm<__m128i, int32_t>::set1(dMax); // we assume 16-bit input data
                 __m128i mmAInv = mm<__m128i, int32_t>::set1(test.A_INV);
                 auto mmData = test.bufEncoded.template begin<__m128i >();
-                auto const mmDataEnd = test.bufEncoded.template end<__m128i >();
+                const auto mmDataEnd = test.bufEncoded.template end<__m128i >();
                 auto mmOut = test.bufResult.template begin<__m128i >();
                 int32_t operandEnc = config.operand * test.A;
                 auto mmOperandEnc = mm<__m128i, int32_t>::set1(operandEnc);
@@ -112,7 +122,7 @@ namespace coding_benchmark {
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = _mm_lddqu_si128(mmData);
                         auto mmInDec = mm_op<__m128i, int32_t, mul>::compute(mmIn, mmAInv);
-                        if (mm_op<__m128i, int32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMin) && mm_op<__m128i, int32_t, std::less_equal>::cmp_mask(mmInDec, mmDMax)) {
+                        if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
                             _mm_storeu_si128(mmOut++, mm_op<__m128i, int32_t, func>::compute(_mm_lddqu_si128(mmData++), mmOperandEnc));
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
@@ -123,7 +133,7 @@ namespace coding_benchmark {
                 while (mmData <= (mmDataEnd - 1)) {
                     auto mmIn = _mm_lddqu_si128(mmData);
                     auto mmInDec = mm_op<__m128i, int32_t, mul>::compute(mmIn, mmAInv);
-                    if (mm_op<__m128i, int32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMin) && mm_op<__m128i, int32_t, std::less_equal>::cmp_mask(mmInDec, mmDMax)) {
+                    if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
                         _mm_storeu_si128(mmOut++, mm_op<__m128i, int32_t, func>::compute(_mm_lddqu_si128(mmData++), mmOperandEnc));
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
@@ -208,7 +218,7 @@ namespace coding_benchmark {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         auto mmIn = _mm_lddqu_si128(mmData++);
                         auto mmInDec = mm_op<__m128i, int32_t, mul>::compute(mmIn, mmAInv);
-                        if (mm_op<__m128i, int32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMin) && mm_op<__m128i, int32_t, std::less_equal>::cmp_mask(mmInDec, mmDMax)) {
+                        if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
                             mmValue = funcKernelVector(mmValue, mmIn);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
@@ -218,7 +228,7 @@ namespace coding_benchmark {
                 while (mmData <= (mmDataEnd - 1)) {
                     auto mmIn = _mm_lddqu_si128(mmData++);
                     auto mmInDec = mm_op<__m128i, int32_t, mul>::compute(mmIn, mmAInv);
-                    if (mm_op<__m128i, int32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMin) && mm_op<__m128i, int32_t, std::less_equal>::cmp_mask(mmInDec, mmDMax)) {
+                    if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
                         mmValue = funcKernelVector(mmValue, mmIn);
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
@@ -227,7 +237,7 @@ namespace coding_benchmark {
                 Aggregate value = funcVectorToScalar(mmValue);
                 if (mmData < mmDataEnd) {
                     auto data = reinterpret_cast<int32_t*>(mmData);
-                    auto const dataEnd = reinterpret_cast<int32_t*>(mmDataEnd);
+                    const auto dataEnd = reinterpret_cast<int32_t*>(mmDataEnd);
                     while (data < dataEnd) {
                         auto tmp = *data * test.A_INV;
                         if ((tmp >= dMin) & (tmp <= dMax)) {
@@ -296,7 +306,7 @@ namespace coding_benchmark {
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = _mm_lddqu_si128(dataIn++);
                         auto mmInDec = mm_op<__m128i, int32_t, mul>::compute(mmIn, mmAInv);
-                        if (mm_op<__m128i, int32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMin) && mm_op<__m128i, int32_t, std::less_equal>::cmp_mask(mmInDec, mmDMax)) {
+                        if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
                             *dataOut++ = _mm_extract_epi64(_mm_shuffle_epi8(mmInDec, mmShuffle), 0);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(dataIn - 1) - this->bufEncoded.template begin<int32_t>(), iteration);
@@ -307,7 +317,7 @@ namespace coding_benchmark {
                 for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
                     auto mmIn = _mm_lddqu_si128(dataIn++);
                     auto mmInDec = mm_op<__m128i, int32_t, mul>::compute(mmIn, mmAInv);
-                    if (mm_op<__m128i, int32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMin) && mm_op<__m128i, int32_t, std::less_equal>::cmp_mask(mmInDec, mmDMax)) {
+                    if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
                         *dataOut++ = _mm_extract_epi64(_mm_shuffle_epi8(mmInDec, mmShuffle), 0);
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(dataIn - 1) - this->bufEncoded.template begin<int32_t>(), iteration);

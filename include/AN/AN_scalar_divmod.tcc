@@ -227,12 +227,12 @@ namespace coding_benchmark {
                 auto dataOut = this->bufResult.template begin<DATARAW>();
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        *dataOut++ = *dataIn++ / this->A;
+                        *dataOut++ = static_cast<DATARAW>(*dataIn++ / this->A);
                     }
                 }
                 // remaining numbers
                 while (dataIn < dataInEnd) {
-                    *dataOut++ = *dataIn++ / this->A;
+                    *dataOut++ = static_cast<DATARAW>(*dataIn++ / this->A);
                 }
             }
         }
@@ -253,7 +253,7 @@ namespace coding_benchmark {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         if ((*dataIn % this->A) == 0) {
-                            *dataOut++ = *dataIn++ / this->A;
+                            *dataOut++ = static_cast<DATARAW>(*dataIn++ / this->A);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration);
                         }
@@ -262,7 +262,7 @@ namespace coding_benchmark {
                 // remaining numbers
                 while (dataIn < dataInEnd) {
                     if ((*dataIn % this->A) == 0) {
-                        *dataOut++ = *dataIn++ / this->A;
+                        *dataOut++ = static_cast<DATARAW>(*dataIn++ / this->A);
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, dataIn - this->bufEncoded.template begin<DATAENC>(), iteration);
                     }

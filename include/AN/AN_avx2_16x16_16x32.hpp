@@ -38,6 +38,9 @@ namespace coding_benchmark {
             public ANTest<DATARAW, DATAENC, UNROLL>,
             public AVX2Test {
 
+        static const constexpr size_t NUM_VALUES_PER_SIMDREG = 32 / sizeof(DATAENC); // sizeof(__m256i) / sizeof(DATAENC)
+        static const constexpr size_t NUM_VALUES_PER_UNROLL = UNROLL * NUM_VALUES_PER_SIMDREG;
+
         using ANTest<DATARAW, DATAENC, UNROLL>::ANTest;
 
         virtual ~AN_avx2_16x16_16x32() {

@@ -75,6 +75,8 @@ namespace coding_benchmark {
                     typedef uint8_t mask_t;
                     typedef uint32_t popcnt_t;
 
+                    static const constexpr mask_t FULL_MASK = 0xFu;
+
                     static inline __m256i set1(
                             T value) {
                         return _mm256_set1_epi64x(value);
@@ -176,7 +178,7 @@ namespace coding_benchmark {
                             __m256i a) {
                         uint64_t mask = 0x0101010101010101;
                         auto shuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFF0F07, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFF0F07);
-                        auto popcount8 = mm256<uint8_t>::popcount2(a);
+                        auto popcount8 = mm256 < uint8_t > ::popcount2(a);
                         auto temp = _mm256_shuffle_epi8(
                                 _mm256_set_epi64x(static_cast<uint64_t>(_mm256_extract_epi64(popcount8, 3)) * mask, static_cast<uint64_t>(_mm256_extract_epi64(popcount8, 2)) * mask,
                                         static_cast<uint64_t>(_mm256_extract_epi64(popcount8, 1)) * mask, static_cast<uint64_t>(_mm256_extract_epi64(popcount8, 0)) * mask), shuffle);
@@ -420,6 +422,7 @@ namespace coding_benchmark {
                 typedef Private64::_mm256<int64_t> BASE;
                 using BASE::mask_t;
                 using BASE::popcnt_t;
+                using BASE::FULL_MASK;
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
@@ -543,6 +546,7 @@ namespace coding_benchmark {
                 typedef Private64::_mm256<uint64_t> BASE;
                 using BASE::mask_t;
                 using BASE::popcnt_t;
+                using BASE::FULL_MASK;
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;

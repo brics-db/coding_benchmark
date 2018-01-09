@@ -46,7 +46,7 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
                 auto dataIn = this->bufRaw.template begin<DATARAW>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = this->bufEncoded.template begin<DATAENC>();
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
@@ -79,7 +79,7 @@ namespace coding_benchmark {
                 func<> functor;
                 const size_t numValues = test.template getNumValues();
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<DATAENC>();
                 DATAENC operandEnc = config.operand * test.A;
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
@@ -139,7 +139,7 @@ namespace coding_benchmark {
                     Finalizer && funcFinal) {
                 const size_t numValues = test.template getNumValues();
                 auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
+                const auto dataInEnd = dataIn + numValues;
                 auto dataOut = test.bufResult.template begin<Tout>();
                 Tout value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
@@ -180,31 +180,6 @@ namespace coding_benchmark {
                 std::visit(Aggregator(*this, config), config.mode);
             }
         }
-
-        bool DoDecode() override {
-            return true;
-        }
-
-        void RunDecode(
-                const DecodeConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                const size_t numValues = this->getNumValues();
-                auto dataIn = this->bufEncoded.template begin<DATAENC>();
-                auto const dataInEnd = dataIn + numValues;
-                auto dataOut = this->bufResult.template begin<DATARAW>();
-                while (dataIn <= (dataInEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k) {
-                        *dataOut++ = static_cast<DATARAW>(*dataIn++ * this->A_INV);
-                    }
-                }
-                // remaining numbers
-                while (dataIn < dataInEnd) {
-                    *dataOut++ = static_cast<DATARAW>(*dataIn++ * this->A_INV);
-                }
-            }
-        }
-    }
-    ;
+    };
 
 }

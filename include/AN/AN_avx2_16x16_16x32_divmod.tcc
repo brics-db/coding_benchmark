@@ -26,7 +26,12 @@ namespace coding_benchmark {
     struct AN_avx2_16x16_16x32_divmod :
             public AN_avx2_16x16_16x32<DATARAW, DATAENC, UNROLL> {
 
-        using AN_avx2_16x16_16x32<DATARAW, DATAENC, UNROLL>::AN_avx2_16x16_16x32;
+        typedef AN_avx2_16x16_16x32<DATARAW, DATAENC, UNROLL> BASE;
+
+        using BASE::NUM_VALUES_PER_SIMDREG;
+        using BASE::NUM_VALUES_PER_UNROLL;
+
+        using BASE::AN_avx2_16x16_16x32;
 
         virtual ~AN_avx2_16x16_16x32_divmod() {
         }
@@ -45,28 +50,33 @@ namespace coding_benchmark {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
                         auto mmIn = _mm256_lddqu_si256(mm_Data);
-                        if ((_mm256_extract_epi32(mmIn, 0) % this->A != 0) || (_mm256_extract_epi32(mmIn, 1) % this->A != 0) || (_mm256_extract_epi32(mmIn, 2) % this->A != 0)
-                                || (_mm256_extract_epi32(mmIn, 3) % this->A != 0) || (_mm256_extract_epi32(mmIn, 4) % this->A != 0) || (_mm256_extract_epi32(mmIn, 5) % this->A != 0)
-                                || (_mm256_extract_epi32(mmIn, 6) % this->A != 0) || (_mm256_extract_epi32(mmIn, 7) % this->A != 0)) {
+                        if ((_mm256_extract_epi32(mmIn, 0) % this->A == 0) && (_mm256_extract_epi32(mmIn, 1) % this->A == 0) && (_mm256_extract_epi32(mmIn, 2) % this->A == 0)
+                                && (_mm256_extract_epi32(mmIn, 3) % this->A == 0) && (_mm256_extract_epi32(mmIn, 4) % this->A == 0) && (_mm256_extract_epi32(mmIn, 5) % this->A == 0)
+                                && (_mm256_extract_epi32(mmIn, 6) % this->A == 0) && (_mm256_extract_epi32(mmIn, 7) % this->A == 0)) {
+                            ++mm_Data;
+                        } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mm_Data) - this->bufEncoded.template begin<DATAENC>(), iteration);
                         }
-                        ++mm_Data;
                     }
                 }
                 // here follows the non-unrolled remainder
                 while (mm_Data <= (mm_DataEnd - 1)) {
                     auto mmIn = _mm256_lddqu_si256(mm_Data);
-                    if ((_mm256_extract_epi32(mmIn, 0) % this->A != 0) || (_mm256_extract_epi32(mmIn, 1) % this->A != 0) || (_mm256_extract_epi32(mmIn, 2) % this->A != 0)
-                            || (_mm256_extract_epi32(mmIn, 3) % this->A != 0) || (_mm256_extract_epi32(mmIn, 4) % this->A != 0) || (_mm256_extract_epi32(mmIn, 5) % this->A != 0)
-                            || (_mm256_extract_epi32(mmIn, 6) % this->A != 0) || (_mm256_extract_epi32(mmIn, 7) % this->A != 0)) {
+                    if ((_mm256_extract_epi32(mmIn, 0) % this->A == 0) && (_mm256_extract_epi32(mmIn, 1) % this->A == 0) && (_mm256_extract_epi32(mmIn, 2) % this->A == 0)
+                            && (_mm256_extract_epi32(mmIn, 3) % this->A == 0) && (_mm256_extract_epi32(mmIn, 4) % this->A == 0) && (_mm256_extract_epi32(mmIn, 5) % this->A == 0)
+                            && (_mm256_extract_epi32(mmIn, 6) % this->A == 0) && (_mm256_extract_epi32(mmIn, 7) % this->A == 0)) {
+                        ++mm_Data;
+                    } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mm_Data) - this->bufEncoded.template begin<DATAENC>(), iteration);
                     }
-                    ++mm_Data;
                 }
                 if (mm_Data < mm_DataEnd) {
                     auto dataEnd2 = reinterpret_cast<DATAENC*>(mm_DataEnd);
-                    for (auto data2 = reinterpret_cast<DATAENC*>(mm_Data); data2 < dataEnd2; ++data2) {
+                    auto data2 = reinterpret_cast<DATAENC*>(mm_Data);
+                    while (data2 < dataEnd2) {
                         if ((*data2 % this->A) != 0) {
+                            ++data2;
+                        } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(data2) - this->bufEncoded.template begin<DATAENC>(), iteration);
                         }
                     }
@@ -91,8 +101,8 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
+            template<template<typename T = void> class Functor>
+            void impl() {
                 auto mmData = test.bufEncoded.template begin<__m256i >();
                 const auto mmDataEnd = test.bufEncoded.template end<__m256i >();
                 auto mmOut = test.bufResult.template begin<__m256i >();
@@ -102,43 +112,55 @@ namespace coding_benchmark {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = _mm256_lddqu_si256(mmData++);
-                        if ((_mm256_extract_epi32(mmIn, 0) % test.A != 0) || (_mm256_extract_epi32(mmIn, 1) % test.A != 0) || (_mm256_extract_epi32(mmIn, 2) % test.A != 0)
-                                || (_mm256_extract_epi32(mmIn, 3) % test.A != 0) || (_mm256_extract_epi32(mmIn, 4) % test.A != 0) || (_mm256_extract_epi32(mmIn, 5) % test.A != 0)
-                                || (_mm256_extract_epi32(mmIn, 6) % test.A != 0) || (_mm256_extract_epi32(mmIn, 7) % test.A != 0)) {
+                        if ((_mm256_extract_epi32(mmIn, 0) % test.A == 0) && (_mm256_extract_epi32(mmIn, 1) % test.A == 0) && (_mm256_extract_epi32(mmIn, 2) % test.A == 0)
+                                && (_mm256_extract_epi32(mmIn, 3) % test.A == 0) && (_mm256_extract_epi32(mmIn, 4) % test.A == 0) && (_mm256_extract_epi32(mmIn, 5) % test.A == 0)
+                                && (_mm256_extract_epi32(mmIn, 6) % test.A == 0) && (_mm256_extract_epi32(mmIn, 7) % test.A == 0)) {
+                            _mm256_storeu_si256(mmOut++, mm_op<__m256i, DATAENC, Functor>::compute(mmIn, mmOperandEnc));
+                        } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
-                        _mm256_storeu_si256(mmOut++, _mm256_add_epi32(mmIn, mmOperandEnc));
                     }
                 }
                 // remaining numbers
                 while (mmData <= (mmDataEnd - 1)) {
                     auto mmIn = _mm256_lddqu_si256(mmData++);
-                    if ((_mm256_extract_epi32(mmIn, 0) % test.A != 0) || (_mm256_extract_epi32(mmIn, 1) % test.A != 0) || (_mm256_extract_epi32(mmIn, 2) % test.A != 0)
-                            || (_mm256_extract_epi32(mmIn, 3) % test.A != 0) || (_mm256_extract_epi32(mmIn, 4) % test.A != 0) || (_mm256_extract_epi32(mmIn, 5) % test.A != 0)
-                            || (_mm256_extract_epi32(mmIn, 6) % test.A != 0) || (_mm256_extract_epi32(mmIn, 7) % test.A != 0)) {
+                    if ((_mm256_extract_epi32(mmIn, 0) % test.A == 0) && (_mm256_extract_epi32(mmIn, 1) % test.A == 0) && (_mm256_extract_epi32(mmIn, 2) % test.A == 0)
+                            && (_mm256_extract_epi32(mmIn, 3) % test.A == 0) && (_mm256_extract_epi32(mmIn, 4) % test.A == 0) && (_mm256_extract_epi32(mmIn, 5) % test.A == 0)
+                            && (_mm256_extract_epi32(mmIn, 6) % test.A == 0) && (_mm256_extract_epi32(mmIn, 7) % test.A == 0)) {
+                        _mm256_storeu_si256(mmOut++, mm_op<__m256i, DATAENC, Functor>::compute(mmIn, mmOperandEnc));
+                    } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - test.bufEncoded.template begin<DATAENC>(), iteration);
                     }
-                    _mm256_storeu_si256(mmOut++, _mm256_add_epi32(mmIn, mmOperandEnc));
                 }
                 if (mmData < mmDataEnd) {
+                    Functor<> functor;
                     auto data32End = reinterpret_cast<DATAENC*>(mmDataEnd);
                     auto out32 = reinterpret_cast<DATAENC*>(mmOut);
-                    for (auto data32 = reinterpret_cast<DATAENC*>(mmData); data32 < data32End; ++data32, ++out32) {
-                        if (*data32 % test.A != 0) {
+                    auto data32 = reinterpret_cast<DATAENC*>(mmData);
+                    while (data32 < data32End) {
+                        if (*data32 % test.A == 0) {
+                            *out32++ = functor(*data32++, operandEnc);
+                        } else {
                             throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
-                        *out32 = *data32 + operandEnc;
                     }
                 }
+            }
+            void operator()(
+                    ArithmeticConfiguration::Add) {
+                impl<add>();
             }
             void operator()(
                     ArithmeticConfiguration::Sub) {
+                impl<sub>();
             }
             void operator()(
                     ArithmeticConfiguration::Mul) {
+                impl<mul>();
             }
             void operator()(
                     ArithmeticConfiguration::Div) {
+                impl<div>();
             }
         };
 
@@ -150,11 +172,11 @@ namespace coding_benchmark {
             }
         }
 
-        bool DoDecode() override {
+        bool DoDecodeChecked() override {
             return true;
         }
 
-        void RunDecode(
+        void RunDecodeChecked(
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
@@ -162,39 +184,57 @@ namespace coding_benchmark {
                 const ssize_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
                 ssize_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
                 ssize_t i = 0;
-                auto mm_In = this->bufEncoded.template begin<__m128i >();
-                auto mm_Out = this->bufResult.template begin<int64_t>();
-                auto mmAinv = _mm256_set1_pd(static_cast<double>(this->A_INV));
+                auto mmData = this->bufEncoded.template begin<__m256i >();
+                auto mmOut = this->bufResult.template begin<int64_t>();
+                auto mmA = _mm256_set1_pd(static_cast<double>(this->A));
                 auto mmShuffle = _mm_set_epi32(static_cast<DATAENC>(0xFFFFFFFF), static_cast<DATAENC>(0xFFFFFFFF), static_cast<DATAENC>(0x0D0C0908), static_cast<DATAENC>(0x05040100));
                 for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        auto tmp1 = _mm256_cvtepi32_pd(_mm_lddqu_si128(mm_In++));
-                        auto tmp2 = _mm256_cvtepi32_pd(_mm_lddqu_si128(mm_In++));
-                        tmp1 = _mm256_div_pd(tmp1, mmAinv);
-                        tmp2 = _mm256_div_pd(tmp2, mmAinv);
-                        auto tmp3 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp1), mmShuffle);
-                        auto tmp4 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp2), mmShuffle);
-                        *mm_Out++ = _mm_extract_epi64(tmp3, 0);
-                        *mm_Out++ = _mm_extract_epi64(tmp4, 0);
+                        auto mmIn = _mm256_lddqu_si256(mmData++);
+                        if ((_mm256_extract_epi32(mmIn, 0) % this->A == 0) && (_mm256_extract_epi32(mmIn, 1) % this->A == 0) && (_mm256_extract_epi32(mmIn, 2) % this->A == 0)
+                                && (_mm256_extract_epi32(mmIn, 3) % this->A == 0) && (_mm256_extract_epi32(mmIn, 4) % this->A == 0) && (_mm256_extract_epi32(mmIn, 5) % this->A == 0)
+                                && (_mm256_extract_epi32(mmIn, 6) % this->A == 0) && (_mm256_extract_epi32(mmIn, 7) % this->A == 0)) {
+                            auto tmp1 = _mm256_cvtepi32_pd(_mm256_extractf128_si256(mmIn, 0));
+                            auto tmp2 = _mm256_cvtepi32_pd(_mm256_extractf128_si256(mmIn, 1));
+                            tmp1 = _mm256_div_pd(tmp1, mmA);
+                            tmp2 = _mm256_div_pd(tmp2, mmA);
+                            auto tmp3 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp1), mmShuffle);
+                            auto tmp4 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp2), mmShuffle);
+                            *mmOut++ = _mm_extract_epi64(tmp3, 0);
+                            *mmOut++ = _mm_extract_epi64(tmp4, 0);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                        }
                     }
                 }
                 // remaining numbers
                 for (; i <= (numValues - VALUES_PER_SIMDREG); i += VALUES_PER_SIMDREG) {
-                    auto tmp1 = _mm256_cvtepi32_pd(_mm_lddqu_si128(mm_In++));
-                    auto tmp2 = _mm256_cvtepi32_pd(_mm_lddqu_si128(mm_In++));
-                    tmp1 = _mm256_div_pd(tmp1, mmAinv);
-                    tmp2 = _mm256_div_pd(tmp2, mmAinv);
-                    auto tmp3 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp1), mmShuffle);
-                    auto tmp4 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp2), mmShuffle);
-                    *mm_Out++ = _mm_extract_epi64(tmp3, 0);
-                    *mm_Out++ = _mm_extract_epi64(tmp4, 0);
+                    auto mmIn = _mm256_lddqu_si256(mmData++);
+                    if ((_mm256_extract_epi32(mmIn, 0) % this->A == 0) && (_mm256_extract_epi32(mmIn, 1) % this->A == 0) && (_mm256_extract_epi32(mmIn, 2) % this->A == 0)
+                            && (_mm256_extract_epi32(mmIn, 3) % this->A == 0) && (_mm256_extract_epi32(mmIn, 4) % this->A == 0) && (_mm256_extract_epi32(mmIn, 5) % this->A == 0)
+                            && (_mm256_extract_epi32(mmIn, 6) % this->A == 0) && (_mm256_extract_epi32(mmIn, 7) % this->A == 0)) {
+                        auto tmp1 = _mm256_cvtepi32_pd(_mm256_extractf128_si256(mmIn, 0));
+                        auto tmp2 = _mm256_cvtepi32_pd(_mm256_extractf128_si256(mmIn, 1));
+                        tmp1 = _mm256_div_pd(tmp1, mmA);
+                        tmp2 = _mm256_div_pd(tmp2, mmA);
+                        auto tmp3 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp1), mmShuffle);
+                        auto tmp4 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp2), mmShuffle);
+                        *mmOut++ = _mm_extract_epi64(tmp3, 0);
+                        *mmOut++ = _mm_extract_epi64(tmp4, 0);
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                    }
                 }
                 if (i < numValues) {
-                    auto out16 = reinterpret_cast<DATARAW*>(mm_Out);
-                    auto in32 = reinterpret_cast<DATAENC*>(mm_In);
+                    auto out16 = reinterpret_cast<DATARAW*>(mmOut);
+                    auto in32 = reinterpret_cast<DATAENC*>(mmData);
                     for (; i < numValues; ++i, ++in32, ++out16) {
-                        *out16 = *in32 * this->A_INV;
+                        if (*in32 % this->A == 0) {
+                            *out16 = *in32 / this->A;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, in32 - this->bufEncoded.template begin<DATAENC>(), iteration);
+                        }
                     }
                 }
             }

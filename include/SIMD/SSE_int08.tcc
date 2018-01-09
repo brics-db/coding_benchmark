@@ -195,6 +195,8 @@ namespace coding_benchmark {
                     typedef uint16_t mask_t;
                     typedef __m128i popcnt_t;
 
+                    static const constexpr mask_t FULL_MASK = 0xFFFFu;
+
                     static inline __m128i set1(
                             T value) {
                         return _mm_set1_epi8(value);
@@ -273,7 +275,7 @@ namespace coding_benchmark {
                     static inline __m128i pack_right(
                             __m128i a,
                             mask_t mask) {
-                        static const uint64_t ALL_ONES = 0xFFFFFFFFFFFFFFFFull;
+                static const uint64_t ALL_ONES = 0xFFFFFFFFFFFFFFFFull;
                         uint64_t shuffleMaskL = SHUFFLE_TABLE_L[static_cast<uint8_t>(mask)];
                         int clzb = __builtin_clzll(~shuffleMaskL); // number of unmatched bytes (if a value matches, the leading bits are zero and the inversion makes it ones, so only full bytes are counted)
                         uint64_t shuffleMaskH = SHUFFLE_TABLE_H[static_cast<uint8_t>(mask >> 8)];
@@ -329,8 +331,8 @@ namespace coding_benchmark {
                     }
 
                 private:
-                    static const uint64_t * const SHUFFLE_TABLE_L;
-                    static const uint64_t * const SHUFFLE_TABLE_H;
+            static const uint64_t * const SHUFFLE_TABLE_L;
+            static const uint64_t * const SHUFFLE_TABLE_H;
                 };
 
                 template<typename T, template<typename > class Op>
@@ -565,6 +567,7 @@ namespace coding_benchmark {
                 typedef Private08::_mm128<int8_t> BASE;
                 using BASE::mask_t;
                 using BASE::popcnt_t;
+                using BASE::FULL_MASK;
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
@@ -690,6 +693,7 @@ namespace coding_benchmark {
                 typedef Private08::_mm128<uint8_t> BASE;
                 using BASE::mask_t;
                 using BASE::popcnt_t;
+                using BASE::FULL_MASK;
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;

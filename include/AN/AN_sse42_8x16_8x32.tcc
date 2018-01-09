@@ -41,6 +41,9 @@ namespace coding_benchmark {
             public ANTest<DATARAW, DATAENC, UNROLL>,
             public SSE42Test {
 
+        static const constexpr size_t NUM_VALUES_PER_SIMDREG = 16 / sizeof(DATAENC); // sizeof(__m128i) / sizeof(DATAENC)
+        static const constexpr size_t NUM_VALUES_PER_UNROLL = UNROLL * NUM_VALUES_PER_SIMDREG;
+
         using ANTest<DATARAW, DATAENC, UNROLL>::ANTest;
 
         virtual ~AN_sse42_8x16_8x32() {
@@ -109,7 +112,7 @@ namespace coding_benchmark {
             void impl() {
                 func<> functor;
                 auto mmData = test.bufEncoded.template begin<__m128i >();
-                auto const mmDataEnd = test.bufEncoded.template end<__m128i >();
+                const auto mmDataEnd = test.bufEncoded.template end<__m128i >();
                 auto mmOut = test.bufResult.template begin<__m128i >();
                 DATAENC operandEnc = config.operand * test.A;
                 auto mmOperandEnc = mm<__m128i, DATAENC>::set1(operandEnc);
@@ -193,7 +196,7 @@ namespace coding_benchmark {
                 Aggregate value = funcVectorToScalar(mmValue);
                 if (mmData < mmDataEnd) {
                     auto dataIn = reinterpret_cast<DATAENC*>(mmData);
-                    auto const dataInEnd = reinterpret_cast<DATAENC*>(mmDataEnd);
+                    const auto dataInEnd = reinterpret_cast<DATAENC*>(mmDataEnd);
                     while (dataIn < dataInEnd) {
                         value = funcKernelScalar(value, *dataIn++);
                     }
