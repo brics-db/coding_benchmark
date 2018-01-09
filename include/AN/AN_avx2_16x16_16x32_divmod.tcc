@@ -44,35 +44,35 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto mm_Data = this->bufEncoded.template begin<__m256i >();
+                auto mmData = this->bufEncoded.template begin<__m256i >();
                 auto mm_DataEnd = this->bufEncoded.template end<__m256i >();
-                while (mm_Data <= (mm_DataEnd - UNROLL)) {
+                while (mmData <= (mm_DataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        auto mmIn = _mm256_lddqu_si256(mm_Data);
+                        auto mmIn = _mm256_lddqu_si256(mmData);
                         if ((_mm256_extract_epi32(mmIn, 0) % this->A == 0) && (_mm256_extract_epi32(mmIn, 1) % this->A == 0) && (_mm256_extract_epi32(mmIn, 2) % this->A == 0)
                                 && (_mm256_extract_epi32(mmIn, 3) % this->A == 0) && (_mm256_extract_epi32(mmIn, 4) % this->A == 0) && (_mm256_extract_epi32(mmIn, 5) % this->A == 0)
                                 && (_mm256_extract_epi32(mmIn, 6) % this->A == 0) && (_mm256_extract_epi32(mmIn, 7) % this->A == 0)) {
-                            ++mm_Data;
+                            ++mmData;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mm_Data) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - this->bufEncoded.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
                 // here follows the non-unrolled remainder
-                while (mm_Data <= (mm_DataEnd - 1)) {
-                    auto mmIn = _mm256_lddqu_si256(mm_Data);
+                while (mmData <= (mm_DataEnd - 1)) {
+                    auto mmIn = _mm256_lddqu_si256(mmData);
                     if ((_mm256_extract_epi32(mmIn, 0) % this->A == 0) && (_mm256_extract_epi32(mmIn, 1) % this->A == 0) && (_mm256_extract_epi32(mmIn, 2) % this->A == 0)
                             && (_mm256_extract_epi32(mmIn, 3) % this->A == 0) && (_mm256_extract_epi32(mmIn, 4) % this->A == 0) && (_mm256_extract_epi32(mmIn, 5) % this->A == 0)
                             && (_mm256_extract_epi32(mmIn, 6) % this->A == 0) && (_mm256_extract_epi32(mmIn, 7) % this->A == 0)) {
-                        ++mm_Data;
+                        ++mmData;
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mm_Data) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - this->bufEncoded.template begin<DATAENC>(), iteration);
                     }
                 }
-                if (mm_Data < mm_DataEnd) {
+                if (mmData < mm_DataEnd) {
                     auto dataEnd2 = reinterpret_cast<DATAENC*>(mm_DataEnd);
-                    auto data2 = reinterpret_cast<DATAENC*>(mm_Data);
+                    auto data2 = reinterpret_cast<DATAENC*>(mmData);
                     while (data2 < dataEnd2) {
                         if ((*data2 % this->A) == 0) {
                             ++data2;
@@ -117,7 +117,7 @@ namespace coding_benchmark {
                                 && (_mm256_extract_epi32(mmIn, 6) % test.A == 0) && (_mm256_extract_epi32(mmIn, 7) % test.A == 0)) {
                             _mm256_storeu_si256(mmOut++, mm_op<__m256i, DATAENC, Functor>::compute(mmIn, mmOperandEnc));
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -129,19 +129,19 @@ namespace coding_benchmark {
                             && (_mm256_extract_epi32(mmIn, 6) % test.A == 0) && (_mm256_extract_epi32(mmIn, 7) % test.A == 0)) {
                         _mm256_storeu_si256(mmOut++, mm_op<__m256i, DATAENC, Functor>::compute(mmIn, mmOperandEnc));
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
                     }
                 }
                 if (mmData < mmDataEnd) {
                     Functor<> functor;
-                    auto data32End = reinterpret_cast<DATAENC*>(mmDataEnd);
-                    auto out32 = reinterpret_cast<DATAENC*>(mmOut);
-                    auto data32 = reinterpret_cast<DATAENC*>(mmData);
-                    while (data32 < data32End) {
-                        if (*data32 % test.A == 0) {
-                            *out32++ = functor(*data32++, operandEnc);
+                    auto dataInEnd = reinterpret_cast<DATAENC*>(mmDataEnd);
+                    auto dataOut = reinterpret_cast<DATAENC*>(mmOut);
+                    auto dataIn = reinterpret_cast<DATAENC*>(mmData);
+                    while (dataIn < dataInEnd) {
+                        if (*dataIn % test.A == 0) {
+                            *dataOut++ = functor(*dataIn++, operandEnc);
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -169,6 +169,106 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
+            }
+        }
+
+        bool DoAggregateChecked(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct AggregatorChecked {
+            typedef typename Larger<DATAENC>::larger_t larger_t;
+            AN_avx2_16x16_16x32_divmod & test;
+            const AggregateConfiguration & config;
+            size_t iteration;
+            AggregatorChecked(
+                    AN_avx2_16x16_16x32_divmod & test,
+                    const AggregateConfiguration & config,
+                    size_t iteration)
+                    : test(test),
+                      config(config),
+                      iteration(iteration) {
+            }
+            template<typename Aggregate, typename InitializeVector, typename KernelVector, typename KernelScalar, typename VectorToScalar, typename Finalize>
+            void impl(
+                    InitializeVector && funcInitVector,
+                    KernelVector && funcKernelVector,
+                    VectorToScalar && funcVectorToScalar,
+                    KernelScalar && funcKernelScalar,
+                    Finalize && funcFinal) {
+                const size_t numValues = test.template getNumValues();
+                auto mmData = test.bufEncoded.template begin<__m256i >();
+                const auto mmDataEnd = test.bufEncoded.template end<__m256i >();
+                auto mmValue = funcInitVector();
+                while (mmData <= (mmDataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        auto mmIn = _mm256_lddqu_si256(mmData++);
+                        if ((_mm256_extract_epi32(mmIn, 0) % test.A == 0) && (_mm256_extract_epi32(mmIn, 1) % test.A == 0) && (_mm256_extract_epi32(mmIn, 2) % test.A == 0)
+                                && (_mm256_extract_epi32(mmIn, 3) % test.A == 0) && (_mm256_extract_epi32(mmIn, 4) % test.A == 0) && (_mm256_extract_epi32(mmIn, 5) % test.A == 0)
+                                && (_mm256_extract_epi32(mmIn, 6) % test.A == 0) && (_mm256_extract_epi32(mmIn, 7) % test.A == 0)) {
+                            mmValue = funcKernelVector(mmValue, mmIn);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                        }
+                    }
+                }
+                while (mmData <= (mmDataEnd - 1)) {
+                    auto mmIn = _mm256_lddqu_si256(mmData++);
+                    if ((_mm256_extract_epi32(mmIn, 0) % test.A == 0) && (_mm256_extract_epi32(mmIn, 1) % test.A == 0) && (_mm256_extract_epi32(mmIn, 2) % test.A == 0)
+                            && (_mm256_extract_epi32(mmIn, 3) % test.A == 0) && (_mm256_extract_epi32(mmIn, 4) % test.A == 0) && (_mm256_extract_epi32(mmIn, 5) % test.A == 0)
+                            && (_mm256_extract_epi32(mmIn, 6) % test.A == 0) && (_mm256_extract_epi32(mmIn, 7) % test.A == 0)) {
+                        mmValue = funcKernelVector(mmValue, mmIn);
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                    }
+                }
+                Aggregate value = funcVectorToScalar(mmValue);
+                if (mmData < mmDataEnd) {
+                    auto dataIn = reinterpret_cast<DATAENC*>(mmData);
+                    const auto dataInEnd = reinterpret_cast<DATAENC*>(mmDataEnd);
+                    while (dataIn < dataInEnd) {
+                        if (*dataIn % test.A == 0) {
+                            value = funcKernelScalar(value, *dataIn++);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<DATAENC>(), iteration);
+                        }
+                    }
+                }
+                auto dataOut = test.bufResult.template begin<Aggregate>();
+                *dataOut = funcFinal(value, numValues);
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                impl<DATAENC>([] {return simd::mm<__m256i, DATAENC>::set1(0);}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm_op<__m256i, DATAENC, add>::compute(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;},
+                        [](DATAENC value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                impl<DATAENC>([] {return simd::mm<__m256i, DATAENC>::set1(std::numeric_limits<DATAENC>::max());},
+                        [](__m256i mmValue, __m256i mmTmp) {return simd::mm<__m256i, DATAENC>::min(mmValue, mmTmp);}, [](__m256i mmValue) {return simd::mm<__m256i, DATAENC>::min(mmValue);},
+                        [](DATAENC value, DATAENC tmp) {return value < tmp ? value : tmp;}, [](DATAENC value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                impl<DATAENC>([] {return simd::mm<__m256i, DATAENC>::set1(std::numeric_limits<DATAENC>::min());},
+                        [](__m256i mmValue, __m256i mmTmp) {return simd::mm<__m256i, DATAENC>::max(mmValue, mmTmp);}, [](__m256i mmValue) {return simd::mm<__m256i, DATAENC>::max(mmValue);},
+                        [](DATAENC value, DATAENC tmp) {return value > tmp ? value : tmp;}, [](DATAENC value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                impl<DATAENC>([] {return simd::mm<__m256i, DATAENC>::set1(0);}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm_op<__m256i, DATAENC, add>::compute(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;},
+                        [this](DATAENC value, size_t numValues) {return (value / (numValues * test.A)) * test.A;});
+            }
+        };
+
+        void RunAggregateChecked(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(AggregatorChecked(*this, config, iteration), config.mode);
             }
         }
 

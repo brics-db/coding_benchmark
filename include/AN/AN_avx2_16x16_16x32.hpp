@@ -150,6 +150,85 @@ namespace coding_benchmark {
                 std::visit(Arithmetor(*this, config), config.mode);
             }
         }
+
+        bool DoAggregate(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct Aggregator {
+            typedef typename Larger<DATAENC>::larger_t larger_t;
+            AN_avx2_16x16_16x32 & test;
+            const AggregateConfiguration & config;
+            Aggregator(
+                    AN_avx2_16x16_16x32 & test,
+                    const AggregateConfiguration & config)
+                    : test(test),
+                      config(config) {
+            }
+            template<typename Aggregate, typename InitializeVector, typename KernelVector, typename KernelScalar, typename VectorToScalar, typename Finalize>
+            void impl(
+                    InitializeVector && funcInitVector,
+                    KernelVector && funcKernelVector,
+                    VectorToScalar && funcVectorToScalar,
+                    KernelScalar && funcKernelScalar,
+                    Finalize && funcFinal) {
+                const size_t numValues = test.template getNumValues();
+                auto *mmData = test.bufEncoded.template begin<__m256i >();
+                auto * const mmDataEnd = test.bufEncoded.template end<__m256i >();
+                auto mmValue = funcInitVector();
+                while (mmData <= (mmDataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        mmValue = funcKernelVector(mmValue, *mmData++);
+                    }
+                }
+                while (mmData <= (mmDataEnd - 1)) {
+                    mmValue = funcKernelVector(mmValue, *mmData++);
+                }
+                Aggregate value = funcVectorToScalar(mmValue);
+                if (mmData < mmDataEnd) {
+                    auto dataIn = reinterpret_cast<DATAENC*>(mmData);
+                    const auto dataInEnd = reinterpret_cast<DATAENC*>(mmDataEnd);
+                    while (dataIn < dataInEnd) {
+                        value = funcKernelScalar(value, *dataIn++);
+                    }
+                }
+                auto dataOut = test.bufResult.template begin<Aggregate>();
+                *dataOut = funcFinal(value, numValues);
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                impl<DATAENC>([] {return simd::mm<__m256i, DATAENC>::set1(0);}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm_op<__m256i, DATAENC, add>::compute(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;},
+                        [](DATAENC value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                impl<DATAENC>([] {return simd::mm<__m256i, DATAENC>::set1(std::numeric_limits<DATAENC>::max());},
+                        [](__m256i mmValue, __m256i mmTmp) {return simd::mm<__m256i, DATAENC>::min(mmValue, mmTmp);}, [](__m256i mmValue) {return simd::mm<__m256i, DATAENC>::min(mmValue);},
+                        [](DATAENC value, DATAENC tmp) {return value < tmp ? value : tmp;}, [](DATAENC value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                impl<DATAENC>([] {return simd::mm<__m256i, DATAENC>::set1(std::numeric_limits<DATAENC>::min());},
+                        [](__m256i mmValue, __m256i mmTmp) {return simd::mm<__m256i, DATAENC>::max(mmValue, mmTmp);}, [](__m256i mmValue) {return simd::mm<__m256i, DATAENC>::max(mmValue);},
+                        [](DATAENC value, DATAENC tmp) {return value > tmp ? value : tmp;}, [](DATAENC value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                impl<DATAENC>([] {return simd::mm<__m256i, DATAENC>::set1(0);}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm_op<__m256i, DATAENC, add>::compute(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;},
+                        [this](DATAENC value, size_t numValues) {return (value / (numValues * test.A)) * test.A;});
+            }
+        };
+
+        void RunAggregate(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(Aggregator(*this, config), config.mode);
+            }
+        }
     };
 
 }

@@ -49,10 +49,10 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 auto mmData = this->bufEncoded.template begin<__m256i >();
                 auto mmDataEnd = this->bufEncoded.template end<__m256i >();
-                int32_t dMin = std::numeric_limits<int16_t>::min();
-                int32_t dMax = std::numeric_limits<int16_t>::max();
-                __m256i mmDMin = mm<__m256i, int32_t>::set1(dMin); // we assume 16-bit input data
-                __m256i mmDMax = mm<__m256i, int32_t>::set1(dMax); // we assume 16-bit input data
+                int32_t dMin = std::numeric_limits<int16_t>::min(); // we assume 16-bit input data
+                int32_t dMax = std::numeric_limits<int16_t>::max(); // we assume 16-bit input data
+                __m256i mmDMin = mm<__m256i, int32_t>::set1(dMin);
+                __m256i mmDMax = mm<__m256i, int32_t>::set1(dMax);
                 __m256i mmAInv = mm<__m256i, int32_t>::set1(this->A_INV);
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     // let the compiler unroll the loop
@@ -116,10 +116,10 @@ namespace coding_benchmark {
             }
             template<template<typename = void> class Functor>
             void impl() {
-                int32_t dMin = std::numeric_limits<int16_t>::min();
-                int32_t dMax = std::numeric_limits<int16_t>::max();
-                __m256i mmDMin = mm<__m256i, int32_t>::set1(dMin); // we assume 16-bit input data
-                __m256i mmDMax = mm<__m256i, int32_t>::set1(dMax); // we assume 16-bit input data
+                int32_t dMin = std::numeric_limits<int16_t>::min(); // we assume 16-bit input data
+                int32_t dMax = std::numeric_limits<int16_t>::max(); // we assume 16-bit input data
+                __m256i mmDMin = mm<__m256i, int32_t>::set1(dMin);
+                __m256i mmDMax = mm<__m256i, int32_t>::set1(dMax);
                 __m256i mmAInv = mm<__m256i, int32_t>::set1(test.A_INV);
                 auto mmData = test.bufEncoded.template begin<__m256i >();
                 const auto mmDataEnd = test.bufEncoded.template end<__m256i >();
@@ -150,14 +150,15 @@ namespace coding_benchmark {
                 }
                 if (mmData < mmDataEnd) {
                     Functor<> functor;
-                    auto data32End = reinterpret_cast<int32_t*>(mmDataEnd);
-                    auto out32 = reinterpret_cast<int32_t*>(mmOut);
-                    for (auto data32 = reinterpret_cast<int32_t*>(mmData); data32 < data32End; ++data32, ++out32) {
-                        auto tmp = *data32 * test.A_INV;
+                    auto dataIn = reinterpret_cast<int32_t*>(mmData);
+                    auto dataInEnd = reinterpret_cast<int32_t*>(mmDataEnd);
+                    auto dataOut = reinterpret_cast<int32_t*>(mmOut);
+                    while (dataIn < dataInEnd) {
+                        auto tmp = *dataIn * test.A_INV;
                         if ((tmp >= dMin) & (tmp <= dMax)) {
-                            *out32 = functor(*data32, operandEnc);
+                            *dataOut++ = functor(*dataIn++, operandEnc);
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<int32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<int32_t>(), iteration);
                         }
                     }
                 }
@@ -188,6 +189,110 @@ namespace coding_benchmark {
             }
         }
 
+        bool DoAggregateChecked(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        struct AggregatorChecked {
+            typedef typename Larger<int32_t>::larger_t larger_t;
+            AN_avx2_16x16_16x32_s_inv & test;
+            const AggregateConfiguration & config;
+            size_t iteration;
+            AggregatorChecked(
+                    AN_avx2_16x16_16x32_s_inv & test,
+                    const AggregateConfiguration & config,
+                    size_t iteration)
+                    : test(test),
+                      config(config),
+                      iteration(iteration) {
+            }
+            template<typename Aggregate, typename InitializeVector, typename KernelVector, typename KernelScalar, typename VectorToScalar, typename Finalize>
+            void impl(
+                    InitializeVector && funcInitVector,
+                    KernelVector && funcKernelVector,
+                    VectorToScalar && funcVectorToScalar,
+                    KernelScalar && funcKernelScalar,
+                    Finalize && funcFinal) {
+                int32_t dMin = std::numeric_limits<int16_t>::min(); // we assume 16-bit input data
+                int32_t dMax = std::numeric_limits<int16_t>::max(); // we assume 16-bit input data
+                __m256i mmDMin = mm<__m256i, int32_t>::set1(dMin);
+                __m256i mmDMax = mm<__m256i, int32_t>::set1(dMax);
+                __m256i mmAInv = mm<__m256i, int32_t>::set1(test.A_INV);
+                const size_t numValues = test.template getNumValues();
+                auto *mmData = test.bufEncoded.template begin<__m256i >();
+                auto * const mmDataEnd = test.bufEncoded.template end<__m256i >();
+                auto mmValue = funcInitVector();
+                while (mmData <= (mmDataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        auto mmIn = _mm256_lddqu_si256(mmData++);
+                        auto mmInDec = _mm256_mullo_epi32(mmIn, mmAInv);
+                        if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
+                            mmValue = funcKernelVector(mmValue, mmIn);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
+                        }
+                    }
+                }
+                while (mmData <= (mmDataEnd - 1)) {
+                    auto mmIn = _mm256_lddqu_si256(mmData++);
+                    auto mmInDec = _mm256_mullo_epi32(mmIn, mmAInv);
+                    if ((mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK) && (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK)) {
+                        mmValue = funcKernelVector(mmValue, mmIn);
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - test.bufEncoded.template begin<int32_t>(), iteration);
+                    }
+                }
+                Aggregate value = funcVectorToScalar(mmValue);
+                if (mmData < mmDataEnd) {
+                    auto dataIn = reinterpret_cast<int32_t*>(mmData);
+                    const auto dataInEnd = reinterpret_cast<int32_t*>(mmDataEnd);
+                    while (dataIn < dataInEnd) {
+                        auto tmp = *dataIn * test.A_INV;
+                        if ((tmp >= dMin) & (tmp <= dMax)) {
+                            value = funcKernelScalar(value, *dataIn++);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<int32_t>(), iteration);
+                        }
+                    }
+                }
+                auto dataOut = test.bufResult.template begin<Aggregate>();
+                *dataOut = funcFinal(value, numValues);
+            }
+            void operator()(
+                    AggregateConfiguration::Sum) {
+                impl<int32_t>([] {return simd::mm<__m256i, int32_t>::set1(0);}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm_op<__m256i, int32_t, add>::compute(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, int32_t>::sum(mmValue);}, [](int32_t value, int32_t tmp) {return value + tmp;},
+                        [](int32_t value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Min) {
+                impl<int32_t>([] {return simd::mm<__m256i, int32_t>::set1(std::numeric_limits<int32_t>::max());},
+                        [](__m256i mmValue, __m256i mmTmp) {return simd::mm<__m256i, int32_t>::min(mmValue, mmTmp);}, [](__m256i mmValue) {return simd::mm<__m256i, int32_t>::min(mmValue);},
+                        [](int32_t value, int32_t tmp) {return value < tmp ? value : tmp;}, [](int32_t value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Max) {
+                impl<int32_t>([] {return simd::mm<__m256i, int32_t>::set1(std::numeric_limits<int32_t>::min());},
+                        [](__m256i mmValue, __m256i mmTmp) {return simd::mm<__m256i, int32_t>::max(mmValue, mmTmp);}, [](__m256i mmValue) {return simd::mm<__m256i, int32_t>::max(mmValue);},
+                        [](int32_t value, int32_t tmp) {return value > tmp ? value : tmp;}, [](int32_t value, size_t numValues) {return value;});
+            }
+            void operator()(
+                    AggregateConfiguration::Avg) {
+                impl<int32_t>([] {return simd::mm<__m256i, int32_t>::set1(0);}, [](__m256i mmValue, __m256i mmTmp) {return simd::mm_op<__m256i, int32_t, add>::compute(mmValue, mmTmp);},
+                        [](__m256i mmValue) {return simd::mm<__m256i, int32_t>::sum(mmValue);}, [](int32_t value, int32_t tmp) {return value + tmp;},
+                        [this](int32_t value, size_t numValues) {return (value / (numValues * test.A)) * test.A;});
+            }
+        };
+
+        void RunAggregateChecked(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(AggregatorChecked(*this, config, iteration), config.mode);
+            }
+        }
+
         bool DoDecodeChecked() override {
             return true;
         }
@@ -198,10 +303,10 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
                 size_t i = 0;
-                int32_t dMin = std::numeric_limits<int16_t>::min();
-                int32_t dMax = std::numeric_limits<int16_t>::max();
-                __m256i mmDMin = mm<__m256i, int32_t>::set1(dMin); // we assume 16-bit input data
-                __m256i mmDMax = mm<__m256i, int32_t>::set1(dMax); // we assume 16-bit input data
+                int32_t dMin = std::numeric_limits<int16_t>::min(); // we assume 16-bit input data
+                int32_t dMax = std::numeric_limits<int16_t>::max(); // we assume 16-bit input data
+                __m256i mmDMin = mm<__m256i, int32_t>::set1(dMin);
+                __m256i mmDMax = mm<__m256i, int32_t>::set1(dMax);
                 auto mmData = this->bufEncoded.template begin<__m256i >();
                 auto mmOut = this->bufResult.template begin<__m128i >();
                 auto mmAInv = _mm256_set1_epi32(this->A_INV);
