@@ -51,8 +51,8 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                ssize_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
-                ssize_t i = 0;
+                size_t numValues = this->getNumValues();
+                size_t i = 0;
                 auto mm_In = this->bufEncoded.template begin<__m128i >();
                 auto mm_Out = this->bufResult.template begin<int64_t>();
                 auto mmAinv = _mm256_set1_pd(static_cast<double>(this->A_INV));

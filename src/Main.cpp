@@ -94,7 +94,8 @@ int main(
         return result;
     }
     _ReadWriteBarrier();
-    uint32_t AUserInv = ext_euclidean(AUser, 32);
+    uint32_t AUserInv = static_cast<uint32_t>(ext_euclidean<uint64_t>(AUser, 32));
+    std::cout << "# A=" << AUser << " A^-1=" << AUserInv << std::endl;
 
     AlignedBlock bufRawdata16(numElements * sizeof(uint16_t), 64);
     AlignedBlock bufEncoded16(2 * numElements * sizeof(uint16_t), 64); // Coding may generate twice as much encoded output data as raw input data

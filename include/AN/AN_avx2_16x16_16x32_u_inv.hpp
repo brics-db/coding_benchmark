@@ -18,22 +18,22 @@
 #error "Clients must not include this file directly, but file <AN/AN_avx2.hpp>!"
 #endif
 
-#include <AN/AN_avx2_16x16_16x32.hpp>
+#include <AN/AN_avx2_16x16_16x32_inv.tcc>
 
 namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct AN_avx2_16x16_16x32_u_inv :
-            public AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL> {
+            public AN_avx2_16x16_16x32_inv<uint16_t, uint32_t, UNROLL> {
 
-        typedef AN_avx2_16x16_16x32<uint16_t, uint32_t, UNROLL> BASE;
+        typedef AN_avx2_16x16_16x32_inv<uint16_t, uint32_t, UNROLL> BASE;
         typedef simd::mm<__m256i, uint32_t> mmEnc;
         typedef simd::mm_op<__m256i, uint32_t, std::less_equal> mmEncLE;
 
         using BASE::NUM_VALUES_PER_SIMDREG;
         using BASE::NUM_VALUES_PER_UNROLL;
 
-        using BASE::AN_avx2_16x16_16x32;
+        using BASE::AN_avx2_16x16_16x32_inv;
 
         virtual ~AN_avx2_16x16_16x32_u_inv() {
         }
@@ -49,12 +49,12 @@ namespace coding_benchmark {
                 auto mmData = this->bufEncoded.template begin<__m256i >();
                 auto mmDataEnd = this->bufEncoded.template end<__m256i >();
                 uint32_t dMax = std::numeric_limits<uint16_t>::max();
-                __m256i mmDMax = _mm256_set1_epi32(dMax); // we assume 16-bit input data
-                __m256i mmAInv = _mm256_set1_epi32(this->A_INV);
+                __m256i mmDMax = mm<__m256i, uint32_t>::set1(dMax); // we assume 16-bit input data
+                __m256i mmAInv = mm<__m256i, uint32_t>::set1(this->A_INV);
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        auto mmInDec = _mm256_mullo_epi32(_mm256_lddqu_si256(mmData), mmAInv);
+                        auto mmInDec = mm_op<__m256i, uint32_t, mul>::compute(mm<__m256i, uint32_t>::loadu(mmData), mmAInv);
                         if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
                             ++mmData;
                         } else {
@@ -64,7 +64,7 @@ namespace coding_benchmark {
                 }
                 // here follows the non-unrolled remainder
                 while (mmData <= (mmDataEnd - 1)) {
-                    auto mmInDec = _mm256_mullo_epi32(_mm256_lddqu_si256(mmData), mmAInv);
+                    auto mmInDec = mm_op<__m256i, uint32_t, mul>::compute(mm<__m256i, uint32_t>::loadu(mmData), mmAInv);
                     if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
                         ++mmData;
                     } else {
@@ -75,7 +75,7 @@ namespace coding_benchmark {
                     auto dataEnd2 = reinterpret_cast<uint32_t*>(mmDataEnd);
                     auto data2 = reinterpret_cast<uint32_t*>(mmData);
                     while (data2 < dataEnd2) {
-                        if ((*data2 * this->A_INV) > dMax) {
+                        if ((*data2 * this->A_INV) <= dMax) {
                             ++data2;
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data2) - this->bufEncoded.template begin<uint32_t>(), iteration);
@@ -105,8 +105,8 @@ namespace coding_benchmark {
             template<template<typename = void> class func>
             void impl() {
                 uint32_t dMax = std::numeric_limits<uint16_t>::max();
-                __m256i mmDMax = _mm256_set1_epi32(dMax); // we assume 16-bit input data
-                __m256i mmAinv = _mm256_set1_epi32(test.A_INV);
+                __m256i mmDMax = mm<__m256i, uint32_t>::set1(dMax); // we assume 16-bit input data
+                __m256i mmAInv = mm<__m256i, uint32_t>::set1(test.A_INV);
                 auto mmData = test.bufEncoded.template begin<__m256i >();
                 const auto mmDataEnd = test.bufEncoded.template end<__m256i >();
                 auto mmOut = test.bufResult.template begin<__m256i >();
@@ -116,8 +116,8 @@ namespace coding_benchmark {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = _mm256_lddqu_si256(mmData++);
-                        auto mmIn2 = _mm256_mullo_epi32(mmIn, mmAinv);
-                        if (simd::mm_op<__m256i, uint32_t, std::greater_equal>::cmp_mask(mmIn2, mmDMax) == simd::mm<__m256i, uint32_t>::FULL_MASK) {
+                        auto mmInDec = _mm256_mullo_epi32(mmIn, mmAInv);
+                        if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
                             _mm256_storeu_si256(mmOut++, mm_op<__m256i, uint32_t, func>::compute(mmIn, mmOperandEnc));
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - test.bufEncoded.template begin<uint32_t>(), iteration);
@@ -127,8 +127,8 @@ namespace coding_benchmark {
                 // remaining numbers
                 while (mmData <= (mmDataEnd - 1)) {
                     auto mmIn = _mm256_lddqu_si256(mmData++);
-                    auto mmIn2 = _mm256_mullo_epi32(mmIn, mmAinv);
-                    if (simd::mm_op<__m256i, uint32_t, std::greater_equal>::cmp_mask(mmIn2, mmDMax) == simd::mm<__m256i, uint32_t>::FULL_MASK) {
+                    auto mmInDec = _mm256_mullo_epi32(mmIn, mmAInv);
+                    if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
                         _mm256_storeu_si256(mmOut++, mm_op<__m256i, uint32_t, func>::compute(mmIn, mmOperandEnc));
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - test.bufEncoded.template begin<uint32_t>(), iteration);
@@ -185,7 +185,7 @@ namespace coding_benchmark {
                 size_t numValues = this->getNumValues();
                 size_t i = 0;
                 uint32_t dMax = std::numeric_limits<uint16_t>::max();
-                __m256i mmDMax = _mm256_set1_epi32(dMax); // we assume 16-bit input data
+                __m256i mmDMax = mm<__m256i, uint32_t>::set1(dMax); // we assume 16-bit input data
                 auto mmData = this->bufEncoded.template begin<__m256i >();
                 auto mmOut = this->bufResult.template begin<__m128i >();
                 auto mmAInv = _mm256_set1_epi32(this->A_INV);
@@ -195,7 +195,7 @@ namespace coding_benchmark {
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = _mm256_lddqu_si256(mmData++);
                         auto mmInDec = _mm256_mullo_epi32(mmIn, mmAInv);
-                        if (simd::mm_op<__m256i, uint32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMax) == simd::mm<__m256i, uint32_t>::FULL_MASK) {
+                        if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
                             _mm_storeu_si128(mmOut++, _mm256_extracti128_si256(_mm256_shuffle_epi8(mmInDec, mmShuffle), 0));
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - this->bufEncoded.template begin<uint32_t>(), iteration);
@@ -206,7 +206,7 @@ namespace coding_benchmark {
                 for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
                     auto mmIn = _mm256_lddqu_si256(mmData++);
                     auto mmInDec = _mm256_mullo_epi32(mmIn, mmAInv);
-                    if (simd::mm_op<__m256i, uint32_t, std::greater_equal>::cmp_mask(mmInDec, mmDMax) == simd::mm<__m256i, uint32_t>::FULL_MASK) {
+                    if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
                         _mm_storeu_si128(mmOut++, _mm256_extracti128_si256(_mm256_shuffle_epi8(mmInDec, mmShuffle), 0));
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - this->bufEncoded.template begin<uint32_t>(), iteration);

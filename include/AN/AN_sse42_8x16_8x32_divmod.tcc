@@ -274,15 +274,15 @@ namespace coding_benchmark {
                 size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<__m128i >();
                 auto dataOut = this->bufResult.template begin<int64_t>();
-                auto mm_A = _mm_set1_pd(static_cast<double>(this->A));
+                auto mmA = _mm_set1_pd(static_cast<double>(this->A));
                 auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0B0A0908, 0x03020100);
                 for (; i <= (numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto tmp = _mm_lddqu_si128(dataIn++);
                         auto tmp1 = _mm_cvtepi32_pd(tmp);
                         auto tmp2 = _mm_cvtepi32_pd(_mm_srli_si128(tmp, 8));
-                        tmp1 = _mm_div_pd(tmp1, mm_A);
-                        tmp2 = _mm_div_pd(tmp2, mm_A);
+                        tmp1 = _mm_div_pd(tmp1, mmA);
+                        tmp2 = _mm_div_pd(tmp2, mmA);
                         auto tmp3 = _mm_cvtpd_epi32(tmp1);
                         auto tmp4 = _mm_cvtpd_epi32(tmp2);
                         tmp = _mm_unpacklo_epi16(tmp3, tmp4);
@@ -295,8 +295,8 @@ namespace coding_benchmark {
                     auto tmp = _mm_lddqu_si128(dataIn++);
                     auto tmp1 = _mm_cvtepi32_pd(tmp);
                     auto tmp2 = _mm_cvtepi32_pd(_mm_srli_si128(tmp, 8));
-                    tmp1 = _mm_div_pd(tmp1, mm_A);
-                    tmp2 = _mm_div_pd(tmp2, mm_A);
+                    tmp1 = _mm_div_pd(tmp1, mmA);
+                    tmp2 = _mm_div_pd(tmp2, mmA);
                     auto tmp3 = _mm_cvtpd_epi32(tmp1);
                     auto tmp4 = _mm_cvtpd_epi32(tmp2);
                     tmp = _mm_unpacklo_epi16(tmp3, tmp4);

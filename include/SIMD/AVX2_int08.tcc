@@ -135,7 +135,11 @@ namespace coding_benchmark {
                     static inline __m256i min(
                             __m256i a,
                             __m256i b) {
-                        return _mm256_min_epu8(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm256_min_epi8(a, b);
+                        } else {
+                            return _mm256_min_epu8(a, b);
+                        }
                     }
 
                     static T min(
@@ -148,7 +152,11 @@ namespace coding_benchmark {
                     static inline __m256i max(
                             __m256i a,
                             __m256i b) {
-                        return _mm256_max_epu8(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm256_max_epi8(a, b);
+                        } else {
+                            return _mm256_max_epu8(a, b);
+                        }
                     }
 
                     static T max(
@@ -295,10 +303,10 @@ namespace coding_benchmark {
                     }
 
                 private:
-                    static const int64_t * const SHUFFLE_TABLE_LL;
-                    static const int64_t * const SHUFFLE_TABLE_LH;
-                    static const int64_t * const SHUFFLE_TABLE_HL;
-                    static const int64_t * const SHUFFLE_TABLE_HH;
+            static const int64_t * const SHUFFLE_TABLE_LL;
+            static const int64_t * const SHUFFLE_TABLE_LH;
+            static const int64_t * const SHUFFLE_TABLE_HL;
+            static const int64_t * const SHUFFLE_TABLE_HH;
                 };
 
                 template<typename T, template<typename > class Op>

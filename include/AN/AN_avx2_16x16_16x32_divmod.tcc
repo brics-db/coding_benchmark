@@ -74,7 +74,7 @@ namespace coding_benchmark {
                     auto dataEnd2 = reinterpret_cast<DATAENC*>(mm_DataEnd);
                     auto data2 = reinterpret_cast<DATAENC*>(mm_Data);
                     while (data2 < dataEnd2) {
-                        if ((*data2 % this->A) != 0) {
+                        if ((*data2 % this->A) == 0) {
                             ++data2;
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(data2) - this->bufEncoded.template begin<DATAENC>(), iteration);
@@ -172,6 +172,56 @@ namespace coding_benchmark {
             }
         }
 
+        bool DoDecode() override {
+            return true;
+        }
+
+        void RunDecode(
+                const DecodeConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                size_t numValues = this->getNumValues();
+                size_t i = 0;
+                auto mmData = this->bufEncoded.template begin<__m256i >();
+                auto mmOut = this->bufResult.template begin<int64_t>();
+                auto mmA = _mm256_set1_pd(static_cast<double>(this->A));
+                auto mmShuffle = _mm_set_epi32(static_cast<DATAENC>(0xFFFFFFFF), static_cast<DATAENC>(0xFFFFFFFF), static_cast<DATAENC>(0x0D0C0908), static_cast<DATAENC>(0x05040100));
+                for (; i <= (numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) {
+                    // let the compiler unroll the loop
+                    for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
+                        auto mmIn = _mm256_lddqu_si256(mmData++);
+                        auto tmp1 = _mm256_cvtepi32_pd(_mm256_extractf128_si256(mmIn, 0));
+                        auto tmp2 = _mm256_cvtepi32_pd(_mm256_extractf128_si256(mmIn, 1));
+                        tmp1 = _mm256_div_pd(tmp1, mmA);
+                        tmp2 = _mm256_div_pd(tmp2, mmA);
+                        auto tmp3 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp1), mmShuffle);
+                        auto tmp4 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp2), mmShuffle);
+                        *mmOut++ = _mm_extract_epi64(tmp3, 0);
+                        *mmOut++ = _mm_extract_epi64(tmp4, 0);
+                    }
+                }
+                // remaining numbers
+                for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
+                    auto mmIn = _mm256_lddqu_si256(mmData++);
+                    auto tmp1 = _mm256_cvtepi32_pd(_mm256_extractf128_si256(mmIn, 0));
+                    auto tmp2 = _mm256_cvtepi32_pd(_mm256_extractf128_si256(mmIn, 1));
+                    tmp1 = _mm256_div_pd(tmp1, mmA);
+                    tmp2 = _mm256_div_pd(tmp2, mmA);
+                    auto tmp3 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp1), mmShuffle);
+                    auto tmp4 = _mm_shuffle_epi8(_mm256_cvtpd_epi32(tmp2), mmShuffle);
+                    *mmOut++ = _mm_extract_epi64(tmp3, 0);
+                    *mmOut++ = _mm_extract_epi64(tmp4, 0);
+                }
+                if (i < numValues) {
+                    auto out16 = reinterpret_cast<DATARAW*>(mmOut);
+                    auto in32 = reinterpret_cast<DATAENC*>(mmData);
+                    for (; i < numValues; ++i, ++in32, ++out16) {
+                        *out16 = *in32 / this->A;
+                    }
+                }
+            }
+        }
+
         bool DoDecodeChecked() override {
             return true;
         }
@@ -180,15 +230,13 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                const ssize_t VALUES_PER_SIMDREG = sizeof(__m256i) / sizeof (DATAENC);
-                const ssize_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_SIMDREG;
-                ssize_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
-                ssize_t i = 0;
+                size_t numValues = this->getNumValues();
+                size_t i = 0;
                 auto mmData = this->bufEncoded.template begin<__m256i >();
                 auto mmOut = this->bufResult.template begin<int64_t>();
                 auto mmA = _mm256_set1_pd(static_cast<double>(this->A));
                 auto mmShuffle = _mm_set_epi32(static_cast<DATAENC>(0xFFFFFFFF), static_cast<DATAENC>(0xFFFFFFFF), static_cast<DATAENC>(0x0D0C0908), static_cast<DATAENC>(0x05040100));
-                for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
+                for (; i <= (numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = _mm256_lddqu_si256(mmData++);
@@ -209,7 +257,7 @@ namespace coding_benchmark {
                     }
                 }
                 // remaining numbers
-                for (; i <= (numValues - VALUES_PER_SIMDREG); i += VALUES_PER_SIMDREG) {
+                for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
                     auto mmIn = _mm256_lddqu_si256(mmData++);
                     if ((_mm256_extract_epi32(mmIn, 0) % this->A == 0) && (_mm256_extract_epi32(mmIn, 1) % this->A == 0) && (_mm256_extract_epi32(mmIn, 2) % this->A == 0)
                             && (_mm256_extract_epi32(mmIn, 3) % this->A == 0) && (_mm256_extract_epi32(mmIn, 4) % this->A == 0) && (_mm256_extract_epi32(mmIn, 5) % this->A == 0)

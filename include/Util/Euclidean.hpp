@@ -62,14 +62,19 @@ template<typename T>
 T ext_euclidean(
         T b0,
         size_t codewidth) {
+    if ((sizeof(T) * 8) <= codewidth) {
+        throw std::runtime_error("The template datatype is too small!");
+    }
     T a0(1);
     a0 <<= codewidth;
-    T a[32], b[32], q[32], r[32], s[32], t[32];
+    // T a[20], b[20], q[20], r[20], s[20], t[20];
+    std::vector<T> a(32), b(32), q(32), r(32), s(32), t(32);
     // std::vector<uint128_t> a(32), b(32), q(32), r(32), s(32), t(32);
-    int aI = 1, bI = 1, qI = 0, rI = 0, sI = 1, tI = 1;
+    uint8_t aI = 1, bI = 1, qI = 0, rI = 0, sI = 1, tI = 1;
     a[0] = a0;
     b[0] = b0;
-    s[0] = t[0] = T(0);
+    s[0] = 0;
+    t[0] = 0;
     ssize_t i = 0;
     do {
         q[qI++] = a[i] / b[i];
@@ -90,7 +95,7 @@ T ext_euclidean(
     result += result < 0 ? a0 : 0;
     if (result == 1) {
         if constexpr (std::is_fundamental_v<T>) {
-            return result;
+            return t[0];
         } else if constexpr (std::is_base_of_v<T, uint128_t>) {
             return Private::extractor<T, uint128_t>::doIt(t[0]);
         } else {

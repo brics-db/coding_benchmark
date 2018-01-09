@@ -46,6 +46,7 @@ namespace coding_benchmark {
         virtual void RunCheck(
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
                 auto data = this->bufEncoded.template begin<__m128i >();
                 auto dataEnd = this->bufEncoded.template end<__m128i >();
                 int32_t dMin = std::numeric_limits<int16_t>::min();

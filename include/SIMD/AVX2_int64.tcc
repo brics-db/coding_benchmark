@@ -104,7 +104,10 @@ namespace coding_benchmark {
                     static inline __m256i min(
                             __m256i a,
                             __m256i b) {
-                        return _mm256_min_epi64(a, b);
+                        auto mm0 = mm<__m128i, T>::min(_mm256_extractf128_si256(a, 0), _mm256_extractf128_si256(b, 0));
+                        auto mm1 = mm<__m128i, T>::min(_mm256_extractf128_si256(a, 1), _mm256_extractf128_si256(b, 1));
+                        auto mm2 = _mm256_insertf128_si256(_mm256_setzero_si256(), mm0, 0);
+                        return _mm256_insertf128_si256(mm2, mm1, 1);
                     }
 
                     static T min(
@@ -117,7 +120,10 @@ namespace coding_benchmark {
                     static inline __m256i max(
                             __m256i a,
                             __m256i b) {
-                        return _mm256_max_epi64(a, b);
+                        auto mm0 = mm<__m128i, T>::max(_mm256_extractf128_si256(a, 0), _mm256_extractf128_si256(b, 0));
+                        auto mm1 = mm<__m128i, T>::max(_mm256_extractf128_si256(a, 1), _mm256_extractf128_si256(b, 1));
+                        auto mm2 = _mm256_insertf128_si256(_mm256_setzero_si256(), mm0, 0);
+                        return _mm256_insertf128_si256(mm2, mm1, 1);
                     }
 
                     static T max(

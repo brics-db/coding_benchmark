@@ -117,7 +117,11 @@ namespace coding_benchmark {
                     static inline __m256i min(
                             __m256i a,
                             __m256i b) {
-                        return _mm256_min_epu16(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm256_min_epi16(a, b);
+                        } else {
+                            return _mm256_min_epu16(a, b);
+                        }
                     }
 
                     static T min(
@@ -130,7 +134,11 @@ namespace coding_benchmark {
                     static inline __m256i max(
                             __m256i a,
                             __m256i b) {
-                        return _mm256_max_epu16(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm256_max_epi16(a, b);
+                        } else {
+                            return _mm256_max_epu16(a, b);
+                        }
                     }
 
                     static T max(
@@ -154,7 +162,7 @@ namespace coding_benchmark {
                     static inline __m256i pack_right(
                             __m256i a,
                             mask_t mask) {
-                        static const uint64_t ALL_ONES = 0xFFFFFFFFFFFFFFFFull;
+                static const uint64_t ALL_ONES = 0xFFFFFFFFFFFFFFFFull;
                         int MAX0[2] = {0, 1};
                         int MAX32a[2] = {32, 1}; // used for shifts where we may have to "erase" the argument by shifting it out of the register
                         int MAX32b[2] = {32, 1}; // used for shifts where we may have to "erase" the argument by shifting it out of the register
@@ -272,8 +280,8 @@ namespace coding_benchmark {
                     }
 
                 private:
-                    static const __m128i * const SHUFFLE_TABLE_L;
-                    static const __m128i * const SHUFFLE_TABLE_H;
+            static const __m128i * const SHUFFLE_TABLE_L;
+            static const __m128i * const SHUFFLE_TABLE_H;
                 };
 
                 template<typename T, template<typename > class Op>
