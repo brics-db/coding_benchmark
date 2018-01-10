@@ -333,6 +333,54 @@ namespace coding_benchmark {
     };
 
     template<typename _Op = void>
+    struct xor_is :
+            public logic_functor {
+        template<typename _Tp, typename ... _Types>
+        constexpr
+        auto operator()(
+                _Tp & __t,
+                _Types && ... args) const noexcept(noexcept(std::forward<_Tp>(__t) ^ _Op().operator()(std::forward<_Types>(args)...)))
+                -> decltype(std::forward<_Tp>(__t) ^ _Op().operator()(std::forward<_Types>(args)...))
+                {
+            return std::forward<_Tp>(__t) ^ _Op().operator()(std::forward<_Types>(args)...);
+        }
+
+        template<typename _Tp, typename ... _Types>
+        constexpr
+        auto operator()(
+                _Tp && __t,
+                _Types && ... args) const noexcept(noexcept(std::forward<_Tp>(__t) ^ _Op().operator()(std::forward<_Types>(args)...)))
+                -> decltype(std::forward<_Tp>(__t) ^ _Op().operator()(std::forward<_Types>(args)...))
+                {
+            return std::forward<_Tp>(__t) ^ _Op().operator()(std::forward<_Types>(args)...);
+        }
+    };
+
+    template<>
+    struct xor_is<void> :
+            public logic_functor {
+        template<typename _Tp, typename _Up>
+        constexpr
+        auto operator()(
+                _Tp & __t,
+                _Up & __u) const noexcept(noexcept(std::forward<_Tp>(__t) ^ std::forward<_Up>(__u)))
+                -> decltype(std::forward<_Tp>(__t) ^ std::forward<_Up>(__u))
+                {
+            return std::forward<_Tp>(__t) ^ std::forward<_Up>(__u);
+        }
+
+        template<typename _Tp, typename _Up>
+        constexpr
+        auto operator()(
+                _Tp && __t,
+                _Up && __u) const noexcept(noexcept(std::forward<_Tp>(__t) | std::forward<_Up>(__u)))
+                -> decltype(std::forward<_Tp>(__t) | std::forward<_Up>(__u))
+                {
+            return std::forward<_Tp>(__t) | std::forward<_Up>(__u);
+        }
+    };
+
+    template<typename _Op = void>
     struct is_not :
             public logic_functor {
         template<typename ... _Types>

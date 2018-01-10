@@ -73,6 +73,9 @@ namespace coding_benchmark {
                 struct _mm512 {
 
                     typedef __mmask64 mask_t;
+                    typedef __m512i popcnt_t;
+
+                    static const constexpr mask_t FULL_MASK = 0xFFFFFFFFFFFFFFFFull;
 
                     static inline __m512i set1(
                             T value) {
@@ -177,10 +180,37 @@ namespace coding_benchmark {
                             __m512i a,
                             __m512i b) {
 #ifdef __AVX512BW__
-                        return _mm512_min_epu8(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_min_epi8(a, b);
+                        } else {
+                            return _mm512_min_epu8(a, b);
+                        }
 #else
-                        return _mm512_inserti64x4(_mm512_castsi256_si512(_mm256_min_epi8(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0))),
-                                _mm256_min_epi8(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1)), 1);
+                        auto a0 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(a, 0));
+                        auto a1 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(a, 1));
+                        auto a2 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(a, 2));
+                        auto a3 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(a, 3));
+                        auto b0 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(b, 0));
+                        auto b1 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(b, 1));
+                        auto b2 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(b, 2));
+                        auto b3 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(b, 3));
+                        if constexpr (std::is_signed_v<T>) {
+                            auto r0 = _mm512_min_epi32(a0, b0);
+                            auto r1 = _mm512_min_epi32(a1, b1);
+                            auto r2 = _mm512_min_epi32(a2, b2);
+                            auto r3 = _mm512_min_epi32(a3, b3);
+                            auto x0 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm512_cvtepi32_epi8(r0)), _mm512_cvtepi32_epi8(r1), 1);
+                            auto x1 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm512_cvtepi32_epi8(r2)), _mm512_cvtepi32_epi8(r3), 1);
+                            return _mm512_inserti32x8(_mm512_castsi256_si512(x0), x1, 1);
+                        } else {
+                            auto r0 = _mm512_min_epu32(a0, b0);
+                            auto r1 = _mm512_min_epu32(a1, b1);
+                            auto r2 = _mm512_min_epu32(a2, b2);
+                            auto r3 = _mm512_min_epu32(a3, b3);
+                            auto x0 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm512_cvtepi32_epi8(r0)), _mm512_cvtepi32_epi8(r1), 1);
+                            auto x1 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm512_cvtepi32_epi8(r2)), _mm512_cvtepi32_epi8(r3), 1);
+                            return _mm512_inserti32x8(_mm512_castsi256_si512(x0), x1, 1);
+                        }
 #endif
                     }
 
@@ -188,10 +218,37 @@ namespace coding_benchmark {
                             __m512i a,
                             __m512i b) {
 #ifdef __AVX512BW__
-                        return _mm512_max_epu8(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_max_epi8(a, b);
+                        } else {
+                            return _mm512_max_epu8(a, b);
+                        }
 #else
-                        return _mm512_inserti64x4(_mm512_castsi256_si512(_mm256_max_epi8(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0))),
-                                _mm256_max_epi8(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1)), 1);
+                        auto a0 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(a, 0));
+                        auto a1 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(a, 1));
+                        auto a2 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(a, 2));
+                        auto a3 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(a, 3));
+                        auto b0 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(b, 0));
+                        auto b1 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(b, 1));
+                        auto b2 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(b, 2));
+                        auto b3 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(b, 3));
+                        if constexpr (std::is_signed_v<T>) {
+                            auto r0 = _mm512_max_epi32(a0, b0);
+                            auto r1 = _mm512_max_epi32(a1, b1);
+                            auto r2 = _mm512_max_epi32(a2, b2);
+                            auto r3 = _mm512_max_epi32(a3, b3);
+                            auto x0 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm512_cvtepi32_epi8(r0)), _mm512_cvtepi32_epi8(r1), 1);
+                            auto x1 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm512_cvtepi32_epi8(r2)), _mm512_cvtepi32_epi8(r3), 1);
+                            return _mm512_inserti32x8(_mm512_castsi256_si512(x0), x1, 1);
+                        } else {
+                            auto r0 = _mm512_max_epu32(a0, b0);
+                            auto r1 = _mm512_max_epu32(a1, b1);
+                            auto r2 = _mm512_max_epu32(a2, b2);
+                            auto r3 = _mm512_max_epu32(a3, b3);
+                            auto x0 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm512_cvtepi32_epi8(r0)), _mm512_cvtepi32_epi8(r1), 1);
+                            auto x1 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm512_cvtepi32_epi8(r2)), _mm512_cvtepi32_epi8(r3), 1);
+                            return _mm512_inserti32x8(_mm512_castsi256_si512(x0), x1, 1);
+                        }
 #endif
                     }
 
@@ -638,7 +695,7 @@ namespace coding_benchmark {
                     public Private08::_mm512<int8_t> {
                 typedef Private08::_mm512<int8_t> BASE;
                 using BASE::mask_t;
-                // TODO using BASE::popcnt_t;
+                using BASE::popcnt_t;
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;

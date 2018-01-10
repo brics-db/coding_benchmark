@@ -55,7 +55,7 @@ namespace coding_benchmark {
 
                     typedef uint8_t mask_t;
 
-                    static const constexpr mask_t FULL_MASK = 0xFF;
+                    static const constexpr mask_t FULL_MASK = 0xFFu;
 
                     static inline __m512i set1(
                             T value) {
@@ -88,13 +88,21 @@ namespace coding_benchmark {
                     static inline __m512i min(
                             __m512i a,
                             __m512i b) {
-                        return _mm512_min_epi64(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_min_epi64(a, b);
+                        } else {
+                            return _mm512_min_epu64(a, b);
+                        }
                     }
 
                     static inline __m512i max(
                             __m512i a,
                             __m512i b) {
-                        return _mm512_max_epi64(a, b);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_max_epi64(a, b);
+                        } else {
+                            return _mm512_max_epu64(a, b);
+                        }
                     }
 
                     static inline __m512i add(
@@ -148,7 +156,7 @@ namespace coding_benchmark {
                             T * & result,
                             __m512i a,
                             mask_t mask) {
-                        typedef mm<__m128i, T>::mask_t sse_mask_t;
+                        typedef typename mm<__m128i, T>::mask_t sse_mask_t;
                         auto subMask = static_cast<sse_mask_t>(mask) & 0x3;
                         _mm_storeu_si128(reinterpret_cast<__m128i *>(result), mm<__m128i, T>::pack_right(_mm512_extracti32x4_epi32(a, 0), subMask));
                         result += __builtin_popcount(subMask);
@@ -167,11 +175,11 @@ namespace coding_benchmark {
             } /* Private64 */
 
             template<>
-            struct mm256<int64_t> :
-                    public Private64::_mm256<int64_t> {
-                typedef Private64::_mm256<int64_t> BASE;
+            struct mm512<int64_t> :
+                    public Private64::_mm512<int64_t> {
+                typedef Private64::_mm512<int64_t> BASE;
                 using BASE::mask_t;
-                using BASE::popcnt_t;
+                // TODO using BASE::popcnt_t;
                 using BASE::FULL_MASK;
                 using BASE::set1;
                 using BASE::set;
@@ -181,19 +189,20 @@ namespace coding_benchmark {
                 using BASE::sum;
                 using BASE::pack_right;
                 using BASE::pack_right2;
-                using BASE::popcount;
-                using BASE::popcount2;
-                using BASE::popcount3;
-                using BASE::cvt_larger_lo;
-                using BASE::cvt_larger_hi;
+                using BASE::pack_right3;
+                // TODO using BASE::popcount;
+                // TODO using BASE::popcount2;
+                // TODO using BASE::popcount3;
+                // TODO using BASE::cvt_larger_lo;
+                // TODO using BASE::cvt_larger_hi;
             };
 
             template<>
-            struct mm256<uint64_t> :
-                    public Private64::_mm256<uint64_t> {
-                typedef Private64::_mm256<uint64_t> BASE;
+            struct mm512<uint64_t> :
+                    public Private64::_mm512<uint64_t> {
+                typedef Private64::_mm512<uint64_t> BASE;
                 using BASE::mask_t;
-                using BASE::popcnt_t;
+                // TODO using BASE::popcnt_t;
                 using BASE::FULL_MASK;
                 using BASE::set1;
                 using BASE::set;
@@ -203,11 +212,12 @@ namespace coding_benchmark {
                 using BASE::sum;
                 using BASE::pack_right;
                 using BASE::pack_right2;
-                using BASE::popcount;
-                using BASE::popcount2;
-                using BASE::popcount3;
-                using BASE::cvt_larger_lo;
-                using BASE::cvt_larger_hi;
+                using BASE::pack_right3;
+                // TODO using BASE::popcount;
+                // TODO using BASE::popcount2;
+                // TODO using BASE::popcount3;
+                // TODO using BASE::cvt_larger_lo;
+                // TODO using BASE::cvt_larger_hi;
             };
 
         }

@@ -73,57 +73,58 @@ namespace coding_benchmark {
                 struct _mm512 {
 
                     typedef uint32_t mask_t;
+                    typedef __m256i popcnt_t;
+
+                    static const constexpr mask_t FULL_MASK = 0xFFFFFFFFu;
 
                     static inline __m512i set1(
-                            uint16_t value) {
+                            T value) {
                         return _mm512_set1_epi16(value);
                     }
 
                     static inline __m512i set(
-                            uint16_t v31,
-                            uint16_t v30,
-                            uint16_t v29,
-                            uint16_t v28,
-                            uint16_t v27,
-                            uint16_t v26,
-                            uint16_t v25,
-                            uint16_t v24,
-                            uint16_t v23,
-                            uint16_t v22,
-                            uint16_t v21,
-                            uint16_t v20,
-                            uint16_t v19,
-                            uint16_t v18,
-                            uint16_t v17,
-                            uint16_t v16,
-                            uint16_t v15,
-                            uint16_t v14,
-                            uint16_t v13,
-                            uint16_t v12,
-                            uint16_t v11,
-                            uint16_t v10,
-                            uint16_t v9,
-                            uint16_t v8,
-                            uint16_t v7,
-                            uint16_t v6,
-                            uint16_t v5,
-                            uint16_t v4,
-                            uint16_t v3,
-                            uint16_t v2,
-                            uint16_t v1,
-                            uint16_t v0) {
+                            T v31,
+                            T v30,
+                            T v29,
+                            T v28,
+                            T v27,
+                            T v26,
+                            T v25,
+                            T v24,
+                            T v23,
+                            T v22,
+                            T v21,
+                            T v20,
+                            T v19,
+                            T v18,
+                            T v17,
+                            T v16,
+                            T v15,
+                            T v14,
+                            T v13,
+                            T v12,
+                            T v11,
+                            T v10,
+                            T v9,
+                            T v8,
+                            T v7,
+                            T v6,
+                            T v5,
+                            T v4,
+                            T v3,
+                            T v2,
+                            T v1,
+                            T v0) {
 #ifdef __AVX512BW__
                         return _mm512_set_epi16(v31, v30, v29, v28, v27, v26, v25, v24, v23, v22, v21, v20, v19, v18, v17, v16, v15, v14, v13, v12, v11, v10, v9, v8, v7, v6, v5, v4, v3, v2, v1,
                                 v0);
 #else
-                        return _mm512_set_epi32((static_cast<uint32_t>(v31) << 16) | static_cast<uint32_t>(v30), (static_cast<uint32_t>(v29) << 16) | static_cast<uint32_t>(v28),
-                                (static_cast<uint32_t>(v27) << 16) | static_cast<uint32_t>(v26), (static_cast<uint32_t>(v25) << 16) | static_cast<uint32_t>(v24),
-                                (static_cast<uint32_t>(v23) << 16) | static_cast<uint32_t>(v22), (static_cast<uint32_t>(v21) << 16) | static_cast<uint32_t>(v20),
-                                (static_cast<uint32_t>(v19) << 16) | static_cast<uint32_t>(v18), (static_cast<uint32_t>(v17) << 16) | static_cast<uint32_t>(v16),
-                                (static_cast<uint32_t>(v15) << 16) | static_cast<uint32_t>(v14), (static_cast<uint32_t>(v13) << 16) | static_cast<uint32_t>(v12),
-                                (static_cast<uint32_t>(v11) << 16) | static_cast<uint32_t>(v10), (static_cast<uint32_t>(v9) << 16) | static_cast<uint32_t>(v8),
-                                (static_cast<uint32_t>(v7) << 16) | static_cast<uint32_t>(v6), (static_cast<uint32_t>(v5) << 16) | static_cast<uint32_t>(v4),
-                                (static_cast<uint32_t>(v3) << 16) | static_cast<uint32_t>(v2), (static_cast<uint32_t>(v1) << 16) | static_cast<uint32_t>(v0));
+                        return _mm512_set_epi32((static_cast<T>(v31) << 16) | static_cast<T>(v30), (static_cast<T>(v29) << 16) | static_cast<T>(v28), (static_cast<T>(v27) << 16) | static_cast<T>(v26),
+                                (static_cast<T>(v25) << 16) | static_cast<T>(v24), (static_cast<T>(v23) << 16) | static_cast<T>(v22), (static_cast<T>(v21) << 16) | static_cast<T>(v20),
+                                (static_cast<T>(v19) << 16) | static_cast<T>(v18), (static_cast<T>(v17) << 16) | static_cast<T>(v16), (static_cast<T>(v15) << 16) | static_cast<T>(v14),
+                                (static_cast<T>(v13) << 16) | static_cast<T>(v12), (static_cast<T>(v11) << 16) | static_cast<T>(v10), (static_cast<T>(v9) << 16) | static_cast<T>(v8),
+                                (static_cast<T>(v7) << 16) | static_cast<T>(v6), (static_cast<T>(v5) << 16) | static_cast<T>(v4), (static_cast<T>(v3) << 16) | static_cast<T>(v2),
+                                (static_cast<T>(v1) << 16) | static_cast<T>(v0));
 #endif
                     }
 
@@ -133,15 +134,14 @@ namespace coding_benchmark {
                         return _mm512_set_epi16(v0 + 31, v0 + 30, v0 + 29, v0 + 28, v0 + 27, v0 + 26, v0 + 25, v0 + 24, v0 + 23, v0 + 22, v0 + 21, v0 + 20, v0 + 19, v0 + 18, v0 + 17, v0 + 16,
                                 v0 + 15, v0 + 14, v0 + 13, v0 + 12, v0 + 11, v0 + 10, v0 + 9, v0 + 8, v0 + 7, v0 + 6, v0 + 5, v0 + 4, v0 + 3, v0 + 2, v0 + 1, v0);
 #else
-                        return _mm512_set_epi32(((static_cast<uint32_t>(v0) << 16) + 31) | (static_cast<uint32_t>(v0) + 30),
-                                ((static_cast<uint32_t>(v0) << 16) + 29) | (static_cast<uint32_t>(v0) + 28), ((static_cast<uint32_t>(v0) << 16) + 27) | (static_cast<uint32_t>(v0) + 26),
-                                ((static_cast<uint32_t>(v0) << 16) + 25) | (static_cast<uint32_t>(v0) + 24), ((static_cast<uint32_t>(v0) << 16) + 23) | (static_cast<uint32_t>(v0) + 22),
-                                ((static_cast<uint32_t>(v0) << 16) + 21) | (static_cast<uint32_t>(v0) + 20), ((static_cast<uint32_t>(v0) << 16) + 19) | (static_cast<uint32_t>(v0) + 18),
-                                ((static_cast<uint32_t>(v0) << 16) + 17) | (static_cast<uint32_t>(v0) + 16), ((static_cast<uint32_t>(v0) << 16) + 15) | (static_cast<uint32_t>(v0) + 14),
-                                ((static_cast<uint32_t>(v0) << 16) + 13) | (static_cast<uint32_t>(v0) + 12), ((static_cast<uint32_t>(v0) << 16) + 11) | (static_cast<uint32_t>(v0) + 10),
-                                ((static_cast<uint32_t>(v0) << 16) + 9) | (static_cast<uint32_t>(v0) + 8), ((static_cast<uint32_t>(v0) << 16) + 7) | (static_cast<uint32_t>(v0) + 6),
-                                ((static_cast<uint32_t>(v0) << 16) + 5) | (static_cast<uint32_t>(v0) + 4), ((static_cast<uint32_t>(v0) << 16) + 3) | (static_cast<uint32_t>(v0) + 2),
-                                ((static_cast<uint32_t>(v0) << 16) + 1) | (static_cast<uint32_t>(v0)));
+                        return _mm512_set_epi32(((static_cast<T>(v0) << 16) + 31) | (static_cast<T>(v0) + 30), ((static_cast<T>(v0) << 16) + 29) | (static_cast<T>(v0) + 28),
+                                ((static_cast<T>(v0) << 16) + 27) | (static_cast<T>(v0) + 26), ((static_cast<T>(v0) << 16) + 25) | (static_cast<T>(v0) + 24),
+                                ((static_cast<T>(v0) << 16) + 23) | (static_cast<T>(v0) + 22), ((static_cast<T>(v0) << 16) + 21) | (static_cast<T>(v0) + 20),
+                                ((static_cast<T>(v0) << 16) + 19) | (static_cast<T>(v0) + 18), ((static_cast<T>(v0) << 16) + 17) | (static_cast<T>(v0) + 16),
+                                ((static_cast<T>(v0) << 16) + 15) | (static_cast<T>(v0) + 14), ((static_cast<T>(v0) << 16) + 13) | (static_cast<T>(v0) + 12),
+                                ((static_cast<T>(v0) << 16) + 11) | (static_cast<T>(v0) + 10), ((static_cast<T>(v0) << 16) + 9) | (static_cast<T>(v0) + 8),
+                                ((static_cast<T>(v0) << 16) + 7) | (static_cast<T>(v0) + 6), ((static_cast<T>(v0) << 16) + 5) | (static_cast<T>(v0) + 4),
+                                ((static_cast<T>(v0) << 16) + 3) | (static_cast<T>(v0) + 2), ((static_cast<T>(v0) << 16) + 1) | (static_cast<T>(v0)));
 #endif
                     }
 
@@ -153,35 +153,67 @@ namespace coding_benchmark {
                                 v0 + 22 * inc, v0 + 21 * inc, v0 + 20 * inc, v0 + 19 * inc, v0 + 18 * inc, v0 + 17 * inc, v0 + 16 * inc, v0 + 15 * inc, v0 + 14 * inc, v0 + 13 * inc, v0 + 12 * inc,
                                 v0 + 11 * inc, v0 + 10 * inc, v0 + 9 * inc, v0 + 8 * inc, v0 + 7 * inc, v0 + 6 * inc, v0 + 5 * inc, v0 + 4 * inc, v0 + 3 * inc, v0 + 2 * inc, v0 + inc, v0);
 #else
-                        return _mm512_set_epi32(((static_cast<uint32_t>(v0) << 16) + 31 * inc) | (static_cast<uint32_t>(v0) + 30 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 29 * inc) | (static_cast<uint32_t>(v0) + 28 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 27 * inc) | (static_cast<uint32_t>(v0) + 26 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 25 * inc) | (static_cast<uint32_t>(v0) + 24 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 23 * inc) | (static_cast<uint32_t>(v0) + 22 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 21 * inc) | (static_cast<uint32_t>(v0) + 20 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 19 * inc) | (static_cast<uint32_t>(v0) + 18 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 17 * inc) | (static_cast<uint32_t>(v0) + 16 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 15 * inc) | (static_cast<uint32_t>(v0) + 14 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 13 * inc) | (static_cast<uint32_t>(v0) + 12 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 11 * inc) | (static_cast<uint32_t>(v0) + 10 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 9 * inc) | (static_cast<uint32_t>(v0) + 8 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 7 * inc) | (static_cast<uint32_t>(v0) + 6 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 5 * inc) | (static_cast<uint32_t>(v0) + 4 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 3 * inc) | (static_cast<uint32_t>(v0) + 2 * inc),
-                                ((static_cast<uint32_t>(v0) << 16) + 1 * inc) | (static_cast<uint32_t>(v0) + 0 * inc));
+                        return _mm512_set_epi32(((static_cast<T>(v0) << 16) + 31 * inc) | (static_cast<T>(v0) + 30 * inc), ((static_cast<T>(v0) << 16) + 29 * inc) | (static_cast<T>(v0) + 28 * inc),
+                                ((static_cast<T>(v0) << 16) + 27 * inc) | (static_cast<T>(v0) + 26 * inc), ((static_cast<T>(v0) << 16) + 25 * inc) | (static_cast<T>(v0) + 24 * inc),
+                                ((static_cast<T>(v0) << 16) + 23 * inc) | (static_cast<T>(v0) + 22 * inc), ((static_cast<T>(v0) << 16) + 21 * inc) | (static_cast<T>(v0) + 20 * inc),
+                                ((static_cast<T>(v0) << 16) + 19 * inc) | (static_cast<T>(v0) + 18 * inc), ((static_cast<T>(v0) << 16) + 17 * inc) | (static_cast<T>(v0) + 16 * inc),
+                                ((static_cast<T>(v0) << 16) + 15 * inc) | (static_cast<T>(v0) + 14 * inc), ((static_cast<T>(v0) << 16) + 13 * inc) | (static_cast<T>(v0) + 12 * inc),
+                                ((static_cast<T>(v0) << 16) + 11 * inc) | (static_cast<T>(v0) + 10 * inc), ((static_cast<T>(v0) << 16) + 9 * inc) | (static_cast<T>(v0) + 8 * inc),
+                                ((static_cast<T>(v0) << 16) + 7 * inc) | (static_cast<T>(v0) + 6 * inc), ((static_cast<T>(v0) << 16) + 5 * inc) | (static_cast<T>(v0) + 4 * inc),
+                                ((static_cast<T>(v0) << 16) + 3 * inc) | (static_cast<T>(v0) + 2 * inc), ((static_cast<T>(v0) << 16) + 1 * inc) | (static_cast<T>(v0) + 0 * inc));
 #endif
                     }
 
                     static inline __m512i min(
                             __m512i a,
                             __m512i b) {
-                        return _mm512_min_epu16(a, b);
+#ifdef __AVX512BW__
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_min_epi16(a, b);
+                        } else {
+                            return _mm512_min_epu16(a, b);
+                        }
+#else
+                        auto a0 = _mm512_cvtepi16_epi32(_mm512_extracti32x8_epi32(a, 0));
+                        auto a1 = _mm512_cvtepi16_epi32(_mm512_extracti32x8_epi32(a, 1));
+                        auto b0 = _mm512_cvtepi16_epi32(_mm512_extracti32x8_epi32(b, 0));
+                        auto b1 = _mm512_cvtepi16_epi32(_mm512_extracti32x8_epi32(b, 1));
+                        if constexpr (std::is_signed_v<T>) {
+                            auto r0 = _mm512_min_epi32(a0, b0);
+                            auto r1 = _mm512_min_epi32(a1, b1);
+                            return _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtepi32_epi16(r0)), _mm512_cvtepi32_epi16(r1), 1);
+                        } else {
+                            auto r0 = _mm512_min_epu32(a0, b0);
+                            auto r1 = _mm512_min_epu32(a1, b1);
+                            return _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtepi32_epi16(r0)), _mm512_cvtepi32_epi16(r1), 1);
+                        }
+#endif
                     }
 
                     static inline __m512i max(
                             __m512i a,
                             __m512i b) {
-                        return _mm512_max_epu16(a, b);
+#ifdef __AVX512BW__
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_max_epi16(a, b);
+                        } else {
+                            return _mm512_max_epu16(a, b);
+                        }
+#else
+                        auto a0 = _mm512_cvtepi16_epi32(_mm512_extracti32x8_epi32(a, 0));
+                        auto a1 = _mm512_cvtepi16_epi32(_mm512_extracti32x8_epi32(a, 1));
+                        auto b0 = _mm512_cvtepi16_epi32(_mm512_extracti32x8_epi32(b, 0));
+                        auto b1 = _mm512_cvtepi16_epi32(_mm512_extracti32x8_epi32(b, 1));
+                        if constexpr (std::is_signed_v<T>) {
+                            auto r0 = _mm512_max_epi32(a0, b0);
+                            auto r1 = _mm512_max_epi32(a1, b1);
+                            return _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtepi32_epi16(r0)), _mm512_cvtepi32_epi16(r1), 1);
+                        } else {
+                            auto r0 = _mm512_max_epu32(a0, b0);
+                            auto r1 = _mm512_max_epu32(a1, b1);
+                            return _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtepi32_epi16(r0)), _mm512_cvtepi32_epi16(r1), 1);
+                        }
+#endif
                     }
 
                     static inline uint8_t sum(
@@ -196,17 +228,17 @@ namespace coding_benchmark {
                     }
 
                     static inline void pack_right2(
-                            uint16_t * & result,
+                            T * & result,
                             __m512i a,
                             mask_t mask) {
                         pack_right2_int16(result, a, mask);
                     }
 
                     static inline void pack_right3(
-                            uint16_t * & result,
+                            T * & result,
                             __m512i a,
                             mask_t mask) {
-                        typedef mm<__m128i, uint16_t>::mask_t sse_mask_t;
+                        typedef typename mm<__m128i, T>::mask_t sse_mask_t;
                         auto subMask = static_cast<sse_mask_t>(mask);
                         _mm_storeu_si128(reinterpret_cast<__m128i *>(result), mm<__m128i, uint16_t>::pack_right(_mm512_extracti32x4_epi32(a, 0), subMask));
                         result += __builtin_popcount(subMask);
@@ -219,6 +251,54 @@ namespace coding_benchmark {
                         subMask = static_cast<sse_mask_t>(mask >> 24);
                         _mm_storeu_si128(reinterpret_cast<__m128i *>(result), mm<__m128i, uint16_t>::pack_right(_mm512_extracti32x4_epi32(a, 3), subMask));
                         result += __builtin_popcount(subMask);
+                    }
+
+                    static inline popcnt_t popcount(
+                            // TODO
+                            __m512i a) {
+#ifdef __AVX512BW__
+                        auto pattern1 = _mm512_set1_epi16(0x5555);
+                        auto pattern2 = _mm512_set1_epi16(0x3333);
+                        auto pattern3 = _mm512_set1_epi16(0x0F0F);
+                        auto pattern4 = _mm512_set1_epi16(0x0101);
+                        auto shuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301, 0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301);
+                        auto temp = _mm256_sub_epi16(a, _mm256_and_si256(_mm256_srli_epi16(a, 1), pattern1));
+                        temp = _mm256_add_epi16(_mm256_and_si256(temp, pattern2), _mm256_and_si256(_mm256_srli_epi16(temp, 2), pattern2));
+                        temp = _mm256_and_si256(_mm256_add_epi16(temp, _mm256_srli_epi16(temp, 4)), pattern3);
+                        temp = _mm256_mullo_epi16(temp, pattern4);
+                        temp = _mm256_shuffle_epi8(temp, shuffle);
+                        return _mm_set_epi64x(_mm256_extract_epi64(temp, 2), _mm256_extract_epi64(temp, 0));
+#else
+                        return 0;
+#endif
+                    }
+
+                    static inline popcnt_t popcount2(
+                            // TODO
+                            __m512i a) {
+#ifdef __AVX512BW__
+                        auto mask = _mm256_set1_epi16(0x0101);
+                        auto shuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301, 0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301);
+                        auto popcount8 = mm256 < uint8_t > ::popcount2(a);
+                        auto temp = _mm256_shuffle_epi8(_mm256_mullo_epi16(popcount8, mask), shuffle);
+                        return _mm_set_epi64x(_mm256_extract_epi64(temp, 2), _mm256_extract_epi64(temp, 0));
+#else
+                        return 0;
+#endif
+                    }
+
+                    static inline popcnt_t popcount3(
+                            // TODO
+                            __m512i a) {
+#ifdef __AVX512BW__
+                        return _mm_set_epi8(_mm_popcnt_u32(_mm256_extract_epi16(a, 15)), _mm_popcnt_u32(_mm256_extract_epi16(a, 14)), _mm_popcnt_u32(_mm256_extract_epi16(a, 13)),
+                                _mm_popcnt_u32(_mm256_extract_epi16(a, 12)), _mm_popcnt_u32(_mm256_extract_epi16(a, 11)), _mm_popcnt_u32(_mm256_extract_epi16(a, 10)),
+                                _mm_popcnt_u32(_mm256_extract_epi16(a, 9)), _mm_popcnt_u32(_mm256_extract_epi16(a, 8)), _mm_popcnt_u32(_mm256_extract_epi16(a, 7)), _mm_popcnt_u32(_mm256_extract_epi16(a, 6)),
+                                _mm_popcnt_u32(_mm256_extract_epi16(a, 5)), _mm_popcnt_u32(_mm256_extract_epi16(a, 4)), _mm_popcnt_u32(_mm256_extract_epi16(a, 3)), _mm_popcnt_u32(_mm256_extract_epi16(a, 2)),
+                                _mm_popcnt_u32(_mm256_extract_epi16(a, 1)), _mm_popcnt_u32(_mm256_extract_epi16(a, 0)));
+#else
+                        return 0;
+#endif
                     }
                 };
 
@@ -592,7 +672,53 @@ namespace coding_benchmark {
                     return _mm512_inserti64x4(mm, mm256, 1);
                 }
 
-            }
+            } /* Private16 */
+
+            template<>
+            struct mm512<int16_t> :
+                    public Private16::_mm512<int16_t> {
+                typedef Private16::_mm512<int16_t> BASE;
+                using BASE::mask_t;
+                using BASE::popcnt_t;
+                using BASE::FULL_MASK;
+                using BASE::set1;
+                using BASE::set;
+                using BASE::set_inc;
+                using BASE::min;
+                using BASE::max;
+                using BASE::sum;
+                using BASE::pack_right;
+                using BASE::pack_right2;
+                using BASE::pack_right3;
+                using BASE::popcount;
+                using BASE::popcount2;
+                using BASE::popcount3;
+                // TODO using BASE::cvt_larger_lo;
+                // TODO using BASE::cvt_larger_hi;
+            };
+
+            template<>
+            struct mm512<uint16_t> :
+                    public Private16::_mm512<uint16_t> {
+                typedef Private16::_mm512<uint16_t> BASE;
+                using BASE::mask_t;
+                using BASE::popcnt_t;
+                using BASE::FULL_MASK;
+                using BASE::set1;
+                using BASE::set;
+                using BASE::set_inc;
+                using BASE::min;
+                using BASE::max;
+                using BASE::sum;
+                using BASE::pack_right;
+                using BASE::pack_right2;
+                using BASE::pack_right3;
+                using BASE::popcount;
+                using BASE::popcount2;
+                using BASE::popcount3;
+                // TODO using BASE::cvt_larger_lo;
+                // TODO using BASE::cvt_larger_hi;
+            };
 
         }
     }

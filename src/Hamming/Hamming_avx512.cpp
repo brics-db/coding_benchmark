@@ -22,6 +22,7 @@
 #ifdef __AVX512F__
 
 #include <Hamming/Hamming_simd.hpp>
+#include <Util/Functors.hpp>
 
 /*
  * For the following algorithms, see
@@ -37,33 +38,34 @@ namespace coding_benchmark {
     template<>
     __m128i hamming_t<uint16_t, __m512i >::computeHamming(
             __m512i data) {
-        auto pattern1 = _mm256_set1_epi16(static_cast<int16_t>(0xAD5B));
-        auto pattern2 = _mm256_set1_epi16(static_cast<int16_t>(0x366D));
-        auto pattern3 = _mm256_set1_epi16(static_cast<int16_t>(0xC78E));
-        auto pattern4 = _mm256_set1_epi16(static_cast<int16_t>(0x07F0));
-        auto pattern5 = _mm256_set1_epi16(static_cast<int16_t>(0xF800));
+        typedef typename mm<__m512i, uint16_t>::popcnt_t popcnt_t;
+        auto pattern1 = _mm512_set1_epi16(static_cast<int16_t>(0xAD5B));
+        auto pattern2 = _mm512_set1_epi16(static_cast<int16_t>(0x366D));
+        auto pattern3 = _mm512_set1_epi16(static_cast<int16_t>(0xC78E));
+        auto pattern4 = _mm512_set1_epi16(static_cast<int16_t>(0x07F0));
+        auto pattern5 = _mm512_set1_epi16(static_cast<int16_t>(0xF800));
         auto mask = _mm_set1_epi8(0x01);
-        __m128i tmp2 = mm<__m512i, uint16_t>::popcount(_mm256_and_si256(data, pattern1));
-        __m128i hamming = _mm_slli_epi16(_mm_and_si128(tmp2, mask), 1);
-        __m128i tmp1 = mm<__m512i, uint16_t>::popcount(_mm256_and_si256(data, pattern2));
-        tmp1 = _mm_and_si128(tmp1, mask);
-        tmp2 = _mm_xor_si128(tmp2, tmp1);
-        hamming = _mm_or_si128(hamming, _mm_slli_epi16(tmp1, 2));
-        tmp1 = mm<__m512i, uint16_t>::popcount(_mm256_and_si256(data, pattern3));
-        tmp1 = _mm_and_si128(tmp1, mask);
-        tmp2 = _mm_xor_si128(tmp2, tmp1);
-        hamming = _mm_or_si128(hamming, _mm_slli_epi16(tmp1, 3));
-        tmp1 = mm<__m512i, uint16_t>::popcount(_mm256_and_si256(data, pattern4));
-        tmp1 = _mm_and_si128(tmp1, mask);
-        tmp2 = _mm_xor_si128(tmp2, tmp1);
-        hamming = _mm_or_si128(hamming, _mm_slli_epi16(tmp1, 4));
-        tmp1 = mm<__m512i, uint16_t>::popcount(_mm256_and_si256(data, pattern5));
-        tmp1 = _mm_and_si128(tmp1, mask);
-        tmp2 = _mm_xor_si128(tmp2, tmp1);
-        hamming = _mm_or_si128(hamming, _mm_slli_epi16(tmp1, 5));
-        tmp1 = _mm_add_epi8(mm<__m512i, uint16_t>::popcount(std::forward<__m512i >(data)), tmp2);
-        tmp1 = _mm_and_si128(tmp1, mask);
-        hamming = _mm_or_si128(hamming, tmp1);
+        popcnt_t tmp2 = mm<__m512i, uint16_t>::popcount(mm_op<__m512i, uint16_t, and_is>::cmp(data, pattern1));
+        popcnt_t hamming = _mm256_slli_epi16(mm_op<popcnt_t, uint16_t, and_is>::cmp(tmp2, mask), 1);
+        popcnt_t tmp1 = mm<__m512i, uint16_t>::popcount(mm_op<__m512i, uint16_t, and_is>::cmp(data, pattern2));
+        tmp1 = mm_op<popcnt_t, uint16_t, and_is>::cmp(tmp1, mask);
+        tmp2 = _mm256_xor_si256(tmp2, tmp1);
+        hamming = mm_op<popcnt_t, uint16_t, and_is>::cmp(hamming, _mm_slli_epi16(tmp1, 2));
+        tmp1 = mm<__m512i, uint16_t>::popcount(mm_op<__m512i, uint16_t, and_is>::cmp(data, pattern3));
+        tmp1 = mm_op<popcnt_t, uint16_t, and_is>::cmp(tmp1, mask);
+        tmp2 = _mm256_xor_si256(tmp2, tmp1);
+        hamming = mm_op<popcnt_t, uint16_t, and_is>::cmp(hamming, _mm_slli_epi16(tmp1, 3));
+        tmp1 = mm<__m512i, uint16_t>::popcount(mm_op<__m512i, uint16_t, and_is>::cmp(data, pattern4));
+        tmp1 = mm_op<popcnt_t, uint16_t, and_is>::cmp(tmp1, mask);
+        tmp2 = _mm256_xor_si256(tmp2, tmp1);
+        hamming = mm_op<popcnt_t, uint16_t, and_is>::cmp(hamming, _mm_slli_epi16(tmp1, 4));
+        tmp1 = mm<__m512i, uint16_t>::popcount(mm_op<__m512i, uint16_t, and_is>::cmp(data, pattern5));
+        tmp1 = mm_op<popcnt_t, uint16_t, and_is>::cmp(tmp1, mask);
+        tmp2 = _mm256_xor_si256(tmp2, tmp1);
+        hamming = mm_op<popcnt_t, uint16_t, and_is>::cmp(hamming, _mm_slli_epi16(tmp1, 5));
+        tmp1 = _mm256_add_epi8(mm<__m512i, uint16_t>::popcount(data), tmp2);
+        tmp1 = mm_op<popcnt_t, uint16_t, and_is>::cmp(tmp1, mask);
+        hamming = mm_op<popcnt_t, uint16_t, or_is>::cmp(hamming, tmp1);
         return hamming;
     }
 
