@@ -134,3 +134,7 @@ ENDIF(Boost_FOUND)
 add_algorithm(TestComputeHamming "src/TestComputeHamming.cpp src/Util/Test.cpp" benchbase)
 add_algorithm(TestComputeHamming_novec "src/TestComputeHamming.cpp src/Util/Test.cpp" benchbase)
 TARGET_COMPILE_OPTIONS(TestComputeHamming_novec PUBLIC "-fno-tree-vectorize")
+
+add_algorithm(TestPopcount "src/TestPopcount.cpp src/Util/Test.cpp" benchbase)
+add_algorithm(TestPopcount_novec "src/TestPopcount.cpp src/Util/Test.cpp" benchbase)
+TARGET_COMPILE_OPTIONS(TestPopcount_novec PUBLIC "-fno-tree-vectorize")
