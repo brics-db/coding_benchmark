@@ -19,6 +19,8 @@
  *      Author: Till Kolditz - Till.Kolditz@gmail.com
  */
 
+#include <iostream>
+
 #include <Util/AlignedBlock.hpp>
 #include <Util/Stopwatch.hpp>
 #include <Util/TestInfo.hpp>
@@ -324,6 +326,11 @@ const constexpr size_t iterations = 10;
 const constexpr size_t UNROLL_LO = 1;
 const constexpr size_t UNROLL_HI = 1024;
 
+std::cout << "# numElements = " << numElements << '\n';
+std::cout << "# iterations = " << iterations << '\n';
+std::cout << "# UNROLL_LO = " << UNROLL_LO << '\n';
+std::cout << "# UNROLL_HI = " << UNROLL_HI << '\n';
+
 AlignedBlock bufRawdata16(numElements * sizeof(uint16_t), 64);
 AlignedBlock bufRawdata32(numElements * sizeof(uint32_t), 64);
 AlignedBlock bufResult(numElements * sizeof(uint64_t), 64);
@@ -345,7 +352,7 @@ TestCase<popcount_avx2_8_2, UNROLL_LO, UNROLL_HI>("popcount_avx2_8_2", "AVX2 2 8
 TestCase<popcount_avx2_8_3, UNROLL_LO, UNROLL_HI>("popcount_avx2_8_3", "AVX2 3 8", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 
-TestCase<popcount_scalar_16, UNROLL_LO, UNROLL_HI>("popcount_scalar_16", "Scalar 8", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
+TestCase<popcount_scalar_16, UNROLL_LO, UNROLL_HI>("popcount_scalar_16", "Scalar 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
 idx = vecTestInfos.size() - 1;
 #ifdef __SSE4_2__
 TestCase<popcount_sse42_16_1, UNROLL_LO, UNROLL_HI>("popcount_sse42_16_1", "SSE4.2 1 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);

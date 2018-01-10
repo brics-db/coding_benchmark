@@ -88,6 +88,11 @@ int main(
     const constexpr size_t UNROLL_LO = 1;
     const constexpr size_t UNROLL_HI = 1024;
 
+    std::cout << "# numElements = " << numElements << '\n';
+    std::cout << "# iterations = " << iterations << '\n';
+    std::cout << "# UNROLL_LO = " << UNROLL_LO << '\n';
+    std::cout << "# UNROLL_HI = " << UNROLL_HI << '\n';
+
     uint32_t AUser = 64311ul;
     int result = checkArgs(argc, argv, AUser);
     if (result != 0) {

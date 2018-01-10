@@ -44,6 +44,11 @@ int main() {
     const constexpr size_t UNROLL_LO = 1;
     const constexpr size_t UNROLL_HI = 1024;
 
+    std::cout << "# numElements = " << numElements << '\n';
+    std::cout << "# iterations = " << iterations << '\n';
+    std::cout << "# UNROLL_LO = " << UNROLL_LO << '\n';
+    std::cout << "# UNROLL_HI = " << UNROLL_HI << '\n';
+
     AlignedBlock bufRawdata16(numElements * sizeof(uint16_t), 64);
     AlignedBlock bufRawdata32(numElements * sizeof(uint32_t), 64);
     AlignedBlock bufResult(numElements * sizeof(uint64_t), 64);
