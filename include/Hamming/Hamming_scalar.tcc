@@ -277,7 +277,7 @@ namespace coding_benchmark {
             void operator()(
                     AggregateConfiguration::Max) {
                 impl<hamming_scalar_t, DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::min();},
-                        [] (DATAIN maximum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < maximum ? dataIn.data : maximum;},
+                        [] (DATAIN maximum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data > maximum ? dataIn.data : maximum;},
                         [] (DATAIN maximum, const size_t numValues) {return maximum;});
             }
             void operator()(

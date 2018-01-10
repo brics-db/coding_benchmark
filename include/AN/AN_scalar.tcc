@@ -153,17 +153,17 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, DATAENC dataIn) -> larger_t {return sum + dataIn;}, [] (larger_t sum, const size_t numValues) {return sum;});
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, DATAENC dataIn) -> larger_t {return sum + dataIn;}, [] (larger_t sum, const size_t numValues) -> larger_t {return sum;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                impl<DATAENC>([] {return (DATAENC) std::numeric_limits<DATAENC>::max();}, [] (DATAENC minimum, DATAENC dataIn) -> DATAENC {return dataIn < minimum ? dataIn : minimum;},
-                        [] (DATAENC minimum, const size_t numValues) {return minimum;});
+                impl<DATAENC>([] () -> DATAENC {return (DATAENC) std::numeric_limits<DATAENC>::max();}, [] (DATAENC minimum, DATAENC dataIn) -> DATAENC {return dataIn < minimum ? dataIn : minimum;},
+                        [] (DATAENC minimum, const size_t numValues) -> DATAENC {return minimum;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                impl<DATAENC>([] {return (DATAENC) std::numeric_limits<DATAENC>::min();}, [] (DATAENC maximum, DATAENC dataIn) -> DATAENC {return dataIn > maximum ? dataIn : maximum;},
-                        [] (DATAENC maximum, const size_t numValues) {return maximum;});
+                impl<DATAENC>([] () -> DATAENC {return (DATAENC) std::numeric_limits<DATAENC>::min();}, [] (DATAENC maximum, DATAENC dataIn) -> DATAENC {return dataIn > maximum ? dataIn : maximum;},
+                        [] (DATAENC maximum, const size_t numValues) -> DATAENC {return maximum;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {

@@ -297,7 +297,7 @@ struct Test :
     }
 
     virtual size_t getOutputTypeSize() override {
-        return sizeof(DATARAW);
+        return sizeof(DATAENC);
     }
 
     size_t getNumValues() {
