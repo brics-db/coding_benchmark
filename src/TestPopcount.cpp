@@ -35,7 +35,7 @@
 
 #include <SIMD/SSE.hpp>
 #include <SIMD/AVX2.hpp>
-// #include <SIMD/AVX512.hpp>
+#include <SIMD/AVX512.hpp>
 
 namespace coding_benchmark {
 
@@ -223,6 +223,7 @@ namespace coding_benchmark {
         }
     };
 
+#ifdef __SSE4_2__
     template<typename TIn, size_t UNROLL>
     struct popcount_sse42_1 :
             public popcount_simd_1<TIn, __m128i, UNROLL>,
@@ -255,7 +256,9 @@ namespace coding_benchmark {
         virtual ~popcount_sse42_3() {
         }
     };
+#endif
 
+#ifdef __AVX2__
     template<typename TIn, size_t UNROLL>
     struct popcount_avx2_1 :
             public popcount_simd_1<TIn, __m256i, UNROLL>,
@@ -288,6 +291,42 @@ namespace coding_benchmark {
         virtual ~popcount_avx2_3() {
         }
     };
+#endif
+
+#ifdef __AVX512F__
+    template<typename TIn, size_t UNROLL>
+    struct popcount_avx512_1 :
+            public popcount_simd_1<TIn, __m512i, UNROLL>,
+            public AVX512Test {
+
+        using popcount_simd_1<TIn, __m512i, UNROLL>::popcount_simd_1;
+
+        virtual ~popcount_avx512_1() {
+        }
+    };
+
+    template<typename TIn, size_t UNROLL>
+    struct popcount_avx512_2 :
+            public popcount_simd_2<TIn, __m512i, UNROLL>,
+            public AVX512Test {
+
+        using popcount_simd_2<TIn, __m512i, UNROLL>::popcount_simd_2;
+
+        virtual ~popcount_avx512_2() {
+        }
+    };
+
+    template<typename TIn, size_t UNROLL>
+    struct popcount_avx512_3 :
+            public popcount_simd_3<TIn, __m512i, UNROLL>,
+            public AVX512Test {
+
+        using popcount_simd_3<TIn, __m512i, UNROLL>::popcount_simd_3;
+
+        virtual ~popcount_avx512_3() {
+        }
+    };
+#endif
 
 #define MAKE_SIMD_TYPE0(SIMD, TYPEIN, TYPEINSIZE, VARIANT) \
     template<size_t UNROLL> \
@@ -310,10 +349,17 @@ namespace coding_benchmark {
 #endif
 
 #ifdef __AVX2__
-MAKE_SIMD_TYPE(avx2, 8)
-MAKE_SIMD_TYPE(avx2, 16)
-MAKE_SIMD_TYPE(avx2, 32)
-MAKE_SIMD_TYPE(avx2, 64)
+    MAKE_SIMD_TYPE(avx2, 8)
+    MAKE_SIMD_TYPE(avx2, 16)
+    MAKE_SIMD_TYPE(avx2, 32)
+    MAKE_SIMD_TYPE(avx2, 64)
+#endif
+
+#ifdef __AVX512F__
+    MAKE_SIMD_TYPE(avx512, 8)
+    MAKE_SIMD_TYPE(avx512, 16)
+    MAKE_SIMD_TYPE(avx512, 32)
+    MAKE_SIMD_TYPE(avx512, 64)
 #endif
 
 }
@@ -321,77 +367,97 @@ MAKE_SIMD_TYPE(avx2, 64)
 using namespace coding_benchmark;
 
 int main() {
-const constexpr size_t numElements = 1000001;
-const constexpr size_t iterations = 10;
-const constexpr size_t UNROLL_LO = 1;
-const constexpr size_t UNROLL_HI = 1024;
+    const constexpr size_t numElements = 1000001;
+    const constexpr size_t iterations = 10;
+    const constexpr size_t UNROLL_LO = 1;
+    const constexpr size_t UNROLL_HI = 1024;
 
-std::cout << "# numElements = " << numElements << '\n';
-std::cout << "# iterations = " << iterations << '\n';
-std::cout << "# UNROLL_LO = " << UNROLL_LO << '\n';
-std::cout << "# UNROLL_HI = " << UNROLL_HI << '\n';
+    std::cout << "# numElements = " << numElements << '\n';
+    std::cout << "# iterations = " << iterations << '\n';
+    std::cout << "# UNROLL_LO = " << UNROLL_LO << '\n';
+    std::cout << "# UNROLL_HI = " << UNROLL_HI << '\n';
 
-AlignedBlock bufRawdata8(numElements * sizeof(uint8_t), 64);
-AlignedBlock bufRawdata16(numElements * sizeof(uint16_t), 64);
-AlignedBlock bufRawdata32(numElements * sizeof(uint32_t), 64);
-AlignedBlock bufRawdata64(numElements * sizeof(uint64_t), 64);
-AlignedBlock bufResult(numElements * sizeof(uint64_t), 64); // this only stores the popcounts
-std::vector<std::vector<TestInfos>> vecTestInfos;
-vecTestInfos.reserve(32); // Reserve space to store sub-vectors!
-TestConfiguration testConfig(iterations);
-DataGenerationConfiguration dataGenConfig;
+    AlignedBlock bufRawdata8(numElements * sizeof(uint8_t), 64);
+    AlignedBlock bufRawdata16(numElements * sizeof(uint16_t), 64);
+    AlignedBlock bufRawdata32(numElements * sizeof(uint32_t), 64);
+    AlignedBlock bufRawdata64(numElements * sizeof(uint64_t), 64);
+    AlignedBlock bufResult(numElements * sizeof(uint64_t), 64); // this only stores the popcounts
+    std::vector<std::vector<TestInfos>> vecTestInfos;
+    vecTestInfos.reserve(32); // Reserve space to store sub-vectors!
+    TestConfiguration testConfig(iterations);
+    DataGenerationConfiguration dataGenConfig;
 
-TestCase<popcount_scalar_8, UNROLL_LO, UNROLL_HI>("popcount_scalar_8", "Scalar 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
-auto idx = vecTestInfos.size() - 1;
+    TestCase<popcount_scalar_8, UNROLL_LO, UNROLL_HI>("popcount_scalar_8", "Scalar 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
+    auto idx = vecTestInfos.size() - 1;
 #ifdef __SSE4_2__
-TestCase<popcount_sse42_8_1, UNROLL_LO, UNROLL_HI>("popcount_sse42_8_1", "SSE4.2 1 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_sse42_8_2, UNROLL_LO, UNROLL_HI>("popcount_sse42_8_2", "SSE4.2 2 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_sse42_8_3, UNROLL_LO, UNROLL_HI>("popcount_sse42_8_3", "SSE4.2 3 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_8_1, UNROLL_LO, UNROLL_HI>("popcount_sse42_8_1", "SSE4.2 1 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_8_2, UNROLL_LO, UNROLL_HI>("popcount_sse42_8_2", "SSE4.2 2 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_8_3, UNROLL_LO, UNROLL_HI>("popcount_sse42_8_3", "SSE4.2 3 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 #ifdef __AVX2__
-TestCase<popcount_avx2_8_1, UNROLL_LO, UNROLL_HI>("popcount_avx2_8_1", "AVX2 1 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_avx2_8_2, UNROLL_LO, UNROLL_HI>("popcount_avx2_8_2", "AVX2 2 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_avx2_8_3, UNROLL_LO, UNROLL_HI>("popcount_avx2_8_3", "AVX2 3 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_8_1, UNROLL_LO, UNROLL_HI>("popcount_avx2_8_1", "AVX2 1 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_8_2, UNROLL_LO, UNROLL_HI>("popcount_avx2_8_2", "AVX2 2 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_8_3, UNROLL_LO, UNROLL_HI>("popcount_avx2_8_3", "AVX2 3 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+#endif
+#ifdef __AVX512F__
+    TestCase<popcount_avx512_8_1, UNROLL_LO, UNROLL_HI>("popcount_avx512_8_1", "AVX512 1 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx512_8_2, UNROLL_LO, UNROLL_HI>("popcount_avx512_8_2", "AVX512 2 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx512_8_3, UNROLL_LO, UNROLL_HI>("popcount_avx512_8_3", "AVX512 3 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 
-TestCase<popcount_scalar_16, UNROLL_LO, UNROLL_HI>("popcount_scalar_16", "Scalar 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
-idx = vecTestInfos.size() - 1;
+    TestCase<popcount_scalar_16, UNROLL_LO, UNROLL_HI>("popcount_scalar_16", "Scalar 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
+    idx = vecTestInfos.size() - 1;
 #ifdef __SSE4_2__
-TestCase<popcount_sse42_16_1, UNROLL_LO, UNROLL_HI>("popcount_sse42_16_1", "SSE4.2 1 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_sse42_16_2, UNROLL_LO, UNROLL_HI>("popcount_sse42_16_2", "SSE4.2 2 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_sse42_16_3, UNROLL_LO, UNROLL_HI>("popcount_sse42_16_3", "SSE4.2 3 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_16_1, UNROLL_LO, UNROLL_HI>("popcount_sse42_16_1", "SSE4.2 1 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_16_2, UNROLL_LO, UNROLL_HI>("popcount_sse42_16_2", "SSE4.2 2 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_16_3, UNROLL_LO, UNROLL_HI>("popcount_sse42_16_3", "SSE4.2 3 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 #ifdef __AVX2__
-TestCase<popcount_avx2_16_1, UNROLL_LO, UNROLL_HI>("popcount_avx2_16_1", "AVX2 1 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_avx2_16_2, UNROLL_LO, UNROLL_HI>("popcount_avx2_16_2", "AVX2 2 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_avx2_16_3, UNROLL_LO, UNROLL_HI>("popcount_avx2_16_3", "AVX2 3 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_16_1, UNROLL_LO, UNROLL_HI>("popcount_avx2_16_1", "AVX2 1 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_16_2, UNROLL_LO, UNROLL_HI>("popcount_avx2_16_2", "AVX2 2 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_16_3, UNROLL_LO, UNROLL_HI>("popcount_avx2_16_3", "AVX2 3 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+#endif
+#ifdef __AVX512F__
+    TestCase<popcount_avx512_16_1, UNROLL_LO, UNROLL_HI>("popcount_avx512_16_1", "AVX512 1 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx512_16_2, UNROLL_LO, UNROLL_HI>("popcount_avx512_16_2", "AVX512 2 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx512_16_3, UNROLL_LO, UNROLL_HI>("popcount_avx512_16_3", "AVX512 3 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 
-TestCase<popcount_scalar_32, UNROLL_LO, UNROLL_HI>("popcount_scalar_32", "Scalar 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
-idx = vecTestInfos.size() - 1;
+    TestCase<popcount_scalar_32, UNROLL_LO, UNROLL_HI>("popcount_scalar_32", "Scalar 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
+    idx = vecTestInfos.size() - 1;
 #ifdef __SSE4_2__
-TestCase<popcount_sse42_32_1, UNROLL_LO, UNROLL_HI>("popcount_sse42_32_1", "SSE4.2 1 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_sse42_32_2, UNROLL_LO, UNROLL_HI>("popcount_sse42_32_2", "SSE4.2 2 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_sse42_32_3, UNROLL_LO, UNROLL_HI>("popcount_sse42_32_3", "SSE4.2 3 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_32_1, UNROLL_LO, UNROLL_HI>("popcount_sse42_32_1", "SSE4.2 1 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_32_2, UNROLL_LO, UNROLL_HI>("popcount_sse42_32_2", "SSE4.2 2 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_32_3, UNROLL_LO, UNROLL_HI>("popcount_sse42_32_3", "SSE4.2 3 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 #ifdef __AVX2__
-TestCase<popcount_avx2_32_1, UNROLL_LO, UNROLL_HI>("popcount_avx2_32_1", "AVX2 1 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_avx2_32_2, UNROLL_LO, UNROLL_HI>("popcount_avx2_32_2", "AVX2 2 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_avx2_32_3, UNROLL_LO, UNROLL_HI>("popcount_avx2_32_3", "AVX2 3 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_32_1, UNROLL_LO, UNROLL_HI>("popcount_avx2_32_1", "AVX2 1 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_32_2, UNROLL_LO, UNROLL_HI>("popcount_avx2_32_2", "AVX2 2 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_32_3, UNROLL_LO, UNROLL_HI>("popcount_avx2_32_3", "AVX2 3 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+#endif
+#ifdef __AVX512F__
+    TestCase<popcount_avx512_32_1, UNROLL_LO, UNROLL_HI>("popcount_avx512_32_1", "AVX512 1 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx512_32_2, UNROLL_LO, UNROLL_HI>("popcount_avx512_32_2", "AVX512 2 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx512_32_3, UNROLL_LO, UNROLL_HI>("popcount_avx512_32_3", "AVX512 3 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 
-TestCase<popcount_scalar_64, UNROLL_LO, UNROLL_HI>("popcount_scalar_64", "Scalar 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
-idx = vecTestInfos.size() - 1;
+    TestCase<popcount_scalar_64, UNROLL_LO, UNROLL_HI>("popcount_scalar_64", "Scalar 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
+    idx = vecTestInfos.size() - 1;
 #ifdef __SSE4_2__
-TestCase<popcount_sse42_64_1, UNROLL_LO, UNROLL_HI>("popcount_sse42_64_1", "SSE4.2 1 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_sse42_64_2, UNROLL_LO, UNROLL_HI>("popcount_sse42_64_2", "SSE4.2 2 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_sse42_64_3, UNROLL_LO, UNROLL_HI>("popcount_sse42_64_3", "SSE4.2 3 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_64_1, UNROLL_LO, UNROLL_HI>("popcount_sse42_64_1", "SSE4.2 1 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_64_2, UNROLL_LO, UNROLL_HI>("popcount_sse42_64_2", "SSE4.2 2 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_sse42_64_3, UNROLL_LO, UNROLL_HI>("popcount_sse42_64_3", "SSE4.2 3 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 #ifdef __AVX2__
-TestCase<popcount_avx2_64_1, UNROLL_LO, UNROLL_HI>("popcount_avx2_64_1", "AVX2 1 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_avx2_64_2, UNROLL_LO, UNROLL_HI>("popcount_avx2_64_2", "AVX2 2 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
-TestCase<popcount_avx2_64_3, UNROLL_LO, UNROLL_HI>("popcount_avx2_64_3", "AVX2 3 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_64_1, UNROLL_LO, UNROLL_HI>("popcount_avx2_64_1", "AVX2 1 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_64_2, UNROLL_LO, UNROLL_HI>("popcount_avx2_64_2", "AVX2 2 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx2_64_3, UNROLL_LO, UNROLL_HI>("popcount_avx2_64_3", "AVX2 3 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+#endif
+#ifdef __AVX512F__
+    TestCase<popcount_avx512_64_1, UNROLL_LO, UNROLL_HI>("popcount_avx512_64_1", "AVX512 1 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx512_64_2, UNROLL_LO, UNROLL_HI>("popcount_avx512_64_2", "AVX512 2 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
+    TestCase<popcount_avx512_64_3, UNROLL_LO, UNROLL_HI>("popcount_avx512_64_3", "AVX512 3 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 
-printResults<false>(vecTestInfos, OutputConfiguration(false, false));
+    printResults<false>(vecTestInfos, OutputConfiguration(false, false));
 }

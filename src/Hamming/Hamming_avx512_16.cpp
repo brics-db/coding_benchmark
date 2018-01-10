@@ -19,7 +19,7 @@
  *      Author: Till Kolditz - Till.Kolditz@gmail.com
  */
 
-#ifdef __AVX512F__
+#ifdef __AVX512BW__
 
 #include <Hamming/Hamming_simd.hpp>
 

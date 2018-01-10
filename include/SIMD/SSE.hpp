@@ -21,6 +21,8 @@
 
 #pragma once
 
+#ifdef __SSE4_2__
+
 #define LIB_COLUMN_OPERATORS_SIMD_SSE_HPP_
 
 #include <cstdint>
@@ -150,6 +152,24 @@ namespace coding_benchmark {
         };
 
         template<typename T>
+        struct mm_op<__m128i, T, coding_benchmark::xor_is> :
+                public sse::mm128op<T, coding_benchmark::or_is> {
+            typedef sse::mm128op<T, coding_benchmark::or_is> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m128i, T, coding_benchmark::is_not> :
+                public sse::mm128op<T, coding_benchmark::or_is> {
+            typedef sse::mm128op<T, coding_benchmark::or_is> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::add> :
                 public sse::mm128op<T, coding_benchmark::add> {
             typedef sse::mm128op<T, coding_benchmark::add> BASE;
@@ -183,3 +203,5 @@ namespace coding_benchmark {
 
     }
 }
+
+#endif

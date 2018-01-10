@@ -32,28 +32,47 @@ namespace coding_benchmark {
             namespace Private32 {
 
                 template<size_t current = 0>
-                inline void pack_right2_uint32(
+                inline void pack_right2_int32(
                         uint32_t * & result,
                         __m512i & a,
                         uint16_t mask) {
                     *result = reinterpret_cast<uint32_t*>(&a)[current];
                     result += (mask >> current) & 0x1;
-                    pack_right2_uint32<current + 1>(result, a, mask);
+                    pack_right2_int32<current + 1>(result, a, mask);
                 }
 
                 template<>
-                inline void pack_right2_uint32<15>(
+                inline void pack_right2_int32<15>(
                         uint32_t * & result,
                         __m512i & a,
                         uint16_t mask) {
                     *result = reinterpret_cast<uint32_t*>(&a)[15];
-                    result += (mask >> 7) & 0x1;
+                    result += (mask >> 15) & 0x1;
+                }
+
+                template<size_t current = 0>
+                inline void pack_right2_int32(
+                        int32_t * & result,
+                        __m512i & a,
+                        uint16_t mask) {
+                    *result = reinterpret_cast<int32_t*>(&a)[current];
+                    result += (mask >> current) & 0x1;
+                    pack_right2_int32<current + 1>(result, a, mask);
+                }
+
+                template<>
+                inline void pack_right2_int32<15>(
+                        int32_t * & result,
+                        __m512i & a,
+                        uint16_t mask) {
+                    *result = reinterpret_cast<int32_t*>(&a)[15];
+                    result += (mask >> 15) & 0x1;
                 }
 
                 template<typename T>
                 struct _mm512 {
 
-                    typedef uint16_t mask_t;
+                    typedef uint32_t mask_t;
                     typedef __m128i popcnt_t;
 
                     static const constexpr mask_t FULL_MASK = 0xFFFFu;
@@ -137,7 +156,7 @@ namespace coding_benchmark {
 #undef MASK
                     }
 
-                    static inline uint16_t geq_mask(
+                    static inline uint32_t geq_mask(
                             __m512i a,
                             __m512i b) {
                         return _mm512_cmpge_epu32_mask(a, b);
@@ -145,20 +164,20 @@ namespace coding_benchmark {
 
                     static inline uint8_t sum(
                             __m512i a) {
-                        throw std::runtime_error("__m512i sum uint16_t not supported yet");
+                        throw std::runtime_error("__m512i sum uint32_t not supported yet");
                     }
 
                     static inline __m512i pack_right(
                             __m512i a,
                             mask_t mask) {
-                        throw std::runtime_error("__m512i pack_right uint16_t not supported yet");
+                        throw std::runtime_error("__m512i pack_right uint32_t not supported yet");
                     }
 
                     static inline void pack_right2(
                             uint32_t * & result,
                             __m512i a,
                             mask_t mask) {
-                        pack_right2_uint32(result, a, mask);
+                        pack_right2_int32(result, a, mask);
                     }
 
                     static inline void pack_right3(
@@ -183,20 +202,34 @@ namespace coding_benchmark {
                     static inline popcnt_t popcount(
                             // TODO
                             __m512i a) {
+                        auto pattern1 = set1(0x55555555);
+                        auto pattern2 = set1(0x33333333);
+                        auto pattern3 = set1(0x0F0F0F0F);
+                        auto pattern4 = set1(0x01010101);
 #ifdef __AVX512BW__
-                        auto pattern1 = _mm512_set1_epi16(0x5555);
-                        auto pattern2 = _mm512_set1_epi16(0x3333);
-                        auto pattern3 = _mm512_set1_epi16(0x0F0F);
-                        auto pattern4 = _mm512_set1_epi16(0x0101);
-                        auto shuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301, 0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301);
-                        auto temp = _mm256_sub_epi16(a, _mm256_and_si256(_mm256_srli_epi16(a, 1), pattern1));
-                        temp = _mm256_add_epi16(_mm256_and_si256(temp, pattern2), _mm256_and_si256(_mm256_srli_epi16(temp, 2), pattern2));
-                        temp = _mm256_and_si256(_mm256_add_epi16(temp, _mm256_srli_epi16(temp, 4)), pattern3);
-                        temp = _mm256_mullo_epi16(temp, pattern4);
-                        temp = _mm256_shuffle_epi8(temp, shuffle);
-                        return _mm_set_epi64x(_mm256_extract_epi64(temp, 2), _mm256_extract_epi64(temp, 0));
+                        auto shuffle = set(0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull, 0x3F3B37332F2B2723ull, 0x1F1B17130F0B0703ull);
 #else
-                        return 0;
+                        auto shuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFFull, 0x000000000F0B0703ull, 0xFFFFFFFFFFFFFFFFull, 0x000000000F0B0703ull);
+#endif
+                        auto temp = _mm512_sub_epi64(a, _mm512_and_si512(_mm512_srli_epi64(a, 1), pattern1));
+#ifdef __AVX512BW__
+                        temp = _mm512_add_epi16(_mm512_and_si512(temp, pattern2), _mm512_and_si512(_mm512_srli_epi16(temp, 2), pattern2));
+#else
+                        auto tempX = _mm512_and_si512(temp, pattern2);
+                        auto tempY = _mm512_and_si512(_mm512_srli_epi32(temp, 2), pattern2);
+                        auto temp0 = _mm256_add_epi16(_mm512_castsi512_si256(tempX), _mm512_castsi512_si256(tempX));
+                        auto temp1 = _mm256_add_epi16(_mm512_extracti64x4_epi64(tempX, 1), _mm512_extracti64x4_epi64(tempY, 1));
+                        temp = _mm512_inserti64x4(_mm512_castsi256_si512(temp0), temp1, 1);
+#endif
+                        temp = _mm512_and_si512(_mm512_add_epi64(temp, _mm512_srli_epi64(temp, 4)), pattern3);
+                        temp = mm512op<T,coding_benchmark::mul>::mullo(temp, pattern4);
+#ifdef __AVX512BW__
+                        temp = _mm512_shuffle_epi8(temp, shuffle);
+                        return _mm512_castsi512_si128(temp);
+#else
+                        auto mm0 = _mm256_shuffle_epi8(_mm512_extracti64x4_epi64(temp, 0), shuffle);
+                        auto mm1 = _mm256_shuffle_epi8(_mm512_extracti64x4_epi64(temp, 1), shuffle);
+                        return _mm_set_epi32(_mm256_extract_epi32(mm1, 4), _mm256_extract_epi32(mm1, 0), _mm256_extract_epi32(mm0, 4), _mm256_extract_epi32(mm0, 0));
 #endif
                     }
 
@@ -210,22 +243,347 @@ namespace coding_benchmark {
                         auto temp = _mm256_shuffle_epi8(_mm256_mullo_epi16(popcount8, mask), shuffle);
                         return _mm_set_epi64x(_mm256_extract_epi64(temp, 2), _mm256_extract_epi64(temp, 0));
 #else
-                        return 0;
+                        auto popcnt0 = mm<__m256i, T>::popcount2(_mm512_extracti64x4_epi64(a, 0));
+                        auto popcnt1 = mm<__m256i, T>::popcount2(_mm512_extracti64x4_epi64(a, 1));
+                        return _mm_set_epi64x(popcnt1, popcnt0);
 #endif
                     }
 
                     static inline popcnt_t popcount3(
                             // TODO
                             __m512i a) {
-#ifdef __AVX512BW__
-                        return _mm_set_epi8(_mm_popcnt_u32(_mm256_extract_epi16(a, 15)), _mm_popcnt_u32(_mm256_extract_epi16(a, 14)), _mm_popcnt_u32(_mm256_extract_epi16(a, 13)),
-                                _mm_popcnt_u32(_mm256_extract_epi16(a, 12)), _mm_popcnt_u32(_mm256_extract_epi16(a, 11)), _mm_popcnt_u32(_mm256_extract_epi16(a, 10)),
-                                _mm_popcnt_u32(_mm256_extract_epi16(a, 9)), _mm_popcnt_u32(_mm256_extract_epi16(a, 8)), _mm_popcnt_u32(_mm256_extract_epi16(a, 7)), _mm_popcnt_u32(_mm256_extract_epi16(a, 6)),
-                                _mm_popcnt_u32(_mm256_extract_epi16(a, 5)), _mm_popcnt_u32(_mm256_extract_epi16(a, 4)), _mm_popcnt_u32(_mm256_extract_epi16(a, 3)), _mm_popcnt_u32(_mm256_extract_epi16(a, 2)),
-                                _mm_popcnt_u32(_mm256_extract_epi16(a, 1)), _mm_popcnt_u32(_mm256_extract_epi16(a, 0)));
+                        auto popcnt0 = mm<__m256i, T>::popcount3(_mm512_extracti64x4_epi64(a, 0));
+                        auto popcnt1 = mm<__m256i, T>::popcount3(_mm512_extracti64x4_epi64(a, 1));
+                        return _mm_set_epi64x(popcnt1, popcnt0);
+                    }
+                };
+
+                template<typename T, template<typename > class Op>
+                struct _mm512op;
+
+                template<typename T>
+                struct _mm512op<T, std::greater> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmpgt_epi32_mask(a, b), static_cast<char>(0xFF));
+                        } else {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmpgt_epu32_mask(a, b), static_cast<char>(0xFF));
+                        }
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+                        if  constexpr (std::is_signed_v<T>) {
+                            return _mm512_cmpgt_epi32_mask(a, b);
+                        } else {
+                            return _mm512_cmpgt_epu32_mask(a, b);
+                        }
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, std::greater_equal> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmpge_epi32_mask(a, b), static_cast<char>(0xFF));
+                        } else {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmpge_epu32_mask(a, b), static_cast<char>(0xFF));
+                        }
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+                        if  constexpr (std::is_signed_v<T>) {
+                            return _mm512_cmpge_epi32_mask(a, b);
+                        } else {
+                            return _mm512_cmpge_epu32_mask(a, b);
+                        }
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, std::less> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmplt_epi32_mask(a, b), static_cast<char>(0xFF));
+                        } else {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmplt_epu32_mask(a, b), static_cast<char>(0xFF));
+                        }
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+                        if  constexpr (std::is_signed_v<T>) {
+                            return _mm512_cmplt_epi32_mask(a, b);
+                        } else {
+                            return _mm512_cmplt_epu32_mask(a, b);
+                        }
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, std::less_equal> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmple_epi32_mask(a, b), static_cast<char>(0xFF));
+                        } else {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmple_epu32_mask(a, b), static_cast<char>(0xFF));
+                        }
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+                        if  constexpr (std::is_signed_v<T>) {
+                            return _mm512_cmple_epi32_mask(a, b);
+                        } else {
+                            return _mm512_cmple_epu32_mask(a, b);
+                        }
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, std::equal_to> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmpeq_epi32_mask(a, b), static_cast<char>(0xFF));
+                        } else {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmpeq_epu32_mask(a, b), static_cast<char>(0xFF));
+                        }
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+                        if  constexpr (std::is_signed_v<T>) {
+                            return _mm512_cmpeq_epi32_mask(a, b);
+                        } else {
+                            return _mm512_cmpeq_epu32_mask(a, b);
+                        }
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, std::not_equal_to> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmpneq_epi32_mask(a, b), static_cast<char>(0xFF));
+                        } else {
+                            return _mm512_mask_set1_epi16(_mm512_setzero_epi32(), _mm512_cmpneq_epu32_mask(a, b), static_cast<char>(0xFF));
+                        }
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+                        if  constexpr (std::is_signed_v<T>) {
+                            return _mm512_cmpneq_epi32_mask(a, b);
+                        } else {
+                            return _mm512_cmpneq_epu32_mask(a, b);
+                        }
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, coding_benchmark::and_is> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        return _mm512_and_si512(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+#ifdef __AVX512DQ__
+                        return _mm512_movepi32_mask(cmp(a, b));
 #else
-                        return 0;
+                        return _mm512op<T, std::not_equal_to>::cmp_mask(_mm512_setzero_si512(), cmp(a, b));
 #endif
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, coding_benchmark::or_is> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        return _mm512_or_si512(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+#ifdef __AVX512DQ__
+                        return _mm512_movepi32_mask(cmp(a, b));
+#else
+                        return _mm512op<T, std::not_equal_to>::cmp_mask(_mm512_setzero_si512(), cmp(a, b));
+#endif
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, coding_benchmark::xor_is> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        return _mm512_xor_si512(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+#ifdef __AVX512DQ__
+                        return _mm512_movepi32_mask(cmp(a, b));
+#else
+                        return _mm512op<T, std::not_equal_to>::cmp_mask(_mm512_setzero_si512(), cmp(a, b));
+#endif
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, coding_benchmark::is_not> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a) {
+                        return _mm512_andnot_si512(a, _mm512_set1_epi32(0xFFFFFFFF));
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a) {
+#ifdef __AVX512DQ__
+                        return _mm512_movepi32_mask(cmp(a));
+#else
+                        return _mm512op<T, std::not_equal_to>::cmp_mask(_mm512_setzero_si512(), cmp(a));
+#endif
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, coding_benchmark::add> {
+
+                    static inline __m512i compute(
+                            __m512i a,
+                            __m512i b) {
+                        return add(a, b);
+                    }
+
+                    static inline __m512i add(
+                            __m512i a,
+                            __m512i b) {
+                        return _mm512_add_epi32(a, b);
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, coding_benchmark::sub> {
+
+                    static inline __m512i compute(
+                            __m512i a,
+                            __m512i b) {
+                        return sub(a, b);
+                    }
+
+                    static inline __m512i sub(
+                            __m512i a,
+                            __m512i b) {
+                        return _mm512_sub_epi32(a, b);
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, coding_benchmark::mul> {
+
+                    static inline __m512i compute(
+                            __m512i a,
+                            __m512i b) {
+                        return mullo(a, b);
+                    }
+
+                    static inline __m512i mullo(
+                            __m512i a,
+                            __m512i b) {
+                        return _mm512_mullo_epi32(a, b);
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, coding_benchmark::div> {
+
+                    static inline __m512i compute(
+                            __m512i a,
+                            __m512i b) {
+                        return div(a, b);
+                    }
+
+                    static inline __m512i div(
+                            __m512i a,
+                            __m512i b) {
+                        if constexpr (std::is_signed_v<T>) {
+                            auto mmA0 = _mm512_cvtepi32_pd(_mm512_extracti64x4_epi64(a, 0));
+                            auto mmA1 = _mm512_cvtepi32_pd(_mm512_extracti64x4_epi64(a, 1));
+                            auto mmB0 = _mm512_cvtepi32_pd(_mm512_extracti64x4_epi64(b, 0));
+                            auto mmB1 = _mm512_cvtepi32_pd(_mm512_extracti64x4_epi64(b, 1));
+                            auto mm0 = _mm512_div_pd(mmA0, mmB0);
+                            auto mm1 = _mm512_div_pd(mmA1, mmB1);
+                            auto mmX0 = _mm512_cvtpd_epi32(mm0);
+                            auto mmX1 = _mm512_cvtpd_epi32(mm1);
+                            return _mm512_inserti32x8(_mm512_castsi256_si512(mmX0), mmX1, 1);
+                        } else {
+                            auto mmA0 = _mm512_cvtepu32_pd(_mm512_extracti64x4_epi64(a, 0));
+                            auto mmA1 = _mm512_cvtepu32_pd(_mm512_extracti64x4_epi64(a, 1));
+                            auto mmB0 = _mm512_cvtepu32_pd(_mm512_extracti64x4_epi64(b, 0));
+                            auto mmB1 = _mm512_cvtepu32_pd(_mm512_extracti64x4_epi64(b, 1));
+                            auto mm0 = _mm512_div_pd(mmA0, mmB0);
+                            auto mm1 = _mm512_div_pd(mmA1, mmB1);
+                            auto mmX0 = _mm512_cvtpd_epu32(mm0);
+                            auto mmX1 = _mm512_cvtpd_epu32(mm1);
+                            return _mm512_inserti32x8(_mm512_castsi256_si512(mmX0), mmX1, 1);
+                        }
                     }
                 };
 
@@ -255,6 +613,110 @@ namespace coding_benchmark {
             };
 
             template<>
+            struct mm512op<int32_t, std::greater_equal> :
+                    private Private08::_mm512op<int32_t, std::greater_equal> {
+                typedef Private08::_mm512op<int32_t, std::greater_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int32_t, std::greater> :
+                    private Private08::_mm512op<int32_t, std::greater> {
+                typedef Private08::_mm512op<int32_t, std::greater> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int32_t, std::less_equal> :
+                    private Private08::_mm512op<int32_t, std::less_equal> {
+                typedef Private08::_mm512op<int32_t, std::less_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int32_t, std::less> :
+                    private Private08::_mm512op<int32_t, std::less> {
+                typedef Private08::_mm512op<int32_t, std::less> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int32_t, std::equal_to> :
+                    private Private08::_mm512op<int32_t, std::equal_to> {
+                typedef Private08::_mm512op<int32_t, std::equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int32_t, std::not_equal_to> :
+                    private Private08::_mm512op<int32_t, std::not_equal_to> {
+                typedef Private08::_mm512op<int32_t, std::not_equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int32_t, coding_benchmark::and_is> :
+                    private Private08::_mm512op<int32_t, coding_benchmark::and_is> {
+                typedef Private08::_mm512op<int32_t, coding_benchmark::and_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int32_t, coding_benchmark::or_is> :
+                    private Private08::_mm512op<int32_t, coding_benchmark::or_is> {
+                typedef Private08::_mm512op<int32_t, coding_benchmark::or_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int32_t, coding_benchmark::add> :
+                    private Private08::_mm512op<int32_t, coding_benchmark::add> {
+                typedef Private08::_mm512op<int32_t, coding_benchmark::add> BASE;
+                using BASE::add;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<int32_t, coding_benchmark::sub> :
+                    private Private08::_mm512op<int32_t, coding_benchmark::sub> {
+                typedef Private08::_mm512op<int32_t, coding_benchmark::sub> BASE;
+                using BASE::sub;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<int32_t, coding_benchmark::mul> :
+                    private Private08::_mm512op<int32_t, coding_benchmark::mul> {
+                typedef Private08::_mm512op<int32_t, coding_benchmark::mul> BASE;
+                using BASE::mullo;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<int32_t, coding_benchmark::div> :
+                    private Private08::_mm512op<int32_t, coding_benchmark::div> {
+                typedef Private08::_mm512op<int32_t, coding_benchmark::div> BASE;
+                using BASE::div;
+                using BASE::compute;
+            };
+
+            template<>
             struct mm512<uint32_t> :
                     public Private32::_mm512<uint32_t> {
                 typedef Private32::_mm512<uint32_t> BASE;
@@ -274,6 +736,110 @@ namespace coding_benchmark {
                 using BASE::popcount3;
                 // TODO using BASE::cvt_larger_lo;
                 // TODO using BASE::cvt_larger_hi;
+            };
+
+            template<>
+            struct mm512op<uint32_t, std::greater_equal> :
+                    private Private08::_mm512op<uint32_t, std::greater_equal> {
+                typedef Private08::_mm512op<uint32_t, std::greater_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint32_t, std::greater> :
+                    private Private08::_mm512op<uint32_t, std::greater> {
+                typedef Private08::_mm512op<uint32_t, std::greater> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint32_t, std::less_equal> :
+                    private Private08::_mm512op<uint32_t, std::less_equal> {
+                typedef Private08::_mm512op<uint32_t, std::less_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint32_t, std::less> :
+                    private Private08::_mm512op<uint32_t, std::less> {
+                typedef Private08::_mm512op<uint32_t, std::less> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint32_t, std::equal_to> :
+                    private Private08::_mm512op<uint32_t, std::equal_to> {
+                typedef Private08::_mm512op<uint32_t, std::equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint32_t, std::not_equal_to> :
+                    private Private08::_mm512op<uint32_t, std::not_equal_to> {
+                typedef Private08::_mm512op<uint32_t, std::not_equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint32_t, coding_benchmark::and_is> :
+                    private Private08::_mm512op<uint32_t, coding_benchmark::and_is> {
+                typedef Private08::_mm512op<uint32_t, coding_benchmark::and_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint32_t, coding_benchmark::or_is> :
+                    private Private08::_mm512op<uint32_t, coding_benchmark::or_is> {
+                typedef Private08::_mm512op<uint32_t, coding_benchmark::or_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint32_t, coding_benchmark::add> :
+                    private Private08::_mm512op<uint32_t, coding_benchmark::add> {
+                typedef Private08::_mm512op<uint32_t, coding_benchmark::add> BASE;
+                using BASE::add;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<uint32_t, coding_benchmark::sub> :
+                    private Private08::_mm512op<uint32_t, coding_benchmark::sub> {
+                typedef Private08::_mm512op<uint32_t, coding_benchmark::sub> BASE;
+                using BASE::sub;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<uint32_t, coding_benchmark::mul> :
+                    private Private08::_mm512op<uint32_t, coding_benchmark::mul> {
+                typedef Private08::_mm512op<uint32_t, coding_benchmark::mul> BASE;
+                using BASE::mullo;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<uint32_t, coding_benchmark::div> :
+                    private Private08::_mm512op<uint32_t, coding_benchmark::div> {
+                typedef Private08::_mm512op<uint32_t, coding_benchmark::div> BASE;
+                using BASE::div;
+                using BASE::compute;
             };
 
         }

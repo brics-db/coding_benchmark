@@ -47,7 +47,7 @@ namespace coding_benchmark {
                         __m512i & a,
                         uint32_t mask) {
                     *result = reinterpret_cast<uint16_t*>(&a)[31];
-                    result += (mask >> 15) & 0x1;
+                    result += (mask >> 31) & 0x1;
                 }
 
                 template<size_t current = 0>
@@ -66,7 +66,7 @@ namespace coding_benchmark {
                         __m512i & a,
                         uint32_t mask) {
                     *result = reinterpret_cast<int16_t*>(&a)[31];
-                    result += (mask >> 15) & 0x1;
+                    result += (mask >> 31) & 0x1;
                 }
 
                 template<typename T>
@@ -216,7 +216,7 @@ namespace coding_benchmark {
 #endif
                     }
 
-                    static inline uint8_t sum(
+                    static inline uint16_t sum(
                             __m512i a) {
                         throw std::runtime_error("__m512i sum int16_t not supported yet");
                     }
@@ -269,7 +269,9 @@ namespace coding_benchmark {
                         temp = _mm256_shuffle_epi8(temp, shuffle);
                         return _mm_set_epi64x(_mm256_extract_epi64(temp, 2), _mm256_extract_epi64(temp, 0));
 #else
-                        return 0;
+                        auto popcnt0 = mm<__m256i, T>::popcount(_mm512_extracti64x4_epi64(a, 0));
+                        auto popcnt1 = mm<__m256i, T>::popcount(_mm512_extracti64x4_epi64(a, 1));
+                        return _mm256_inserti128_si256(_mm256_castsi128_si256(popcnt0), popcnt1, 1);
 #endif
                     }
 
@@ -279,26 +281,22 @@ namespace coding_benchmark {
 #ifdef __AVX512BW__
                         auto mask = _mm256_set1_epi16(0x0101);
                         auto shuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301, 0xFFFFFFFFFFFFFFFF, 0x0F0D0B0907050301);
-                        auto popcount8 = mm256 < uint8_t > ::popcount2(a);
+                        auto popcount8 = mm256 < uint16_t > ::popcount2(a);
                         auto temp = _mm256_shuffle_epi8(_mm256_mullo_epi16(popcount8, mask), shuffle);
                         return _mm_set_epi64x(_mm256_extract_epi64(temp, 2), _mm256_extract_epi64(temp, 0));
 #else
-                        return 0;
+                        auto popcnt0 = mm<__m256i, T>::popcount2(_mm512_extracti64x4_epi64(a, 0));
+                        auto popcnt1 = mm<__m256i, T>::popcount2(_mm512_extracti64x4_epi64(a, 1));
+                        return _mm256_inserti128_si256(_mm256_castsi128_si256(popcnt0), popcnt1, 1);
 #endif
                     }
 
                     static inline popcnt_t popcount3(
                             // TODO
                             __m512i a) {
-#ifdef __AVX512BW__
-                        return _mm_set_epi8(_mm_popcnt_u32(_mm256_extract_epi16(a, 15)), _mm_popcnt_u32(_mm256_extract_epi16(a, 14)), _mm_popcnt_u32(_mm256_extract_epi16(a, 13)),
-                                _mm_popcnt_u32(_mm256_extract_epi16(a, 12)), _mm_popcnt_u32(_mm256_extract_epi16(a, 11)), _mm_popcnt_u32(_mm256_extract_epi16(a, 10)),
-                                _mm_popcnt_u32(_mm256_extract_epi16(a, 9)), _mm_popcnt_u32(_mm256_extract_epi16(a, 8)), _mm_popcnt_u32(_mm256_extract_epi16(a, 7)), _mm_popcnt_u32(_mm256_extract_epi16(a, 6)),
-                                _mm_popcnt_u32(_mm256_extract_epi16(a, 5)), _mm_popcnt_u32(_mm256_extract_epi16(a, 4)), _mm_popcnt_u32(_mm256_extract_epi16(a, 3)), _mm_popcnt_u32(_mm256_extract_epi16(a, 2)),
-                                _mm_popcnt_u32(_mm256_extract_epi16(a, 1)), _mm_popcnt_u32(_mm256_extract_epi16(a, 0)));
-#else
-                        return 0;
-#endif
+                        auto popcnt0 = mm<__m256i, T>::popcount3(_mm512_extracti64x4_epi64(a, 0));
+                        auto popcnt1 = mm<__m256i, T>::popcount3(_mm512_extracti64x4_epi64(a, 1));
+                        return _mm256_inserti128_si256(_mm256_castsi128_si256(popcnt0), popcnt1, 1);
                     }
                 };
 
@@ -576,6 +574,42 @@ namespace coding_benchmark {
                 };
 
                 template<typename T>
+                struct _mm512op<T, coding_benchmark::xor_is> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        return _mm512_xor_si512(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+                        return _mm512op<T, std::not_equal_to>::cmp_mask(_mm512_setzero_si512(), cmp(a, b));
+                    }
+                };
+
+                template<typename T>
+                struct _mm512op<T, coding_benchmark::is_not> {
+
+                    typedef typename _mm512<T>::mask_t mask_t;
+
+                    static inline __m512i cmp(
+                            __m512i a,
+                            __m512i b) {
+                        return _mm512_or_si512(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m512i a,
+                            __m512i b) {
+                        return _mm512op<T, std::not_equal_to>::cmp_mask(_mm512_setzero_si512(), cmp(a, b));
+                    }
+                };
+
+                template<typename T>
                 struct _mm512op<T, coding_benchmark::add> {
 
                     static inline __m512i compute(
@@ -662,16 +696,6 @@ namespace coding_benchmark {
                     }
                 };
 
-                template<typename T>
-                inline __m512i _mm512op<T, coding_benchmark::sub>::sub(
-                        __m512i a,
-                        __m512i b) {
-                    auto mm256 = coding_benchmark::simd::mm_op<__m256i, T, coding_benchmark::sub>::sub(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0));
-                    auto mm = _mm512_castps256_ps512(mm256);
-                    mm256 = coding_benchmark::simd::mm_op<__m256i, T, coding_benchmark::sub>::sub(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1));
-                    return _mm512_inserti64x4(mm, mm256, 1);
-                }
-
             } /* Private16 */
 
             template<>
@@ -698,6 +722,110 @@ namespace coding_benchmark {
             };
 
             template<>
+            struct mm512op<int16_t, std::greater_equal> :
+                    private Private08::_mm512op<int16_t, std::greater_equal> {
+                typedef Private08::_mm512op<int16_t, std::greater_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int16_t, std::greater> :
+                    private Private08::_mm512op<int16_t, std::greater> {
+                typedef Private08::_mm512op<int16_t, std::greater> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int16_t, std::less_equal> :
+                    private Private08::_mm512op<int16_t, std::less_equal> {
+                typedef Private08::_mm512op<int16_t, std::less_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int16_t, std::less> :
+                    private Private08::_mm512op<int16_t, std::less> {
+                typedef Private08::_mm512op<int16_t, std::less> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int16_t, std::equal_to> :
+                    private Private08::_mm512op<int16_t, std::equal_to> {
+                typedef Private08::_mm512op<int16_t, std::equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int16_t, std::not_equal_to> :
+                    private Private08::_mm512op<int16_t, std::not_equal_to> {
+                typedef Private08::_mm512op<int16_t, std::not_equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int16_t, coding_benchmark::and_is> :
+                    private Private08::_mm512op<int16_t, coding_benchmark::and_is> {
+                typedef Private08::_mm512op<int16_t, coding_benchmark::and_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int16_t, coding_benchmark::or_is> :
+                    private Private08::_mm512op<int16_t, coding_benchmark::or_is> {
+                typedef Private08::_mm512op<int16_t, coding_benchmark::or_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<int16_t, coding_benchmark::add> :
+                    private Private08::_mm512op<int16_t, coding_benchmark::add> {
+                typedef Private08::_mm512op<int16_t, coding_benchmark::add> BASE;
+                using BASE::add;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<int16_t, coding_benchmark::sub> :
+                    private Private08::_mm512op<int16_t, coding_benchmark::sub> {
+                typedef Private08::_mm512op<int16_t, coding_benchmark::sub> BASE;
+                using BASE::sub;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<int16_t, coding_benchmark::mul> :
+                    private Private08::_mm512op<int16_t, coding_benchmark::mul> {
+                typedef Private08::_mm512op<int16_t, coding_benchmark::mul> BASE;
+                using BASE::mullo;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<int16_t, coding_benchmark::div> :
+                    private Private08::_mm512op<int16_t, coding_benchmark::div> {
+                typedef Private08::_mm512op<int16_t, coding_benchmark::div> BASE;
+                using BASE::div;
+                using BASE::compute;
+            };
+
+            template<>
             struct mm512<uint16_t> :
                     public Private16::_mm512<uint16_t> {
                 typedef Private16::_mm512<uint16_t> BASE;
@@ -718,6 +846,110 @@ namespace coding_benchmark {
                 using BASE::popcount3;
                 // TODO using BASE::cvt_larger_lo;
                 // TODO using BASE::cvt_larger_hi;
+            };
+
+            template<>
+            struct mm512op<uint16_t, std::greater_equal> :
+                    private Private08::_mm512op<uint16_t, std::greater_equal> {
+                typedef Private08::_mm512op<uint16_t, std::greater_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint16_t, std::greater> :
+                    private Private08::_mm512op<uint16_t, std::greater> {
+                typedef Private08::_mm512op<uint16_t, std::greater> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint16_t, std::less_equal> :
+                    private Private08::_mm512op<uint16_t, std::less_equal> {
+                typedef Private08::_mm512op<uint16_t, std::less_equal> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint16_t, std::less> :
+                    private Private08::_mm512op<uint16_t, std::less> {
+                typedef Private08::_mm512op<uint16_t, std::less> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint16_t, std::equal_to> :
+                    private Private08::_mm512op<uint16_t, std::equal_to> {
+                typedef Private08::_mm512op<uint16_t, std::equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint16_t, std::not_equal_to> :
+                    private Private08::_mm512op<uint16_t, std::not_equal_to> {
+                typedef Private08::_mm512op<uint16_t, std::not_equal_to> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint16_t, coding_benchmark::and_is> :
+                    private Private08::_mm512op<uint16_t, coding_benchmark::and_is> {
+                typedef Private08::_mm512op<uint16_t, coding_benchmark::and_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint16_t, coding_benchmark::or_is> :
+                    private Private08::_mm512op<uint16_t, coding_benchmark::or_is> {
+                typedef Private08::_mm512op<uint16_t, coding_benchmark::or_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm512op<uint16_t, coding_benchmark::add> :
+                    private Private08::_mm512op<uint16_t, coding_benchmark::add> {
+                typedef Private08::_mm512op<uint16_t, coding_benchmark::add> BASE;
+                using BASE::add;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<uint16_t, coding_benchmark::sub> :
+                    private Private08::_mm512op<uint16_t, coding_benchmark::sub> {
+                typedef Private08::_mm512op<uint16_t, coding_benchmark::sub> BASE;
+                using BASE::sub;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<uint16_t, coding_benchmark::mul> :
+                    private Private08::_mm512op<uint16_t, coding_benchmark::mul> {
+                typedef Private08::_mm512op<uint16_t, coding_benchmark::mul> BASE;
+                using BASE::mullo;
+                using BASE::compute;
+            };
+
+            template<>
+            struct mm512op<uint16_t, coding_benchmark::div> :
+                    private Private08::_mm512op<uint16_t, coding_benchmark::div> {
+                typedef Private08::_mm512op<uint16_t, coding_benchmark::div> BASE;
+                using BASE::div;
+                using BASE::compute;
             };
 
         }

@@ -485,6 +485,40 @@ namespace coding_benchmark {
                 };
 
                 template<typename T>
+                struct _mm128op<T, coding_benchmark::xor_is> {
+
+                    typedef typename _mm128<T>::mask_t mask_t;
+
+                    static inline __m128i cmp(
+                            __m128i a,
+                            __m128i b) {
+                        return _mm_xor_si128(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m128i a,
+                            __m128i b) {
+                        return static_cast<mask_t>(_mm_movemask_epi8(cmp(a, b)));
+                    }
+                };
+
+                template<typename T>
+                struct _mm128op<T, coding_benchmark::is_not> {
+
+                    typedef typename _mm128<T>::mask_t mask_t;
+
+                    static inline __m128i cmp(
+                            __m128i a) {
+                        return _mm_andnot_si128(a, _mm_set1_epi64x(0xFFFFFFFFFFFFFFFFull));
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m128i a) {
+                        return static_cast<mask_t>(_mm_movemask_epi8(cmp(a)));
+                    }
+                };
+
+                template<typename T>
                 struct _mm128op<T, coding_benchmark::add> {
 
                     static inline __m128i compute(
@@ -656,6 +690,24 @@ namespace coding_benchmark {
             };
 
             template<>
+            struct mm128op<int8_t, coding_benchmark::xor_is> :
+                    private Private08::_mm128op<int8_t, coding_benchmark::xor_is> {
+                typedef Private08::_mm128op<int8_t, coding_benchmark::xor_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm128op<int8_t, coding_benchmark::is_not> :
+                    private Private08::_mm128op<int8_t, coding_benchmark::is_not> {
+                typedef Private08::_mm128op<int8_t, coding_benchmark::is_not> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
             struct mm128op<int8_t, coding_benchmark::add> :
                     private Private08::_mm128op<int8_t, coding_benchmark::add> {
                 typedef Private08::_mm128op<int8_t, coding_benchmark::add> BASE;
@@ -776,6 +828,24 @@ namespace coding_benchmark {
             struct mm128op<uint8_t, coding_benchmark::or_is> :
                     private Private08::_mm128op<uint8_t, coding_benchmark::or_is> {
                 typedef Private08::_mm128op<uint8_t, coding_benchmark::or_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm128op<uint8_t, coding_benchmark::xor_is> :
+                    private Private08::_mm128op<uint8_t, coding_benchmark::xor_is> {
+                typedef Private08::_mm128op<uint8_t, coding_benchmark::xor_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm128op<uint8_t, coding_benchmark::is_not> :
+                    private Private08::_mm128op<uint8_t, coding_benchmark::is_not> {
+                typedef Private08::_mm128op<uint8_t, coding_benchmark::is_not> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;

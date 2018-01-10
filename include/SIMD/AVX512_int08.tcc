@@ -47,7 +47,7 @@ namespace coding_benchmark {
                         __m512i & a,
                         uint64_t mask) {
                     *result = reinterpret_cast<int8_t*>(&a)[63];
-                    result += (mask >> 31) & 0x1;
+                    result += (mask >> 63) & 0x1;
                 }
 
                 template<size_t current = 0>
@@ -66,7 +66,7 @@ namespace coding_benchmark {
                         __m512i & a,
                         uint64_t mask) {
                     *result = reinterpret_cast<uint8_t*>(&a)[63];
-                    result += (mask >> 31) & 0x1;
+                    result += (mask >> 63) & 0x1;
                 }
 
                 template<typename T>
@@ -314,6 +314,47 @@ namespace coding_benchmark {
                         subMask = static_cast<sse_mask_t>(mask >> 48);
                         _mm_storeu_si128(reinterpret_cast<__m128i *>(result), mm<__m128i, uint8_t>::pack_right(_mm512_extracti32x4_epi32(a, 3), subMask));
                         result += __builtin_popcount(subMask);
+                    }
+
+                    static inline popcnt_t popcount(
+                            __m512i a) {
+#ifdef __AVX512BW__
+                        auto pattern1 = _mm512_set1_epi8(0x55);
+                        auto pattern2 = _mm512_set1_epi8(0x33);
+                        auto pattern3 = _mm512_set1_epi8(0x0F);
+                        auto temp = _mm256_sub_epi8(a, _mm256_and_si256(_mm256_srli_epi16(a, 1), pattern1));
+                        temp = _mm256_add_epi8(_mm256_and_si256(temp, pattern2), _mm256_and_si256(_mm256_srli_epi16(temp, 2), pattern2));
+                        temp = _mm256_add_epi8(_mm256_and_si256(temp, pattern3), _mm256_and_si256(_mm256_srli_epi16(temp, 4), pattern3));
+                        return temp;
+#else
+                        auto popcnt0 = mm<__m256i, T>::popcount(_mm512_extracti64x4_epi64(a, 0));
+                        auto popcnt1 = mm<__m256i, T>::popcount(_mm512_extracti64x4_epi64(a, 1));
+                        return _mm512_inserti64x4(_mm512_castsi256_si512(popcnt0), popcnt1, 1);
+#endif
+                    }
+
+                    static inline popcnt_t popcount2(
+                            __m512i a) {
+#ifdef __AVX512BW__
+                        auto lookup = _mm512_set_epi32(0x4332, 0x3221, 0x3221, 0x2110, 0x4332, 0x3221, 0x3221, 0x2110, 0x4332, 0x3221, 0x3221, 0x2110, 0x4332, 0x3221, 0x3221, 0x2110);
+                        auto low_mask = _mm512_set1_epi8(0x0f);
+                        auto lo = _mm512_and_si512(a, low_mask);
+                        auto hi = _mm512_and_si512(_mm512_srli_epi16(a, 4), low_mask);
+                        auto cnt_lo = _mm512_shuffle_epi8(lookup, lo);
+                        auto cnt_hi = _mm512_shuffle_epi8(lookup, hi);
+                        return _mm512_add_epi8(cnt_lo, cnt_hi);
+#else
+                        auto popcnt0 = mm<__m256i, T>::popcount2(_mm512_extracti64x4_epi64(a, 0));
+                        auto popcnt1 = mm<__m256i, T>::popcount2(_mm512_extracti64x4_epi64(a, 1));
+                        return _mm512_inserti64x4(_mm512_castsi256_si512(popcnt0), popcnt1, 1);
+#endif
+                    }
+
+                    static inline popcnt_t popcount3(
+                            __m512i a) {
+                        auto popcnt0 = mm<__m256i, T>::popcount3(_mm512_extracti64x4_epi64(a, 0));
+                        auto popcnt1 = mm<__m256i, T>::popcount3(_mm512_extracti64x4_epi64(a, 1));
+                        return _mm512_inserti64x4(_mm512_castsi256_si512(popcnt0), popcnt1, 1);
                     }
                 };
 
@@ -661,7 +702,7 @@ namespace coding_benchmark {
                         auto mm0 = mm_op<__m256i, T, coding_benchmark::mul>::mullo(mmA0, mmB0);
                         auto mm1 = mm_op<__m256i, T, coding_benchmark::mul>::mullo(mmA1, mmB1);
                         auto c = _mm512_castsi256_si512(mm0);
-                        return _mm512_insertf64x4(c, mm1, 1);
+                        return _mm512_inserti64x4(c, mm1, 1);
                     }
                 };
 
@@ -684,7 +725,7 @@ namespace coding_benchmark {
                         auto mm0 = mm_op<__m256i, T, coding_benchmark::div>::div(mmA0, mmB0);
                         auto mm1 = mm_op<__m256i, T, coding_benchmark::div>::div(mmA1, mmB1);
                         auto c = _mm512_castsi256_si512(mm0);
-                        return _mm512_insertf64x4(c, mm1, 1);
+                        return _mm512_inserti64x4(c, mm1, 1);
                     }
                 };
 
@@ -704,9 +745,9 @@ namespace coding_benchmark {
                 using BASE::sum;
                 using BASE::pack_right;
                 using BASE::pack_right2;
-                // TODO using BASE::popcount;
-                // TODO using BASE::popcount2;
-                // TODO using BASE::popcount3;
+                using BASE::popcount;
+                using BASE::popcount2;
+                using BASE::popcount3;
                 // TODO using BASE::cvt_larger_lo;
                 // TODO using BASE::cvt_larger_hi;
             };
@@ -820,7 +861,7 @@ namespace coding_benchmark {
                     public Private08::_mm512<uint8_t> {
                 typedef Private08::_mm512<uint8_t> BASE;
                 using BASE::mask_t;
-                // TODO using BASE::popcnt_t;
+                using BASE::popcnt_t;
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
@@ -829,9 +870,9 @@ namespace coding_benchmark {
                 using BASE::sum;
                 using BASE::pack_right;
                 using BASE::pack_right2;
-                // TODO using BASE::popcount;
-                // TODO using BASE::popcount2;
-                // TODO using BASE::popcount3;
+                using BASE::popcount;
+                using BASE::popcount2;
+                using BASE::popcount3;
                 // TODO using BASE::cvt_larger_lo;
                 // TODO using BASE::cvt_larger_hi;
             };

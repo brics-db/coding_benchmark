@@ -21,6 +21,8 @@
 
 #pragma once
 
+#ifdef __AVX2__
+
 #define LIB_COLUMN_OPERATORS_SIMD_AVX2_HPP_
 
 #include <cstdint>
@@ -176,3 +178,5 @@ namespace coding_benchmark {
 
     }
 }
+
+#endif

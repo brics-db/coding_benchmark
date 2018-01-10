@@ -21,6 +21,8 @@
 
 #pragma once
 
+#ifdef __AVX512F__
+
 #define LIB_COLUMN_OPERATORS_SIMD_AVX512_HPP_
 
 #include <cstdint>
@@ -148,6 +150,15 @@ namespace coding_benchmark {
         };
 
         template<typename T>
+        struct mm_op<__m512i, T, coding_benchmark::xor_is> :
+                public avx512::mm512op<T, coding_benchmark::or_is> {
+            typedef avx512::mm512op<T, coding_benchmark::or_is> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
         struct mm_op<__m512i, T, coding_benchmark::add> :
                 public avx512::mm512op<T, coding_benchmark::add> {
             typedef avx512::mm512op<T, coding_benchmark::add> BASE;
@@ -181,3 +192,5 @@ namespace coding_benchmark {
 
     }
 }
+
+#endif

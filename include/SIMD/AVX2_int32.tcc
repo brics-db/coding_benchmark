@@ -192,7 +192,7 @@ namespace coding_benchmark {
                             __m256i a) {
                         auto mask = _mm256_set1_epi32(0x01010101);
                         auto shuffle = _mm256_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0F0B0703);
-                        auto popcount8 = mm256 < uint8_t > ::popcount2(a);
+                        auto popcount8 = mm256<uint8_t>::popcount2(a);
                         auto temp = _mm256_shuffle_epi8(_mm256_mullo_epi32(popcount8, mask), shuffle);
                         return static_cast<uint64_t>(_mm256_extract_epi32(temp, 0)) | (static_cast<uint64_t>(_mm256_extract_epi32(temp, 4)) << 32);
                     }
@@ -368,6 +368,40 @@ namespace coding_benchmark {
                 };
 
                 template<typename T>
+                struct _mm256op<T, coding_benchmark::xor_is> {
+
+                    typedef typename _mm256<T>::mask_t mask_t;
+
+                    static inline __m256i cmp(
+                            __m256i a,
+                            __m256i b) {
+                        return _mm256_xor_si256(a, b);
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m256i a,
+                            __m256i b) {
+                        return static_cast<mask_t>(_mm256_movemask_ps(_mm256_castsi256_ps(cmp(a, b))));
+                    }
+                };
+
+                template<typename T>
+                struct _mm256op<T, coding_benchmark::is_not> {
+
+                    typedef typename _mm256<T>::mask_t mask_t;
+
+                    static inline __m256i cmp(
+                            __m256i a) {
+                        return _mm256_andnot_si256(a, _mm256_set1_epi64x(0xFFFFFFFFFFFFFFFFull));
+                    }
+
+                    static inline mask_t cmp_mask(
+                            __m256i a) {
+                        return static_cast<mask_t>(_mm256_movemask_ps(_mm256_castsi256_ps(cmp(a))));
+                    }
+                };
+
+                template<typename T>
                 struct _mm256op<T, coding_benchmark::add> {
 
                     static inline __m256i compute(
@@ -535,6 +569,24 @@ namespace coding_benchmark {
             };
 
             template<>
+            struct mm256op<int32_t, coding_benchmark::xor_is> :
+                    private Private32::_mm256op<int32_t, coding_benchmark::xor_is> {
+                typedef Private32::_mm256op<int32_t, coding_benchmark::xor_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm256op<int32_t, coding_benchmark::is_not> :
+                    private Private32::_mm256op<int32_t, coding_benchmark::is_not> {
+                typedef Private32::_mm256op<int32_t, coding_benchmark::is_not> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
             struct mm256op<int32_t, coding_benchmark::add> :
                     private Private32::_mm256op<int32_t, coding_benchmark::add> {
                 typedef Private32::_mm256op<int32_t, coding_benchmark::add> BASE;
@@ -655,6 +707,24 @@ namespace coding_benchmark {
             struct mm256op<uint32_t, coding_benchmark::or_is> :
                     private Private32::_mm256op<uint32_t, coding_benchmark::or_is> {
                 typedef Private32::_mm256op<uint32_t, coding_benchmark::or_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm256op<uint32_t, coding_benchmark::xor_is> :
+                    private Private32::_mm256op<uint32_t, coding_benchmark::xor_is> {
+                typedef Private32::_mm256op<uint32_t, coding_benchmark::xor_is> BASE;
+                using BASE::mask_t;
+                using BASE::cmp;
+                using BASE::cmp_mask;
+            };
+
+            template<>
+            struct mm256op<uint32_t, coding_benchmark::is_not> :
+                    private Private32::_mm256op<uint32_t, coding_benchmark::is_not> {
+                typedef Private32::_mm256op<uint32_t, coding_benchmark::is_not> BASE;
                 using BASE::mask_t;
                 using BASE::cmp;
                 using BASE::cmp_mask;
