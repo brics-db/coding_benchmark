@@ -15,7 +15,7 @@
 #include <sstream>
 #include <cstring>
 
-#include "ErrorInfo.hpp"
+#include <Util/ErrorInfo.hpp>
 
 ErrorInfo::ErrorInfo(
         const char* file,

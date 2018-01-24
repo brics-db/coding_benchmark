@@ -19,9 +19,9 @@
  * Created on 15-08-2017 16:32
  */
 
-#include <Hamming/Hamming_sse42.hpp>
-
 #ifdef __SSE4_2__
+
+#include <Hamming/Hamming_simd.hpp>
 
 /*
  * For the following algorithms, see
@@ -279,52 +279,6 @@ namespace coding_benchmark {
         _mm_storeu_si128(&this->data, data);
         this->code = computeHamming3(data);
     }
-
-    template
-    struct Hamming_sse42_16<1> ;
-    template
-    struct Hamming_sse42_16<2> ;
-    template
-    struct Hamming_sse42_16<4> ;
-    template
-    struct Hamming_sse42_16<8> ;
-    template
-    struct Hamming_sse42_16<16> ;
-    template
-    struct Hamming_sse42_16<32> ;
-    template
-    struct Hamming_sse42_16<64> ;
-    template
-    struct Hamming_sse42_16<128> ;
-    template
-    struct Hamming_sse42_16<256> ;
-    template
-    struct Hamming_sse42_16<512> ;
-    template
-    struct Hamming_sse42_16<1024> ;
-
-    template
-    struct Hamming_sse42_32<1> ;
-    template
-    struct Hamming_sse42_32<2> ;
-    template
-    struct Hamming_sse42_32<4> ;
-    template
-    struct Hamming_sse42_32<8> ;
-    template
-    struct Hamming_sse42_32<16> ;
-    template
-    struct Hamming_sse42_32<32> ;
-    template
-    struct Hamming_sse42_32<64> ;
-    template
-    struct Hamming_sse42_32<128> ;
-    template
-    struct Hamming_sse42_32<256> ;
-    template
-    struct Hamming_sse42_32<512> ;
-    template
-    struct Hamming_sse42_32<1024> ;
 
 }
 

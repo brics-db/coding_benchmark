@@ -12,7 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Main.hpp>
+#include <string>
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <algorithm>
+
+#ifdef _MSC_VER
+// disable stupid diamond-inheritance warnings (the compiler does not see that there is only a single implementation for each of the functions)
+#pragma warning(disable: 4250)
+#endif
+
+#include <Util/Test.hpp>
+#include <Util/AlignedBlock.hpp>
+#include <Util/TestInfo.hpp>
+#include <Util/ErrorInfo.hpp>
+#include <Util/VFunc.hpp>
+#include <Util/Euclidean.hpp>
+#include <Util/Intrinsics.hpp>
+#include <Util/ComputeNumRuns.hpp>
+#include <Util/ExpandTest.hpp>
+#include <Util/TestCase.hpp>
+#include <Util/Output.hpp>
+
+#include <Copy/CopyTest.hpp>
+
+#include <XOR/XOR_scalar.hpp>
+#include <XOR/XOR_sse42.hpp>
+#ifdef __AVX2__
+#include <XOR/XOR_avx2.hpp>
+#endif
+
+#include <AN/AN_scalar.hpp>
+#include <AN/AN_sse42.hpp>
+#ifdef __AVX2__
+#include <AN/AN_avx2.hpp>
+#endif
+
+#include <Hamming/Hamming_scalar.hpp>
+#include <Hamming/Hamming_simd.hpp>
+
+#include <CRC/CRC_scalar.hpp>
 
 using namespace coding_benchmark;
 
@@ -45,10 +85,15 @@ int checkArgs(
 int main(
         int argc,
         char* argv[]) {
-    const constexpr size_t numElements = 1000001;
-    const constexpr size_t iterations = 10;
+    const constexpr size_t numElements = 100001;
+    const constexpr size_t iterations = 1;
     const constexpr size_t UNROLL_LO = 1;
     const constexpr size_t UNROLL_HI = 1024;
+
+    std::cout << "# numElements = " << numElements << '\n';
+    std::cout << "# iterations = " << iterations << '\n';
+    std::cout << "# UNROLL_LO = " << UNROLL_LO << '\n';
+    std::cout << "# UNROLL_HI = " << UNROLL_HI << '\n';
 
     uint32_t AUser = 64311ul;
     int result = checkArgs(argc, argv, AUser);
@@ -56,11 +101,12 @@ int main(
         return result;
     }
     _ReadWriteBarrier();
-    uint32_t AUserInv = ext_euclidean(AUser, 32);
+    uint32_t AUserInv = static_cast<uint32_t>(ext_euclidean<uint64_t>(AUser, 32));
+    std::cout << "# A=" << AUser << " A^-1=" << AUserInv << std::endl;
 
     AlignedBlock bufRawdata16(numElements * sizeof(uint16_t), 64);
-    AlignedBlock bufEncoded16(2 * numElements * sizeof(uint16_t), 64); // Coding may generate twice as much encoded output data as raw input data
-    AlignedBlock bufResult16(2 * numElements * sizeof(uint16_t), 64); // Coding may generate twice as much encoded result data as raw input data (or the same amount as encoded data)
+    AlignedBlock bufEncoded16(3 * numElements * sizeof(uint16_t), 64); // Coding may generate thrice (since CRC) as much encoded output data as raw input data
+    AlignedBlock bufResult16(3 * numElements * sizeof(uint16_t), 64); // Coding may generate thrice (since CRC) as much encoded result data as raw input data (or the same amount as encoded data)
 
     AlignedBlock bufRawdata32(numElements * sizeof(uint32_t), 64);
     AlignedBlock bufEncoded32(2 * numElements * sizeof(uint32_t), 64); // Coding may generate twice as much encoded output data as raw input data
@@ -89,6 +135,7 @@ int main(
     TestCase<AN_scalar_16_32_s_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_16_32_s_inv", "AN Scalar S Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig, vecTestInfos,
             refIdx);
     TestCase<Hamming_scalar_16, UNROLL_LO, UNROLL_HI>("Hamming_scalar_16", "Hamming Scalar", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<CRC32_scalar_16, UNROLL_LO, UNROLL_HI>("CRC32_scalar_16", "CRC32 Scalar", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
 
 #ifdef __SSE4_2__
     // 16-bit data vectorized tests
@@ -126,8 +173,9 @@ int main(
 
     std::clog << "# 32-bit Scalar tests:" << std::endl;
     // 32-bit data sequential tests
-    TestCase<XOR_seq_32_32, UNROLL_LO, UNROLL_HI>("XOR_seq_32_32", "XOR Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
-    TestCase<Hamming_seq_32, UNROLL_LO, UNROLL_HI>("Hamming_seq_32", "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<XOR_scalar_32_32, UNROLL_LO, UNROLL_HI>("XOR_scalar_32_32", "XOR Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<Hamming_scalar_32, UNROLL_LO, UNROLL_HI>("Hamming_scalar_32", "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<CRC32_scalar_32, UNROLL_LO, UNROLL_HI>("CRC32_scalar_32", "CRC32 Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
 
 #ifdef __SSE4_2__
     std::clog << "# 32-bit SSE4.2 tests:" << std::endl;

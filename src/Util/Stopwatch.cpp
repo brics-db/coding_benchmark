@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "Stopwatch.hpp"
+#include <Util/Stopwatch.hpp>
 
 Stopwatch::Stopwatch()
         : start(Clock::now()) {

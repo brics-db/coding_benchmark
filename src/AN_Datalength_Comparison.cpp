@@ -25,11 +25,11 @@
 #include <Util/ComputeNumRuns.hpp>
 #include <Util/ExpandTest.hpp>
 #include <Util/TestCase.hpp>
+#include <Util/Test.hpp>
+#include <Util/Output.hpp>
 
-#include <Test.hpp>
-#include <CopyTest.hpp>
-#include <CopyTest2.hpp>
-#include <Output.hpp>
+#include <Copy/CopyTest.hpp>
+#include <Copy/CopyTest2.hpp>
 
 #include <AN/AN_scalar.hpp>
 
@@ -68,6 +68,11 @@ int main(
     const constexpr size_t iterations = 10;
     const constexpr size_t UNROLL_LO = 1;
     const constexpr size_t UNROLL_HI = 1024;
+
+    std::cout << "# numElements = " << numElements << '\n';
+    std::cout << "# iterations = " << iterations << '\n';
+    std::cout << "# UNROLL_LO = " << UNROLL_LO << '\n';
+    std::cout << "# UNROLL_HI = " << UNROLL_HI << '\n';
 
     uint32_t AUser = 233ul;
     int result = checkArgs(argc, argv, AUser);
