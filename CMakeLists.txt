@@ -33,8 +33,8 @@ ADD_DEFINITIONS(-pedantic)
 ADD_DEFINITIONS(-march=native)
 #ADD_DEFINITIONS(-mavx2)
 #ADD_DEFINITIONS(-march=knl)
-ADD_DEFINITIONS(-Wno-ignored-attributes)
 ADD_DEFINITIONS(-Weffc++)
+ADD_DEFINITIONS(-Wno-ignored-attributes)
 
 MACRO( add_static_lib arg_name arg_source_files arg_dep_libs )
     SET(LIBNAME "${arg_name}")
@@ -102,13 +102,22 @@ src/AN/AN_scalar_8_16_u_inv.cpp src/AN/AN_scalar_8_16_s_inv.cpp \
 src/AN/AN_scalar_16_32_s_divmod.cpp src/AN/AN_scalar_16_32_s_inv.cpp src/AN/AN_scalar_16_32_u_divmod.cpp src/AN/AN_scalar_16_32_u_inv.cpp \
 src/AN/AN_scalar_32_64_s_inv.cpp src/AN/AN_scalar_32_64_u_inv.cpp \
 src/AN/AN_sse42_8x16_8x32_s_divmod.cpp src/AN/AN_sse42_8x16_8x32_s_inv.cpp src/AN/AN_sse42_8x16_8x32_u_divmod.cpp src/AN/AN_sse42_8x16_8x32_u_inv.cpp \
-src/AN/AN_avx2_16x16_16x32_s_divmod.cpp src/AN/AN_avx2_16x16_16x32_s_inv.cpp src/AN/AN_avx2_16x16_16x32_u_divmod.cpp src/AN/AN_avx2_16x16_16x32_u_inv.cpp" "")
+src/AN/AN_avx2_16x16_16x32_s_divmod.cpp src/AN/AN_avx2_16x16_16x32_s_inv.cpp src/AN/AN_avx2_16x16_16x32_u_divmod.cpp src/AN/AN_avx2_16x16_16x32_u_inv.cpp \
+src/CRC/CRC_base.cpp src/CRC/CRC32_scalar_16.cpp src/CRC/CRC32_scalar_32.cpp" "")
 
 add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Util/Test.cpp" benchbase)
 
 add_algorithm(benchmark "src/Main.cpp src/Util/Test.cpp" benchbase)
+
+add_algorithm(benchmark32 "src/Main.cpp src/Util/Test.cpp" benchbase)
+TARGET_COMPILE_DEFINITIONS(benchmark32 PRIVATE "TEST32")
+
 add_algorithm(benchmark_novec "src/Main.cpp src/Util/Test.cpp" benchbase)
 TARGET_COMPILE_OPTIONS(benchmark_novec PUBLIC "-fno-tree-vectorize")
+
+add_algorithm(benchmark32_novec "src/Main.cpp src/Util/Test.cpp" benchbase)
+TARGET_COMPILE_DEFINITIONS(benchmark32_novec PRIVATE "TEST32")
+TARGET_COMPILE_OPTIONS(benchmark32_novec PUBLIC "-fno-tree-vectorize")
 
 FIND_PACKAGE(OpenMP)
 IF(OPENMP_FOUND)

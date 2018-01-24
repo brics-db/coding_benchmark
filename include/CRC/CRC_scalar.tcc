@@ -1,4 +1,4 @@
-// Copyright 2016 Till Kolditz, Stefan de Bruijn
+// Copyright (c) 2018 Till Kolditz
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/*
+ * File:   CRC_scalar.tcc
+ * Author: Till Kolditz <till.kolditz@gmail.com>
+ *
+ * Created on 24-01-2018 10:11
+ */
+
 #pragma once
 
-#ifndef XOR_SCALAR
-#error "Clients must not include this file directly, but file <XOR/XOR_scalar.hpp>!"
+#ifndef CRC_SCALAR
+#error "Clients must not include this file directly, but file <CRC/CRC_scalar.hpp>!"
 #endif
 
 #include <Util/Test.hpp>
-#include <XOR/XOR_base.hpp>
+#include <CRC/CRC_base.hpp>
 #include <Util/Intrinsics.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/Functors.hpp>
@@ -30,12 +37,12 @@
 namespace coding_benchmark {
 
     template<typename DATA, typename CS, size_t BLOCKSIZE>
-    struct XOR_scalar :
+    struct CRC_scalar :
             public Test<DATA, CS> {
 
         using Test<DATA, CS>::Test;
 
-        virtual ~XOR_scalar() {
+        virtual ~CRC_scalar() {
         }
 
         void RunEncode(
@@ -44,29 +51,29 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 auto dataIn = this->bufRaw.template begin<DATA>();
                 auto dataInEnd = this->bufRaw.template end<DATA>();
-                auto dataOut = this->bufEncoded.template begin<CS>();
+                auto crcOut = this->bufEncoded.template begin<CS>();
                 while (dataIn <= (dataInEnd - BLOCKSIZE)) {
-                    DATA checksum = 0;
-                    auto dataOut2 = reinterpret_cast<DATA*>(dataOut);
+                    CS crc = 0;
+                    auto dataOut = reinterpret_cast<DATA*>(crcOut);
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
                         const auto tmp = *dataIn++;
-                        *dataOut2++ = tmp;
-                        checksum ^= tmp;
+                        *dataOut++ = tmp;
+                        crc = CRC<DATA, CS>::compute(crc, tmp);
                     }
-                    dataOut = reinterpret_cast<CS*>(dataOut2);
-                    *dataOut++ = XOR<DATA, CS>::computeFinalChecksum(checksum);
+                    crcOut = reinterpret_cast<CS*>(dataOut);
+                    *crcOut++ = crc;
                 }
                 // checksum remaining values which do not fit in the block size
                 if (dataIn < dataInEnd) {
-                    DATA checksum = 0;
-                    auto dataOut2 = reinterpret_cast<DATA*>(dataOut);
+                    CS crc = 0;
+                    auto dataOut = reinterpret_cast<DATA*>(crcOut);
                     do {
                         const auto tmp = *dataIn++;
-                        *dataOut2++ = tmp;
-                        checksum ^= tmp;
+                        *dataOut++ = tmp;
+                        crc = CRC<DATA, CS>::compute(crc, tmp);
                     } while (dataIn < dataInEnd);
-                    dataOut = reinterpret_cast<CS*>(dataOut2);
-                    *dataOut++ = XOR<DATA, CS>::computeFinalChecksum(checksum);
+                    crcOut = reinterpret_cast<CS*>(dataOut);
+                    *crcOut = crc;
                 }
             }
         }
@@ -81,32 +88,29 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto data = this->bufEncoded.template begin<CS>();
-                while (i <= (numValues - BLOCKSIZE)) {
-                    auto data2 = reinterpret_cast<DATA*>(data); // first, iterate over sizeof(IN)-bit values
-                    DATA checksum = 0;
+                auto crcIn = this->bufEncoded.template begin<CS>();
+                for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn); // first, iterate over sizeof(IN)-bit values
+                    CS crc = 0;
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                        checksum ^= *data2++;
+                        crc = CRC<DATA, CS>::compute(crc, *dataIn++);
                     }
-                    i += BLOCKSIZE;
-                    data = reinterpret_cast<CS*>(data2); // second, advance data2 up to the checksum
-                    if (XORdiff<CS>::checksumsDiffer(*data, XOR<DATA, CS>::computeFinalChecksum(checksum))) // third, test checksum
-                            {
+                    crcIn = reinterpret_cast<CS*>(dataIn); // second, advance data2 up to the checksum
+                    if (crc != *crcIn) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
-                    ++data; // fourth, advance after the checksum to the next block of values
+                    ++crcIn; // fourth, advance after the checksum to the next block of values
                 }
                 // checksum remaining values which do not fit in the block size
                 if (i < numValues) {
-                    auto data2 = reinterpret_cast<DATA*>(data); // first, iterate over sizeof(IN)-bit values
-                    DATA checksum = 0;
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn); // first, iterate over sizeof(IN)-bit values
+                    CS crc = 0;
                     do {
                         ++i;
-                        checksum ^= *data2++;
+                        crc = CRC<DATA, CS>::compute(crc, *dataIn++);
                     } while (i < numValues);
-                    data = reinterpret_cast<CS*>(data2); // second, advance data2 up to the checksum
-                    if (XORdiff<CS>::checksumsDiffer(*data, XOR<DATA, CS>::computeFinalChecksum(checksum))) // third, test checksum
-                            {
+                    crcIn = reinterpret_cast<CS*>(dataIn); // second, advance data2 up to the checksum
+                    if (crc != *crcIn) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
@@ -119,10 +123,10 @@ namespace coding_benchmark {
         }
 
         struct Arithmetor {
-            XOR_scalar & test;
+            CRC_scalar & test;
             const ArithmeticConfiguration & config;
             Arithmetor(
-                    XOR_scalar & test,
+                    CRC_scalar & test,
                     const ArithmeticConfiguration & config)
                     : test(test),
                       config(config) {
@@ -132,32 +136,32 @@ namespace coding_benchmark {
                 func<> functor;
                 size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<CS>();
+                auto crcIn = test.bufEncoded.template begin<CS>();
                 auto dataOut = test.bufResult.template begin<DATA>();
                 for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
-                    DATA checksum = 0;
-                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
+                    CS crc = 0;
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                        const auto tmp = functor(*dataIn2++, config.operand);
+                        const auto tmp = functor(*dataIn++, config.operand);
                         *dataOut++ = tmp;
-                        checksum ^= tmp;
+                        crc = CRC<DATA, CS>::compute(crc, tmp);
                     }
                     auto chkOut = reinterpret_cast<CS*>(dataOut);
-                    *chkOut++ = XOR<DATA, CS>::computeFinalChecksum(checksum);
+                    *chkOut++ = crc;
                     dataOut = reinterpret_cast<DATA*>(chkOut);
-                    dataIn = reinterpret_cast<CS*>(dataIn2) + 1; // ignore the original checksum
+                    crcIn = reinterpret_cast<CS*>(dataIn) + 1; // ignore the original checksum
                 }
                 // checksum remaining values which do not fit in the block size
                 if (i < numValues) {
-                    DATA checksum = 0;
-                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
+                    CS crc = 0;
+                    auto dataIn2 = reinterpret_cast<DATA*>(crcIn);
                     for (; i < numValues; ++i) {
                         const auto tmp = functor(*dataIn2++, config.operand);
                         *dataOut++ = tmp;
-                        checksum ^= tmp;
+                        crc = CRC<DATA, CS>::compute(crc, tmp);
                     }
                     auto chkOut = reinterpret_cast<CS*>(dataOut);
-                    *chkOut = XOR<DATA, CS>::computeFinalChecksum(checksum);
+                    *chkOut = crc;
                 }
             }
             void operator()(
@@ -192,11 +196,11 @@ namespace coding_benchmark {
         }
 
         struct ArithmetorChecked {
-            XOR_scalar & test;
+            CRC_scalar & test;
             const ArithmeticConfiguration & config;
             const size_t iteration;
             ArithmetorChecked(
-                    XOR_scalar & test,
+                    CRC_scalar & test,
                     const ArithmeticConfiguration & config,
                     const size_t iteration)
                     : test(test),
@@ -208,49 +212,46 @@ namespace coding_benchmark {
                 func<> functor;
                 size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<CS>();
+                auto crcIn = test.bufEncoded.template begin<CS>();
                 auto dataOut = test.bufResult.template begin<DATA>();
                 for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
-                    DATA oldChecksum = 0;
-                    DATA newChecksum = 0;
-                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
+                    CS crcOld = 0;
+                    CS crcNew = 0;
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                        const auto tmp1 = *dataIn2++;
-                        oldChecksum ^= tmp1;
+                        const auto tmp1 = *dataIn++;
+                        crcOld = CRC<DATA, CS>::compute(crcOld, tmp1);
                         const auto tmp2 = functor(tmp1, config.operand);
-                        newChecksum ^= tmp2;
                         *dataOut++ = tmp2;
+                        crcNew = CRC<DATA, CS>::compute(crcNew, tmp2);
                     }
-                    dataIn = reinterpret_cast<CS*>(dataIn2);
-                    const auto finalOLdChecksum = XOR<DATA, CS>::computeFinalChecksum(oldChecksum);
-                    const auto finalNewChecksum = XOR<DATA, CS>::computeFinalChecksum(newChecksum);
-                    if (XORdiff<CS>::checksumsDiffer(*dataIn++, finalOLdChecksum)) {
+                    crcIn = reinterpret_cast<CS*>(dataIn);
+                    if (*crcIn != crcOld) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
-                    auto chkOut = reinterpret_cast<CS*>(dataOut);
-                    *chkOut++ = finalNewChecksum;
-                    dataOut = reinterpret_cast<DATA*>(chkOut);
+                    ++crcIn;
+                    auto crcOut = reinterpret_cast<CS*>(dataOut);
+                    *crcOut++ = crcNew;
+                    dataOut = reinterpret_cast<DATA*>(crcOut);
                 }
                 // checksum remaining values which do not fit in the block size
                 if (i < numValues) {
-                    DATA oldChecksum = 0;
-                    DATA newChecksum = 0;
-                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
-                    for (; i < numValues; ++i) {
-                        const auto tmp1 = *dataIn2++;
-                        oldChecksum ^= tmp1;
+                    CS crcOld = 0;
+                    CS crcNew = 0;
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
+                    for (size_t k = 0; k < BLOCKSIZE; ++k) {
+                        const auto tmp1 = *dataIn++;
+                        crcOld = CRC<DATA, CS>::compute(crcOld, tmp1);
                         const auto tmp2 = functor(tmp1, config.operand);
-                        newChecksum ^= tmp2;
                         *dataOut++ = tmp2;
+                        crcNew = CRC<DATA, CS>::compute(crcNew, tmp2);
                     }
-                    dataIn = reinterpret_cast<CS*>(dataIn2);
-                    const auto finalOLdChecksum = XOR<DATA, CS>::computeFinalChecksum(oldChecksum);
-                    const auto finalNewChecksum = XOR<DATA, CS>::computeFinalChecksum(newChecksum);
-                    if (XORdiff<CS>::checksumsDiffer(*dataIn++, finalOLdChecksum)) {
+                    crcIn = reinterpret_cast<CS*>(dataIn);
+                    if (*crcIn != crcOld) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
-                    auto chkOut = reinterpret_cast<CS*>(dataOut);
-                    *chkOut = finalNewChecksum;
+                    auto crcOut = reinterpret_cast<CS*>(dataOut);
+                    *crcOut = crcNew;
                 }
             }
             void operator()(
@@ -290,10 +291,10 @@ namespace coding_benchmark {
 
         struct Aggregator {
             typedef typename Larger<DATA>::larger_t larger_t;
-            XOR_scalar & test;
+            CRC_scalar & test;
             const AggregateConfiguration & config;
             Aggregator(
-                    XOR_scalar & test,
+                    CRC_scalar & test,
                     const AggregateConfiguration & config)
                     : test(test),
                       config(config) {
@@ -305,24 +306,25 @@ namespace coding_benchmark {
                     Finalizer && funcFinal) {
                 size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<CS>();
+                auto crcIn = test.bufEncoded.template begin<CS>();
                 auto dataOut = test.bufResult.template begin<Tout>();
                 Tout value = funcInit();
-                while (i <= (numValues - BLOCKSIZE)) {
-                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
+                for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                        value = funcKernel(value, *dataIn2++);
+                        value = funcKernel(value, *dataIn++);
                     }
-                    dataIn = reinterpret_cast<CS*>(dataIn2);
-                    ++dataIn; // here, simply jump over the checksum
-                    i += BLOCKSIZE;
+                    crcIn = reinterpret_cast<CS*>(dataIn) + 1; // here, simply jump over the checksum
                 }
-                for (; i < numValues; ++i) {
-                    value = funcKernel(value, *dataIn++);
+                if (i < numValues) {
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
+                    for (; i < numValues; ++i) {
+                        value = funcKernel(value, *dataIn++);
+                    }
                 }
-                auto final = funcFinal(value, numValues);
+                Tout final = funcFinal(value, numValues);
                 *dataOut++ = final;
-                *dataOut++ = final; // the "checksum"
+                *reinterpret_cast<CS*>(dataOut) = CRC<Tout, CS>::compute(0, final); // the "checksum"
             }
             void operator()(
                     AggregateConfiguration::Sum) {
@@ -360,11 +362,11 @@ namespace coding_benchmark {
 
         struct AggregatorChecked {
             typedef typename Larger<DATA>::larger_t larger_t;
-            XOR_scalar & test;
+            CRC_scalar & test;
             const AggregateConfiguration & config;
             const size_t iteration;
             AggregatorChecked(
-                    XOR_scalar & test,
+                    CRC_scalar & test,
                     const AggregateConfiguration & config,
                     size_t iteration)
                     : test(test),
@@ -378,39 +380,43 @@ namespace coding_benchmark {
                     Finalizer && funcFinal) {
                 size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<CS>();
+                auto crcIn = test.bufEncoded.template begin<CS>();
                 auto dataOut = test.bufResult.template begin<Tout>();
                 Tout value = funcInit();
-                while (i <= (numValues - BLOCKSIZE)) {
-                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
-                    CS checksum_computed(0);
+                for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
+                    CS crcOld = 0;
+                    CS crcNew = 0;
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                        checksum_computed ^= *dataIn2;
-                        value = funcKernel(value, *dataIn2++);
+                        DATA tmp = *dataIn++;
+                        crcOld = CRC<DATA, CS>::compute(crcOld, tmp);
+                        value = funcKernel(value, tmp);
+                        crcNew = CRC<DATA, CS>::compute(crcNew, value);
                     }
-                    dataIn = reinterpret_cast<CS*>(dataIn2);
-                    CS checksum_read = *dataIn++;
-                    if (XORdiff<CS>::checksumsDiffer(checksum_read, checksum_computed)) {
+                    crcIn = reinterpret_cast<CS*>(dataIn);
+                    if (*crcIn != crcOld) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
-                    i += BLOCKSIZE;
+                    ++crcIn;
                 }
                 if (i < numValues) {
-                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
-                    CS checksum_computed(0);
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
+                    CS crcOld = 0;
+                    CS crcNew = 0;
                     for (; i < numValues; ++i) {
-                        checksum_computed ^= *dataIn2;
-                        value = funcKernel(value, *dataIn2++);
+                        DATA tmp = *dataIn++;
+                        crcOld = CRC<DATA, CS>::compute(crcOld, tmp);
+                        value = funcKernel(value, tmp);
+                        crcNew = CRC<DATA, CS>::compute(crcNew, value);
                     }
-                    dataIn = reinterpret_cast<CS*>(dataIn2);
-                    CS checksum_read = *dataIn++;
-                    if (XORdiff<CS>::checksumsDiffer(checksum_read, checksum_computed)) {
+                    crcIn = reinterpret_cast<CS*>(dataIn);
+                    if (*crcIn != crcOld) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
-                auto final = funcFinal(value, numValues);
+                Tout final = funcFinal(value, numValues);
                 *dataOut++ = final;
-                *dataOut++ = final; // the "checksum"
+                *reinterpret_cast<CS*>(dataOut) = CRC<Tout, CS>::compute(0, final); // the "checksum"
             }
             void operator()(
                     AggregateConfiguration::Sum) {
@@ -447,20 +453,19 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto dataIn = this->bufEncoded.template begin<CS>();
+                auto crcIn = this->bufEncoded.template begin<CS>();
                 auto dataOut = this->bufResult.template begin<DATA>();
                 while (i <= (numValues - BLOCKSIZE)) {
-                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                        *dataOut++ = *dataIn2++;
+                        *dataOut++ = *dataIn++;
                     }
                     i += BLOCKSIZE;
-                    dataIn = reinterpret_cast<CS*>(dataIn2);
-                    dataIn++;
+                    crcIn = reinterpret_cast<CS*>(dataIn) + 1; // ignore the checksum
                 }
                 // checksum remaining values which do not fit in the block size
                 if (i < numValues) {
-                    for (auto dataIn2 = reinterpret_cast<DATA*>(dataIn); i < numValues; ++i) {
+                    for (auto dataIn2 = reinterpret_cast<DATA*>(crcIn); i < numValues; ++i) {
                         *dataOut++ = *dataIn2++;
                     }
                 }
@@ -477,34 +482,34 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto dataIn = this->bufEncoded.template begin<CS>();
+                auto crcIn = this->bufEncoded.template begin<CS>();
                 auto dataOut = this->bufResult.template begin<DATA>();
                 while (i <= (numValues - BLOCKSIZE)) {
-                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
-                    DATA checksum = 0;
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
+                    CS crc = 0;
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                        const auto tmp = *dataIn2++;
-                        checksum ^= tmp;
+                        const auto tmp = *dataIn++;
+                        crc = CRC<DATA, CS>::compute(crc, tmp);
                         *dataOut++ = tmp;
                     }
                     i += BLOCKSIZE;
-                    dataIn = reinterpret_cast<CS*>(dataIn2);
-                    if (XORdiff<CS>::checksumsDiffer(*dataIn, XOR<DATA, CS>::computeFinalChecksum(checksum))) { // third, test checksum
+                    crcIn = reinterpret_cast<CS*>(dataIn);
+                    if (crc != *crcIn) { // third, test checksum
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
-                    dataIn++;
+                    ++crcIn;
                 }
                 // checksum remaining values which do not fit in the block size
                 if (i < numValues) {
-                    auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
-                    DATA checksum = 0;
-                    for (; i < numValues; ++i) {
-                        const auto tmp = *dataIn2++;
-                        checksum ^= tmp;
+                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
+                    CS crc = 0;
+                    for (size_t k = 0; k < BLOCKSIZE; ++k) {
+                        const auto tmp = *dataIn++;
+                        crc = CRC<DATA, CS>::compute(crc, tmp);
                         *dataOut++ = tmp;
                     }
-                    dataIn = reinterpret_cast<CS*>(dataIn2);
-                    if (XORdiff<CS>::checksumsDiffer(*dataIn, XOR<DATA, CS>::computeFinalChecksum(checksum))) { // third, test checksum
+                    crcIn = reinterpret_cast<CS*>(dataIn);
+                    if (crc != *crcIn) { // third, test checksum
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
