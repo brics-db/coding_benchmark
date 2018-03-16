@@ -77,20 +77,20 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto data = this->bufEncoded.template begin<hamming_scalar_t>();
-                const auto dataEnd = this->bufEncoded.template end<hamming_scalar_t>();
+                auto data = config.target.template begin<hamming_scalar_t>();
+                const auto dataEnd = config.target.template end<hamming_scalar_t>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data) {
                         if (data->isValid()) {
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, data - config.target.template begin<hamming_scalar_t>(), iteration);
                         }
                     }
                 }
                 for (; data < dataEnd; ++data) {
                     if (data->isValid()) {
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<hamming_scalar_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, data - config.target.template begin<hamming_scalar_t>(), iteration);
                     }
                 }
             }

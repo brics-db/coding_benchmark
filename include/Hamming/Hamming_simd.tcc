@@ -110,7 +110,7 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto data = this->bufEncoded.template begin<hamming_simd_t>();
+                auto data = config.target.template begin<hamming_simd_t>();
                 while (i <= (numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++data) {
                         if (!data->isValid()) {

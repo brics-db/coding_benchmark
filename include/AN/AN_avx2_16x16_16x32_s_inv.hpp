@@ -47,8 +47,8 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto mmData = this->bufEncoded.template begin<__m256i >();
-                auto mmDataEnd = this->bufEncoded.template end<__m256i >();
+                auto mmData = config.target.template begin<__m256i >();
+                auto mmDataEnd = config.target.template end<__m256i >();
                 int32_t dMin = std::numeric_limits<int16_t>::min(); // we assume 16-bit input data
                 int32_t dMax = std::numeric_limits<int16_t>::max(); // we assume 16-bit input data
                 __m256i mmDMin = mm<__m256i, int32_t>::set1(dMin);
@@ -64,7 +64,7 @@ namespace coding_benchmark {
                         if ((maskDMin == mmEnc::FULL_MASK) && (maskDMax == mmEnc::FULL_MASK)) {
                             ++mmData;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - this->bufEncoded.template begin<int32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - config.target.template begin<int32_t>(), iteration);
                         }
                     }
                 }
@@ -77,7 +77,7 @@ namespace coding_benchmark {
                     if ((maskDMin == mmEnc::FULL_MASK) && (maskDMax == mmEnc::FULL_MASK)) {
                         ++mmData;
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - this->bufEncoded.template begin<int32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(mmData) - config.target.template begin<int32_t>(), iteration);
                     }
                 }
                 if (mmData < mmDataEnd) {
@@ -90,7 +90,7 @@ namespace coding_benchmark {
                         } else {
                             std::stringstream ss;
                             ss << " Value:" << *data2;
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data2) - this->bufEncoded.template begin<int32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<int32_t*>(data2) - config.target.template begin<int32_t>(), iteration);
                         }
                     }
                 }

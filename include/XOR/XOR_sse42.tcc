@@ -133,7 +133,7 @@ namespace coding_benchmark {
                 const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_SIMDREG * BLOCKSIZE;
                 size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto data128 = this->bufEncoded.template begin<__m128i >();
+                auto data128 = config.target.template begin<__m128i >();
                 while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
                     __m128i checksum = _mm_setzero_si128();
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {

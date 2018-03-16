@@ -60,7 +60,7 @@ struct CopyTest :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            int ret = memcmp(this->bufEncoded.begin(), this->bufRaw.begin(), getNumBytes());
+            int ret = memcmp(config.target.begin(), this->bufRaw.begin(), getNumBytes());
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }

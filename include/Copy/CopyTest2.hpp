@@ -75,7 +75,7 @@ struct CopyTest2 :
             const size_t numValues = this->getNumValues();
             size_t i = 0;
             auto dataRaw = this->bufRaw.template begin<DATARAW>();
-            auto dataEnc = this->bufEncoded.template begin<DATAENC>();
+            auto dataEnc = config.target.template begin<DATAENC>();
             while (i <= (numValues - UNROLL)) {
                 // let the compiler unroll the loop
                 for (size_t unroll = 0; unroll < UNROLL; ++unroll, ++dataRaw, ++dataEnc, ++i) {

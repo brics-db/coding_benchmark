@@ -44,8 +44,8 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto mmData = this->bufEncoded.template begin<__m256i >();
-                auto mm_DataEnd = this->bufEncoded.template end<__m256i >();
+                auto mmData = config.target.template begin<__m256i >();
+                auto mm_DataEnd = config.target.template end<__m256i >();
                 while (mmData <= (mm_DataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
@@ -55,7 +55,7 @@ namespace coding_benchmark {
                                 && (_mm256_extract_epi32(mmIn, 6) % this->A == 0) && (_mm256_extract_epi32(mmIn, 7) % this->A == 0)) {
                             ++mmData;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - config.target.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -67,7 +67,7 @@ namespace coding_benchmark {
                             && (_mm256_extract_epi32(mmIn, 6) % this->A == 0) && (_mm256_extract_epi32(mmIn, 7) % this->A == 0)) {
                         ++mmData;
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - config.target.template begin<DATAENC>(), iteration);
                     }
                 }
                 if (mmData < mm_DataEnd) {
@@ -77,7 +77,7 @@ namespace coding_benchmark {
                         if ((*data2 % this->A) == 0) {
                             ++data2;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(data2) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(data2) - config.target.template begin<DATAENC>(), iteration);
                         }
                     }
                 }

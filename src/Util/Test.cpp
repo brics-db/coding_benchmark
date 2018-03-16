@@ -216,6 +216,8 @@ struct ConfigurationModeExecutor<Conf, max, max> {
 
 template<typename PreFunc, typename RunFunc>
 void InternalExecute(
+        TestBase & test,
+        const CheckConfiguration & cc,
         Stopwatch & sw,
         TestInfo & ti,
         PreFunc preFunc,
@@ -239,6 +241,7 @@ void InternalExecute(
         runFunc();
 #endif
         ti.set(sw.Current());
+        test.RunCheck(cc);
     } catch (ErrorInfo & ei) {
         auto msg = ei.what();
         std::cerr << msg << std::endl;
@@ -248,6 +251,8 @@ void InternalExecute(
 
 template<typename PreFunc, typename RunFunc, typename SetTimeInfoFunc, typename CatchErrorInfoFunc>
 void InternalExecuteMode(
+        TestBase & test,
+        const CheckConfiguration & cc,
         Stopwatch & sw,
         PreFunc preFunc,
         RunFunc runFunc,
@@ -273,6 +278,7 @@ void InternalExecuteMode(
 #endif
         auto nanos = sw.Current();
         setTimeInfoFunc(nanos);
+        test.RunCheck(cc);
     } catch (ErrorInfo & ei) {
         auto msg = ei.what();
         std::cerr << msg << std::endl;
@@ -322,7 +328,7 @@ TestInfos TestBase::Execute(
     std::uniform_int_distribution<uint16_t> rDist;
 
     EncodeConfiguration encConf(configTest);
-    CheckConfiguration chkConf(configTest);
+    CheckConfiguration chkConf(configTest, bufEncoded);
     ArithmeticConfiguration arithConf(configTest, ArithmeticConfiguration::Mode(ArithmeticConfiguration::Add()), rDist(rEng));
     // Following: use an odd A. As the actual A is not important we can choose an arbitrary one here and simply cast it later to the desired width (i.e. select the appropriate LSBs).
     std::size_t newA = rDist(rEng) | 0x1;
@@ -336,16 +342,20 @@ TestInfos TestBase::Execute(
 
     TestInfo tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk, tiMaxChk, tiAvgChk, tiReencChk, tiDec, tiDecChk;
 
+    TestConfiguration tc(1); // we need to check the result buffer only once!
+    const CheckConfiguration cc1 = CheckConfiguration(tc, bufEncoded);
+    const CheckConfiguration cc2 = CheckConfiguration(tc, bufResult);
+
     std::clog << "encode" << std::flush;
-    InternalExecute(sw, tiEnc, [this,&encConf] {this->PreEncode(encConf);}, [this,&encConf] {this->RunEncode(encConf);});
+    InternalExecute(*this, cc1, sw, tiEnc, [this,&encConf] {this->PreEncode(encConf);}, [this,&encConf] {this->RunEncode(encConf);});
 
     if (configTest.enableCheck && this->DoCheck()) {
         std::clog << ", check" << std::flush;
-        InternalExecute(sw, tiCheck, [this,&chkConf] {this->PreCheck(chkConf);}, [this,&chkConf] {this->RunCheck(chkConf);});
+        InternalExecute(*this, cc1, sw, tiCheck, [this,&chkConf] {this->PreCheck(chkConf);}, [this,&chkConf] {this->RunCheck(chkConf);});
     }
 
     if (configTest.enableArithmetic) {
-        auto func = [this,&sw,&tiAdd,&tiSub,&tiMul,&tiDiv] (ArithmeticConfiguration & conf) {
+        auto func = [this,&cc2,&sw,&tiAdd,&tiSub,&tiMul,&tiDiv] (ArithmeticConfiguration & conf) {
             if (DoArithmetic(conf)) {
                 std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode);
                 auto preFunc = [this,&conf] {
@@ -360,14 +370,14 @@ TestInfos TestBase::Execute(
                 auto catchFunc = [&conf,&tiAdd,&tiSub,&tiMul,&tiDiv] (const char * msg) {
                     SetForMode<ArithmeticConfiguration, const char *>::run(conf, msg, {&tiAdd,&tiSub,&tiMul,&tiDiv});
                 };
-                InternalExecuteMode(sw, preFunc, runFunc, setFunc, catchFunc);
+                InternalExecuteMode(*this, cc2, sw, preFunc, runFunc, setFunc, catchFunc);
             };
         };
         ConfigurationModeExecutor<ArithmeticConfiguration>::run(arithConf, func);
     }
 
     if (configTest.enableArithmeticChk) {
-        auto func = [this,&sw,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (ArithmeticConfiguration & conf) {
+        auto func = [this,&cc2,&sw,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (ArithmeticConfiguration & conf) {
             if (DoArithmeticChecked(conf)) {
                 std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode) << " checked";
                 auto preFunc = [this,&conf] {
@@ -382,14 +392,14 @@ TestInfos TestBase::Execute(
                 auto catchFunc = [&conf,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (const char * msg) {
                     SetForMode<ArithmeticConfiguration, const char *>::run(conf, msg, {&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk});
                 };
-                InternalExecuteMode(sw, preFunc, runFunc, setFunc, catchFunc);
+                InternalExecuteMode(*this, cc2, sw, preFunc, runFunc, setFunc, catchFunc);
             }
         };
         ConfigurationModeExecutor<ArithmeticConfiguration>::run(arithConf, func);
     }
 
     if (configTest.enableAggregate) {
-        auto func = [this,&sw,&tiSum,&tiMin,&tiMax,&tiAvg] (AggregateConfiguration & conf) {
+        auto func = [this,&cc2,&sw,&tiSum,&tiMin,&tiMax,&tiAvg] (AggregateConfiguration & conf) {
             if (DoAggregate(conf)) {
                 std::clog << ", " << std::visit(AggregateConfigurationModeName(), conf.mode);
                 auto preFunc = [this,&conf] {
@@ -404,14 +414,14 @@ TestInfos TestBase::Execute(
                 auto catchFunc = [&conf,&tiSum,&tiMin,&tiMax,&tiAvg] (const char * msg) {
                     SetForMode<AggregateConfiguration, const char *>::run(conf, msg, {&tiSum,&tiMin,&tiMax,&tiAvg});
                 };
-                InternalExecuteMode(sw, preFunc, runFunc, setFunc, catchFunc);
+                InternalExecuteMode(*this, cc2, sw, preFunc, runFunc, setFunc, catchFunc);
             }
         };
         ConfigurationModeExecutor<AggregateConfiguration>::run(aggrConf, func);
     }
 
     if (configTest.enableAggregateChk) {
-        auto func = [this,&sw,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (AggregateConfiguration & conf) {
+        auto func = [this,&cc2,&sw,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (AggregateConfiguration & conf) {
             if (DoAggregateChecked(conf)) {
                 std::clog << ", " << std::visit(AggregateConfigurationModeName(), conf.mode) << " checked";
                 auto preFunc = [this,&conf] {
@@ -426,7 +436,7 @@ TestInfos TestBase::Execute(
                 auto catchFunc = [&conf,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (const char * msg) {
                     SetForMode<AggregateConfiguration, const char *>::run(conf, msg, {&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk});
                 };
-                InternalExecuteMode(sw, preFunc, runFunc, setFunc, catchFunc);
+                InternalExecuteMode(*this, cc2, sw, preFunc, runFunc, setFunc, catchFunc);
             }
         };
         ConfigurationModeExecutor<AggregateConfiguration>::run(aggrConf, func);
@@ -434,17 +444,17 @@ TestInfos TestBase::Execute(
 
     if (configTest.enableReencodeChk && this->DoReencodeChecked()) {
         std::clog << ", reencode checked" << std::flush;
-        InternalExecute(sw, tiReencChk, [this,&reencConf] {this->PreReencodeChecked(reencConf);}, [this,&reencConf] {this->RunReencodeChecked(reencConf);});
+        InternalExecute(*this, cc2, sw, tiReencChk, [this,&reencConf] {this->PreReencodeChecked(reencConf);}, [this,&reencConf] {this->RunReencodeChecked(reencConf);});
     }
 
     if (configTest.enableDecode && this->DoDecode()) {
         std::clog << ", decode" << std::flush;
-        InternalExecute(sw, tiDec, [this,&decConf] {this->PreDecode(decConf);}, [this,&decConf] {this->RunDecode(decConf);});
+        InternalExecute(*this, cc2, sw, tiDec, [this,&decConf] {this->PreDecode(decConf);}, [this,&decConf] {this->RunDecode(decConf);});
     }
 
     if (configTest.enableDecodeChk && this->DoDecodeChecked()) {
         std::clog << ", decode checked" << std::flush;
-        InternalExecute(sw, tiDecChk, [this,&decConf] {this->PreDecodeChecked(decConf);}, [this,&decConf] {this->RunDecodeChecked(decConf);});
+        InternalExecute(*this, cc2, sw, tiDecChk, [this,&decConf] {this->PreDecodeChecked(decConf);}, [this,&decConf] {this->RunDecodeChecked(decConf);});
     }
 
     return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk,

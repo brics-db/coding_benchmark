@@ -49,7 +49,7 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
-                auto data = this->bufEncoded.template begin<DATAENC>();
+                auto data = config.target.template begin<DATAENC>();
                 auto dataEnd = data + numValues;
                 const constexpr DATAENC dMax = static_cast<DATAENC>(std::numeric_limits<DATARAW>::max());
                 while (data <= (dataEnd - UNROLL)) {
@@ -61,7 +61,7 @@ namespace coding_benchmark {
                         } else {
                             std::stringstream ss;
                             ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                            throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
+                            throw ErrorInfo(__FILE__, __LINE__, data - config.target.template begin<DATAENC>(), iteration, ss.str().c_str());
                         }
                     }
                 }
@@ -73,7 +73,7 @@ namespace coding_benchmark {
                     } else {
                         std::stringstream ss;
                         ss << "A=" << this->A << ", A^-1=" << this->A_INV;
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration, ss.str().c_str());
+                        throw ErrorInfo(__FILE__, __LINE__, data - config.target.template begin<DATAENC>(), iteration, ss.str().c_str());
                     }
                 }
             }

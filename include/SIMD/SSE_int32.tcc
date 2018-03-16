@@ -488,7 +488,17 @@ namespace coding_benchmark {
                     static inline __m128i div(
                             __m128i a,
                             __m128i b) {
-                        return _mm_cvtps_epi32(_mm_div_ps(_mm_cvtepi32_ps(a), _mm_cvtepi32_ps(b)));
+                        // return _mm_cvtps_epi32(_mm_div_ps(_mm_cvtepi32_ps(a), _mm_cvtepi32_ps(b)));
+                        // let's do it more exact
+                        auto mmA1 = _mm_cvtepi32_pd(a);
+                        auto mmA2 = _mm_cvtepi32_pd(_mm_srli_si128(a, 8));
+                        auto mmB1 = _mm_cvtepi32_pd(b);
+                        auto mmB2 = _mm_cvtepi32_pd(_mm_srli_si128(b, 8));
+                        auto tmp1 = _mm_div_pd(mmA1, mmB1);
+                        auto tmp2 = _mm_div_pd(mmA2, mmB2);
+                        auto tmp3 = _mm_cvtpd_epi32(tmp1);
+                        auto tmp4 = _mm_cvtpd_epi32(tmp2);
+                        return _mm_blendv_epi8(tmp3, tmp4, _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0)); // combine the results
                     }
                 };
 

@@ -40,7 +40,7 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 const size_t numValues = this->getNumValues();
-                auto data = this->bufEncoded.template begin<DATAENC>();
+                auto data = config.target.template begin<DATAENC>();
                 const auto dataEnd = data + numValues;
                 while (data <= (dataEnd - UNROLL)) {
                     // let the compiler unroll the loop
@@ -48,7 +48,7 @@ namespace coding_benchmark {
                         if ((*data % this->A) == 0) {
                             ++data;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, data - config.target.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -57,7 +57,7 @@ namespace coding_benchmark {
                     if ((*data % this->A) == 0) {
                         ++data;
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, data - this->bufEncoded.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, data - config.target.template begin<DATAENC>(), iteration);
                     }
                 }
             }

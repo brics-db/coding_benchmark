@@ -88,7 +88,7 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto crcIn = this->bufEncoded.template begin<CS>();
+                auto crcIn = config.target.template begin<CS>();
                 for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
                     auto dataIn = reinterpret_cast<DATA*>(crcIn); // first, iterate over sizeof(IN)-bit values
                     CS crc = 0;

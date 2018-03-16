@@ -78,9 +78,12 @@ struct EncodeConfiguration :
 
 struct CheckConfiguration :
         public BasicTestConfiguration {
+    const AlignedBlock & target;
     CheckConfiguration(
-            const BasicTestConfiguration & config)
-            : BasicTestConfiguration(config) {
+            const BasicTestConfiguration & config,
+            const AlignedBlock & target)
+            : BasicTestConfiguration(config),
+              target(target) {
     }
 };
 

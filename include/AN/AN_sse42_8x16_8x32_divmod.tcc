@@ -43,8 +43,8 @@ namespace coding_benchmark {
         virtual void RunCheck(
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                auto mmData = this->bufEncoded.template begin<__m128i >();
-                const auto mmDataEnd = this->bufEncoded.template end<__m128i >();
+                auto mmData = config.target.template begin<__m128i >();
+                const auto mmDataEnd = config.target.template end<__m128i >();
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
@@ -53,7 +53,7 @@ namespace coding_benchmark {
                                 && (_mm_extract_epi32(mmIn, 3) % this->A == 0)) {
                             ++mmData;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - config.target.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -64,7 +64,7 @@ namespace coding_benchmark {
                             && (_mm_extract_epi32(mmIn, 3) % this->A == 0)) {
                         ++mmData;
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - this->bufEncoded.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData) - config.target.template begin<DATAENC>(), iteration);
                     }
                 }
                 if (mmData < mmDataEnd) {
@@ -73,7 +73,7 @@ namespace coding_benchmark {
                         if ((*data2 % this->A) == 0) {
                             ++data2;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, data2 - this->bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, data2 - config.target.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -102,15 +102,27 @@ namespace coding_benchmark {
                 auto mmData = test.bufEncoded.template begin<__m128i >();
                 const auto mmDataEnd = test.bufEncoded.template end<__m128i >();
                 auto mmOut = test.bufResult.template begin<__m128i >();
-                DATAENC operandEnc = config.operand * test.A;
-                auto mmOperandEnc = _mm_set1_epi32(operandEnc);
+                DATAENC operand = config.operand;
+                if constexpr (std::is_same_v<Functor<void>, add<void>> || std::is_same_v<Functor<void>, sub<void>> || std::is_same_v<Functor<void>, div<void>>) {
+                    operand = config.operand * test.A;
+                } else if constexpr (std::is_same_v<Functor<void>, mul<void>>) {
+                    // do not encode operand here, otherwise we will have non-code values after the operation!
+                } else {
+                    throw std::runtime_error("Functor not known!");
+                }
+                __m128i mmOperand = mm<__m128i, DATAENC>::set1(operand);
+                __m128i mmA = mm<__m128i, DATAENC>::set1(test.A);
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = _mm_lddqu_si128(mmData++);
                         if ((_mm_extract_epi32(mmIn, 0) % test.A == 0) && (_mm_extract_epi32(mmIn, 1) % test.A == 0) && (_mm_extract_epi32(mmIn, 2) % test.A == 0)
                                 && (_mm_extract_epi32(mmIn, 3) % test.A == 0)) {
-                            _mm_storeu_si128(mmOut++, mm_op<__m128i, DATAENC, Functor>::compute(mmIn, mmOperandEnc));
+                            auto x = mm_op<__m128i, DATAENC, Functor>::compute(_mm_lddqu_si128(mmData++), mmOperand);
+                            if (std::is_same_v<Functor<void>, div<void>>) {
+                                x = mm_op<__m128i, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
+                            }
+                            _mm_storeu_si128(mmOut++, x);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
@@ -121,7 +133,11 @@ namespace coding_benchmark {
                     auto mmIn = _mm_lddqu_si128(mmData++);
                     if ((_mm_extract_epi32(mmIn, 0) % test.A == 0) && (_mm_extract_epi32(mmIn, 1) % test.A == 0) && (_mm_extract_epi32(mmIn, 2) % test.A == 0)
                             && (_mm_extract_epi32(mmIn, 3) % test.A == 0)) {
-                        _mm_storeu_si128(mmOut++, mm_op<__m128i, DATAENC, Functor>::compute(mmIn, mmOperandEnc));
+                        auto x = mm_op<__m128i, DATAENC, Functor>::compute(_mm_lddqu_si128(mmData++), mmOperand);
+                        if (std::is_same_v<Functor<void>, div<void>>) {
+                            x = mm_op<__m128i, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
+                        }
+                        _mm_storeu_si128(mmOut++, x);
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
                     }
@@ -132,7 +148,11 @@ namespace coding_benchmark {
                     auto out32 = reinterpret_cast<DATAENC*>(mmOut);
                     for (auto data32 = reinterpret_cast<DATAENC*>(mmData); data32 < data32End; ++data32, ++out32) {
                         if (*data32 % test.A == 0) {
-                            *out32 = functor(*data32, operandEnc);
+                            auto x = functor(*data32, operand);
+                            if (std::is_same_v<Functor<void>, div<void>>) {
+                                x *= test.A; // make sure we get a code word again
+                            }
+                            *out32 = x;
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<DATAENC>(), iteration);
                         }
@@ -270,7 +290,7 @@ namespace coding_benchmark {
         void RunDecode(
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+                size_t numValues = this->getNumValues();
                 size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<__m128i >();
                 auto dataOut = this->bufResult.template begin<int64_t>();
@@ -320,7 +340,7 @@ namespace coding_benchmark {
         void RunDecodeChecked(
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                size_t numValues = this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
+                size_t numValues = this->getNumValues();
                 size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<__m128i >();
                 auto dataOut = this->bufResult.template begin<int64_t>();

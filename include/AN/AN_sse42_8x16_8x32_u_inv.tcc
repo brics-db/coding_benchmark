@@ -45,8 +45,8 @@ namespace coding_benchmark {
         virtual void RunCheck(
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                auto mmData = this->bufEncoded.template begin<__m128i >();
-                auto mmDataEnd = this->bufEncoded.template end<__m128i >();
+                auto mmData = config.target.template begin<__m128i >();
+                auto mmDataEnd = config.target.template end<__m128i >();
                 uint32_t dMax = std::numeric_limits<uint16_t>::max();
                 __m128i mmDMax = _mm_set1_epi32(dMax); // we assume 16-bit input data
                 __m128i mmAInv = _mm_set1_epi32(this->A_INV);
@@ -57,7 +57,7 @@ namespace coding_benchmark {
                         if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
                             ++mmData;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - this->bufEncoded.template begin<uint32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - config.target.template begin<uint32_t>(), iteration);
                         }
                     }
                 }
@@ -67,7 +67,7 @@ namespace coding_benchmark {
                     if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
                         ++mmData;
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - this->bufEncoded.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - config.target.template begin<uint32_t>(), iteration);
                     }
                 }
                 if (mmData < mmDataEnd) {
@@ -77,7 +77,7 @@ namespace coding_benchmark {
                         if ((*data2 * this->A_INV) <= dMax) {
                             ++data2;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, data2 - this->bufEncoded.template begin<uint32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, data2 - config.target.template begin<uint32_t>(), iteration);
                         }
                     }
                 }
@@ -109,15 +109,27 @@ namespace coding_benchmark {
                 auto mmData = test.bufEncoded.template begin<__m128i >();
                 const auto mmDataEnd = test.bufEncoded.template end<__m128i >();
                 auto mmOut = test.bufResult.template begin<__m128i >();
-                uint32_t operandEnc = config.operand * test.A;
-                auto mmOperandEnc = mm<__m128i, uint32_t>::set1(operandEnc);
+                uint32_t operand = config.operand;
+                if constexpr (std::is_same_v<Functor<void>, add<void>> || std::is_same_v<Functor<void>, sub<void>> || std::is_same_v<Functor<void>, div<void>>) {
+                    operand = config.operand * test.A;
+                } else if constexpr (std::is_same_v<Functor<void>, mul<void>>) {
+                    // do not encode operand here, otherwise we will have non-code values after the operation!
+                } else {
+                    throw std::runtime_error("Functor not known!");
+                }
+                __m128i mmOperand = mm<__m128i, uint32_t>::set1(operand);
+                __m128i mmA = mm<__m128i, uint32_t>::set1(test.A);
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = _mm_lddqu_si128(mmData);
                         auto mmInDec = mm_op<__m128i, uint32_t, mul>::compute(mmIn, mmAInv);
                         if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
-                            _mm_storeu_si128(mmOut++, mm_op<__m128i, uint32_t, Functor>::compute(_mm_lddqu_si128(mmData++), mmOperandEnc));
+                            auto x = mm_op<__m128i, uint32_t, Functor>::compute(_mm_lddqu_si128(mmData++), mmOperand);
+                            if (std::is_same_v<Functor<void>, div<void>>) {
+                                x = mm_op<__m128i, uint32_t, mul>::compute(x, mmA); // make sure we get a code word again
+                            }
+                            _mm_storeu_si128(mmOut++, x);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - test.bufEncoded.template begin<uint32_t>(), iteration);
                         }
@@ -128,7 +140,11 @@ namespace coding_benchmark {
                     auto mmIn = _mm_lddqu_si128(mmData);
                     auto mmInDec = mm_op<__m128i, uint32_t, mul>::compute(mmIn, mmAInv);
                     if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
-                        _mm_storeu_si128(mmOut++, mm_op<__m128i, uint32_t, Functor>::compute(_mm_lddqu_si128(mmData++), mmOperandEnc));
+                        auto x = mm_op<__m128i, uint32_t, Functor>::compute(_mm_lddqu_si128(mmData++), mmOperand);
+                        if (std::is_same_v<Functor<void>, div<void>>) {
+                            x = mm_op<__m128i, uint32_t, mul>::compute(x, mmA); // make sure we get a code word again
+                        }
+                        _mm_storeu_si128(mmOut++, x);
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - test.bufEncoded.template begin<uint32_t>(), iteration);
                     }
@@ -141,7 +157,11 @@ namespace coding_benchmark {
                     while (data < dataEnd) {
                         auto tmp = *data * test.A_INV;
                         if (tmp <= dMax) {
-                            *out++ = functor(*data++, operandEnc);
+                            auto x = functor(*data, operand);
+                            if (std::is_same_v<Functor<void>, div<void>>) {
+                                x *= test.A; // make sure we get a code word again
+                            }
+                            *out = x;
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, data - test.bufEncoded.template begin<uint32_t>(), iteration);
                         }

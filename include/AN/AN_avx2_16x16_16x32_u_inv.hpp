@@ -46,8 +46,8 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto mmData = this->bufEncoded.template begin<__m256i >();
-                auto mmDataEnd = this->bufEncoded.template end<__m256i >();
+                auto mmData = config.target.template begin<__m256i >();
+                auto mmDataEnd = config.target.template end<__m256i >();
                 uint32_t dMax = std::numeric_limits<uint16_t>::max();
                 __m256i mmDMax = mm<__m256i, uint32_t>::set1(dMax); // we assume 16-bit input data
                 __m256i mmAInv = mm<__m256i, uint32_t>::set1(this->A_INV);
@@ -58,7 +58,7 @@ namespace coding_benchmark {
                         if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
                             ++mmData;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - this->bufEncoded.template begin<uint32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - config.target.template begin<uint32_t>(), iteration);
                         }
                     }
                 }
@@ -68,7 +68,7 @@ namespace coding_benchmark {
                     if (mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) {
                         ++mmData;
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - this->bufEncoded.template begin<uint32_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(mmData) - config.target.template begin<uint32_t>(), iteration);
                     }
                 }
                 if (mmData < mmDataEnd) {
@@ -78,7 +78,7 @@ namespace coding_benchmark {
                         if ((*data2 * this->A_INV) <= dMax) {
                             ++data2;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data2) - this->bufEncoded.template begin<uint32_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<uint32_t*>(data2) - config.target.template begin<uint32_t>(), iteration);
                         }
                     }
                 }
