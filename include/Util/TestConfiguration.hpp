@@ -23,15 +23,34 @@
 
 #include <variant>
 
+/**
+ * This benchmark suite has a structure where there are individual ``tests'' which
+ * contain several ``subtests''.
+ * A ``Testcase'' runs each test on a sequence of unroll or block sizes. This is
+ * included, because some tests work on an adjustable block size. Other tests do
+ * not support block-based operation and there we test how ``loop unrolling''
+ * affects the runtimes.
+ */
+
+/**
+ * Abstract test configuration which keeps those settings which are
+ * common / useful / needed across all types of test configurations.
+ */
 struct BasicTestConfiguration {
     const size_t numIterations;
+    const size_t numValues;
 
     BasicTestConfiguration(
-            const size_t numIterations)
-            : numIterations(numIterations) {
+            const size_t numIterations,
+            const size_t numValues)
+            : numIterations(numIterations),
+              numValues(numValues) {
     }
 };
 
+/**
+ * The TestConfiguration contains the settings
+ */
 struct TestConfiguration :
         public BasicTestConfiguration {
     bool enableCheck;
@@ -44,8 +63,9 @@ struct TestConfiguration :
     bool enableDecodeChk;
 
     TestConfiguration(
-            const size_t numIterations)
-            : BasicTestConfiguration(numIterations),
+            const size_t numIterations,
+            const size_t numValues)
+            : BasicTestConfiguration(numIterations, numValues),
               enableCheck(true),
               enableArithmetic(true),
               enableArithmeticChk(true),
@@ -68,27 +88,34 @@ struct TestConfiguration :
     }
 };
 
-struct EncodeConfiguration :
+struct SubTestConfiguration :
         public BasicTestConfiguration {
-    EncodeConfiguration(
-            const BasicTestConfiguration & config)
-            : BasicTestConfiguration(config) {
+    const AlignedBlock & source;
+    const AlignedBlock & target;
+    SubTestConfiguration(
+            const BasicTestConfiguration & config,
+            const AlignedBlock & source,
+            const AlignedBlock & target)
+            : BasicTestConfiguration(config),
+              source(source),
+              target(target) {
     }
+    SubTestConfiguration(
+            const SubTestConfiguration &) = default;
+};
+
+struct EncodeConfiguration :
+        public SubTestConfiguration {
+    using SubTestConfiguration::SubTestConfiguration;
 };
 
 struct CheckConfiguration :
-        public BasicTestConfiguration {
-    const AlignedBlock & target;
-    CheckConfiguration(
-            const BasicTestConfiguration & config,
-            const AlignedBlock & target)
-            : BasicTestConfiguration(config),
-              target(target) {
-    }
+        public SubTestConfiguration {
+    using SubTestConfiguration::SubTestConfiguration;
 };
 
 struct FilterConfiguration :
-        public BasicTestConfiguration {
+        public SubTestConfiguration {
     struct None {
     };
     struct LT {
@@ -110,10 +137,10 @@ struct FilterConfiguration :
     Mode2 mode2;
     size_t predicate2;
     FilterConfiguration(
-            const BasicTestConfiguration & config,
+            const SubTestConfiguration & config,
             Mode1 mode,
             size_t predicate)
-            : BasicTestConfiguration(config),
+            : SubTestConfiguration(config),
               mode1(mode),
               predicate1(predicate),
               mode2(None()),
@@ -121,11 +148,37 @@ struct FilterConfiguration :
     }
     FilterConfiguration(
             const BasicTestConfiguration & config,
+            const AlignedBlock & source,
+            const AlignedBlock & target,
+            Mode1 mode,
+            size_t predicate)
+            : SubTestConfiguration(config, source, target),
+              mode1(mode),
+              predicate1(predicate),
+              mode2(None()),
+              predicate2() {
+    }
+    FilterConfiguration(
+            const SubTestConfiguration & config,
             Mode1 mode1,
             size_t predicate1,
             Mode2 mode2,
             size_t predicate2)
-            : BasicTestConfiguration(config),
+            : SubTestConfiguration(config),
+              mode1(mode1),
+              predicate1(predicate1),
+              mode2(mode2),
+              predicate2(predicate2) {
+    }
+    FilterConfiguration(
+            const BasicTestConfiguration & config,
+            const AlignedBlock & source,
+            const AlignedBlock & target,
+            Mode1 mode1,
+            size_t predicate1,
+            Mode2 mode2,
+            size_t predicate2)
+            : SubTestConfiguration(config, source, target),
               mode1(mode1),
               predicate1(predicate1),
               mode2(mode2),
@@ -134,7 +187,7 @@ struct FilterConfiguration :
 };
 
 struct ArithmeticConfiguration :
-        public BasicTestConfiguration {
+        public SubTestConfiguration {
     struct Add {
     };
     struct Sub {
@@ -147,10 +200,20 @@ struct ArithmeticConfiguration :
     Mode mode;
     size_t operand;
     ArithmeticConfiguration(
-            const BasicTestConfiguration & config,
+            const SubTestConfiguration & config,
             Mode mode,
             const size_t operand)
-            : BasicTestConfiguration(config),
+            : SubTestConfiguration(config),
+              mode(mode),
+              operand(operand) {
+    }
+    ArithmeticConfiguration(
+            const BasicTestConfiguration & config,
+            const AlignedBlock & source,
+            const AlignedBlock & target,
+            Mode mode,
+            const size_t operand)
+            : SubTestConfiguration(config, source, target),
               mode(mode),
               operand(operand) {
     }
@@ -176,7 +239,7 @@ struct ArithmeticConfigurationModeName {
 };
 
 struct AggregateConfiguration :
-        public BasicTestConfiguration {
+        public SubTestConfiguration {
     struct Sum {
     };
     struct Min {
@@ -188,9 +251,17 @@ struct AggregateConfiguration :
     typedef std::variant<Sum, Min, Max, Avg> Mode;
     Mode mode;
     AggregateConfiguration(
-            const BasicTestConfiguration & config,
+            const SubTestConfiguration & config,
             Mode mode)
-            : BasicTestConfiguration(config),
+            : SubTestConfiguration(config),
+              mode(mode) {
+    }
+    AggregateConfiguration(
+            const BasicTestConfiguration & config,
+            const AlignedBlock & source,
+            const AlignedBlock & target,
+            Mode mode)
+            : SubTestConfiguration(config, source, target),
               mode(mode) {
     }
 };
@@ -215,20 +286,25 @@ struct AggregateConfigurationModeName {
 };
 
 struct ReencodeConfiguration :
-        public BasicTestConfiguration {
+        public SubTestConfiguration {
     size_t newA;
     ReencodeConfiguration(
-            const BasicTestConfiguration & config,
+            const SubTestConfiguration & config,
             const size_t newA)
-            : BasicTestConfiguration(config),
+            : SubTestConfiguration(config),
+              newA(newA) {
+    }
+    ReencodeConfiguration(
+            const BasicTestConfiguration & config,
+            const AlignedBlock & source,
+            const AlignedBlock & target,
+            const size_t newA)
+            : SubTestConfiguration(config, source, target),
               newA(newA) {
     }
 };
 
 struct DecodeConfiguration :
-        public BasicTestConfiguration {
-    DecodeConfiguration(
-            const BasicTestConfiguration & config)
-            : BasicTestConfiguration(config) {
-    }
+        public SubTestConfiguration {
+    using SubTestConfiguration::SubTestConfiguration;
 };

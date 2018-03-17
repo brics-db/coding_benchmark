@@ -25,7 +25,7 @@ struct AlignedBlock {
 
 private:
     std::shared_ptr<char> baseptr;
-    void* data;
+    void* const data;
 
 public:
 
@@ -42,9 +42,7 @@ public:
             : nBytes(nBytes),
               alignment(alignment),
               baseptr(new char[nBytes + alignment]),
-              data(nullptr) {
-        size_t tmp = reinterpret_cast<size_t>(baseptr.get());
-        data = baseptr.get() + (alignment - (tmp & (alignment - 1)));
+              data(baseptr.get() + (alignment - (reinterpret_cast<size_t>(baseptr.get()) & (alignment - 1)))) {
     }
 
     AlignedBlock(
@@ -74,8 +72,13 @@ public:
         return reinterpret_cast<T*>(static_cast<char*>(data) + nBytes);
     }
 
+    void clear() const { // OK this is quite shitty but we need it when AlignedBlock is a member of a function's const argument
+        memset(data, 0, nBytes);
+    }
+
     virtual ~AlignedBlock() {
-        data = nullptr;
-        // baseptr is now a std::shared_ptr and auto-deallocated, which deletes its contents as well
+        // force to set everything to zero to avoid bad use-after-free
+        // we call the constructor, because I want data to be a constant pointer
+        new (this) AlignedBlock();
     }
 };

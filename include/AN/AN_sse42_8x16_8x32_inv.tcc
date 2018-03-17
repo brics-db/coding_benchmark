@@ -50,13 +50,12 @@ namespace coding_benchmark {
         void RunDecode(
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                size_t numValues = this->template getNumValues();
                 size_t i = 0;
-                auto dataIn = this->bufEncoded.template begin<__m128i >();
-                auto dataOut = this->bufResult.template begin<int64_t>();
+                auto dataIn = config.source.template begin<__m128i >();
+                auto dataOut = config.target.template begin<int64_t>();
                 auto mm_Ainv = _mm_set1_epi32(this->A_INV);
                 auto mmShuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0D0C090805040100);
-                for (; i <= (numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) {
+                for (; i <= (config.numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto tmp = _mm_lddqu_si128(dataIn++);
@@ -66,16 +65,16 @@ namespace coding_benchmark {
                     }
                 }
                 // remaining numbers
-                for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
+                for (; i <= (config.numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
                     auto tmp = _mm_lddqu_si128(dataIn++);
                     tmp = _mm_mullo_epi32(tmp, mm_Ainv);
                     tmp = _mm_shuffle_epi8(tmp, mmShuffle);
                     *dataOut++ = _mm_extract_epi64(tmp, 0);
                 }
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto out16 = reinterpret_cast<DATARAW*>(dataOut);
                     auto in32 = reinterpret_cast<DATAENC*>(dataIn);
-                    for (; i < numValues; ++i, ++in32, ++out16) {
+                    for (; i < config.numValues; ++i, ++in32, ++out16) {
                         *out16 = *in32 * this->A_INV;
                     }
                 }

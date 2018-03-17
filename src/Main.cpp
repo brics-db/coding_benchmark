@@ -114,8 +114,8 @@ int main(
 
     std::vector<std::vector<TestInfos>> vecTestInfos;
 
-    TestConfiguration testConfig(iterations);
-    DataGenerationConfiguration dataGenConfig;
+    TestConfiguration testConfig(iterations, numElements);
+    DataGenerationConfiguration dataGenConfig(12, 5, 4, 0); /* TODO we do not check for overflows or underflows ANYWHERE, yet :-(*/
 
     WarmUp<CopyTest16, UNROLL_LO, UNROLL_HI>("CopyTest16", "Copy", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig);
 
@@ -167,27 +167,28 @@ int main(
 #endif
 
 #ifdef TEST32
+    DataGenerationConfiguration dataGenConfig32(31); /* TODO we do not check for overflows or underflows ANYWHERE, yet :-(*/
     std::clog << "# 32-bit Baseline (memcpy / memcmp) test:" << std::endl;
-    TestCase<CopyTest32, UNROLL_LO, UNROLL_HI>("CopyTest32", "Copy", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<CopyTest32, UNROLL_LO, UNROLL_HI>("CopyTest32", "Copy", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
     refIdx = vecTestInfos.size() - 1;
 
     std::clog << "# 32-bit Scalar tests:" << std::endl;
     // 32-bit data sequential tests
-    TestCase<XOR_scalar_32_32, UNROLL_LO, UNROLL_HI>("XOR_scalar_32_32", "XOR Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
-    TestCase<Hamming_scalar_32, UNROLL_LO, UNROLL_HI>("Hamming_scalar_32", "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
-    TestCase<CRC32_scalar_32, UNROLL_LO, UNROLL_HI>("CRC32_scalar_32", "CRC32 Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<XOR_scalar_32_32, UNROLL_LO, UNROLL_HI>("XOR_scalar_32_32", "XOR Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
+    TestCase<Hamming_scalar_32, UNROLL_LO, UNROLL_HI>("Hamming_scalar_32", "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
+    TestCase<CRC32_scalar_32, UNROLL_LO, UNROLL_HI>("CRC32_scalar_32", "CRC32 Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
 
 #ifdef __SSE4_2__
     std::clog << "# 32-bit SSE4.2 tests:" << std::endl;
     // 32-bit data vectorized tests
-    TestCase<XOR_sse42_4x32_4x32, UNROLL_LO, UNROLL_HI>("XOR_sse42_4x32_4x32", "XOR SSE4.2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
-    TestCase<Hamming_sse42_32, UNROLL_LO, UNROLL_HI>("Hamming_sse42_32", "Hamming SSE4.2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<XOR_sse42_4x32_4x32, UNROLL_LO, UNROLL_HI>("XOR_sse42_4x32_4x32", "XOR SSE4.2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
+    TestCase<Hamming_sse42_32, UNROLL_LO, UNROLL_HI>("Hamming_sse42_32", "Hamming SSE4.2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
 #endif
 
 #ifdef __AVX2__
     std::clog << "# 32-bit AVX2 tests:" << std::endl;
-    TestCase<XOR_avx2_8x32_8x32, UNROLL_LO, UNROLL_HI>("XOR_avx2_8x32_8x32", "XOR AVX2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
-    TestCase<Hamming_avx2_32, UNROLL_LO, UNROLL_HI>("Hamming_avx2_32", "Hamming AVX2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig, vecTestInfos, refIdx);
+    TestCase<XOR_avx2_8x32_8x32, UNROLL_LO, UNROLL_HI>("XOR_avx2_8x32_8x32", "XOR AVX2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
+    TestCase<Hamming_avx2_32, UNROLL_LO, UNROLL_HI>("Hamming_avx2_32", "Hamming AVX2", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
 #endif
 #endif
 

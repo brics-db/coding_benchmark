@@ -54,9 +54,9 @@ namespace coding_benchmark {
         void RunEncode(
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                auto *mmData = this->bufRaw.template begin<__m128i >();
-                auto * const mmDataEnd = this->bufRaw.template end<__m128i >();
-                auto *mmOut = this->bufEncoded.template begin<__m128i >();
+                auto *mmData = config.source.template begin<__m128i >();
+                auto * const mmDataEnd = config.source.template end<__m128i >();
+                auto *mmOut = config.target.template begin<__m128i >();
                 auto mmA = _mm_set1_epi32(this->A);
 
                 const constexpr bool isSigned = std::is_signed<DATARAW>::value;
@@ -95,7 +95,7 @@ namespace coding_benchmark {
                 }
             }
         }
-//#define TOSTRING(X) #X
+
         bool DoArithmetic(
                 const ArithmeticConfiguration & config) override {
             return std::visit(ArithmeticSelector(), config.mode);
@@ -112,12 +112,13 @@ namespace coding_benchmark {
             }
             template<template<typename = void> class Functor>
             void impl() {
-                auto mmData = test.bufEncoded.template begin<__m128i >();
-                const auto mmDataEnd = test.bufEncoded.template end<__m128i >();
-                auto mmOut = test.bufResult.template begin<__m128i >();
+                auto mmData = config.source.template begin<__m128i >();
+                const auto mmDataEnd = config.source.template end<__m128i >();
+                auto mmOut = config.target.template begin<__m128i >();
+                auto mmA __attribute__((unused)) = mm<__m128i, DATAENC>::set1(test.A);
                 DATAENC operand = config.operand;
                 if constexpr (std::is_same_v<Functor<void>, add<void>> || std::is_same_v<Functor<void>, sub<void>> || std::is_same_v<Functor<void>, div<void>>) {
-                    operand = config.operand * test.A;
+                    operand *= test.A;
                 } else if constexpr (std::is_same_v<Functor<void>, mul<void>>) {
                     // do not encode operand here, otherwise we will have non-code values after the operation!
                 } else {
@@ -128,8 +129,8 @@ namespace coding_benchmark {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto x = mm_op<__m128i, DATAENC, Functor>::compute(_mm_lddqu_si128(mmData++), mmOperand);
-                        if (std::is_same_v<Functor<void>, div<void>>) {
-                            x = mm_op<__m128i, DATAENC, mul>::compute(x, mm<__m128i, DATAENC>::set1(test.A)); // make sure we get a code word again
+                        if constexpr (std::is_same_v<Functor<void>, div<void>>) {
+                            x = mm_op<__m128i, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
                         }
                         _mm_storeu_si128(mmOut++, x);
                     }
@@ -137,8 +138,8 @@ namespace coding_benchmark {
                 // remaining numbers
                 while (mmData <= (mmDataEnd - 1)) {
                     auto x = mm_op<__m128i, DATAENC, Functor>::compute(_mm_lddqu_si128(mmData++), mmOperand);
-                    if (std::is_same_v<Functor<void>, div<void>>) {
-                        x = mm_op<__m128i, DATAENC, mul>::compute(x, mm<__m128i, DATAENC>::set1(test.A)); // make sure we get a code word again
+                    if constexpr (std::is_same_v<Functor<void>, div<void>>) {
+                        x = mm_op<__m128i, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
                     }
                     _mm_storeu_si128(mmOut++, x);
                 }
@@ -203,9 +204,8 @@ namespace coding_benchmark {
                     VectorToScalar && funcVectorToScalar,
                     KernelScalar && funcKernelScalar,
                     Finalize && funcFinal) {
-                const size_t numValues = test.template getNumValues();
-                auto *mmData = test.bufEncoded.template begin<__m128i >();
-                auto * const mmDataEnd = test.bufEncoded.template end<__m128i >();
+                auto *mmData = config.source.template begin<__m128i >();
+                auto * const mmDataEnd = config.source.template end<__m128i >();
                 auto mmValue = funcInitVector();
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
@@ -223,8 +223,8 @@ namespace coding_benchmark {
                         value = funcKernelScalar(value, *dataIn++);
                     }
                 }
-                auto dataOut = test.bufResult.template begin<Aggregate>();
-                *dataOut = funcFinal(value, numValues);
+                auto dataOut = config.target.template begin<Aggregate>();
+                *dataOut = funcFinal(value, config.numValues);
             }
             void operator()(
                     AggregateConfiguration::Sum) {

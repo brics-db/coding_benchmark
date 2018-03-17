@@ -14,7 +14,6 @@
 
 #include <cstring>
 #include <iostream>
-#include <random>
 #include <functional>
 
 #ifdef OMP
@@ -26,43 +25,142 @@
 #include <Util/ErrorInfo.hpp>
 #include <Util/Stopwatch.hpp>
 
+Randomizer Randomizer::instance;
+
+Randomizer::Randomizer()
+        : rDev(),
+          rEng(rDev()),
+          rDist() {
+}
+
+int Randomizer::getUniformInt() {
+    return instance.rDist(instance.rEng);
+}
+
+DataGenerationConfiguration::DataGenerationConfiguration()
+        : numEffectiveBitsData(std::nullopt),
+          numIneffectiveLSBsData(std::nullopt),
+          numEffectiveBitsArithOperand(std::nullopt),
+          numIneffectiveLSBsArithOperand(std::nullopt) {
+}
+
+DataGenerationConfiguration::DataGenerationConfiguration(
+        const size_t numEffectiveLSBs)
+        : numEffectiveBitsData(numEffectiveLSBs),
+          numIneffectiveLSBsData(std::nullopt),
+          numEffectiveBitsArithOperand(std::nullopt),
+          numIneffectiveLSBsArithOperand(std::nullopt) {
+}
+
+DataGenerationConfiguration::DataGenerationConfiguration(
+        const size_t numEffectiveLSBs,
+        const size_t numIneffectiveLSBsData)
+        : numEffectiveBitsData(numEffectiveLSBs),
+          numIneffectiveLSBsData(numIneffectiveLSBsData),
+          numEffectiveBitsArithOperand(std::nullopt),
+          numIneffectiveLSBsArithOperand(std::nullopt) {
+}
+
+DataGenerationConfiguration::DataGenerationConfiguration(
+        const size_t numEffectiveLSBs,
+        const size_t numIneffectiveLSBsData,
+        const size_t numEffectiveBitsArithOperand)
+        : numEffectiveBitsData(numEffectiveLSBs),
+          numIneffectiveLSBsData(numIneffectiveLSBsData),
+          numEffectiveBitsArithOperand(numEffectiveBitsArithOperand),
+          numIneffectiveLSBsArithOperand(std::nullopt) {
+}
+
+DataGenerationConfiguration::DataGenerationConfiguration(
+        const size_t numEffectiveLSBs,
+        const size_t numIneffectiveLSBsData,
+        const size_t numEffectiveBitsArithOperand,
+        const size_t numIneffectiveLSBsArithOperand)
+        : numEffectiveBitsData(numEffectiveLSBs),
+          numIneffectiveLSBsData(numIneffectiveLSBsData),
+          numEffectiveBitsArithOperand(numEffectiveBitsArithOperand),
+          numIneffectiveLSBsArithOperand(numIneffectiveLSBsArithOperand) {
+}
+
+int DataGenerationConfiguration::getUniformData() const {
+    auto x = Randomizer::getUniformInt();
+    if (numEffectiveBitsData) {
+        x &= ((1ull << numEffectiveBitsData.value()) - 1ull);
+    }
+    if (numIneffectiveLSBsData) {
+        x &= ~((1ull << numIneffectiveLSBsData.value()) - 1ull);
+    }
+    return x;
+}
+
+int DataGenerationConfiguration::getUniformArithOperand() const {
+    int x;
+    do {
+        x = Randomizer::getUniformInt();
+        if (numEffectiveBitsArithOperand) {
+            x &= ((1ull << numEffectiveBitsArithOperand.value()) - 1ull);
+        }
+        if (numIneffectiveLSBsArithOperand) {
+            x &= ~((1ull << numIneffectiveLSBsArithOperand.value()) - 1ull);
+        }
+    } while (x == 0); // we do not allow zero-valued operands
+    return x;
+}
+
 TestBase::TestBase(
         size_t datawidth,
         const std::string & name,
         AlignedBlock & bufRaw,
         AlignedBlock & bufEncoded,
         AlignedBlock & bufResult)
-        : datawidth(datawidth),
+        : internalPreEncodeCalled(false),
+          internalPreCheckCalled(false),
+          internalPreFilterCalled(false),
+          internalPreFilterCheckedCalled(false),
+          internalPreArithmeticCalled(false),
+          internalPreArithmeticCheckedCalled(false),
+          internalPreAggregateCalled(false),
+          internalPreAggregateCheckedCalled(false),
+          internalPreReencodeCheckedCalled(false),
+          internalPreDecodeCalled(false),
+          internalPreDecodeCheckedCalled(false),
+          datawidth(datawidth),
           name(name),
           bufRaw(bufRaw),
           bufEncoded(bufEncoded),
-          bufResult(bufResult) {
+          bufResult(bufResult),
+          bufArith(bufResult.nBytes, bufResult.alignment),
+          bufDecoded(bufResult.nBytes, bufResult.alignment) {
 }
 
 TestBase::TestBase(
         TestBase & other)
-        : datawidth(other.datawidth),
+        : internalPreEncodeCalled(false),
+          internalPreCheckCalled(false),
+          internalPreFilterCalled(false),
+          internalPreFilterCheckedCalled(false),
+          internalPreArithmeticCalled(false),
+          internalPreArithmeticCheckedCalled(false),
+          internalPreAggregateCalled(false),
+          internalPreAggregateCheckedCalled(false),
+          internalPreReencodeCheckedCalled(false),
+          internalPreDecodeCalled(false),
+          internalPreDecodeCheckedCalled(false),
+          datawidth(other.datawidth),
           name(other.name),
           bufRaw(other.bufRaw),
           bufEncoded(other.bufEncoded),
-          bufResult(other.bufResult) {
+          bufResult(other.bufResult),
+          bufArith(other.bufArith),
+          bufDecoded(other.bufDecoded) {
 }
 
 TestBase::~TestBase() {
 }
 
-// Encoding
-void TestBase::PreEncode(
-        const EncodeConfiguration & config) {
-}
-
 // Check-Only
 bool TestBase::DoCheck() {
     return false;
-}
-
-void TestBase::PreCheck(
-        const CheckConfiguration & config) {
 }
 
 void TestBase::RunCheck(
@@ -74,10 +172,6 @@ bool TestBase::DoFilter() {
     return false;
 }
 
-void TestBase::PreFilter(
-        const FilterConfiguration & config) {
-}
-
 void TestBase::RunFilter(
         const FilterConfiguration & config) {
 }
@@ -85,10 +179,6 @@ void TestBase::RunFilter(
 // Filter Checked
 bool TestBase::DoFilterChecked() {
     return false;
-}
-
-void TestBase::PreFilterChecked(
-        const FilterConfiguration & config) {
 }
 
 void TestBase::RunFilterChecked(
@@ -101,10 +191,6 @@ bool TestBase::DoArithmetic(
     return false;
 }
 
-void TestBase::PreArithmetic(
-        const ArithmeticConfiguration & config) {
-}
-
 void TestBase::RunArithmetic(
         const ArithmeticConfiguration & config) {
 }
@@ -113,10 +199,6 @@ void TestBase::RunArithmetic(
 bool TestBase::DoArithmeticChecked(
         const ArithmeticConfiguration & config) {
     return false;
-}
-
-void TestBase::PreArithmeticChecked(
-        const ArithmeticConfiguration & config) {
 }
 
 void TestBase::RunArithmeticChecked(
@@ -129,10 +211,6 @@ bool TestBase::DoAggregate(
     return false;
 }
 
-void TestBase::PreAggregate(
-        const AggregateConfiguration & config) {
-}
-
 void TestBase::RunAggregate(
         const AggregateConfiguration & config) {
 }
@@ -141,10 +219,6 @@ void TestBase::RunAggregate(
 bool TestBase::DoAggregateChecked(
         const AggregateConfiguration & config) {
     return false;
-}
-
-void TestBase::PreAggregateChecked(
-        const AggregateConfiguration & config) {
 }
 
 void TestBase::RunAggregateChecked(
@@ -156,10 +230,6 @@ bool TestBase::DoReencodeChecked() {
     return false;
 }
 
-void TestBase::PreReencodeChecked(
-        const ReencodeConfiguration & config) {
-}
-
 void TestBase::RunReencodeChecked(
         const ReencodeConfiguration & config) {
 }
@@ -169,10 +239,6 @@ bool TestBase::DoDecode() {
     return false;
 }
 
-void TestBase::PreDecode(
-        const DecodeConfiguration & config) {
-}
-
 void TestBase::RunDecode(
         const DecodeConfiguration & config) {
 }
@@ -180,10 +246,6 @@ void TestBase::RunDecode(
 // Check-And-Decode
 bool TestBase::DoDecodeChecked() {
     return false;
-}
-
-void TestBase::PreDecodeChecked(
-        const DecodeConfiguration & config) {
 }
 
 void TestBase::RunDecodeChecked(
@@ -214,14 +276,14 @@ struct ConfigurationModeExecutor<Conf, max, max> {
     }
 };
 
-template<typename PreFunc, typename RunFunc>
+template<typename PreFunc, typename RunFunc, typename PostFunc>
 void InternalExecute(
         TestBase & test,
-        const CheckConfiguration & cc,
         Stopwatch & sw,
         TestInfo & ti,
         PreFunc preFunc,
-        RunFunc runFunc) {
+        RunFunc runFunc,
+        PostFunc postFunc) {
     try {
         preFunc();
         sw.Reset();
@@ -241,7 +303,7 @@ void InternalExecute(
         runFunc();
 #endif
         ti.set(sw.Current());
-        test.RunCheck(cc);
+        postFunc();
     } catch (ErrorInfo & ei) {
         auto msg = ei.what();
         std::cerr << msg << std::endl;
@@ -249,13 +311,13 @@ void InternalExecute(
     }
 }
 
-template<typename PreFunc, typename RunFunc, typename SetTimeInfoFunc, typename CatchErrorInfoFunc>
+template<typename PreFunc, typename RunFunc, typename PostFunc, typename SetTimeInfoFunc, typename CatchErrorInfoFunc>
 void InternalExecuteMode(
         TestBase & test,
-        const CheckConfiguration & cc,
         Stopwatch & sw,
         PreFunc preFunc,
         RunFunc runFunc,
+        PostFunc postFunc,
         SetTimeInfoFunc setTimeInfoFunc,
         CatchErrorInfoFunc catchErrorInfoFunc) {
     try {
@@ -278,7 +340,7 @@ void InternalExecuteMode(
 #endif
         auto nanos = sw.Current();
         setTimeInfoFunc(nanos);
-        test.RunCheck(cc);
+        postFunc();
     } catch (ErrorInfo & ei) {
         auto msg = ei.what();
         std::cerr << msg << std::endl;
@@ -309,7 +371,7 @@ struct SetForMode<Conf, T, max, max> {
             std::array<TestInfo*, max> && arrayTI) {
         std::get<std::variant_alternative_t<max - 1, typename Conf::Mode>>(conf.mode);
         std::get<max - 1>(arrayTI)->set(data);
-        // if we get an std::bad_variant_access error here, don't catch it here!
+        // if we get an std::bad_variant_access error here, don't catch it, because it's a real error now!
     }
 };
 
@@ -323,46 +385,72 @@ TestInfos TestBase::Execute(
 
     ResetBuffers(configDataGen);
 
-    std::random_device rDev;
-    std::default_random_engine rEng(rDev());
-    std::uniform_int_distribution<uint16_t> rDist;
+    uint16_t arithOperand;
+    do {
+        arithOperand = static_cast<uint16_t>(configDataGen.getUniformArithOperand());
+    } while (arithOperand == 0); /* force non-zero operand */
 
-    EncodeConfiguration encConf(configTest);
-    CheckConfiguration chkConf(configTest, bufEncoded);
-    ArithmeticConfiguration arithConf(configTest, ArithmeticConfiguration::Mode(ArithmeticConfiguration::Add()), rDist(rEng));
+    EncodeConfiguration encConf(configTest, bufRaw, bufEncoded); // encode from raw buffer to encoded buffer
+    CheckConfiguration chkConf(configTest, bufRaw, bufEncoded); // check encoded buffer, with the possibility to also use the raw buffer (RUnCheck must actually check the TARGET buffer!)
+    ArithmeticConfiguration arithConf(configTest, bufEncoded, bufResult, ArithmeticConfiguration::Mode(ArithmeticConfiguration::Add()), arithOperand);
     // Following: use an odd A. As the actual A is not important we can choose an arbitrary one here and simply cast it later to the desired width (i.e. select the appropriate LSBs).
-    std::size_t newA = rDist(rEng) | 0x1;
+    std::size_t newA = static_cast<size_t>(configDataGen.getUniformData()) | 0x1;
 #ifdef DEBUG
     std::clog << "# Reencode uses A=" << newA << " (cast down to the appropriate data length as needed (LSBs extracted)" << std::endl;
 #endif
-    ReencodeConfiguration reencConf(configTest, newA);
-    DecodeConfiguration decConf(configTest);
-    AggregateConfiguration aggrConf(configTest, AggregateConfiguration::Mode(AggregateConfiguration::Sum()));
+    ReencodeConfiguration reencConf(configTest, bufEncoded, bufResult, newA);
+    DecodeConfiguration decConf(configTest, bufEncoded, bufResult);
+    AggregateConfiguration aggrConf(configTest, bufEncoded, bufResult, AggregateConfiguration::Mode(AggregateConfiguration::Sum()));
     Stopwatch sw;
 
     TestInfo tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk, tiMaxChk, tiAvgChk, tiReencChk, tiDec, tiDecChk;
 
-    TestConfiguration tc(1); // we need to check the result buffer only once!
-    const CheckConfiguration cc1 = CheckConfiguration(tc, bufEncoded);
-    const CheckConfiguration cc2 = CheckConfiguration(tc, bufResult);
+    TestConfiguration tc(1, configTest.numValues); // we need to check the result buffer only once!
+    TestConfiguration tcAggr(1, 1); // we need to check the result buffer only once and for the aggregates only a single value!
 
-    std::clog << "encode" << std::flush;
-    InternalExecute(*this, cc1, sw, tiEnc, [this,&encConf] {this->PreEncode(encConf);}, [this,&encConf] {this->RunEncode(encConf);});
+    {
+        std::clog << "encode" << std::flush;
+        auto postFunc = [this,&tc] {
+            if (!this->internalPreEncodeCalled) {
+                throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "PreEncode() was not called!");
+            }
+            const DecodeConfiguration ccEnc = DecodeConfiguration(tc, bufEncoded, bufDecoded);
+            this->RunDecodeChecked(ccEnc);
+            auto ret = memcmp(this->bufRaw.begin(), this->bufDecoded.begin(), this->bufRaw.nBytes);
+            if (ret != 0) {
+                throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
+            }
+        };
+        InternalExecute(*this, sw, tiEnc, [this,&encConf] {this->PreEncode(encConf);}, [this,&encConf] {this->RunEncode(encConf);}, postFunc);
+    }
 
     if (configTest.enableCheck && this->DoCheck()) {
         std::clog << ", check" << std::flush;
-        InternalExecute(*this, cc1, sw, tiCheck, [this,&chkConf] {this->PreCheck(chkConf);}, [this,&chkConf] {this->RunCheck(chkConf);});
+        InternalExecute(*this, sw, tiCheck, [this,&chkConf] {this->PreCheck(chkConf);}, [this,&chkConf] {this->RunCheck(chkConf);}, [this] {}); // no need to check again
     }
 
     if (configTest.enableArithmetic) {
-        auto func = [this,&cc2,&sw,&tiAdd,&tiSub,&tiMul,&tiDiv] (ArithmeticConfiguration & conf) {
+        auto func = [this,&sw,&tiAdd,&tiSub,&tiMul,&tiDiv,&tc] (ArithmeticConfiguration & conf) {
             if (DoArithmetic(conf)) {
                 std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode);
                 auto preFunc = [this,&conf] {
-                    PreArithmetic(conf);
+                    this->PreArithmetic(conf);
                 };
                 auto runFunc = [this,&conf] {
-                    RunArithmetic(conf);
+                    this->RunArithmetic(conf);
+                };
+                auto postFunc = [this,&tc] {
+                    if (!this->internalPreArithmeticCalled) {
+                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "PreArithmetic() was not called!");
+                    }
+                    const CheckConfiguration ccChk(tc, bufArith, bufResult);
+                    this->RunCheck(ccChk);
+                    const DecodeConfiguration ccDec(tc, bufResult, bufDecoded);
+                    this->RunDecode(ccDec);
+                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), this->bufArith.nBytes);
+                    if (ret != 0) {
+                        throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
+                    }
                 };
                 auto setFunc = [&conf,&tiAdd,&tiSub,&tiMul,&tiDiv] (int64_t nanos) {
                     SetForMode<ArithmeticConfiguration, int64_t>::run(conf, nanos, {&tiAdd,&tiSub,&tiMul,&tiDiv});
@@ -370,21 +458,34 @@ TestInfos TestBase::Execute(
                 auto catchFunc = [&conf,&tiAdd,&tiSub,&tiMul,&tiDiv] (const char * msg) {
                     SetForMode<ArithmeticConfiguration, const char *>::run(conf, msg, {&tiAdd,&tiSub,&tiMul,&tiDiv});
                 };
-                InternalExecuteMode(*this, cc2, sw, preFunc, runFunc, setFunc, catchFunc);
+                InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             };
         };
         ConfigurationModeExecutor<ArithmeticConfiguration>::run(arithConf, func);
     }
 
     if (configTest.enableArithmeticChk) {
-        auto func = [this,&cc2,&sw,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (ArithmeticConfiguration & conf) {
+        auto func = [this,&sw,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk,&tc] (ArithmeticConfiguration & conf) {
             if (DoArithmeticChecked(conf)) {
                 std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode) << " checked";
                 auto preFunc = [this,&conf] {
-                    PreArithmeticChecked(conf);
+                    this->PreArithmeticChecked(conf);
                 };
                 auto runFunc = [this,&conf] {
-                    RunArithmeticChecked(conf);
+                    this->RunArithmeticChecked(conf);
+                };
+                auto postFunc = [this,&tc] {
+                    if (!this->internalPreArithmeticCheckedCalled) {
+                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "PreArithmeticChecked() was not called!");
+                    }
+                    const CheckConfiguration ccChk(tc, bufArith, bufResult);
+                    this->RunCheck(ccChk);
+                    const DecodeConfiguration ccDec(tc, bufResult, bufDecoded);
+                    this->RunDecode(ccDec);
+                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), this->bufArith.nBytes);
+                    if (ret != 0) {
+                        throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
+                    }
                 };
                 auto setFunc = [&conf,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (int64_t nanos) {
                     SetForMode<ArithmeticConfiguration, int64_t>::run(conf, nanos, {&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk});
@@ -392,14 +493,14 @@ TestInfos TestBase::Execute(
                 auto catchFunc = [&conf,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (const char * msg) {
                     SetForMode<ArithmeticConfiguration, const char *>::run(conf, msg, {&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk});
                 };
-                InternalExecuteMode(*this, cc2, sw, preFunc, runFunc, setFunc, catchFunc);
+                InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             }
         };
         ConfigurationModeExecutor<ArithmeticConfiguration>::run(arithConf, func);
     }
 
     if (configTest.enableAggregate) {
-        auto func = [this,&cc2,&sw,&tiSum,&tiMin,&tiMax,&tiAvg] (AggregateConfiguration & conf) {
+        auto func = [this,&sw,&tiSum,&tiMin,&tiMax,&tiAvg,&tcAggr] (AggregateConfiguration & conf) {
             if (DoAggregate(conf)) {
                 std::clog << ", " << std::visit(AggregateConfigurationModeName(), conf.mode);
                 auto preFunc = [this,&conf] {
@@ -408,20 +509,31 @@ TestInfos TestBase::Execute(
                 auto runFunc = [this,&conf] {
                     RunAggregate(conf);
                 };
+                auto postFunc = [this,&tcAggr] {
+                    if (!this->internalPreAggregateCalled) {
+                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "PreAggregate() was not called!");
+                    }
+                    const DecodeConfiguration ccDec(tcAggr, bufResult, bufDecoded);
+                    this->RunDecode(ccDec);
+                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), 2 * this->getOutputTypeSize()); /* For sum and average, we cannot yet handle the larger types! */
+                    if (ret != 0) {
+                        throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
+                    }
+                };
                 auto setFunc = [&conf,&tiSum,&tiMin,&tiMax,&tiAvg] (int64_t nanos) {
                     SetForMode<AggregateConfiguration, int64_t>::run(conf, nanos, {&tiSum,&tiMin,&tiMax,&tiAvg});
                 };
                 auto catchFunc = [&conf,&tiSum,&tiMin,&tiMax,&tiAvg] (const char * msg) {
                     SetForMode<AggregateConfiguration, const char *>::run(conf, msg, {&tiSum,&tiMin,&tiMax,&tiAvg});
                 };
-                InternalExecuteMode(*this, cc2, sw, preFunc, runFunc, setFunc, catchFunc);
+                InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             }
         };
         ConfigurationModeExecutor<AggregateConfiguration>::run(aggrConf, func);
     }
 
     if (configTest.enableAggregateChk) {
-        auto func = [this,&cc2,&sw,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (AggregateConfiguration & conf) {
+        auto func = [this,&sw,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk,&tcAggr] (AggregateConfiguration & conf) {
             if (DoAggregateChecked(conf)) {
                 std::clog << ", " << std::visit(AggregateConfigurationModeName(), conf.mode) << " checked";
                 auto preFunc = [this,&conf] {
@@ -430,13 +542,24 @@ TestInfos TestBase::Execute(
                 auto runFunc = [this,&conf] {
                     RunAggregateChecked(conf);
                 };
+                auto postFunc = [this,&tcAggr] {
+                    if (!this->internalPreAggregateCheckedCalled) {
+                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "PreAggregateChecked() was not called!");
+                    }
+                    const DecodeConfiguration ccDec(tcAggr, bufResult, bufDecoded);
+                    this->RunDecode(ccDec);
+                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), this->getOutputTypeSize()); /* For sum and average, we cannot yet handle the larger types! */
+                    if (ret != 0) {
+                        throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
+                    }
+                };
                 auto setFunc = [&conf,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (int64_t nanos) {
                     SetForMode<AggregateConfiguration, int64_t>::run(conf, nanos, {&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk});
                 };
                 auto catchFunc = [&conf,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (const char * msg) {
                     SetForMode<AggregateConfiguration, const char *>::run(conf, msg, {&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk});
                 };
-                InternalExecuteMode(*this, cc2, sw, preFunc, runFunc, setFunc, catchFunc);
+                InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             }
         };
         ConfigurationModeExecutor<AggregateConfiguration>::run(aggrConf, func);
@@ -444,17 +567,17 @@ TestInfos TestBase::Execute(
 
     if (configTest.enableReencodeChk && this->DoReencodeChecked()) {
         std::clog << ", reencode checked" << std::flush;
-        InternalExecute(*this, cc2, sw, tiReencChk, [this,&reencConf] {this->PreReencodeChecked(reencConf);}, [this,&reencConf] {this->RunReencodeChecked(reencConf);});
+        InternalExecute(*this, sw, tiReencChk, [this,&reencConf] {this->PreReencodeChecked(reencConf);}, [this,&reencConf] {this->RunReencodeChecked(reencConf);}, [this] {/* TODO */});
     }
 
     if (configTest.enableDecode && this->DoDecode()) {
         std::clog << ", decode" << std::flush;
-        InternalExecute(*this, cc2, sw, tiDec, [this,&decConf] {this->PreDecode(decConf);}, [this,&decConf] {this->RunDecode(decConf);});
+        InternalExecute(*this, sw, tiDec, [this,&decConf] {this->PreDecode(decConf);}, [this,&decConf] {this->RunDecode(decConf);}, [this] {/* TODO */});
     }
 
     if (configTest.enableDecodeChk && this->DoDecodeChecked()) {
         std::clog << ", decode checked" << std::flush;
-        InternalExecute(*this, cc2, sw, tiDecChk, [this,&decConf] {this->PreDecodeChecked(decConf);}, [this,&decConf] {this->RunDecodeChecked(decConf);});
+        InternalExecute(*this, sw, tiDecChk, [this,&decConf] {this->PreDecodeChecked(decConf);}, [this,&decConf] {this->RunDecodeChecked(decConf);}, [this] {/* TODO */});
     }
 
     return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk,

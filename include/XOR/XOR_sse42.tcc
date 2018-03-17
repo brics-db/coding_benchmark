@@ -21,9 +21,6 @@
 #include <Util/Test.hpp>
 #include <XOR/XOR_base.hpp>
 #include <SIMD/SSE.hpp>
-#include <Util/ErrorInfo.hpp>
-#include <Util/Functors.hpp>
-#include <Util/Helpers.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Util/AggregateSelector.hpp>
 
@@ -80,9 +77,9 @@ namespace coding_benchmark {
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto dataIn = this->bufRaw.template begin<__m128i >();
-                auto dataInEnd = this->bufRaw.template end<__m128i >();
-                auto pChkOut = this->bufEncoded.template begin<CS>();
+                auto dataIn = config.source.template begin<__m128i >();
+                auto dataInEnd = config.source.template end<__m128i >();
+                auto pChkOut = config.target.template begin<CS>();
                 while (dataIn <= (dataInEnd - BLOCKSIZE)) {
                     __m128i checksum = _mm_setzero_si128();
                     auto pDataOut = reinterpret_cast<__m128i *>(pChkOut);
@@ -131,10 +128,9 @@ namespace coding_benchmark {
                 _ReadWriteBarrier();
                 const size_t NUM_VALUES_PER_SIMDREG = sizeof(__m128i) / sizeof (DATA);
                 const size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_SIMDREG * BLOCKSIZE;
-                size_t numValues = this->getNumValues();
                 size_t i = 0;
                 auto data128 = config.target.template begin<__m128i >();
-                while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
+                while (i <= (config.numValues - NUM_VALUES_PER_BLOCK)) {
                     __m128i checksum = _mm_setzero_si128();
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
                         checksum = _mm_xor_si128(checksum, _mm_lddqu_si128(data128++));
@@ -148,12 +144,12 @@ namespace coding_benchmark {
                     i += NUM_VALUES_PER_BLOCK;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
+                if (i <= (config.numValues - NUM_VALUES_PER_SIMDREG)) {
                     __m128i checksum = _mm_setzero_si128();
                     do {
                         checksum = _mm_xor_si128(checksum, _mm_lddqu_si128(data128++));
                         i += NUM_VALUES_PER_SIMDREG;
-                    } while (i <= (numValues - NUM_VALUES_PER_SIMDREG));
+                    } while (i <= (config.numValues - NUM_VALUES_PER_SIMDREG));
                     auto pChksum = reinterpret_cast<CS*>(data128);
                     if (XORdiff<CS>::checksumsDiffer(*pChksum, XOR<__m128i, CS>::computeFinalChecksum(checksum))) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -162,10 +158,10 @@ namespace coding_benchmark {
                     data128 = reinterpret_cast<__m128i *>(pChksum);
                 }
                 // checksum remaining integers which do not fit in the SIMD register, so we do it on the actual data width denoted by template parameter IN
-                if (i < numValues) {
+                if (i < config.numValues) {
                     DATA checksum = 0;
                     auto data = reinterpret_cast<DATA*>(data128);
-                    for (; i < numValues; ++i) {
+                    for (; i < config.numValues; ++i) {
                         checksum ^= *data++;
                     }
                     if (XORdiff<DATA>::checksumsDiffer(*data, XOR<DATA, DATA>::computeFinalChecksum(checksum))) {
@@ -194,12 +190,11 @@ namespace coding_benchmark {
                 func<> functor;
                 const constexpr size_t NUM_VALUES_PER_SIMDREG = sizeof(__m128i) /sizeof (DATA);
                 const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_SIMDREG * BLOCKSIZE;
-                size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto data128In = test.bufEncoded.template begin<__m128i >();
-                auto data128Out = test.bufResult.template begin<__m128i >();
+                auto data128In = config.source.template begin<__m128i >();
+                auto data128Out = config.target.template begin<__m128i >();
                 auto mmOperand = simd::mm<__m128i, DATA>::set1(config.operand);
-                while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
+                while (i <= (config.numValues - NUM_VALUES_PER_BLOCK)) {
                     __m128i checksum = _mm_setzero_si128();
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
                         auto mmTmp = simd::mm_op<__m128i, DATA, func>::compute(_mm_lddqu_si128(data128In++), mmOperand);
@@ -213,25 +208,25 @@ namespace coding_benchmark {
                     i += NUM_VALUES_PER_BLOCK;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
+                if (i <= (config.numValues - NUM_VALUES_PER_SIMDREG)) {
                     __m128i checksum = _mm_setzero_si128();
                     do {
                         auto mmTmp = simd::mm_op<__m128i, DATA, func>::compute(_mm_lddqu_si128(data128In++), mmOperand);
                         checksum = _mm_xor_si128(checksum, mmTmp);
                         _mm_storeu_si128(data128Out++, mmTmp);
                         i += NUM_VALUES_PER_SIMDREG;
-                    } while (i <= (numValues - NUM_VALUES_PER_SIMDREG));
+                    } while (i <= (config.numValues - NUM_VALUES_PER_SIMDREG));
                     auto pChkOut = reinterpret_cast<CS*>(data128Out);
                     *pChkOut++ = XOR<__m128i, CS>::computeFinalChecksum(checksum);
                     data128Out = reinterpret_cast<__m128i *>(pChkOut);
                     data128In = reinterpret_cast<__m128i *>(reinterpret_cast<CS*>(data128In) + 1);
                 }
                 // checksum remaining integers which do not fit in the SIMD register, so we do it on the actual data width denoted by template parameter IN
-                if (i < numValues) {
+                if (i < config.numValues) {
                     DATA checksum = 0;
                     auto dataIn = reinterpret_cast<DATA*>(data128In);
                     auto dataOut = reinterpret_cast<DATA*>(data128Out);
-                    for (; i < numValues; ++i) {
+                    for (; i < config.numValues; ++i) {
                         const auto tmp = functor(*dataIn++, config.operand);
                         checksum ^= tmp;
                         *dataOut++ = tmp;
@@ -287,12 +282,11 @@ namespace coding_benchmark {
                 func<> functor;
                 const constexpr size_t NUM_VALUES_PER_SIMDREG = sizeof(__m128i) /sizeof (DATA);
                 const constexpr size_t NUM_VALUES_PER_BLOCK = NUM_VALUES_PER_SIMDREG * BLOCKSIZE;
-                size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto data128In = test.bufEncoded.template begin<__m128i >();
-                auto data128Out = test.bufResult.template begin<__m128i >();
+                auto data128In = config.source.template begin<__m128i >();
+                auto data128Out = config.target.template begin<__m128i >();
                 auto mmOperand = simd::mm<__m128i, DATA>::set1(config.operand);
-                while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
+                while (i <= (config.numValues - NUM_VALUES_PER_BLOCK)) {
                     __m128i oldChecksum = _mm_setzero_si128();
                     __m128i newChecksum = _mm_setzero_si128();
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
@@ -313,7 +307,7 @@ namespace coding_benchmark {
                     i += NUM_VALUES_PER_BLOCK;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
+                if (i <= (config.numValues - NUM_VALUES_PER_SIMDREG)) {
                     __m128i oldChecksum = _mm_setzero_si128();
                     __m128i newChecksum = _mm_setzero_si128();
                     do {
@@ -323,7 +317,7 @@ namespace coding_benchmark {
                         newChecksum = _mm_xor_si128(newChecksum, mmTmp);
                         _mm_storeu_si128(data128Out++, mmTmp);
                         i += NUM_VALUES_PER_SIMDREG;
-                    } while (i <= (numValues - NUM_VALUES_PER_SIMDREG));
+                    } while (i <= (config.numValues - NUM_VALUES_PER_SIMDREG));
                     auto storedChecksum = reinterpret_cast<CS*>(data128In);
                     if (XORdiff<CS>::checksumsDiffer(*storedChecksum, XOR<__m128i, CS>::computeFinalChecksum(oldChecksum))) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -334,12 +328,12 @@ namespace coding_benchmark {
                     data128Out = reinterpret_cast<__m128i *>(newChecksumOut);
                 }
                 // checksum remaining integers which do not fit in the SIMD register, so we do it on the actual data width denoted by template parameter IN
-                if (i < numValues) {
+                if (i < config.numValues) {
                     DATA oldChecksum = 0;
                     DATA newChecksum = 0;
                     auto dataIn = reinterpret_cast<DATA*>(data128In);
                     auto dataOut = reinterpret_cast<DATA*>(data128Out);
-                    for (; i < numValues; ++i) {
+                    for (; i < config.numValues; ++i) {
                         auto tmp = *dataIn++;
                         oldChecksum ^= tmp;
                         tmp = functor(tmp, config.operand);
@@ -385,6 +379,7 @@ namespace coding_benchmark {
         }
 
         struct Aggregator {
+            typedef typename Larger<DATA>::larger_t larger_t;
             XOR_sse42 & test;
             const AggregateConfiguration & config;
             Aggregator(
@@ -400,11 +395,10 @@ namespace coding_benchmark {
                     VectorToScalar && funcVectorToScalar,
                     KernelScalar && funcKernelScalar,
                     Finalize && funcFinal) {
-                size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto data128In = test.bufEncoded.template begin<__m128i >();
+                auto data128In = config.source.template begin<__m128i >();
                 auto mmValue = funcInitVector(); // simd::mm<__m128i, DATA>::set1(config.operand);
-                while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
+                while (i <= (config.numValues - NUM_VALUES_PER_BLOCK)) {
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
                         auto mmTmp = _mm_lddqu_si128(data128In++);
                         mmValue = funcKernelVector(mmValue, mmTmp);
@@ -413,50 +407,58 @@ namespace coding_benchmark {
                     i += NUM_VALUES_PER_BLOCK;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
+                if (i <= (config.numValues - NUM_VALUES_PER_SIMDREG)) {
                     do {
                         auto mmTmp = _mm_lddqu_si128(data128In++);
                         mmValue = funcKernelVector(mmValue, mmTmp);
                         i += NUM_VALUES_PER_SIMDREG;
-                    } while (i <= (numValues - NUM_VALUES_PER_SIMDREG));
+                    } while (i <= (config.numValues - NUM_VALUES_PER_SIMDREG));
                     data128In = reinterpret_cast<__m128i *>(reinterpret_cast<CS*>(data128In) + 1);
                 }
                 Aggregate value = funcVectorToScalar(mmValue);
                 // checksum remaining integers which do not fit in the SIMD register, so we do it on the actual data width denoted by template parameter IN
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn = reinterpret_cast<DATA*>(data128In);
-                    for (; i < numValues; ++i) {
+                    for (; i < config.numValues; ++i) {
                         const DATA tmp = *dataIn++;
                         value = funcKernelScalar(value, tmp);
                     }
                 }
                 auto dataOut = test.bufResult.template begin<Aggregate>();
-                Aggregate final = funcFinal(value, numValues);
+                Aggregate final = funcFinal(value, config.numValues);
                 *dataOut++ = final;
                 *dataOut++ = final; // "XOR checksum"
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                impl<DATA>([] {return simd::mm<__m128i, DATA>::set1(0);}, [](__m128i mmValue, __m128i mmTmp) {return simd::mm_op<__m128i, DATA, add>::compute(mmValue, mmTmp);},
-                        [](__m128i mmValue) {return simd::mm<__m128i, DATA>::sum(mmValue);}, [](DATA value, DATA tmp) {return value + tmp;}, [](DATA value, size_t numValues) {return value;});
+                impl<larger_t>([] {return simd::mm<__m128i, larger_t>::set1(0);}, [](__m128i mmSum, __m128i mmTmp) {
+                    auto mmLo = simd::mm<__m128i, DATA>::cvt_larger_lo(mmTmp);
+                    mmLo = simd::mm_op<__m128i, larger_t, add>::compute(mmSum, mmLo);
+                    auto mmHi = simd::mm<__m128i, DATA>::cvt_larger_hi(mmTmp);
+                    return simd::mm_op<__m128i, larger_t, add>::compute(mmLo, mmHi);
+                }, [](__m128i mmValue) {return simd::mm<__m128i, larger_t>::sum(mmValue);}, [](larger_t value, DATA tmp) {return value + tmp;}, [](larger_t sum, size_t numValues) {return sum;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
                 impl<DATA>([] {return simd::mm<__m128i, DATA>::set1(std::numeric_limits<DATA>::max());}, [](__m128i mmValue, __m128i mmTmp) {return simd::mm<__m128i, DATA>::min(mmValue, mmTmp);},
                         [](__m128i mmValue) {return simd::mm<__m128i, DATA>::min(mmValue);}, [](DATA value, DATA tmp) {return value < tmp ? value : tmp;},
-                        [](DATA value, size_t numValues) {return value;});
+                        [](DATA min, size_t numValues) {return min;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
                 impl<DATA>([] {return simd::mm<__m128i, DATA>::set1(std::numeric_limits<DATA>::min());}, [](__m128i mmValue, __m128i mmTmp) {return simd::mm<__m128i, DATA>::max(mmValue, mmTmp);},
                         [](__m128i mmValue) {return simd::mm<__m128i, DATA>::max(mmValue);}, [](DATA value, DATA tmp) {return value > tmp ? value : tmp;},
-                        [](DATA value, size_t numValues) {return value;});
+                        [](DATA max, size_t numValues) {return max;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                impl<DATA>([] {return simd::mm<__m128i, DATA>::set1(0);}, [](__m128i mmValue, __m128i mmTmp) {return simd::mm_op<__m128i, DATA, add>::compute(mmValue, mmTmp);},
-                        [](__m128i mmValue) {return simd::mm<__m128i, DATA>::sum(mmValue);}, [](DATA value, DATA tmp) {return value + tmp;},
-                        [](DATA value, size_t numValues) {return value / numValues;});
+                impl<larger_t>([] {return simd::mm<__m128i, larger_t>::set1(0);}, [](__m128i mmSum, __m128i mmTmp) {
+                    auto mmLo = simd::mm<__m128i, DATA>::cvt_larger_lo(mmTmp);
+                    mmLo = simd::mm_op<__m128i, larger_t, add>::compute(mmSum, mmLo);
+                    auto mmHi = simd::mm<__m128i, DATA>::cvt_larger_hi(mmTmp);
+                    return simd::mm_op<__m128i, larger_t, add>::compute(mmLo, mmHi);
+                }, [](__m128i mmValue) {return simd::mm<__m128i, larger_t>::sum(mmValue);}, [](larger_t value, DATA tmp) {return value + tmp;},
+                        [](larger_t sum, size_t numValues) {return sum / numValues;});
             }
         };
 
@@ -492,11 +494,10 @@ namespace coding_benchmark {
                     VectorToScalar && funcVectorToScalar,
                     KernelScalar && funcKernelScalar,
                     Finalize && funcFinal) {
-                size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto data128In = test.bufEncoded.template begin<__m128i >();
+                auto data128In = config.source.template begin<__m128i >();
                 auto mmValue = funcInitVector(); // simd::mm<__m128i, DATA>::set1(config.operand);
-                while (i <= (numValues - NUM_VALUES_PER_BLOCK)) {
+                while (i <= (config.numValues - NUM_VALUES_PER_BLOCK)) {
                     __m128i checksum = _mm_setzero_si128();
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
                         auto mmTmp = _mm_lddqu_si128(data128In++);
@@ -511,14 +512,14 @@ namespace coding_benchmark {
                     i += NUM_VALUES_PER_BLOCK;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i <= (numValues - NUM_VALUES_PER_SIMDREG)) {
+                if (i <= (config.numValues - NUM_VALUES_PER_SIMDREG)) {
                     __m128i checksum = _mm_setzero_si128();
                     do {
                         auto mmTmp = _mm_lddqu_si128(data128In++);
                         checksum = _mm_xor_si128(checksum, mmTmp);
                         mmValue = funcKernelVector(mmValue, mmTmp);
                         i += NUM_VALUES_PER_SIMDREG;
-                    } while (i <= (numValues - NUM_VALUES_PER_SIMDREG));
+                    } while (i <= (config.numValues - NUM_VALUES_PER_SIMDREG));
                     CS storedChecksum = *reinterpret_cast<CS*>(data128In);
                     data128In = reinterpret_cast<__m128i *>(reinterpret_cast<CS*>(data128In) + 1);
                     if (XORdiff<CS>::checksumsDiffer(storedChecksum, XOR<__m128i, CS>::computeFinalChecksum(checksum))) {
@@ -527,10 +528,10 @@ namespace coding_benchmark {
                 }
                 Aggregate value = funcVectorToScalar(mmValue);
                 // checksum remaining integers which do not fit in the SIMD register, so we do it on the actual data width denoted by template parameter IN
-                if (i < numValues) {
+                if (i < config.numValues) {
                     DATA checksum = 0;
                     auto dataIn = reinterpret_cast<DATA*>(data128In);
-                    for (; i < numValues; ++i) {
+                    for (; i < config.numValues; ++i) {
                         const DATA tmp = *dataIn++;
                         checksum ^= tmp;
                         value = funcKernelScalar(value, tmp);
@@ -540,8 +541,8 @@ namespace coding_benchmark {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
-                auto dataOut = test.bufResult.template begin<Aggregate>();
-                Aggregate final = funcFinal(value, numValues);
+                auto dataOut = config.target.template begin<Aggregate>();
+                Aggregate final = funcFinal(value, config.numValues);
                 *dataOut++ = final;
                 *dataOut++ = final; // "XOR checksum"
             }
