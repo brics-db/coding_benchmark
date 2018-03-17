@@ -127,6 +127,7 @@ TestBase::TestBase(
           datawidth(datawidth),
           name(name),
           bufRaw(bufRaw),
+          bufScratchPad(bufResult.nBytes, bufResult.alignment),
           bufEncoded(bufEncoded),
           bufResult(bufResult),
           bufArith(bufResult.nBytes, bufResult.alignment),
@@ -149,6 +150,7 @@ TestBase::TestBase(
           datawidth(other.datawidth),
           name(other.name),
           bufRaw(other.bufRaw),
+          bufScratchPad(other.bufScratchPad),
           bufEncoded(other.bufEncoded),
           bufResult(other.bufResult),
           bufArith(other.bufArith),
@@ -406,7 +408,7 @@ TestInfos TestBase::Execute(
     TestInfo tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk, tiMaxChk, tiAvgChk, tiReencChk, tiDec, tiDecChk;
 
     TestConfiguration tc(1, configTest.numValues); // we need to check the result buffer only once!
-    TestConfiguration tcAggr(1, 1); // we need to check the result buffer only once and for the aggregates only a single value!
+    TestConfiguration tcAggr(1, 2); // we need to check the result buffer only once and for the aggregates only a single value! We check 2 values, because sum and avg require larger ones. The test must respect this!
 
     {
         std::clog << "encode" << std::flush;
@@ -515,7 +517,7 @@ TestInfos TestBase::Execute(
                     }
                     const DecodeConfiguration ccDec(tcAggr, bufResult, bufDecoded);
                     this->RunDecode(ccDec);
-                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), 2 * this->getOutputTypeSize()); /* For sum and average, we cannot yet handle the larger types! */
+                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), 2 * this->getEncodedDataTypeSize()); /* For sum and average, we cannot yet handle the larger types! */
                     if (ret != 0) {
                         throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
                     }
@@ -548,7 +550,7 @@ TestInfos TestBase::Execute(
                     }
                     const DecodeConfiguration ccDec(tcAggr, bufResult, bufDecoded);
                     this->RunDecode(ccDec);
-                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), this->getOutputTypeSize()); /* For sum and average, we cannot yet handle the larger types! */
+                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), 2 * this->getEncodedDataTypeSize()); /* For sum and average, we cannot yet handle the larger types! */
                     if (ret != 0) {
                         throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
                     }

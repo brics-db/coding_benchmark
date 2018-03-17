@@ -258,8 +258,11 @@ namespace coding_benchmark {
                         }
                     }
                 }
-                auto dataOut = config.target.template begin<Aggregate>();
-                *dataOut = funcFinal(value, config.numValues);
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {

@@ -424,10 +424,11 @@ namespace coding_benchmark {
                         value = funcKernelScalar(value, tmp);
                     }
                 }
-                auto dataOut = test.bufResult.template begin<Aggregate>();
-                Aggregate final = funcFinal(value, config.numValues);
-                *dataOut++ = final;
-                *dataOut++ = final; // "XOR checksum"
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
@@ -541,10 +542,11 @@ namespace coding_benchmark {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
-                auto dataOut = config.target.template begin<Aggregate>();
-                Aggregate final = funcFinal(value, config.numValues);
-                *dataOut++ = final;
-                *dataOut++ = final; // "XOR checksum"
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {

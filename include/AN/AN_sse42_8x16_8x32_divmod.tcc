@@ -99,9 +99,9 @@ namespace coding_benchmark {
             }
             template<template<typename = void> class Functor>
             void impl() {
-                auto mmData = test.bufEncoded.template begin<__m128i >();
-                const auto mmDataEnd = test.bufEncoded.template end<__m128i >();
-                auto mmOut = test.bufResult.template begin<__m128i >();
+                auto mmData = config.source.template begin<__m128i >();
+                const auto mmDataEnd = config.source.template end<__m128i >();
+                auto mmOut = config.target.template begin<__m128i >();
                 DATAENC operand = config.operand;
                 if constexpr (std::is_same_v<Functor<void>, add<void>> || std::is_same_v<Functor<void>, sub<void>> || std::is_same_v<Functor<void>, div<void>>) {
                     operand = config.operand * test.A;
@@ -124,7 +124,7 @@ namespace coding_benchmark {
                             }
                             _mm_storeu_si128(mmOut++, x);
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - config.source.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -139,7 +139,7 @@ namespace coding_benchmark {
                         }
                         _mm_storeu_si128(mmOut++, x);
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - config.source.template begin<DATAENC>(), iteration);
                     }
                 }
                 if (mmData < mmDataEnd) {
@@ -154,7 +154,7 @@ namespace coding_benchmark {
                             }
                             *out32 = x;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, data32 - test.bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, data32 - config.source.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -210,9 +210,8 @@ namespace coding_benchmark {
                     VectorToScalar && funcVectorToScalar,
                     KernelScalar && funcKernelScalar,
                     Finalize && funcFinal) {
-                const size_t numValues = test.template getNumValues();
-                auto *mmData = test.bufEncoded.template begin<__m128i >();
-                auto * const mmDataEnd = test.bufEncoded.template end<__m128i >();
+                auto *mmData = config.source.template begin<__m128i >();
+                auto * const mmDataEnd = config.source.template end<__m128i >();
                 auto mmValue = funcInitVector();
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
@@ -221,7 +220,7 @@ namespace coding_benchmark {
                                 && (_mm_extract_epi32(mmIn, 3) % test.A == 0)) {
                             mmValue = funcKernelVector(mmValue, mmIn);
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - config.source.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
@@ -231,7 +230,7 @@ namespace coding_benchmark {
                             && (_mm_extract_epi32(mmIn, 3) % test.A == 0)) {
                         mmValue = funcKernelVector(mmValue, mmIn);
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - test.bufEncoded.template begin<DATAENC>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(mmData - 1) - config.source.template begin<DATAENC>(), iteration);
                     }
                 }
                 Aggregate value = funcVectorToScalar(mmValue);
@@ -242,12 +241,15 @@ namespace coding_benchmark {
                         if ((*data % test.A) == 0) {
                             value = funcKernelScalar(value, *data++);
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, data - test.bufEncoded.template begin<DATAENC>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, data - config.source.template begin<DATAENC>(), iteration);
                         }
                     }
                 }
-                auto dataOut = test.bufResult.template begin<Aggregate>();
-                *dataOut = funcFinal(value, numValues);
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
@@ -290,13 +292,12 @@ namespace coding_benchmark {
         void RunDecode(
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                size_t numValues = this->getNumValues();
                 size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<__m128i >();
                 auto dataOut = this->bufResult.template begin<int64_t>();
                 auto mmA = _mm_set1_pd(static_cast<double>(this->A));
                 auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0B0A0908, 0x03020100);
-                for (; i <= (numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) { // let the compiler unroll the loop
+                for (; i <= (config.numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto tmp = _mm_lddqu_si128(dataIn++);
                         auto tmp1 = _mm_cvtepi32_pd(tmp);
@@ -311,7 +312,7 @@ namespace coding_benchmark {
                     }
                 }
                 // remaining numbers
-                for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
+                for (; i <= (config.numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
                     auto tmp = _mm_lddqu_si128(dataIn++);
                     auto tmp1 = _mm_cvtepi32_pd(tmp);
                     auto tmp2 = _mm_cvtepi32_pd(_mm_srli_si128(tmp, 8));
@@ -323,10 +324,10 @@ namespace coding_benchmark {
                     tmp = _mm_shuffle_epi8(tmp, mmShuffle);
                     *dataOut++ = _mm_extract_epi64(tmp, 0);
                 }
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto out = reinterpret_cast<DATARAW*>(dataOut);
                     auto in = reinterpret_cast<DATAENC*>(dataIn);
-                    for (; i < numValues; ++i) {
+                    for (; i < config.numValues; ++i) {
                         *out++ = static_cast<DATARAW>(*in++ / this->A);
                     }
                 }
@@ -340,13 +341,12 @@ namespace coding_benchmark {
         void RunDecodeChecked(
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                size_t numValues = this->getNumValues();
                 size_t i = 0;
                 auto dataIn = this->bufEncoded.template begin<__m128i >();
                 auto dataOut = this->bufResult.template begin<int64_t>();
                 auto mm_A = _mm_set1_pd(static_cast<double>(this->A));
                 auto mmShuffle = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0B0A0908, 0x03020100);
-                for (; i <= (numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) { // let the compiler unroll the loop
+                for (; i <= (config.numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto tmp = _mm_lddqu_si128(dataIn++);
                         if ((_mm_extract_epi32(tmp, 0) % this->A == 0) && (_mm_extract_epi32(tmp, 1) % this->A == 0) && (_mm_extract_epi32(tmp, 2) % this->A == 0)
@@ -366,7 +366,7 @@ namespace coding_benchmark {
                     }
                 }
                 // remaining numbers
-                for (; i <= (numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
+                for (; i <= (config.numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
                     auto tmp = _mm_lddqu_si128(dataIn++);
                     if ((_mm_extract_epi32(tmp, 0) % this->A == 0) && (_mm_extract_epi32(tmp, 1) % this->A == 0) && (_mm_extract_epi32(tmp, 2) % this->A == 0)
                             && (_mm_extract_epi32(tmp, 3) % this->A == 0)) {
@@ -383,10 +383,10 @@ namespace coding_benchmark {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(dataIn - 1) - this->bufEncoded.template begin<DATAENC>(), iteration);
                     }
                 }
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto out = reinterpret_cast<DATARAW*>(dataOut);
                     auto in = reinterpret_cast<DATAENC*>(dataIn);
-                    for (; i < numValues; ++i) {
+                    for (; i < config.numValues; ++i) {
                         if ((*in % this->A) == 0) {
                             *out++ = static_cast<DATARAW>(*in++ / this->A);
                         } else {

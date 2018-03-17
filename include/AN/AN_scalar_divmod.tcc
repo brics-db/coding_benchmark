@@ -164,15 +164,14 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            template<typename Aggregate, typename Initializer, typename Kernel, typename Finalizer>
             void impl(
                     Initializer && funcInit,
                     Kernel && funcKernel,
                     Finalizer && funcFinal) {
                 auto dataIn = config.source.template begin<DATAENC>();
                 const auto dataInEnd = dataIn + config.numValues;
-                auto dataOut = config.target.template begin<Tout>();
-                Tout value = funcInit();
+                Aggregate value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         if ((*dataIn % test.A) == 0) {
@@ -193,7 +192,11 @@ namespace coding_benchmark {
                         throw ErrorInfo(__FILE__, __LINE__, dataIn - config.source.template begin<DATAENC>(), iteration);
                     }
                 }
-                *dataOut = funcFinal(value, config.numValues);
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final / test.A;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {

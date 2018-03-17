@@ -120,6 +120,7 @@ protected:
     size_t datawidth;
     std::string name;
     AlignedBlock bufRaw;
+    AlignedBlock bufScratchPad;
     AlignedBlock bufEncoded;
     AlignedBlock bufResult;
 
@@ -144,9 +145,9 @@ public:
     virtual void ResetBuffers(
             const DataGenerationConfiguration & config) = 0;
 
-    virtual size_t getInputTypeSize() = 0;
+    virtual size_t getRawDataTypeSize() = 0;
 
-    virtual size_t getOutputTypeSize() = 0;
+    virtual size_t getEncodedDataTypeSize() = 0;
 
     // Encoding
     virtual void PreEncode(
@@ -353,11 +354,11 @@ public:
     virtual ~Test() {
     }
 
-    virtual size_t getInputTypeSize() override {
+    virtual size_t getRawDataTypeSize() override {
         return sizeof(DATARAW);
     }
 
-    virtual size_t getOutputTypeSize() override {
+    virtual size_t getEncodedDataTypeSize() override {
         return sizeof(DATAENC);
     }
 
@@ -394,23 +395,27 @@ public:
     void PreEncode(
             const EncodeConfiguration & config) {
         config.target.clear();
+        this->bufScratchPad.clear();
         this->internalPreEncodeCalled = true;
     }
 
     void PreCheck(
             const CheckConfiguration & config) {
+        this->bufScratchPad.clear();
         this->internalPreCheckCalled = true;
     }
 
     void PreFilter(
             const FilterConfiguration & config) {
         config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
         this->internalPreFilterCalled = true;
     }
 
     void PreFilterChecked(
             const FilterConfiguration & config) {
         config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
         this->internalPreFilterCheckedCalled = true;
     }
 
@@ -466,6 +471,7 @@ public:
     void PreArithmetic(
             const ArithmeticConfiguration & config) {
         config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
         // here we prepare the adapted raw data (with the given arithmetic operation) aginst which
         // the encoded data (modified also by the given arithmetic operation) can be checked.
         // The encoded operation will store its result in bufResult, so we can check bufArith against
@@ -480,6 +486,7 @@ public:
     void PreArithmeticChecked(
             const ArithmeticConfiguration & config) {
         config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
         // here we prepare the adapted raw data (with the given arithmetic operation) aginst which
         // the encoded data (modified also by the given arithmetic operation) can be checked.
         // The encoded operation will store its result in bufResult, so we can check bufArith against
@@ -554,6 +561,7 @@ public:
     void PreAggregate(
             const AggregateConfiguration & config) {
         config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
         // here we prepare the adapted raw data (with the given aggregate operation) aginst which
         // the encoded data (modified also by the given aggregate operation) can be checked.
         // The encoded operation will store its result in bufResult, so we can check bufArith against
@@ -568,6 +576,7 @@ public:
     void PreAggregateChecked(
             const AggregateConfiguration & config) {
         config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
         // here we prepare the adapted raw data (with the given aggregate operation) aginst which
         // the encoded data (modified also by the given aggregate operation) can be checked.
         // The encoded operation will store its result in bufResult, so we can check bufArith against
@@ -582,6 +591,7 @@ public:
     void PreReencodeChecked(
             const ReencodeConfiguration & config) {
         config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
         // TODO after Run: decode to bufDecoded and compare against bufRaw
         this->internalPreReencodeCheckedCalled = true;
     }
@@ -589,6 +599,7 @@ public:
     void PreDecode(
             const DecodeConfiguration & config) {
         config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
         // TODO after Run: compare config.target against bufRaw
         this->internalPreDecodeCalled = true;
     }
@@ -596,6 +607,7 @@ public:
     void PreDecodeChecked(
             const DecodeConfiguration & config) {
         config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
         // TODO after Run: compare config.target against bufRaw
         this->internalPreDecodeCheckedCalled = true;
     }

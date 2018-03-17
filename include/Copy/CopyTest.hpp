@@ -163,11 +163,12 @@ struct CopyTest :
             larger_t sum = larger_t(0);
             auto beg = config.source.template begin<DATA>();
             auto end = beg + config.numValues;
-            auto out = config.target.template begin<larger_t>();
+            auto out = config.target.template begin<DATA>();
             while (beg < end) {
                 sum += *beg++;
             }
-            *out = sum;
+            *out++ = static_cast<DATA>(sum);
+            *out = static_cast<DATA>(sum >> (sizeof(DATA) * CHAR_BIT));
         }
         void operator()(
                 AggregateConfiguration::Min) {
@@ -200,7 +201,9 @@ struct CopyTest :
             while (beg < end) {
                 sum += *beg++;
             }
-            *out = sum / ct.getNumValues();
+            larger_t avg = sum / config.numValues;
+            *out++ = static_cast<DATA>(avg);
+            *out = static_cast<DATA>(avg >> (sizeof(DATA) * CHAR_BIT));
         }
     };
 

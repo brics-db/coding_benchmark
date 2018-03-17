@@ -43,20 +43,18 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 auto dataIn = config.source.template begin<DATA>();
-                auto dataInEnd = config.source.template end<DATA>();
+                auto dataInEnd = dataIn + config.numValues;
                 auto dataOut = config.target.template begin<CS>();
-                if (config.numValues >= BLOCKSIZE) {
-                    while (dataIn <= (dataInEnd - BLOCKSIZE)) {
-                        DATA checksum = 0;
-                        auto dataOut2 = reinterpret_cast<DATA*>(dataOut);
-                        for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                            const auto tmp = *dataIn++;
-                            *dataOut2++ = tmp;
-                            checksum ^= tmp;
-                        }
-                        dataOut = reinterpret_cast<CS*>(dataOut2);
-                        *dataOut++ = XOR<DATA, CS>::computeFinalChecksum(checksum);
+                while (dataIn <= (dataInEnd - BLOCKSIZE)) {
+                    DATA checksum = 0;
+                    auto dataOut2 = reinterpret_cast<DATA*>(dataOut);
+                    for (size_t k = 0; k < BLOCKSIZE; ++k) {
+                        const auto tmp = *dataIn++;
+                        *dataOut2++ = tmp;
+                        checksum ^= tmp;
                     }
+                    dataOut = reinterpret_cast<CS*>(dataOut2);
+                    *dataOut++ = XOR<DATA, CS>::computeFinalChecksum(checksum);
                 }
                 // checksum remaining values which do not fit in the block size
                 if (dataIn < dataInEnd) {
@@ -303,15 +301,14 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            template<typename Aggregate, typename Initializer, typename Kernel, typename Finalizer>
             void impl(
                     Initializer && funcInit,
                     Kernel && funcKernel,
                     Finalizer && funcFinal) {
                 size_t i = 0;
                 auto dataIn = config.source.template begin<CS>();
-                auto dataOut = config.target.template begin<Tout>();
-                Tout value = funcInit();
+                Aggregate value = funcInit();
                 if (config.numValues >= BLOCKSIZE) {
                     while (i <= (config.numValues - BLOCKSIZE)) {
                         auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
@@ -327,8 +324,10 @@ namespace coding_benchmark {
                     value = funcKernel(value, *dataIn++);
                 }
                 auto final = funcFinal(value, config.numValues);
-                *dataOut++ = final;
-                *dataOut++ = final; // the "checksum"
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
@@ -377,15 +376,14 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            template<typename Aggregate, typename Initializer, typename Kernel, typename Finalizer>
             void impl(
                     Initializer && funcInit,
                     Kernel && funcKernel,
                     Finalizer && funcFinal) {
                 size_t i = 0;
                 auto dataIn = config.source.template begin<CS>();
-                auto dataOut = config.target.template begin<Tout>();
-                Tout value = funcInit();
+                Aggregate value = funcInit();
                 if (config.numValues >= BLOCKSIZE) {
                     while (i <= (config.numValues - BLOCKSIZE)) {
                         auto dataIn2 = reinterpret_cast<DATA*>(dataIn);
@@ -416,8 +414,10 @@ namespace coding_benchmark {
                     }
                 }
                 auto final = funcFinal(value, config.numValues);
-                *dataOut++ = final;
-                *dataOut++ = final; // the "checksum"
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {

@@ -94,7 +94,11 @@ namespace coding_benchmark {
                     }
                 }
                 while (dataIn < dataInEnd) {
-                    *dataOut++ = functor(*dataIn++, operand);
+                    DATAENC x = functor(*dataIn++, operand);
+                    if constexpr (std::is_same_v<Functor<void>, div<void>>) {
+                        x *= test.A; // make sure we get a code word again
+                    }
+                    *dataOut++ = x;
                 }
             }
             void operator()(
@@ -138,15 +142,14 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            template<typename Aggregate, typename Initializer, typename Kernel, typename Finalizer>
             void impl(
                     Initializer && funcInit,
                     Kernel && funcKernel,
                     Finalizer && funcFinal) {
                 auto dataIn = config.source.template begin<DATAENC>();
                 const auto dataInEnd = dataIn + config.numValues;
-                auto dataOut = config.target.template begin<Tout>();
-                Tout value = funcInit();
+                Aggregate value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         value = funcKernel(value, *dataIn++);
@@ -155,7 +158,11 @@ namespace coding_benchmark {
                 while (dataIn < dataInEnd) {
                     value = funcKernel(value, *dataIn++);
                 }
-                *dataOut = funcFinal(value, config.numValues);
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final / test.A;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {

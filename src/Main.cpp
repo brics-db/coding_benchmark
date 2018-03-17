@@ -115,7 +115,7 @@ int main(
     std::vector<std::vector<TestInfos>> vecTestInfos;
 
     TestConfiguration testConfig(iterations, numElements);
-    DataGenerationConfiguration dataGenConfig(12, 5, 4, 0); /* TODO we do not check for overflows or underflows ANYWHERE, yet :-(*/
+    DataGenerationConfiguration dataGenConfig(11, 5, 4, 0); /* TODO we do not check for overflows or underflows ANYWHERE, yet :-(*/
 
     WarmUp<CopyTest16, UNROLL_LO, UNROLL_HI>("CopyTest16", "Copy", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig);
 

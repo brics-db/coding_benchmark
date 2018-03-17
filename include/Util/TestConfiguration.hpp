@@ -101,6 +101,15 @@ struct SubTestConfiguration :
               target(target) {
     }
     SubTestConfiguration(
+            const size_t numIterations,
+            const size_t numValues,
+            const AlignedBlock & source,
+            const AlignedBlock & target)
+            : BasicTestConfiguration(numIterations, numValues),
+              source(source),
+              target(target) {
+    }
+    SubTestConfiguration(
             const SubTestConfiguration &) = default;
 };
 
