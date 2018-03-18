@@ -26,9 +26,11 @@ namespace coding_benchmark {
     struct AN_sse42_8x16_8x32_u_inv :
             public AN_sse42_8x16_8x32_inv<uint16_t, uint32_t, UNROLL> {
 
+        typedef __m128i VEC;
+
         typedef AN_sse42_8x16_8x32_inv<uint16_t, uint32_t, UNROLL> BASE;
-        typedef simd::mm<__m128i, uint32_t> mmEnc;
-        typedef simd::mm_op<__m128i, uint32_t, std::less_equal> mmEncLE;
+        typedef simd::mm<VEC, uint32_t> mmEnc;
+        typedef simd::mm_op<VEC, uint32_t, std::less_equal> mmEncLE;
 
         using BASE::AN_sse42_8x16_8x32_inv;
 
@@ -42,11 +44,11 @@ namespace coding_benchmark {
         virtual void RunCheck(
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                auto in128 = config.target.template begin<__m128i >();
+                auto in128 = config.target.template begin<VEC>();
                 const auto in128end = this->template ComputeEnd<uint32_t>(in128, config);
                 uint32_t d16Max = std::numeric_limits<uint16_t>::max();
-                __m128i mmD16Max = _mm_set1_epi32(d16Max); // we assume 16-bit input data
-                __m128i mmAInv = _mm_set1_epi32(this->A_INV);
+                VEC mmD16Max = _mm_set1_epi32(d16Max);
+                VEC mmAInv = _mm_set1_epi32(this->A_INV);
                 while (in128 <= (in128end - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
@@ -100,12 +102,12 @@ namespace coding_benchmark {
             }
             template<template<typename = void> class Functor>
             void impl() {
-                auto in128 = config.source.template begin<__m128i >();
+                auto in128 = config.source.template begin<VEC>();
                 const auto in128end = test.template ComputeEnd<uint32_t>(in128, config);
-                auto out128 = config.target.template begin<__m128i >();
+                auto out128 = config.target.template begin<VEC>();
                 uint32_t d16Max = std::numeric_limits<uint16_t>::max();
-                __m128i mmD16Max = mm<__m128i, uint32_t>::set1(d16Max); // we assume 16-bit input data
-                __m128i mmAInv = mm<__m128i, uint32_t>::set1(test.A_INV);
+                VEC mmD16Max = mm<VEC, uint32_t>::set1(d16Max); // we assume 16-bit input data
+                VEC mmAInv = mm<VEC, uint32_t>::set1(test.A_INV);
                 uint32_t operand = config.operand;
                 if constexpr (std::is_same_v<Functor<void>, add<void>> || std::is_same_v<Functor<void>, sub<void>> || std::is_same_v<Functor<void>, div<void>>) {
                     operand = config.operand * test.A;
@@ -114,17 +116,17 @@ namespace coding_benchmark {
                 } else {
                     throw std::runtime_error("Functor not known!");
                 }
-                __m128i mmOperand = mm<__m128i, uint32_t>::set1(operand);
-                __m128i mmA = mm<__m128i, uint32_t>::set1(test.A);
+                VEC mmOperand = mm<VEC, uint32_t>::set1(operand);
+                VEC mmA = mm<VEC, uint32_t>::set1(test.A);
                 while (in128 <= (in128end - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = *in128++;
-                        auto mmInDec = mm_op<__m128i, uint32_t, mul>::compute(mmIn, mmAInv);
+                        auto mmInDec = mm_op<VEC, uint32_t, mul>::compute(mmIn, mmAInv);
                         if (mmEncLE::cmp_mask(mmInDec, mmD16Max) == mmEnc::FULL_MASK) {
-                            auto x = mm_op<__m128i, uint32_t, Functor>::compute(mmIn, mmOperand);
+                            auto x = mm_op<VEC, uint32_t, Functor>::compute(mmIn, mmOperand);
                             if (std::is_same_v<Functor<void>, div<void>>) {
-                                x = mm_op<__m128i, uint32_t, mul>::compute(x, mmA); // make sure we get a code word again
+                                x = mm_op<VEC, uint32_t, mul>::compute(x, mmA); // make sure we get a code word again
                             }
                             _mm_storeu_si128(out128++, x);
                         } else {
@@ -135,11 +137,11 @@ namespace coding_benchmark {
                 // remaining numbers
                 while (in128 <= (in128end - 1)) {
                     auto mmIn = *in128++;
-                    auto mmInDec = mm_op<__m128i, uint32_t, mul>::compute(mmIn, mmAInv);
+                    auto mmInDec = mm_op<VEC, uint32_t, mul>::compute(mmIn, mmAInv);
                     if (mmEncLE::cmp_mask(mmInDec, mmD16Max) == mmEnc::FULL_MASK) {
-                        auto x = mm_op<__m128i, uint32_t, Functor>::compute(mmIn, mmOperand);
+                        auto x = mm_op<VEC, uint32_t, Functor>::compute(mmIn, mmOperand);
                         if (std::is_same_v<Functor<void>, div<void>>) {
-                            x = mm_op<__m128i, uint32_t, mul>::compute(x, mmA); // make sure we get a code word again
+                            x = mm_op<VEC, uint32_t, mul>::compute(x, mmA); // make sure we get a code word again
                         }
                         _mm_storeu_si128(out128++, x);
                     } else {
@@ -216,16 +218,16 @@ namespace coding_benchmark {
                     VectorToScalar && funcVectorToScalar,
                     KernelScalar && funcKernelScalar,
                     Finalize && funcFinal) {
-                auto in128 = config.source.template begin<__m128i >();
+                auto in128 = config.source.template begin<VEC>();
                 const auto in128end = test.template ComputeEnd<uint32_t>(in128, config);
                 uint32_t d16Max = std::numeric_limits<uint16_t>::max();
-                __m128i mmD16Max = mm<__m128i, uint32_t>::set1(d16Max); // we assume 16-bit input data
-                __m128i mmAInv = mm<__m128i, uint32_t>::set1(test.A_INV);
+                VEC mmD16Max = mm<VEC, uint32_t>::set1(d16Max); // we assume 16-bit input data
+                VEC mmAInv = mm<VEC, uint32_t>::set1(test.A_INV);
                 auto mmValue = funcInitVector();
                 while (in128 <= (in128end - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         auto mmIn = *in128++;
-                        auto mmInDec = mm_op<__m128i, uint32_t, mul>::compute(mmIn, mmAInv);
+                        auto mmInDec = mm_op<VEC, uint32_t, mul>::compute(mmIn, mmAInv);
                         if (mmEncLE::cmp_mask(mmInDec, mmD16Max) == mmEnc::FULL_MASK) {
                             mmValue = funcKernelVector(mmValue, mmIn);
                         } else {
@@ -235,7 +237,7 @@ namespace coding_benchmark {
                 }
                 while (in128 <= (in128end - 1)) {
                     auto mmIn = *in128++;
-                    auto mmInDec = mm_op<__m128i, uint32_t, mul>::compute(mmIn, mmAInv);
+                    auto mmInDec = mm_op<VEC, uint32_t, mul>::compute(mmIn, mmAInv);
                     if (mmEncLE::cmp_mask(mmInDec, mmD16Max) == mmEnc::FULL_MASK) {
                         mmValue = funcKernelVector(mmValue, mmIn);
                     } else {
@@ -247,9 +249,9 @@ namespace coding_benchmark {
                     auto in32 = reinterpret_cast<uint32_t*>(in128);
                     const auto in32end = reinterpret_cast<uint32_t* const >(in128end);
                     while (in32 < in32end) {
-                        auto tmp = *in32++ * test.A_INV;
+                        auto tmp = *in32 * test.A_INV;
                         if (tmp <= d16Max) {
-                            value = funcKernelScalar(value, *in32);
+                            value = funcKernelScalar(value, *in32++);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, in32 - config.source.template begin<uint32_t>(), iteration);
                         }
@@ -257,33 +259,40 @@ namespace coding_benchmark {
                 }
                 auto final = funcFinal(value, config.numValues);
                 auto dataOut = test.bufScratchPad.template begin<Aggregate>();
-                *dataOut = final;
+                *dataOut = final / test.A; // decode here, because we encode again in the next step. This is currently required!
                 EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
                 test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                impl<uint32_t>([] {return simd::mm<__m128i, uint32_t>::set1(0);}, [](__m128i mmValue, __m128i mmTmp) {return simd::mm_op<__m128i, uint32_t, add>::compute(mmValue, mmTmp);},
-                        [](__m128i mmValue) {return simd::mm<__m128i, uint32_t>::sum(mmValue);}, [](uint32_t value, uint32_t tmp) {return value + tmp;},
-                        [](uint32_t value, size_t numValues) {return value;});
+                impl<larger_t>([] {return simd::mm<VEC, larger_t>::set1(0);}, [](VEC mmSum, VEC mmTmp) {
+                    auto mmLo = simd::mm<VEC, uint32_t>::cvt_larger_lo(mmTmp);
+                    mmLo = simd::mm_op<VEC, larger_t, add>::compute(mmSum, mmLo);
+                    auto mmHi = simd::mm<VEC, uint32_t>::cvt_larger_hi(mmTmp);
+                    return simd::mm_op<VEC, larger_t, add>::compute(mmLo, mmHi);
+                }, [](VEC mmSum) {return simd::mm<VEC, larger_t>::sum(mmSum);}, [](larger_t sum, uint32_t tmp) {return sum + tmp;}, [](larger_t sum, size_t numValues) {return sum;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                impl<uint32_t>([] {return simd::mm<__m128i, uint32_t>::set1(std::numeric_limits<uint32_t>::max());},
-                        [](__m128i mmValue, __m128i mmTmp) {return simd::mm<__m128i, uint32_t>::min(mmValue, mmTmp);}, [](__m128i mmValue) {return simd::mm<__m128i, uint32_t>::min(mmValue);},
-                        [](uint32_t value, uint32_t tmp) {return value < tmp ? value : tmp;}, [](uint32_t value, size_t numValues) {return value;});
+                impl<uint32_t>([] {return simd::mm<VEC, uint32_t>::set1(std::numeric_limits<uint32_t>::max());}, [](VEC mmMin, VEC mmTmp) {return simd::mm<VEC, uint32_t>::min(mmMin, mmTmp);},
+                        [](VEC mmMin) {return simd::mm<VEC, uint32_t>::min(mmMin);}, [](uint32_t min, uint32_t tmp) {return min < tmp ? min : tmp;},
+                        [](uint32_t min, size_t numValues) {return min;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                impl<uint32_t>([] {return simd::mm<__m128i, uint32_t>::set1(std::numeric_limits<uint32_t>::min());},
-                        [](__m128i mmValue, __m128i mmTmp) {return simd::mm<__m128i, uint32_t>::max(mmValue, mmTmp);}, [](__m128i mmValue) {return simd::mm<__m128i, uint32_t>::max(mmValue);},
-                        [](uint32_t value, uint32_t tmp) {return value > tmp ? value : tmp;}, [](uint32_t value, size_t numValues) {return value;});
+                impl<uint32_t>([] {return simd::mm<VEC, uint32_t>::set1(std::numeric_limits<uint32_t>::min());}, [](VEC mmMax, VEC mmTmp) {return simd::mm<VEC, uint32_t>::max(mmMax, mmTmp);},
+                        [](VEC mmMax) {return simd::mm<VEC, uint32_t>::max(mmMax);}, [](uint32_t max, uint32_t tmp) {return max > tmp ? max : tmp;},
+                        [](uint32_t max, size_t numValues) {return max;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                impl<uint32_t>([] {return simd::mm<__m128i, uint32_t>::set1(0);}, [](__m128i mmValue, __m128i mmTmp) {return simd::mm_op<__m128i, uint32_t, add>::compute(mmValue, mmTmp);},
-                        [](__m128i mmValue) {return simd::mm<__m128i, uint32_t>::sum(mmValue);}, [](uint32_t value, uint32_t tmp) {return value + tmp;},
-                        [this](uint32_t value, size_t numValues) {return (value / (numValues * test.A)) * test.A;});
+                impl<larger_t>([] {return simd::mm<VEC, larger_t>::set1(0);}, [](VEC mmSum, VEC mmTmp) {
+                    auto mmLo = simd::mm<VEC, uint32_t>::cvt_larger_lo(mmTmp);
+                    mmLo = simd::mm_op<VEC, larger_t, add>::compute(mmSum, mmLo);
+                    auto mmHi = simd::mm<VEC, uint32_t>::cvt_larger_hi(mmTmp);
+                    return simd::mm_op<VEC, larger_t, add>::compute(mmLo, mmHi);
+                }, [](VEC mmSum) {return simd::mm<VEC, larger_t>::sum(mmSum);}, [](larger_t sum, uint32_t tmp) {return sum + tmp;},
+                        [this](larger_t sum, size_t numValues) {return (sum / (numValues * test.A)) * test.A;});
             }
         };
 
@@ -302,18 +311,17 @@ namespace coding_benchmark {
         void RunDecodeChecked(
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                auto in128 = config.source.template begin<__m128i >();
+                auto in128 = config.source.template begin<VEC>();
                 const auto in128end = this->template ComputeEnd<uint32_t>(in128, config);
-                auto out64 = config.target.template begin<int64_t>();
+                auto out64 = config.target.template begin<uint64_t>();
                 uint32_t d16Max = std::numeric_limits<uint16_t>::max();
-                __m128i mmD16Max = mm<__m128i, uint32_t>::set1(d16Max); // we assume 16-bit input data
-                __m128i mmAInv = mm<__m128i, uint32_t>::set1(this->A_INV);
+                VEC mmD16Max = mm<VEC, uint32_t>::set1(d16Max); // we assume 16-bit input data
+                VEC mmAInv = mm<VEC, uint32_t>::set1(this->A_INV);
                 auto mmShuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0D0C090805040100);
                 while (in128 <= (in128end - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        auto mmIn = *in128++;
-                        auto mmInDec = mm_op<__m128i, uint32_t, mul>::compute(mmIn, mmAInv);
+                        auto mmInDec = mm_op<VEC, uint32_t, mul>::compute(*in128++, mmAInv);
                         if (mmEncLE::cmp_mask(mmInDec, mmD16Max) == mmEnc::FULL_MASK) {
                             *out64++ = _mm_extract_epi64(_mm_shuffle_epi8(mmInDec, mmShuffle), 0);
                         } else {
@@ -324,7 +332,7 @@ namespace coding_benchmark {
                 // remaining numbers
                 while (in128 <= (in128end - 1)) {
                     auto mmIn = *in128++;
-                    auto mmInDec = mm_op<__m128i, uint32_t, mul>::compute(mmIn, mmAInv);
+                    auto mmInDec = mm_op<VEC, uint32_t, mul>::compute(mmIn, mmAInv);
                     if (mmEncLE::cmp_mask(mmInDec, mmD16Max) == mmEnc::FULL_MASK) {
                         *out64++ = _mm_extract_epi64(_mm_shuffle_epi8(mmInDec, mmShuffle), 0);
                     } else {

@@ -235,12 +235,12 @@ namespace coding_benchmark {
 
                     static inline __m128i cvt_larger_lo(
                             __m128i a) {
-                        return _mm_cvtepi16_epi32(a);
+                        return _mm_cvtepi32_epi64(a);
                     }
 
                     static inline __m128i cvt_larger_hi(
                             __m128i a) {
-                        return _mm_cvtepi16_epi32(_mm_srli_si128(a, 8));
+                        return _mm_cvtepi32_epi64(_mm_srli_si128(a, 8));
                     }
 
                 private:

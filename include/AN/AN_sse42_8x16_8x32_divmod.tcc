@@ -115,10 +115,10 @@ namespace coding_benchmark {
                 while (in128 <= (in128end - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        auto mmIn = _mm_lddqu_si128(in128++);
+                        auto mmIn = *in128++;
                         if ((_mm_extract_epi32(mmIn, 0) % test.A == 0) && (_mm_extract_epi32(mmIn, 1) % test.A == 0) && (_mm_extract_epi32(mmIn, 2) % test.A == 0)
                                 && (_mm_extract_epi32(mmIn, 3) % test.A == 0)) {
-                            auto x = mm_op<VEC, DATAENC, Functor>::compute(_mm_lddqu_si128(in128++), mmOperand);
+                            auto x = mm_op<VEC, DATAENC, Functor>::compute(mmIn, mmOperand);
                             if (std::is_same_v<Functor<void>, div<void>>) {
                                 x = mm_op<VEC, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
                             }
@@ -130,10 +130,10 @@ namespace coding_benchmark {
                 }
                 // remaining numbers
                 while (in128 <= (in128end - 1)) {
-                    auto mmIn = _mm_lddqu_si128(in128++);
+                    auto mmIn = *in128++;
                     if ((_mm_extract_epi32(mmIn, 0) % test.A == 0) && (_mm_extract_epi32(mmIn, 1) % test.A == 0) && (_mm_extract_epi32(mmIn, 2) % test.A == 0)
                             && (_mm_extract_epi32(mmIn, 3) % test.A == 0)) {
-                        auto x = mm_op<VEC, DATAENC, Functor>::compute(_mm_lddqu_si128(in128++), mmOperand);
+                        auto x = mm_op<VEC, DATAENC, Functor>::compute(mmIn, mmOperand);
                         if (std::is_same_v<Functor<void>, div<void>>) {
                             x = mm_op<VEC, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
                         }
@@ -248,32 +248,38 @@ namespace coding_benchmark {
                 }
                 auto final = funcFinal(value, config.numValues);
                 auto dataOut = test.bufScratchPad.template begin<Aggregate>();
-                *dataOut = final;
+                *dataOut = final / test.A; // decode here, because we encode again in the next step. This is currently required!
                 EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
                 test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                impl<DATAENC>([] {return simd::mm<VEC, DATAENC>::set1(0);}, [](VEC mmValue, VEC mmTmp) {return simd::mm_op<VEC, DATAENC, add>::compute(mmValue, mmTmp);},
-                        [](VEC mmValue) {return simd::mm<VEC, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;}, [](DATAENC value, size_t numValues) {return value;});
+                impl<larger_t>([] {return simd::mm<VEC, larger_t>::set1(0);}, [](VEC mmSum, VEC mmTmp) {
+                    auto mmLo = simd::mm<VEC, DATAENC>::cvt_larger_lo(mmTmp);
+                    mmLo = simd::mm_op<VEC, larger_t, add>::compute(mmSum, mmLo);
+                    auto mmHi = simd::mm<VEC, DATAENC>::cvt_larger_hi(mmTmp);
+                    return simd::mm_op<VEC, larger_t, add>::compute(mmLo, mmHi);
+                }, [](VEC mmSum) {return simd::mm<VEC, larger_t>::sum(mmSum);}, [](larger_t sum, DATAENC tmp) {return sum + tmp;}, [](larger_t sum, size_t numValues) {return sum;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                impl<DATAENC>([] {return simd::mm<VEC, DATAENC>::set1(std::numeric_limits<DATAENC>::max());}, [](VEC mmValue, VEC mmTmp) {return simd::mm<VEC, DATAENC>::min(mmValue, mmTmp);},
-                        [](VEC mmValue) {return simd::mm<VEC, DATAENC>::min(mmValue);}, [](DATAENC value, DATAENC tmp) {return value < tmp ? value : tmp;},
-                        [](DATAENC value, size_t numValues) {return value;});
+                impl<DATAENC>([] {return simd::mm<VEC, DATAENC>::set1(std::numeric_limits<DATAENC>::max());}, [](VEC mmMin, VEC mmTmp) {return simd::mm<VEC, DATAENC>::min(mmMin, mmTmp);},
+                        [](VEC mmMin) {return simd::mm<VEC, DATAENC>::min(mmMin);}, [](DATAENC min, DATAENC tmp) {return min < tmp ? min : tmp;}, [](DATAENC min, size_t numValues) {return min;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                impl<DATAENC>([] {return simd::mm<VEC, DATAENC>::set1(std::numeric_limits<DATAENC>::min());}, [](VEC mmValue, VEC mmTmp) {return simd::mm<VEC, DATAENC>::max(mmValue, mmTmp);},
-                        [](VEC mmValue) {return simd::mm<VEC, DATAENC>::max(mmValue);}, [](DATAENC value, DATAENC tmp) {return value > tmp ? value : tmp;},
-                        [](DATAENC value, size_t numValues) {return value;});
+                impl<DATAENC>([] {return simd::mm<VEC, DATAENC>::set1(std::numeric_limits<DATAENC>::min());}, [](VEC mmMax, VEC mmTmp) {return simd::mm<VEC, DATAENC>::max(mmMax, mmTmp);},
+                        [](VEC mmMax) {return simd::mm<VEC, DATAENC>::max(mmMax);}, [](DATAENC max, DATAENC tmp) {return max > tmp ? max : tmp;}, [](DATAENC max, size_t numValues) {return max;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                impl<DATAENC>([] {return simd::mm<VEC, DATAENC>::set1(0);}, [](VEC mmValue, VEC mmTmp) {return simd::mm_op<VEC, DATAENC, add>::compute(mmValue, mmTmp);},
-                        [](VEC mmValue) {return simd::mm<VEC, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;},
-                        [this](DATAENC value, size_t numValues) {return (value / (numValues * test.A)) * test.A;});
+                impl<larger_t>([] {return simd::mm<VEC, larger_t>::set1(0);}, [](VEC mmSum, VEC mmTmp) {
+                    auto mmLo = simd::mm<VEC, DATAENC>::cvt_larger_lo(mmTmp);
+                    mmLo = simd::mm_op<VEC, larger_t, add>::compute(mmSum, mmLo);
+                    auto mmHi = simd::mm<VEC, DATAENC>::cvt_larger_hi(mmTmp);
+                    return simd::mm_op<VEC, larger_t, add>::compute(mmLo, mmHi);
+                }, [](VEC mmSum) {return simd::mm<VEC, larger_t>::sum(mmSum);}, [](larger_t sum, DATAENC tmp) {return sum + tmp;},
+                        [this](larger_t sum, size_t numValues) {return (sum / (numValues * test.A)) * test.A;});
             }
         };
 

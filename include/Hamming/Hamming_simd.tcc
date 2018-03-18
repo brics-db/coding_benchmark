@@ -66,9 +66,6 @@ namespace coding_benchmark {
         typedef hamming_t<DATAIN, V> hamming_simd_t;
         typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
 
-        static const constexpr size_t VALUES_PER_VECTOR = sizeof(V) / sizeof(DATAIN);
-        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
-
         using Test<DATAIN, hamming_simd_t>::Test;
 
         virtual ~Hamming_simd() {
@@ -78,23 +75,23 @@ namespace coding_benchmark {
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto data = config.source.template begin<V>();
-                auto dataEnd = config.source.template end<V>();
-                auto dataOut = config.target.template begin<hamming_simd_t>();
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        dataOut->store(*data);
+                auto inV = config.source.template begin<V>();
+                const auto inVend = this->template ComputeEnd<DATAIN>(inV, config);
+                auto outV = config.target.template begin<hamming_simd_t>();
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++outV) {
+                        outV->store(*inV++);
                     }
                 }
-                for (; data <= (dataEnd - 1); ++data, ++dataOut) {
-                    dataOut->store(*data);
+                for (; inV <= (inVend - 1); ++outV) {
+                    outV->store(*inV++);
                 }
-                if (data < dataEnd) {
-                    auto data2 = reinterpret_cast<DATAIN*>(data);
-                    auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
-                    auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                    for (; data2 < dataEnd2; ++data2, ++dataOut2) {
-                        dataOut2->store(*data2);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<DATAIN*>(inV);
+                    const auto inSend = reinterpret_cast<DATAIN* const >(inVend);
+                    auto outS = reinterpret_cast<hamming_scalar_t*>(outV);
+                    for (; inS < inSend; ++outS) {
+                        outS->store(*inS++);
                     }
                 }
             }
@@ -108,24 +105,32 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t i = 0;
-                auto data = config.target.template begin<hamming_simd_t>();
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++data) {
-                        if (!data->isValid()) {
-                            throw ErrorInfo(__FILE__, __LINE__, i + k, iteration);
+                auto inV = config.target.template begin<hamming_simd_t>();
+                const auto inVend = this->template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        if (inV->isValid()) {
+                            ++inV;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.target.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++data) {
-                    if (!data->isValid()) {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                while (inV <= (inVend - 1)) {
+                    if (inV->isValid()) {
+                        ++inV;
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.target.template begin<DATAIN>(), iteration);
                     }
                 }
-                if (i < config.numValues) {
-                    for (auto data2 = reinterpret_cast<hamming_scalar_t*>(data); i < config.numValues; ++i, ++data2) {
-                        if (!data2->isValid()) {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t* const >(inVend);
+                    while (inS < inSend) {
+                        if (inS->isValid()) {
+                            ++inS;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.target.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
@@ -155,22 +160,23 @@ namespace coding_benchmark {
             void impl() {
                 func<> functor;
                 auto mmOperand = mm<V, DATAIN>::set1(config.operand);
-                size_t i = 0;
-                auto dataIn = config.source.template begin<hamming_simd_t>();
-                auto dataOut = config.target.template begin<hamming_simd_t>();
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
-                        dataOut->store(mm_op<V, DATAIN, func>::compute(dataIn->data, mmOperand));
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                auto outV = config.target.template begin<hamming_simd_t>();
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV, ++outV) {
+                        outV->store(mm_op<V, DATAIN, func>::compute(inV->data, mmOperand));
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
-                    dataOut->store(mm_op<V, DATAIN, func>::compute(dataIn->data, mmOperand));
+                for (; inV < (inVend - 1); ++inV, ++outV) {
+                    outV->store(mm_op<V, DATAIN, func>::compute(inV->data, mmOperand));
                 }
-                if (i < config.numValues) {
-                    auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                    for (; i < config.numValues; ++i, ++dataIn2, ++dataOut2) {
-                        dataOut2->store(functor(dataIn2->data, config.operand));
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t* const >(inVend);
+                    auto outS = reinterpret_cast<hamming_scalar_t*>(outV);
+                    for (; inS < inSend; ++outS, ++inS) {
+                        outS->store(functor(inS->data, config.operand));
                     }
                 }
             }
@@ -219,40 +225,41 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            template<template<typename = void> class func>
+            template<template<typename = void> class Functor>
             void impl() {
-                func<> functor;
                 auto mmOperand = mm<V, DATAIN>::set1(config.operand);
-                size_t i = 0;
-                auto dataIn = config.source.template begin<hamming_simd_t>();
-                auto dataOut = config.target.template begin<hamming_simd_t>();
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
-                        auto tmp = dataIn->data;
-                        if (dataIn->isValid()) {
-                            dataOut->store(mm_op<V, DATAIN, func>::compute(tmp, mmOperand));
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                auto outV = config.target.template begin<hamming_simd_t>();
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV, ++outV) {
+                        auto tmp = inV->data;
+                        if (inV->isValid()) {
+                            outV->store(mm_op<V, DATAIN, Functor>::compute(tmp, mmOperand));
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i + k, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
-                    auto tmp = dataIn->data;
-                    if (dataIn->isValid()) {
-                        dataOut->store(mm_op<V, DATAIN, func>::compute(tmp, mmOperand));
+                for (; inV < (inVend - 1); ++inV, ++outV) {
+                    auto tmp = inV->data;
+                    if (inV->isValid()) {
+                        outV->store(mm_op<V, DATAIN, Functor>::compute(tmp, mmOperand));
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                     }
                 }
-                if (i < config.numValues) {
-                    auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                    for (; i < config.numValues; ++i, ++dataIn2, ++dataOut2) {
-                        auto tmp = dataIn2->data;
-                        if (dataIn2->isValid()) {
-                            dataOut2->store(functor(tmp, config.operand));
+                if (inV < inVend) {
+                    Functor<> functor;
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    auto outS = reinterpret_cast<hamming_scalar_t*>(outV);
+                    for (; inS < inSend; ++outS, ++inS) {
+                        auto tmp = inS->data;
+                        if (inS->isValid()) {
+                            outS->store(functor(tmp, config.operand));
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
@@ -302,24 +309,25 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                size_t i = 0;
-                auto dataIn = config.source.template begin<hamming_simd_t>();
-                auto mmTmp = mm<V, larger_t>::set1(0);
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                auto mmSum = mm<V, larger_t>::set1(0);
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
+                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
+                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                    mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                for (; inV < (inVend - 1); ++inV) {
+                    mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
+                    mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
                 }
-                auto sum = mm<V, larger_t>::sum(mmTmp);
-                if (i < config.numValues) {
-                    auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < config.numValues; ++i, ++dataIn2) {
-                        sum += dataIn2->data;
+                larger_t sum = mm<V, larger_t>::sum(mmSum);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    for (; inS < inSend; ++inS) {
+                        sum += inS->data;
                     }
                 }
                 auto dataOut = test.bufScratchPad.template begin<larger_t>();
@@ -329,82 +337,85 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                size_t i = 0;
-                auto dataIn = config.source.template begin<hamming_simd_t>();
-                auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
+                auto mmMin = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
+                        mmMin = mm<V, DATAIN>::min(mmMin, inV->data);
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
+                for (; inV < (inVend - 1); ++inV) {
+                    mmMin = mm<V, DATAIN>::min(mmMin, inV->data);
                 }
-                DATAIN minimum = mm<V, DATAIN>::min(mmTmp);
-                if (i < config.numValues) {
-                    auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < config.numValues; ++i, ++dataIn2) {
-                        if (dataIn2->data < minimum) {
-                            minimum = dataIn2->data;
+                DATAIN min = mm<V, DATAIN>::min(mmMin);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    for (; inS < inSend; ++inS) {
+                        if (inS->data < min) {
+                            min = inS->data;
                         }
                     }
                 }
                 auto dataOut = test.bufScratchPad.template begin<DATAIN>();
-                *dataOut = minimum;
+                *dataOut = min;
                 EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
                 test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                size_t i = 0;
-                auto dataIn = config.source.template begin<hamming_simd_t>();
-                auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
+                auto mmMax = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
+                        mmMax = mm<V, DATAIN>::max(mmMax, inV->data);
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
+                for (; inV < (inVend - 1); ++inV) {
+                    mmMax = mm<V, DATAIN>::max(mmMax, inV->data);
                 }
-                DATAIN maximum = mm<V, DATAIN>::max(mmTmp);
-                if (i < config.numValues) {
-                    auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < config.numValues; ++i, ++dataIn2) {
-                        if (dataIn2->data > maximum) {
-                            maximum = dataIn2->data;
+                DATAIN max = mm<V, DATAIN>::max(mmMax);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    for (; inS < inSend; ++inS) {
+                        if (inS->data > max) {
+                            max = inS->data;
                         }
                     }
                 }
                 auto dataOut = test.bufScratchPad.template begin<DATAIN>();
-                *dataOut = maximum;
+                *dataOut = max;
                 EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
                 test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                size_t i = 0;
-                auto dataIn = config.source.template begin<hamming_simd_t>();
-                auto mmTmp = mm<V, larger_t>::set1(0);
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                auto mmSum = mm<V, larger_t>::set1(0);
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
+                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
+                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                    mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                for (; inV < (inVend - 1); ++inV) {
+                    mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
+                    mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
                 }
-                auto tmp = mm<V, larger_t>::sum(mmTmp);
-                if (i < config.numValues) {
-                    auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < config.numValues; ++i, ++dataIn2) {
-                        tmp += dataIn2->data;
+                auto sum = mm<V, larger_t>::sum(mmSum);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    for (; inS < inSend; ++inS) {
+                        sum += inS->data;
                     }
                 }
                 auto dataOut = test.bufScratchPad.template begin<larger_t>();
-                *dataOut = tmp / config.numValues;
+                *dataOut = sum / config.numValues;
                 EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
                 test.RunEncode(encConf);
             }
@@ -441,35 +452,36 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                size_t i = 0;
-                auto dataIn = config.source.template begin<hamming_simd_t>();
-                auto mmTmp = mm<V, larger_t>::set1(0);
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        if (dataIn->isValid()) {
-                            mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                            mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                auto mmSum = mm<V, larger_t>::set1(0);
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
+                        if (inV->isValid()) {
+                            mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
+                            mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i + k, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    if (dataIn->isValid()) {
-                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                for (; inV < (inVend - 1); ++inV) {
+                    if (inV->isValid()) {
+                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
+                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                     }
                 }
-                auto sum = mm<V, larger_t>::sum(mmTmp);
-                if (i < config.numValues) {
-                    auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < config.numValues; ++i, ++dataIn2) {
-                        if (dataIn2->isValid()) {
-                            sum += dataIn2->data;
+                auto sum = mm<V, larger_t>::sum(mmSum);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    for (; inS < inSend; ++inS) {
+                        if (inS->isValid()) {
+                            sum += inS->data;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
@@ -480,114 +492,117 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                size_t i = 0;
-                auto dataIn = config.source.template begin<hamming_simd_t>();
-                auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        if (dataIn->isValid()) {
-                            mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
+                auto mmMin = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
+                        if (inV->isValid()) {
+                            mmMin = mm<V, DATAIN>::min(mmMin, inV->data);
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i + k, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    if (dataIn->isValid()) {
-                        mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
+                for (; inV < (inVend - 1); ++inV) {
+                    if (inV->isValid()) {
+                        mmMin = mm<V, DATAIN>::min(mmMin, inV->data);
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                     }
                 }
-                DATAIN minimum = mm<V, DATAIN>::min(mmTmp);
-                if (i < config.numValues) {
-                    auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < config.numValues; ++i, ++dataIn2) {
-                        if (dataIn2->isValid()) {
-                            minimum = (dataIn2->data < minimum) ? dataIn2->data : minimum;
+                DATAIN min = mm<V, DATAIN>::min(mmMin);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    for (; inS < inSend; ++inS) {
+                        if (inS->isValid()) {
+                            min = (inS->data < min) ? inS->data : min;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
                 auto dataOut = test.bufScratchPad.template begin<DATAIN>();
-                *dataOut = minimum;
+                *dataOut = min;
                 EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
                 test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                size_t i = 0;
-                auto dataIn = config.source.template begin<hamming_simd_t>();
                 auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        if (dataIn->isValid()) {
-                            mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
+                        if (inV->isValid()) {
+                            mmTmp = mm<V, DATAIN>::max(mmTmp, inV->data);
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i + k, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    if (dataIn->isValid()) {
-                        mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
+                for (; inV < (inVend - 1); ++inV) {
+                    if (inV->isValid()) {
+                        mmTmp = mm<V, DATAIN>::max(mmTmp, inV->data);
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                     }
                 }
-                DATAIN maximum = mm<V, DATAIN>::max(mmTmp);
-                if (i < config.numValues) {
-                    auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < config.numValues; ++i, ++dataIn2) {
-                        if (dataIn2->isValid()) {
-                            maximum = (dataIn2->data > maximum) ? dataIn2->data : maximum;
+                DATAIN max = mm<V, DATAIN>::max(mmTmp);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    for (; inS < inSend; ++inS) {
+                        if (inS->isValid()) {
+                            max = (inS->data > max) ? inS->data : max;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
                 auto dataOut = test.bufScratchPad.template begin<DATAIN>();
-                *dataOut = maximum;
+                *dataOut = max;
                 EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
                 test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                size_t i = 0;
-                auto dataIn = config.source.template begin<hamming_simd_t>();
-                auto mmTmp = mm<V, larger_t>::set1(0);
-                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
-                        if (dataIn->isValid()) {
-                            mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                            mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                auto mmSum = mm<V, larger_t>::set1(0);
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
+                        if (inV->isValid()) {
+                            mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
+                            mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i + k, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
-                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
-                    if (dataIn->isValid()) {
-                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
-                        mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
+                for (; inV < (inVend - 1); ++inV) {
+                    if (inV->isValid()) {
+                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
+                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                     }
                 }
-                auto tmp = mm<V, larger_t>::sum(mmTmp);
-                if (i < config.numValues) {
-                    auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < config.numValues; ++i, ++dataIn2) {
-                        if (dataIn2->isValid()) {
-                            tmp += dataIn2->data;
+                auto sum = mm<V, larger_t>::sum(mmSum);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    for (; inS < inSend; ++inS) {
+                        if (inS->isValid()) {
+                            sum += inS->data;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
                 auto dataOut = test.bufScratchPad.template begin<larger_t>();
-                *dataOut = tmp / config.numValues;
+                *dataOut = sum / config.numValues;
                 EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
                 test.RunEncode(encConf);
             }
@@ -609,22 +624,23 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t i = 0;
-                auto data = config.source.template begin<hamming_simd_t>();
-                auto dataOut = config.target.template begin<V>();
-                for (; i <= (config.numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        *dataOut = data->data;
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = this->template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                auto outV = config.target.template begin<V>();
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
+                        *outV++ = inV->data;
                     }
                 }
-                for (; i <= (config.numValues - 1); i += VALUES_PER_VECTOR, ++data, ++dataOut) {
-                    *dataOut = data->data;
+                for (; inV < (inVend - 1); ++inV) {
+                    *outV++ = inV->data;
                 }
-                if (i < config.numValues) {
-                    auto data2 = reinterpret_cast<hamming_scalar_t*>(data);
-                    auto dataOut2 = reinterpret_cast<DATAIN*>(dataOut);
-                    for (; i < config.numValues; ++i, ++data2, ++dataOut2) {
-                        *dataOut2 = data2->data;
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    auto outS = reinterpret_cast<DATAIN*>(outV);
+                    for (; inS < inSend; ++inS) {
+                        *outS++ = inS->data;
                     }
                 }
             }
@@ -638,30 +654,40 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t i = 0;
-                auto data = config.source.template begin<hamming_simd_t>();
-                auto dataOut = config.target.template begin<V>();
-                for (; i <= (config.numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        if (data->isValid()) {
-                            *dataOut = data->data;
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = this->template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                auto outV = config.target.template begin<V>();
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
+                        if (inV->isValid()) {
+                            *outV++ = inV->data;
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, i + k, iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
-                for (; i <= (config.numValues - 1); i += VALUES_PER_VECTOR, ++data, ++dataOut) {
-                    *dataOut = data->data;
+                for (; inV < (inVend - 1); ++inV) {
+                    if (inV->isValid()) {
+                        *outV++ = inV->data;
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
+                    }
                 }
-                if (i < config.numValues) {
-                    auto data2 = reinterpret_cast<hamming_scalar_t*>(data);
-                    auto dataOut2 = reinterpret_cast<DATAIN*>(dataOut);
-                    for (; i < config.numValues; ++i, ++data2, ++dataOut2) {
-                        *dataOut2 = data2->data;
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    auto outS = reinterpret_cast<DATAIN*>(outV);
+                    for (; inS < inSend; ++inS) {
+                        if (inS->isValid()) {
+                            *outS++ = inS->data;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
+                        }
                     }
                 }
             }
         }
-    };
+    }
+    ;
 
 }

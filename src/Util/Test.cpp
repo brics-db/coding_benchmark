@@ -255,6 +255,88 @@ void TestBase::RunDecodeChecked(
         const DecodeConfiguration & config) {
 }
 
+ScalarTest::~ScalarTest() {
+}
+
+const std::string &
+ScalarTest::getSIMDtypeName() {
+    static const std::string SIMDtypeName("Scalar");
+    return SIMDtypeName;
+}
+
+bool ScalarTest::HasCapabilities() {
+    return true;
+}
+
+#ifdef __SSE4_2__
+
+template
+struct SIMDTestBase<__m128i > ;
+
+SSE42Test::~SSE42Test() {
+}
+
+const std::string &
+SSE42Test::getSIMDtypeName() {
+    static const std::string SIMDtypeName("SSE4.2");
+    return SIMDtypeName;
+}
+
+bool SSE42Test::HasCapabilities() {
+    auto& cpu = CPU::Instance();
+    return cpu.SSE42 && cpu.OS_X64;
+}
+
+#endif
+
+#ifdef __AVX2__
+
+template
+struct SIMDTestBase<__m256i > ;
+
+SIMDTestBase<__m256i >::~SIMDTestBase() {
+}
+
+AVX2Test::~AVX2Test() {
+}
+
+const std::string &
+AVX2Test::getSIMDtypeName() {
+    static const std::string SIMDtypeName("AVX2");
+    return SIMDtypeName;
+}
+
+bool AVX2Test::HasCapabilities() {
+    auto& cpu = CPU::Instance();
+    return cpu.AVX2 && cpu.OS_X64 && cpu.OS_AVX;
+}
+
+#endif
+
+#ifdef __AVX512_F__
+
+template
+struct SIMDTestBase<__m512i > ;
+
+SIMDTestBase<__m512i >::~SIMDTestBase() {
+}
+
+AVX512Test::~AVX512Test() {
+}
+
+const std::string &
+AVX512Test::getSIMDtypeName() {
+    static const std::string SIMDtypeName("AVX512");
+    return SIMDtypeName;
+}
+
+bool AVX512Test::HasCapabilities() {
+    auto& cpu = CPU::Instance();
+    return (cpu.AVX512_BW | cpu.AVX512_CD | cpu.AVX512_DQ | cpu.AVX512_ER | cpu.AVX512_F | cpu.AVX512_IFMA | cpu.AVX512_PF | cpu.AVX512_VBMI | cpu.AVX512_VL) && cpu.OS_X64 && cpu.OS_AVX512;
+}
+
+#endif
+
 template<typename Conf, size_t max = std::variant_size_v<typename Conf::Mode>, size_t num = 1>
 struct ConfigurationModeExecutor {
     static void run(
@@ -624,59 +706,4 @@ TestInfos TestBase::Execute(
 
     return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk,
             tiMaxChk, tiAvgChk, tiReencChk, tiDec, tiDecChk);
-}
-
-ScalarTest::~ScalarTest() {
-}
-
-const std::string &
-ScalarTest::getSIMDtypeName() {
-    static const std::string SIMDtypeName("Scalar");
-    return SIMDtypeName;
-}
-
-bool ScalarTest::HasCapabilities() {
-    return true;
-}
-
-SSE42Test::~SSE42Test() {
-}
-
-const std::string &
-SSE42Test::getSIMDtypeName() {
-    static const std::string SIMDtypeName("SSE4.2");
-    return SIMDtypeName;
-}
-
-bool SSE42Test::HasCapabilities() {
-    auto& cpu = CPU::Instance();
-    return cpu.SSE42 && cpu.OS_X64;
-}
-
-AVX2Test::~AVX2Test() {
-}
-
-const std::string &
-AVX2Test::getSIMDtypeName() {
-    static const std::string SIMDtypeName("AVX2");
-    return SIMDtypeName;
-}
-
-bool AVX2Test::HasCapabilities() {
-    auto& cpu = CPU::Instance();
-    return cpu.AVX2 && cpu.OS_X64 && cpu.OS_AVX;
-}
-
-AVX512Test::~AVX512Test() {
-}
-
-const std::string &
-AVX512Test::getSIMDtypeName() {
-    static const std::string SIMDtypeName("AVX512");
-    return SIMDtypeName;
-}
-
-bool AVX512Test::HasCapabilities() {
-    auto& cpu = CPU::Instance();
-    return (cpu.AVX512_BW | cpu.AVX512_CD | cpu.AVX512_DQ | cpu.AVX512_ER | cpu.AVX512_F | cpu.AVX512_IFMA | cpu.AVX512_PF | cpu.AVX512_VBMI | cpu.AVX512_VL) && cpu.OS_X64 && cpu.OS_AVX512;
 }

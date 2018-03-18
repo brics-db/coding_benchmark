@@ -266,8 +266,27 @@ struct ScalarTest :
     virtual bool HasCapabilities() override;
 };
 
+template<typename VEC>
+struct SIMDTestBase {
+    virtual ~SIMDTestBase() {
+    }
+
+    template<typename T, typename V = VEC>
+    V * const ComputeEnd(
+            V * mmBeg,
+            const SubTestConfiguration & config) const {
+        return reinterpret_cast<V*>(reinterpret_cast<T*>(mmBeg) + config.numValues);
+    }
+};
+
+#ifdef __SSE4_2__
+
+extern template
+struct SIMDTestBase<__m128i>;
+
 struct SSE42Test :
-        virtual public TestBase0 {
+        virtual public TestBase0,
+        public virtual SIMDTestBase<__m128i> {
 
     virtual ~SSE42Test();
 
@@ -276,8 +295,13 @@ struct SSE42Test :
     virtual bool HasCapabilities() override;
 };
 
+#endif
+
+#ifdef __AVX2__
+
 struct AVX2Test :
-        virtual public TestBase0 {
+        virtual public TestBase0,
+        public virtual SIMDTestBase<__m256i> {
 
     virtual ~AVX2Test();
 
@@ -286,8 +310,13 @@ struct AVX2Test :
     virtual bool HasCapabilities() override;
 };
 
+#endif
+
+#ifdef __AVX512_F__
+
 struct AVX512Test :
-        virtual public TestBase0 {
+        virtual public TestBase0,
+        public virtual SIMDTestBase<__m512i> {
 
     virtual ~AVX512Test();
 
@@ -295,6 +324,8 @@ struct AVX512Test :
 
     virtual bool HasCapabilities() override;
 };
+
+#endif
 
 template<typename V>
 struct SIMDTest;
@@ -514,7 +545,7 @@ private:
                 AggregateConfiguration::Sum) {
             larger_t sum = larger_t(0);
             auto beg = config.source.template begin<DATARAW>();
-            auto end = beg + config.numValues;
+            const auto end = beg + config.numValues;
             auto out = config.target.template begin<larger_t>();
             while (beg < end) {
                 sum += *beg++;
@@ -525,7 +556,7 @@ private:
                 AggregateConfiguration::Min) {
             DATARAW min(std::numeric_limits<DATARAW>::max());
             auto beg = config.source.template begin<DATARAW>();
-            auto end = beg + config.numValues;
+            const auto end = beg + config.numValues;
             auto out = config.target.template begin<DATARAW>();
             while (beg < end) {
                 min = std::min(min, *beg++);
@@ -536,7 +567,7 @@ private:
                 AggregateConfiguration::Max) {
             DATARAW max(std::numeric_limits<DATARAW>::min());
             auto beg = config.source.template begin<DATARAW>();
-            auto end = beg + config.numValues;
+            const auto end = beg + config.numValues;
             auto out = config.target.template begin<DATARAW>();
             while (beg < end) {
                 max = std::max(max, *beg++);
@@ -547,7 +578,7 @@ private:
                 AggregateConfiguration::Avg) {
             larger_t sum = larger_t(0);
             auto beg = config.source.template begin<DATARAW>();
-            auto end = beg + config.numValues;
+            const auto end = beg + config.numValues;
             auto out = config.target.template begin<larger_t>();
             while (beg < end) {
                 sum += *beg++;
