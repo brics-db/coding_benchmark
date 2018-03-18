@@ -50,12 +50,12 @@ namespace coding_benchmark {
     extern template struct hamming_t<uint32_t, __m128i > ;
 #endif
 #ifdef __AVX2__
-    extern template struct hamming_t<uint16_t, __m256i >;
-    extern template struct hamming_t<uint32_t, __m256i >;
+    extern template struct hamming_t<uint16_t, __m256i > ;
+    extern template struct hamming_t<uint32_t, __m256i > ;
 #endif
 #ifdef __AVX512F__
-    extern template struct hamming_t<uint16_t, __m512i >;
-    extern template struct hamming_t<uint32_t, __m512i >;
+    extern template struct hamming_t<uint16_t, __m512i > ;
+    extern template struct hamming_t<uint32_t, __m512i > ;
 #endif
 
     template<typename DATAIN, typename V, size_t UNROLL>
@@ -78,9 +78,9 @@ namespace coding_benchmark {
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto data = this->bufRaw.template begin<V>();
-                auto dataEnd = this->bufRaw.template end<V>();
-                auto dataOut = this->bufEncoded.template begin<hamming_simd_t>();
+                auto data = config.source.template begin<V>();
+                auto dataEnd = config.source.template end<V>();
+                auto dataOut = config.target.template begin<hamming_simd_t>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                         dataOut->store(*data);
@@ -108,23 +108,22 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t numValues = this->getNumValues();
                 size_t i = 0;
                 auto data = config.target.template begin<hamming_simd_t>();
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++data) {
                         if (!data->isValid()) {
                             throw ErrorInfo(__FILE__, __LINE__, i + k, iteration);
                         }
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++data) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++data) {
                     if (!data->isValid()) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
-                if (i < numValues) {
-                    for (auto data2 = reinterpret_cast<hamming_scalar_t*>(data); i < numValues; ++i, ++data2) {
+                if (i < config.numValues) {
+                    for (auto data2 = reinterpret_cast<hamming_scalar_t*>(data); i < config.numValues; ++i, ++data2) {
                         if (!data2->isValid()) {
                             throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                         }
@@ -155,23 +154,22 @@ namespace coding_benchmark {
             template<template<typename = void> class func>
             void impl() {
                 func<> functor;
-                const size_t numValues = test.getNumValues();
                 auto mmOperand = mm<V, DATAIN>::set1(config.operand);
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = test.bufResult.template begin<hamming_simd_t>();
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                auto dataIn = config.source.template begin<hamming_simd_t>();
+                auto dataOut = config.target.template begin<hamming_simd_t>();
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                         dataOut->store(mm_op<V, DATAIN, func>::compute(dataIn->data, mmOperand));
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                     dataOut->store(mm_op<V, DATAIN, func>::compute(dataIn->data, mmOperand));
                 }
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
                     auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                    for (; i < numValues; ++i, ++dataIn2, ++dataOut2) {
+                    for (; i < config.numValues; ++i, ++dataIn2, ++dataOut2) {
                         dataOut2->store(functor(dataIn2->data, config.operand));
                     }
                 }
@@ -224,12 +222,11 @@ namespace coding_benchmark {
             template<template<typename = void> class func>
             void impl() {
                 func<> functor;
-                const size_t numValues = test.getNumValues();
                 auto mmOperand = mm<V, DATAIN>::set1(config.operand);
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = test.bufResult.template begin<hamming_simd_t>();
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                auto dataIn = config.source.template begin<hamming_simd_t>();
+                auto dataOut = config.target.template begin<hamming_simd_t>();
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                         auto tmp = dataIn->data;
                         if (dataIn->isValid()) {
@@ -239,7 +236,7 @@ namespace coding_benchmark {
                         }
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn, ++dataOut) {
                     auto tmp = dataIn->data;
                     if (dataIn->isValid()) {
                         dataOut->store(mm_op<V, DATAIN, func>::compute(tmp, mmOperand));
@@ -247,10 +244,10 @@ namespace coding_benchmark {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
                     auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                    for (; i < numValues; ++i, ++dataIn2, ++dataOut2) {
+                    for (; i < config.numValues; ++i, ++dataIn2, ++dataOut2) {
                         auto tmp = dataIn2->data;
                         if (dataIn2->isValid()) {
                             dataOut2->store(functor(tmp, config.operand));
@@ -295,7 +292,6 @@ namespace coding_benchmark {
             using hamming_sse24_t = Hamming_simd::hamming_simd_t;
             using hamming_scalar_t = Hamming_simd::hamming_scalar_t;
             typedef typename Larger<DATAIN>::larger_t larger_t;
-            typedef hamming_t<larger_t, larger_t> hamming_larger_t;
             Hamming_simd & test;
             const AggregateConfiguration & config;
             Aggregator(
@@ -306,107 +302,111 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                const size_t numValues = test.getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+                auto dataIn = config.source.template begin<hamming_simd_t>();
                 auto mmTmp = mm<V, larger_t>::set1(0);
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                         mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
                         mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                     mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
                     mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
                 }
-                auto tmp = mm<V, larger_t>::sum(mmTmp);
-                if (i < numValues) {
+                auto sum = mm<V, larger_t>::sum(mmTmp);
+                if (i < config.numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < numValues; ++i, ++dataIn2) {
-                        tmp += dataIn2->data;
+                    for (; i < config.numValues; ++i, ++dataIn2) {
+                        sum += dataIn2->data;
                     }
                 }
-                dataOut->store(tmp);
+                auto dataOut = test.bufScratchPad.template begin<larger_t>();
+                *dataOut = sum;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                const size_t numValues = test.getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
+                auto dataIn = config.source.template begin<hamming_simd_t>();
                 auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                         mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                     mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
                 }
                 DATAIN minimum = mm<V, DATAIN>::min(mmTmp);
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < numValues; ++i, ++dataIn2) {
+                    for (; i < config.numValues; ++i, ++dataIn2) {
                         if (dataIn2->data < minimum) {
                             minimum = dataIn2->data;
                         }
                     }
                 }
-                dataOut->store(minimum);
+                auto dataOut = test.bufScratchPad.template begin<DATAIN>();
+                *dataOut = minimum;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                const size_t numValues = test.getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
+                auto dataIn = config.source.template begin<hamming_simd_t>();
                 auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                         mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                     mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
                 }
                 DATAIN maximum = mm<V, DATAIN>::max(mmTmp);
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < numValues; ++i, ++dataIn2) {
+                    for (; i < config.numValues; ++i, ++dataIn2) {
                         if (dataIn2->data > maximum) {
                             maximum = dataIn2->data;
                         }
                     }
                 }
-                dataOut->store(maximum);
+                auto dataOut = test.bufScratchPad.template begin<DATAIN>();
+                *dataOut = maximum;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                const size_t numValues = test.getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+                auto dataIn = config.source.template begin<hamming_simd_t>();
                 auto mmTmp = mm<V, larger_t>::set1(0);
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                         mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
                         mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                     mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
                     mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
                 }
                 auto tmp = mm<V, larger_t>::sum(mmTmp);
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < numValues; ++i, ++dataIn2) {
+                    for (; i < config.numValues; ++i, ++dataIn2) {
                         tmp += dataIn2->data;
                     }
                 }
-                dataOut->store(tmp / numValues);
+                auto dataOut = test.bufScratchPad.template begin<larger_t>();
+                *dataOut = tmp / config.numValues;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
         };
 
@@ -441,12 +441,10 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                const size_t numValues = test.getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+                auto dataIn = config.source.template begin<hamming_simd_t>();
                 auto mmTmp = mm<V, larger_t>::set1(0);
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                         if (dataIn->isValid()) {
                             mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
@@ -456,7 +454,7 @@ namespace coding_benchmark {
                         }
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                     if (dataIn->isValid()) {
                         mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
                         mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
@@ -464,27 +462,28 @@ namespace coding_benchmark {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
-                auto tmp = mm<V, larger_t>::sum(mmTmp);
-                if (i < numValues) {
+                auto sum = mm<V, larger_t>::sum(mmTmp);
+                if (i < config.numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < numValues; ++i, ++dataIn2) {
+                    for (; i < config.numValues; ++i, ++dataIn2) {
                         if (dataIn2->isValid()) {
-                            tmp += dataIn2->data;
+                            sum += dataIn2->data;
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                         }
                     }
                 }
-                dataOut->store(tmp);
+                auto dataOut = test.bufScratchPad.template begin<larger_t>();
+                *dataOut = sum;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                const size_t numValues = test.getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
+                auto dataIn = config.source.template begin<hamming_simd_t>();
                 auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                         if (dataIn->isValid()) {
                             mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
@@ -493,7 +492,7 @@ namespace coding_benchmark {
                         }
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                     if (dataIn->isValid()) {
                         mmTmp = mm<V, DATAIN>::min(mmTmp, dataIn->data);
                     } else {
@@ -501,9 +500,9 @@ namespace coding_benchmark {
                     }
                 }
                 DATAIN minimum = mm<V, DATAIN>::min(mmTmp);
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < numValues; ++i, ++dataIn2) {
+                    for (; i < config.numValues; ++i, ++dataIn2) {
                         if (dataIn2->isValid()) {
                             minimum = (dataIn2->data < minimum) ? dataIn2->data : minimum;
                         } else {
@@ -511,16 +510,17 @@ namespace coding_benchmark {
                         }
                     }
                 }
-                dataOut->store(minimum);
+                auto dataOut = test.bufScratchPad.template begin<DATAIN>();
+                *dataOut = minimum;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                const size_t numValues = test.getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
+                auto dataIn = config.source.template begin<hamming_simd_t>();
                 auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                         if (dataIn->isValid()) {
                             mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
@@ -529,7 +529,7 @@ namespace coding_benchmark {
                         }
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                     if (dataIn->isValid()) {
                         mmTmp = mm<V, DATAIN>::max(mmTmp, dataIn->data);
                     } else {
@@ -537,9 +537,9 @@ namespace coding_benchmark {
                     }
                 }
                 DATAIN maximum = mm<V, DATAIN>::max(mmTmp);
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < numValues; ++i, ++dataIn2) {
+                    for (; i < config.numValues; ++i, ++dataIn2) {
                         if (dataIn2->isValid()) {
                             maximum = (dataIn2->data > maximum) ? dataIn2->data : maximum;
                         } else {
@@ -547,16 +547,17 @@ namespace coding_benchmark {
                         }
                     }
                 }
-                dataOut->store(maximum);
+                auto dataOut = test.bufScratchPad.template begin<DATAIN>();
+                *dataOut = maximum;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                const size_t numValues = test.getNumValues();
                 size_t i = 0;
-                auto dataIn = test.bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = test.bufResult.template begin<hamming_larger_t>();
+                auto dataIn = config.source.template begin<hamming_simd_t>();
                 auto mmTmp = mm<V, larger_t>::set1(0);
-                while (i <= (numValues - VALUES_PER_UNROLL)) {
+                while (i <= (config.numValues - VALUES_PER_UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, i += VALUES_PER_VECTOR, ++dataIn) {
                         if (dataIn->isValid()) {
                             mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
@@ -566,7 +567,7 @@ namespace coding_benchmark {
                         }
                     }
                 }
-                for (; i <= (numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
+                for (; i <= (config.numValues - VALUES_PER_VECTOR); i += VALUES_PER_VECTOR, ++dataIn) {
                     if (dataIn->isValid()) {
                         mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_lo(dataIn->data));
                         mmTmp = mm_op<V, larger_t, add>::compute(mmTmp, mm<V, DATAIN>::cvt_larger_hi(dataIn->data));
@@ -575,9 +576,9 @@ namespace coding_benchmark {
                     }
                 }
                 auto tmp = mm<V, larger_t>::sum(mmTmp);
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn2 = reinterpret_cast<hamming_scalar_t*>(dataIn);
-                    for (; i < numValues; ++i, ++dataIn2) {
+                    for (; i < config.numValues; ++i, ++dataIn2) {
                         if (dataIn2->isValid()) {
                             tmp += dataIn2->data;
                         } else {
@@ -585,7 +586,10 @@ namespace coding_benchmark {
                         }
                     }
                 }
-                dataOut->store(tmp / numValues);
+                auto dataOut = test.bufScratchPad.template begin<larger_t>();
+                *dataOut = tmp / config.numValues;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
         };
 
@@ -605,22 +609,21 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto data = this->bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = this->bufResult.template begin<V>();
-                for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
+                auto data = config.source.template begin<hamming_simd_t>();
+                auto dataOut = config.target.template begin<V>();
+                for (; i <= (config.numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                         *dataOut = data->data;
                     }
                 }
-                for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++data, ++dataOut) {
+                for (; i <= (config.numValues - 1); i += VALUES_PER_VECTOR, ++data, ++dataOut) {
                     *dataOut = data->data;
                 }
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto data2 = reinterpret_cast<hamming_scalar_t*>(data);
                     auto dataOut2 = reinterpret_cast<DATAIN*>(dataOut);
-                    for (; i < numValues; ++i, ++data2, ++dataOut2) {
+                    for (; i < config.numValues; ++i, ++data2, ++dataOut2) {
                         *dataOut2 = data2->data;
                     }
                 }
@@ -635,11 +638,10 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto data = this->bufEncoded.template begin<hamming_simd_t>();
-                auto dataOut = this->bufResult.template begin<V>();
-                for (; i <= (numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
+                auto data = config.source.template begin<hamming_simd_t>();
+                auto dataOut = config.target.template begin<V>();
+                for (; i <= (config.numValues - VALUES_PER_UNROLL); i += VALUES_PER_UNROLL) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                         if (data->isValid()) {
                             *dataOut = data->data;
@@ -648,13 +650,13 @@ namespace coding_benchmark {
                         }
                     }
                 }
-                for (; i <= (numValues - 1); i += VALUES_PER_VECTOR, ++data, ++dataOut) {
+                for (; i <= (config.numValues - 1); i += VALUES_PER_VECTOR, ++data, ++dataOut) {
                     *dataOut = data->data;
                 }
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto data2 = reinterpret_cast<hamming_scalar_t*>(data);
                     auto dataOut2 = reinterpret_cast<DATAIN*>(dataOut);
-                    for (; i < numValues; ++i, ++data2, ++dataOut2) {
+                    for (; i < config.numValues; ++i, ++data2, ++dataOut2) {
                         *dataOut2 = data2->data;
                     }
                 }

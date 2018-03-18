@@ -55,9 +55,9 @@ namespace coding_benchmark {
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto data = this->bufRaw.template begin<DATAIN>();
-                const auto dataEnd = this->bufRaw.template end<DATAIN>();
-                auto dataOut = this->bufEncoded.template begin<hamming_scalar_t>();
+                auto data = config.source.template begin<DATAIN>();
+                const auto dataEnd = data + config.numValues;
+                auto dataOut = config.target.template begin<hamming_scalar_t>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                         dataOut->store(*data);
@@ -114,10 +114,9 @@ namespace coding_benchmark {
             template<template<typename = void> class func>
             void impl() {
                 func<> functor;
-                const size_t numValues = test.getNumValues();
-                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
+                auto data = config.source.template begin<hamming_scalar_t>();
+                auto dataEnd = data + config.numValues;
+                auto dataOut = config.target.template begin<hamming_scalar_t>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                         auto tmp = functor(data->data, config.operand);
@@ -176,10 +175,9 @@ namespace coding_benchmark {
             template<template<typename = void> class func>
             void impl() {
                 func<> functor;
-                const size_t numValues = test.getNumValues();
-                auto data = test.bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = test.bufResult.template begin<hamming_scalar_t>();
+                auto data = config.source.template begin<hamming_scalar_t>();
+                auto dataEnd = data + config.numValues;
+                auto dataOut = config.target.template begin<hamming_scalar_t>();
                 size_t i = 0;
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut, ++i) {
@@ -187,7 +185,7 @@ namespace coding_benchmark {
                         if (data->isValid()) {
                             dataOut->store(functor(tmp, config.operand));
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, data - test.bufEncoded.template begin<hamming_scalar_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, data - config.source.template begin<hamming_scalar_t>(), iteration);
                         }
                     }
                 }
@@ -196,7 +194,7 @@ namespace coding_benchmark {
                     if (data->isValid()) {
                         dataOut->store(functor(tmp, config.operand));
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, data - test.bufEncoded.template begin<hamming_scalar_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, data - config.source.template begin<hamming_scalar_t>(), iteration);
                     }
                 }
             }
@@ -234,7 +232,6 @@ namespace coding_benchmark {
         struct Aggregator {
             using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
             typedef typename Larger<DATAIN>::larger_t larger_t;
-            typedef hamming_t<larger_t, larger_t> hamming_larger_t;
             Hamming_scalar & test;
             const AggregateConfiguration & config;
             Aggregator(
@@ -243,16 +240,14 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            template<typename Hout, typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            template<typename Aggregate, typename Initializer, typename Kernel, typename Finalizer>
             void impl(
                     Initializer && funcInit,
                     Kernel && funcKernel,
                     Finalizer && funcFinal) {
-                const size_t numValues = test.template getNumValues();
-                auto dataIn = test.bufEncoded.template begin<hamming_scalar_t>();
-                const auto dataInEnd = dataIn + numValues;
-                auto dataOut = test.bufResult.template begin<Hout>();
-                Tout value = funcInit();
+                auto dataIn = config.source.template begin<hamming_scalar_t>();
+                const auto dataInEnd = dataIn + config.numValues;
+                Aggregate value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         value = funcKernel(value, *dataIn++);
@@ -261,28 +256,29 @@ namespace coding_benchmark {
                 while (dataIn < dataInEnd) {
                     value = funcKernel(value, *dataIn++);
                 }
-                dataOut->store(funcFinal(value, numValues));
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                impl<hamming_larger_t, larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
-                        [] (larger_t sum, const size_t numValues) {return sum;});
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;}, [] (larger_t sum, const size_t numValues) {return sum;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                impl<hamming_scalar_t, DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::max();},
-                        [] (DATAIN minimum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < minimum ? dataIn.data : minimum;},
+                impl<DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::max();}, [] (DATAIN minimum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < minimum ? dataIn.data : minimum;},
                         [] (DATAIN minimum, const size_t numValues) {return minimum;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                impl<hamming_scalar_t, DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::min();},
-                        [] (DATAIN maximum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data > maximum ? dataIn.data : maximum;},
+                impl<DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::min();}, [] (DATAIN maximum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data > maximum ? dataIn.data : maximum;},
                         [] (DATAIN maximum, const size_t numValues) {return maximum;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                impl<hamming_larger_t, larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
                         [] (larger_t sum, const size_t numValues) {return sum / numValues;});
             }
         };
@@ -303,7 +299,6 @@ namespace coding_benchmark {
         struct AggregatorChecked {
             using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
             typedef typename Larger<DATAIN>::larger_t larger_t;
-            typedef hamming_t<larger_t, larger_t> hamming_larger_t;
             Hamming_scalar & test;
             const AggregateConfiguration & config;
             const size_t iteration;
@@ -315,22 +310,20 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            template<typename Hout, typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            template<typename Aggregate, typename Initializer, typename Kernel, typename Finalizer>
             void impl(
                     Initializer && funcInit,
                     Kernel && funcKernel,
                     Finalizer && funcFinal) {
-                const size_t numValues = test.template getNumValues();
-                auto dataIn = test.bufEncoded.template begin<hamming_scalar_t>();
-                const auto dataInEnd = dataIn + numValues;
-                auto dataOut = test.bufResult.template begin<Hout>();
-                Tout value = funcInit();
+                auto dataIn = config.source.template begin<hamming_scalar_t>();
+                const auto dataInEnd = dataIn + config.numValues;
+                Aggregate value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         if (dataIn->isValid()) {
                             value = funcKernel(value, *dataIn++);
                         } else {
-                            throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<hamming_scalar_t>(), iteration);
+                            throw ErrorInfo(__FILE__, __LINE__, dataIn - config.source.template begin<hamming_scalar_t>(), iteration);
                         }
                     }
                 }
@@ -338,31 +331,32 @@ namespace coding_benchmark {
                     if (dataIn->isValid()) {
                         value = funcKernel(value, *dataIn++);
                     } else {
-                        throw ErrorInfo(__FILE__, __LINE__, dataIn - test.bufEncoded.template begin<hamming_scalar_t>(), iteration);
+                        throw ErrorInfo(__FILE__, __LINE__, dataIn - config.target.template begin<hamming_scalar_t>(), iteration);
                     }
                 }
-                dataOut->store(funcFinal(value, numValues));
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                impl<hamming_larger_t, larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
-                        [] (larger_t sum, const size_t numValues) {return sum;});
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;}, [] (larger_t sum, const size_t numValues) {return sum;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                impl<hamming_scalar_t, DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::max();},
-                        [] (DATAIN minimum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < minimum ? dataIn.data : minimum;},
+                impl<DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::max();}, [] (DATAIN minimum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < minimum ? dataIn.data : minimum;},
                         [] (DATAIN minimum, const size_t numValues) {return minimum;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                impl<hamming_scalar_t, DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::min();},
-                        [] (DATAIN maximum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < maximum ? dataIn.data : maximum;},
+                impl<DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::min();}, [] (DATAIN maximum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data > maximum ? dataIn.data : maximum;},
                         [] (DATAIN maximum, const size_t numValues) {return maximum;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                impl<hamming_larger_t, larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
+                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
                         [] (larger_t sum, const size_t numValues) {return sum / numValues;});
             }
         };
@@ -383,10 +377,9 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t numValues = this->getNumValues();
-                auto data = this->bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = this->bufResult.template begin<DATAIN>();
+                auto data = config.source.template begin<hamming_scalar_t>();
+                auto dataEnd = data + config.numValues;
+                auto dataOut = config.target.template begin<DATAIN>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                         *dataOut = data->data;
@@ -406,10 +399,9 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t numValues = this->getNumValues();
-                auto data = this->bufEncoded.template begin<hamming_scalar_t>();
-                auto dataEnd = data + numValues;
-                auto dataOut = this->bufResult.template begin<DATAIN>();
+                auto data = config.source.template begin<hamming_scalar_t>();
+                auto dataEnd = data + config.numValues;
+                auto dataOut = config.target.template begin<DATAIN>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
                         if (data->isValid()) {
