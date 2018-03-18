@@ -43,25 +43,29 @@ namespace coding_benchmark {
             public ANTest<DATARAW, DATAENC, UNROLL>,
             public SSE42Test {
 
-        static const constexpr size_t NUM_VALUES_PER_SIMDREG = 16 / sizeof(DATAENC); // sizeof(__m128i) / sizeof(DATAENC)
-        static const constexpr size_t NUM_VALUES_PER_UNROLL = UNROLL * NUM_VALUES_PER_SIMDREG;
+        typedef __m128i VEC;
 
         using ANTest<DATARAW, DATAENC, UNROLL>::ANTest;
 
         virtual ~AN_sse42_8x16_8x32() {
         }
 
+        template<typename T>
+        VEC * const ComputeEnd(
+                VEC * mmBeg,
+                const SubTestConfiguration & config) const {
+            return reinterpret_cast<VEC*>(reinterpret_cast<T*>(mmBeg) + config.numValues);
+        }
+
         void RunEncode(
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                auto *mmData = config.source.template begin<__m128i >();
-                auto * const mmDataEnd = config.source.template end<__m128i >();
-                auto *mmOut = config.target.template begin<__m128i >();
+                auto *mmData = config.source.template begin<VEC>();
+                auto * const mmDataEnd = this->template ComputeEnd<DATARAW>(mmData, config);
+                auto *mmOut = config.target.template begin<VEC>();
                 auto mmA = _mm_set1_epi32(this->A);
 
-                const constexpr bool isSigned = std::is_signed<DATARAW>::value;
-                auto mmShuffleS = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0x0F0E0D0C, 0x0B0A0908);
-                auto mmShuffleU = _mm_set_epi32(0xFFFF0F0E, 0xFFFF0D0C, 0xFFFF0B0A, 0xFFFF0908);
+                const constexpr bool isSigned = std::is_signed_v<DATARAW>;
 
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     // let the compiler unroll the loop
@@ -69,10 +73,10 @@ namespace coding_benchmark {
                         auto mmIn = _mm_lddqu_si128(mmData++);
                         if (isSigned) {
                             _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepi16_epi32(mmIn), mmA));
-                            _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepi16_epi32(_mm_shuffle_epi8(mmIn, mmShuffleS)), mmA));
+                            _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepi16_epi32(_mm_srli_si128(mmIn, sizeof(VEC) / 2)), mmA));
                         } else {
                             _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepu16_epi32(mmIn), mmA));
-                            _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_shuffle_epi8(mmIn, mmShuffleU), mmA));
+                            _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepu16_epi32(_mm_srli_si128(mmIn, sizeof(VEC) / 2)), mmA));
                         }
                     }
                 }
@@ -81,17 +85,19 @@ namespace coding_benchmark {
                     auto mmIn = _mm_lddqu_si128(mmData++);
                     if (isSigned) {
                         _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepi16_epi32(mmIn), mmA));
-                        _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepi16_epi32(_mm_shuffle_epi8(mmIn, mmShuffleS)), mmA));
+                        _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepi16_epi32(_mm_srli_si128(mmIn, sizeof(VEC) / 2)), mmA));
                     } else {
                         _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepu16_epi32(mmIn), mmA));
-                        _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_shuffle_epi8(mmIn, mmShuffleU), mmA));
+                        _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepu16_epi32(_mm_srli_si128(mmIn, sizeof(VEC) / 2)), mmA));
                     }
                 }
                 if (mmData < mmDataEnd) {
                     auto data16End = reinterpret_cast<DATARAW*>(mmDataEnd);
                     auto out32 = reinterpret_cast<DATAENC*>(mmOut);
-                    for (auto data16 = reinterpret_cast<DATARAW*>(mmData); data16 < data16End; ++data16, ++out32)
-                        *out32 = *data16 * this->A;
+                    auto data16 = reinterpret_cast<DATARAW*>(mmData);
+                    while (data16 < data16End) {
+                        *out32++ = *data16++ * this->A;
+                    }
                 }
             }
         }
@@ -112,10 +118,10 @@ namespace coding_benchmark {
             }
             template<template<typename = void> class Functor>
             void impl() {
-                auto mmData = config.source.template begin<__m128i >();
-                const auto mmDataEnd = config.source.template end<__m128i >();
-                auto mmOut = config.target.template begin<__m128i >();
-                auto mmA __attribute__((unused)) = mm<__m128i, DATAENC>::set1(test.A);
+                auto in128 = config.source.template begin<VEC>();
+                const auto in128end = test.template ComputeEnd<DATAENC>(in128, config);
+                auto out128 = config.target.template begin<VEC>();
+                auto mmA __attribute__((unused)) = mm<VEC, DATAENC>::set1(test.A);
                 DATAENC operand = config.operand;
                 if constexpr (std::is_same_v<Functor<void>, add<void>> || std::is_same_v<Functor<void>, sub<void>> || std::is_same_v<Functor<void>, div<void>>) {
                     operand *= test.A;
@@ -124,35 +130,36 @@ namespace coding_benchmark {
                 } else {
                     throw std::runtime_error("Functor not known!");
                 }
-                __m128i mmOperand = mm<__m128i, DATAENC>::set1(operand);
-                while (mmData <= (mmDataEnd - UNROLL)) {
+                VEC mmOperand = mm<VEC, DATAENC>::set1(operand);
+                while (in128 <= (in128end - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        auto x = mm_op<__m128i, DATAENC, Functor>::compute(_mm_lddqu_si128(mmData++), mmOperand);
+                        auto x = mm_op<VEC, DATAENC, Functor>::compute(*in128++, mmOperand);
                         if constexpr (std::is_same_v<Functor<void>, div<void>>) {
-                            x = mm_op<__m128i, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
+                            x = mm_op<VEC, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
                         }
-                        _mm_storeu_si128(mmOut++, x);
+                        *out128++ = x;
                     }
                 }
                 // remaining numbers
-                while (mmData <= (mmDataEnd - 1)) {
-                    auto x = mm_op<__m128i, DATAENC, Functor>::compute(_mm_lddqu_si128(mmData++), mmOperand);
+                while (in128 <= (in128end - 1)) {
+                    auto x = mm_op<VEC, DATAENC, Functor>::compute(*in128++, mmOperand);
                     if constexpr (std::is_same_v<Functor<void>, div<void>>) {
-                        x = mm_op<__m128i, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
+                        x = mm_op<VEC, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
                     }
-                    _mm_storeu_si128(mmOut++, x);
+                    *out128++ = x;
                 }
-                if (mmData < mmDataEnd) {
+                if (in128 < in128end) {
                     Functor<> functor;
-                    auto data32End = reinterpret_cast<DATAENC*>(mmDataEnd);
-                    auto out32 = reinterpret_cast<DATAENC*>(mmOut);
-                    for (auto data32 = reinterpret_cast<DATAENC*>(mmData); data32 < data32End; ++data32, ++out32) {
-                        auto x = functor(*data32, operand);
+                    auto in32 = reinterpret_cast<DATAENC*>(in128);
+                    const auto in32end = reinterpret_cast<DATAENC* const >(in128end);
+                    auto out32 = reinterpret_cast<DATAENC*>(out128);
+                    while (in32 < in32end) {
+                        auto x = functor(*in32++, operand);
                         if (std::is_same_v<Functor<void>, div<void>>) {
                             x *= test.A; // make sure we get a code word again
                         }
-                        *out32 = x;
+                        *out32++ = x;
                     }
                 }
             }
@@ -204,53 +211,52 @@ namespace coding_benchmark {
                     VectorToScalar && funcVectorToScalar,
                     KernelScalar && funcKernelScalar,
                     Finalize && funcFinal) {
-                auto *mmData = config.source.template begin<__m128i >();
-                auto * const mmDataEnd = config.source.template end<__m128i >();
+                auto in128 = config.source.template begin<VEC>();
+                const auto in128end = test.template ComputeEnd<DATAENC>(in128, config);
                 auto mmValue = funcInitVector();
-                while (mmData <= (mmDataEnd - UNROLL)) {
+                while (in128 <= (in128end - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        mmValue = funcKernelVector(mmValue, *mmData++);
+                        mmValue = funcKernelVector(mmValue, *in128++);
                     }
                 }
-                while (mmData <= (mmDataEnd - 1)) {
-                    mmValue = funcKernelVector(mmValue, *mmData++);
+                while (in128 <= (in128end - 1)) {
+                    mmValue = funcKernelVector(mmValue, *in128++);
                 }
                 Aggregate value = funcVectorToScalar(mmValue);
-                if (mmData < mmDataEnd) {
-                    auto dataIn = reinterpret_cast<DATAENC*>(mmData);
-                    const auto dataInEnd = reinterpret_cast<DATAENC*>(mmDataEnd);
+                if (in128 < in128end) {
+                    auto dataIn = reinterpret_cast<DATAENC*>(in128);
+                    const auto dataInEnd = reinterpret_cast<DATAENC* const >(in128end);
                     while (dataIn < dataInEnd) {
                         value = funcKernelScalar(value, *dataIn++);
                     }
                 }
                 auto final = funcFinal(value, config.numValues);
-                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
-                *dataOut = final;
+                auto out32 = test.bufScratchPad.template begin<Aggregate>();
+                *out32 = final;
                 EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
                 test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                impl<DATAENC>([] {return simd::mm<__m128i, DATAENC>::set1(0);}, [](__m128i mmValue, __m128i mmTmp) {return simd::mm_op<__m128i, DATAENC, add>::compute(mmValue, mmTmp);},
-                        [](__m128i mmValue) {return simd::mm<__m128i, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;},
-                        [](DATAENC value, size_t numValues) {return value;});
+                impl<DATAENC>([] {return simd::mm<VEC, DATAENC>::set1(0);}, [](VEC mmValue, VEC mmTmp) {return simd::mm_op<VEC, DATAENC, add>::compute(mmValue, mmTmp);},
+                        [](VEC mmValue) {return simd::mm<VEC, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;}, [](DATAENC value, size_t numValues) {return value;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                impl<DATAENC>([] {return simd::mm<__m128i, DATAENC>::set1(std::numeric_limits<DATAENC>::max());},
-                        [](__m128i mmValue, __m128i mmTmp) {return simd::mm<__m128i, DATAENC>::min(mmValue, mmTmp);}, [](__m128i mmValue) {return simd::mm<__m128i, DATAENC>::min(mmValue);},
-                        [](DATAENC value, DATAENC tmp) {return value < tmp ? value : tmp;}, [](DATAENC value, size_t numValues) {return value;});
+                impl<DATAENC>([] {return simd::mm<VEC, DATAENC>::set1(std::numeric_limits<DATAENC>::max());}, [](VEC mmValue, VEC mmTmp) {return simd::mm<VEC, DATAENC>::min(mmValue, mmTmp);},
+                        [](VEC mmValue) {return simd::mm<VEC, DATAENC>::min(mmValue);}, [](DATAENC value, DATAENC tmp) {return value < tmp ? value : tmp;},
+                        [](DATAENC value, size_t numValues) {return value;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                impl<DATAENC>([] {return simd::mm<__m128i, DATAENC>::set1(std::numeric_limits<DATAENC>::min());},
-                        [](__m128i mmValue, __m128i mmTmp) {return simd::mm<__m128i, DATAENC>::max(mmValue, mmTmp);}, [](__m128i mmValue) {return simd::mm<__m128i, DATAENC>::max(mmValue);},
-                        [](DATAENC value, DATAENC tmp) {return value > tmp ? value : tmp;}, [](DATAENC value, size_t numValues) {return value;});
+                impl<DATAENC>([] {return simd::mm<VEC, DATAENC>::set1(std::numeric_limits<DATAENC>::min());}, [](VEC mmValue, VEC mmTmp) {return simd::mm<VEC, DATAENC>::max(mmValue, mmTmp);},
+                        [](VEC mmValue) {return simd::mm<VEC, DATAENC>::max(mmValue);}, [](DATAENC value, DATAENC tmp) {return value > tmp ? value : tmp;},
+                        [](DATAENC value, size_t numValues) {return value;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                impl<DATAENC>([] {return simd::mm<__m128i, DATAENC>::set1(0);}, [](__m128i mmValue, __m128i mmTmp) {return simd::mm_op<__m128i, DATAENC, add>::compute(mmValue, mmTmp);},
-                        [](__m128i mmValue) {return simd::mm<__m128i, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;},
+                impl<DATAENC>([] {return simd::mm<VEC, DATAENC>::set1(0);}, [](VEC mmValue, VEC mmTmp) {return simd::mm_op<VEC, DATAENC, add>::compute(mmValue, mmTmp);},
+                        [](VEC mmValue) {return simd::mm<VEC, DATAENC>::sum(mmValue);}, [](DATAENC value, DATAENC tmp) {return value + tmp;},
                         [this](DATAENC value, size_t numValues) {return (value / (numValues * test.A)) * test.A;});
             }
         };

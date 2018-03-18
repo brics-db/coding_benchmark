@@ -35,9 +35,6 @@ namespace coding_benchmark {
 
         typedef AN_sse42_8x16_8x32<DATARAW, DATAENC, UNROLL> BASE;
 
-        using BASE::NUM_VALUES_PER_SIMDREG;
-        using BASE::NUM_VALUES_PER_UNROLL;
-
         using BASE::AN_sse42_8x16_8x32;
 
         virtual ~AN_sse42_8x16_8x32_inv() {
@@ -50,32 +47,33 @@ namespace coding_benchmark {
         void RunDecode(
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                size_t i = 0;
-                auto dataIn = config.source.template begin<__m128i >();
+                auto in128 = config.source.template begin<__m128i >();
+                const auto in128end = this->template ComputeEnd<DATAENC>(in128, config);
                 auto dataOut = config.target.template begin<int64_t>();
                 auto mm_Ainv = _mm_set1_epi32(this->A_INV);
                 auto mmShuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0D0C090805040100);
-                for (; i <= (config.numValues - NUM_VALUES_PER_UNROLL); i += NUM_VALUES_PER_UNROLL) {
+                while (in128 <= (in128end - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        auto tmp = _mm_lddqu_si128(dataIn++);
+                        auto tmp = _mm_lddqu_si128(in128++);
                         tmp = _mm_mullo_epi32(tmp, mm_Ainv);
                         tmp = _mm_shuffle_epi8(tmp, mmShuffle);
                         *dataOut++ = _mm_extract_epi64(tmp, 0);
                     }
                 }
                 // remaining numbers
-                for (; i <= (config.numValues - NUM_VALUES_PER_SIMDREG); i += NUM_VALUES_PER_SIMDREG) {
-                    auto tmp = _mm_lddqu_si128(dataIn++);
+                while (in128 <= (in128end - 1)) {
+                    auto tmp = _mm_lddqu_si128(in128++);
                     tmp = _mm_mullo_epi32(tmp, mm_Ainv);
                     tmp = _mm_shuffle_epi8(tmp, mmShuffle);
                     *dataOut++ = _mm_extract_epi64(tmp, 0);
                 }
-                if (i < config.numValues) {
+                if (in128 < in128end) {
+                    auto in32 = reinterpret_cast<DATAENC*>(in128);
+                    const auto in32end = reinterpret_cast<DATAENC * const >(in128end);
                     auto out16 = reinterpret_cast<DATARAW*>(dataOut);
-                    auto in32 = reinterpret_cast<DATAENC*>(dataIn);
-                    for (; i < config.numValues; ++i, ++in32, ++out16) {
-                        *out16 = *in32 * this->A_INV;
+                    while (in32 < in32end) {
+                        *out16++ = *in32++ * this->A_INV;
                     }
                 }
             }

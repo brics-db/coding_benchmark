@@ -431,7 +431,7 @@ TestInfos TestBase::Execute(
         std::clog << "encode" << std::flush;
         auto postFunc = [this,&tc] {
             if (!this->internalPreEncodeCalled) {
-                throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "PreEncode() was not called!");
+                throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreEncode() was not called!");
             }
             const DecodeConfiguration ccEnc = DecodeConfiguration(tc, bufEncoded, bufDecoded);
             this->RunDecodeChecked(ccEnc);
@@ -457,7 +457,7 @@ TestInfos TestBase::Execute(
                 };
                 auto postFunc = [this,&tc] {
                     if (!this->internalPreArithmeticCalled) {
-                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "PreArithmetic() was not called!");
+                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreArithmetic() was not called!");
                     }
                     const CheckConfiguration ccChk(tc, bufArith, bufResult);
                     this->RunCheck(ccChk);
@@ -489,7 +489,7 @@ TestInfos TestBase::Execute(
                 };
                 auto postFunc = [this,&tc] {
                     if (!this->internalPreArithmeticCheckedCalled) {
-                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "PreArithmeticChecked() was not called!");
+                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreArithmeticChecked() was not called!");
                     }
                     const CheckConfiguration ccChk(tc, bufArith, bufResult);
                     this->RunCheck(ccChk);
@@ -521,7 +521,7 @@ TestInfos TestBase::Execute(
                 };
                 auto postFunc = [this,&tcAggr] {
                     if (!this->internalPreAggregateCalled) {
-                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "PreAggregate() was not called!");
+                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreAggregate() was not called!");
                     }
                     const DecodeConfiguration ccDec(tcAggr, bufResult, bufDecoded);
                     this->RunDecode(ccDec);
@@ -551,7 +551,7 @@ TestInfos TestBase::Execute(
                 };
                 auto postFunc = [this,&tcAggr] {
                     if (!this->internalPreAggregateCheckedCalled) {
-                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "PreAggregateChecked() was not called!");
+                        throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreAggregateChecked() was not called!");
                     }
                     const DecodeConfiguration ccDec(tcAggr, bufResult, bufDecoded);
                     this->RunDecode(ccDec);
@@ -577,8 +577,13 @@ TestInfos TestBase::Execute(
         auto runFunc = [this,&reencConf] {
             this->RunReencodeChecked(reencConf);
         };
-        auto postFunc = [this] {
-            /* TODO */
+        auto postFunc = [this,&configTest] {
+            if (!this->internalPreReencodeCheckedCalled) {
+                throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreReencodeChecked() was not called!");
+            }
+            const DecodeConfiguration ccDec(configTest, bufResult, bufDecoded);
+            this->RunDecode(ccDec);
+            compare(this->bufRaw, this->bufDecoded, configTest.numValues);
         };
         InternalExecute(*this, sw, tiReencChk, preFunc, runFunc, postFunc);
     }
@@ -591,8 +596,11 @@ TestInfos TestBase::Execute(
         auto runFunc = [this,&decConf] {
             this->RunDecode(decConf);
         };
-        auto postFunc = [this] {
-            /* TODO */
+        auto postFunc = [this,&configTest] {
+            if (!this->internalPreDecodeCalled) {
+                throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreDecode() was not called!");
+            }
+            compare(this->bufRaw, this->bufResult, configTest.numValues);
         };
         InternalExecute(*this, sw, tiDec, preFunc, runFunc, postFunc);
     }
@@ -605,8 +613,11 @@ TestInfos TestBase::Execute(
         auto runFunc = [this,&decConf] {
             this->RunDecodeChecked(decConf);
         };
-        auto postFunc = [this] {
-            /* TODO */
+        auto postFunc = [this,&configTest] {
+            if (!this->internalPreDecodeCheckedCalled) {
+                throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreDecodeChecked() was not called!");
+            }
+            compare(this->bufRaw, this->bufResult, configTest.numValues);
         };
         InternalExecute(*this, sw, tiDecChk, preFunc, runFunc, postFunc);
     }
