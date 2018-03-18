@@ -142,6 +142,7 @@ namespace coding_benchmark {
             return std::visit(ArithmeticSelector(), config.mode);
         }
 
+        template<bool check>
         struct Arithmetor {
             using hamming_sse24_t = Hamming_simd::hamming_simd_t;
             using hamming_scalar_t = Hamming_simd::hamming_scalar_t;
@@ -156,27 +157,51 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            template<template<typename = void> class func>
+            template<template<typename = void> class Functor>
             void impl() {
-                func<> functor;
                 auto mmOperand = mm<V, DATAIN>::set1(config.operand);
                 auto inV = config.source.template begin<hamming_simd_t>();
                 const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
                 auto outV = config.target.template begin<hamming_simd_t>();
                 while (inV <= (inVend - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++inV, ++outV) {
-                        outV->store(mm_op<V, DATAIN, func>::compute(inV->data, mmOperand));
+                        if constexpr (check) {
+                            if (inV->isValid()) {
+                                outV->store(mm_op<V, DATAIN, Functor>::compute(inV->data, mmOperand));
+                            } else {
+                                throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
+                            }
+                        } else {
+                            outV->store(mm_op<V, DATAIN, Functor>::compute(inV->data, mmOperand));
+                        }
                     }
                 }
                 for (; inV < (inVend - 1); ++inV, ++outV) {
-                    outV->store(mm_op<V, DATAIN, func>::compute(inV->data, mmOperand));
+                    if constexpr (check) {
+                        if (inV->isValid()) {
+                            outV->store(mm_op<V, DATAIN, Functor>::compute(inV->data, mmOperand));
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
+                        }
+                    } else {
+                        outV->store(mm_op<V, DATAIN, Functor>::compute(inV->data, mmOperand));
+                    }
                 }
                 if (inV < inVend) {
+                    Functor<> functor;
                     auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
                     const auto inSend = reinterpret_cast<hamming_scalar_t* const >(inVend);
                     auto outS = reinterpret_cast<hamming_scalar_t*>(outV);
                     for (; inS < inSend; ++outS, ++inS) {
-                        outS->store(functor(inS->data, config.operand));
+                        if constexpr (check) {
+                            if (inS->isValid()) {
+                                outS->store(functor(inS->data, config.operand));
+                            } else {
+                                throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
+                            }
+                        } else {
+                            outS->store(functor(inS->data, config.operand));
+                        }
                     }
                 }
             }
@@ -202,7 +227,7 @@ namespace coding_benchmark {
                 const ArithmeticConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                std::visit(Arithmetor(*this, config, iteration), config.mode);
+                std::visit(Arithmetor<false>(*this, config, iteration), config.mode);
             }
         }
 
@@ -211,82 +236,11 @@ namespace coding_benchmark {
             return std::visit(ArithmeticSelector(), config.mode);
         }
 
-        struct ArithmetorChecked {
-            using hamming_sse24_t = Hamming_simd::hamming_simd_t;
-            using hamming_scalar_t = Hamming_simd::hamming_scalar_t;
-            Hamming_simd & test;
-            const ArithmeticConfiguration & config;
-            const size_t iteration;
-            ArithmetorChecked(
-                    Hamming_simd & test,
-                    const ArithmeticConfiguration & config,
-                    const size_t iteration)
-                    : test(test),
-                      config(config),
-                      iteration(iteration) {
-            }
-            template<template<typename = void> class Functor>
-            void impl() {
-                auto mmOperand = mm<V, DATAIN>::set1(config.operand);
-                auto inV = config.source.template begin<hamming_simd_t>();
-                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
-                auto outV = config.target.template begin<hamming_simd_t>();
-                while (inV <= (inVend - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++inV, ++outV) {
-                        auto tmp = inV->data;
-                        if (inV->isValid()) {
-                            outV->store(mm_op<V, DATAIN, Functor>::compute(tmp, mmOperand));
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                        }
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV, ++outV) {
-                    auto tmp = inV->data;
-                    if (inV->isValid()) {
-                        outV->store(mm_op<V, DATAIN, Functor>::compute(tmp, mmOperand));
-                    } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                    }
-                }
-                if (inV < inVend) {
-                    Functor<> functor;
-                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
-                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
-                    auto outS = reinterpret_cast<hamming_scalar_t*>(outV);
-                    for (; inS < inSend; ++outS, ++inS) {
-                        auto tmp = inS->data;
-                        if (inS->isValid()) {
-                            outS->store(functor(tmp, config.operand));
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
-                        }
-                    }
-                }
-            }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
-                impl<add>();
-            }
-            void operator()(
-                    ArithmeticConfiguration::Sub) {
-                impl<sub>();
-            }
-            void operator()(
-                    ArithmeticConfiguration::Mul) {
-                impl<mul>();
-            }
-            void operator()(
-                    ArithmeticConfiguration::Div) {
-                impl<div>();
-            }
-        };
-
         void RunArithmeticChecked(
                 const ArithmeticConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
+                std::visit(Arithmetor<true>(*this, config, iteration), config.mode);
             }
         }
 
@@ -295,129 +249,100 @@ namespace coding_benchmark {
             return std::visit(AggregateSelector(), config.mode);
         }
 
+        template<bool check>
         struct Aggregator {
             using hamming_sse24_t = Hamming_simd::hamming_simd_t;
             using hamming_scalar_t = Hamming_simd::hamming_scalar_t;
             typedef typename Larger<DATAIN>::larger_t larger_t;
             Hamming_simd & test;
             const AggregateConfiguration & config;
+            size_t iteration;
             Aggregator(
                     Hamming_simd & test,
-                    const AggregateConfiguration & config)
+                    const AggregateConfiguration & config,
+                    size_t iteration)
                     : test(test),
-                      config(config) {
+                      config(config),
+                      iteration(iteration) {
+            }
+            template<typename Aggregate, typename InitializeVector, typename KernelVector, typename KernelScalar, typename VectorToScalar, typename Finalize>
+            void impl(
+                    InitializeVector && funcInitVector,
+                    KernelVector && funcKernelVector,
+                    VectorToScalar && funcVectorToScalar,
+                    KernelScalar && funcKernelScalar,
+                    Finalize && funcFinal) {
+                auto mmAggr = funcInitVector();
+                auto inV = config.source.template begin<hamming_simd_t>();
+                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
+                while (inV <= (inVend - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k) {
+                        if constexpr (check) {
+                            if (inV->isValid()) {
+                                mmAggr = funcKernelVector(mmAggr, inV++->data);
+                            } else {
+                                throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<hamming_scalar_t*>(inV) - config.source.template begin<hamming_scalar_t>(), iteration);
+                            }
+                        } else {
+                            mmAggr = funcKernelVector(mmAggr, inV++->data);
+                        }
+                    }
+                }
+                while (inV < (inVend - 1)) {
+                    if constexpr (check) {
+                        if (inV->isValid()) {
+                            mmAggr = funcKernelVector(mmAggr, inV++->data);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<hamming_scalar_t*>(inV) - config.source.template begin<hamming_scalar_t>(), iteration);
+                        }
+                    } else {
+                        mmAggr = funcKernelVector(mmAggr, inV++->data);
+                    }
+                }
+                Aggregate aggr = funcVectorToScalar(mmAggr);
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
+                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
+                    while (inS < inSend) {
+                        if constexpr (check) {
+                            if (inS->isValid()) {
+                                aggr = funcKernelScalar(aggr, inS++->data);
+                            } else {
+                                throw ErrorInfo(__FILE__, __LINE__, inS - config.source.template begin<hamming_scalar_t>(), iteration);
+                            }
+                        } else {
+                            aggr = funcKernelScalar(aggr, inS++->data);
+                        }
+                    }
+                }
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = funcFinal(aggr, config.numValues);
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                auto mmSum = mm<V, larger_t>::set1(0);
-                auto inV = config.source.template begin<hamming_simd_t>();
-                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
-                while (inV <= (inVend - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
-                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
-                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV) {
-                    mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
-                    mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
-                }
-                larger_t sum = mm<V, larger_t>::sum(mmSum);
-                if (inV < inVend) {
-                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
-                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
-                    for (; inS < inSend; ++inS) {
-                        sum += inS->data;
-                    }
-                }
-                auto dataOut = test.bufScratchPad.template begin<larger_t>();
-                *dataOut = sum;
-                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
-                test.RunEncode(encConf);
+                impl<larger_t>([] {return mm<V, larger_t>::set1(0);}, [](V mmSum, V inV) {
+                    mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV));
+                    return mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV));
+                }, [] (V mmSum) {return mm<V, larger_t>::sum(mmSum);}, [] (larger_t sum, DATAIN tmp) {return sum + tmp;}, [] (larger_t sum, size_t numValues) {return sum;});
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                auto mmMin = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
-                auto inV = config.source.template begin<hamming_simd_t>();
-                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
-                while (inV <= (inVend - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
-                        mmMin = mm<V, DATAIN>::min(mmMin, inV->data);
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV) {
-                    mmMin = mm<V, DATAIN>::min(mmMin, inV->data);
-                }
-                DATAIN min = mm<V, DATAIN>::min(mmMin);
-                if (inV < inVend) {
-                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
-                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
-                    for (; inS < inSend; ++inS) {
-                        if (inS->data < min) {
-                            min = inS->data;
-                        }
-                    }
-                }
-                auto dataOut = test.bufScratchPad.template begin<DATAIN>();
-                *dataOut = min;
-                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
-                test.RunEncode(encConf);
+                impl<DATAIN>([] {return mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());}, [](V mmMin, V inV) { return mm<V, DATAIN>::min(mmMin, inV);},
+                        [](V mmMin){return mm<V, DATAIN>::min(mmMin);}, [](DATAIN min, DATAIN tmp){return std::min(min, tmp);}, [](DATAIN min, size_t numValues){return min;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                auto mmMax = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
-                auto inV = config.source.template begin<hamming_simd_t>();
-                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
-                while (inV <= (inVend - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
-                        mmMax = mm<V, DATAIN>::max(mmMax, inV->data);
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV) {
-                    mmMax = mm<V, DATAIN>::max(mmMax, inV->data);
-                }
-                DATAIN max = mm<V, DATAIN>::max(mmMax);
-                if (inV < inVend) {
-                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
-                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
-                    for (; inS < inSend; ++inS) {
-                        if (inS->data > max) {
-                            max = inS->data;
-                        }
-                    }
-                }
-                auto dataOut = test.bufScratchPad.template begin<DATAIN>();
-                *dataOut = max;
-                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
-                test.RunEncode(encConf);
+                impl<DATAIN>([] {return mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());}, [](V mmMax, V inV) { return mm<V, DATAIN>::max(mmMax, inV);},
+                        [](V mmMax){return mm<V, DATAIN>::max(mmMax);}, [](DATAIN max, DATAIN tmp){return std::max(max, tmp);}, [](DATAIN max, size_t numValues){return max;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                auto mmSum = mm<V, larger_t>::set1(0);
-                auto inV = config.source.template begin<hamming_simd_t>();
-                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
-                while (inV <= (inVend - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
-                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
-                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV) {
-                    mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
-                    mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
-                }
-                auto sum = mm<V, larger_t>::sum(mmSum);
-                if (inV < inVend) {
-                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
-                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
-                    for (; inS < inSend; ++inS) {
-                        sum += inS->data;
-                    }
-                }
-                auto dataOut = test.bufScratchPad.template begin<larger_t>();
-                *dataOut = sum / config.numValues;
-                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
-                test.RunEncode(encConf);
+                impl<larger_t>([] {return mm<V, larger_t>::set1(0);}, [](V mmSum, V inV) {
+                    mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV));
+                    return mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV));
+                }, [] (V mmSum) {return mm<V, larger_t>::sum(mmSum);}, [] (larger_t sum, DATAIN tmp) {return sum + tmp;}, [] (larger_t sum, size_t numValues) {return sum / numValues;});
             }
         };
 
@@ -425,7 +350,7 @@ namespace coding_benchmark {
                 const AggregateConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                std::visit(Aggregator(*this, config), config.mode);
+                std::visit(Aggregator<false>(*this, config, iteration), config.mode);
             }
         }
 
@@ -434,185 +359,11 @@ namespace coding_benchmark {
             return std::visit(AggregateSelector(), config.mode);
         }
 
-        struct AggregatorChecked {
-            using hamming_sse24_t = Hamming_simd::hamming_simd_t;
-            using hamming_scalar_t = Hamming_simd::hamming_scalar_t;
-            typedef typename Larger<DATAIN>::larger_t larger_t;
-            typedef hamming_t<larger_t, larger_t> hamming_larger_t;
-            Hamming_simd & test;
-            const AggregateConfiguration & config;
-            size_t iteration;
-            AggregatorChecked(
-                    Hamming_simd & test,
-                    const AggregateConfiguration & config,
-                    size_t iteration)
-                    : test(test),
-                      config(config),
-                      iteration(iteration) {
-            }
-            void operator()(
-                    AggregateConfiguration::Sum) {
-                auto mmSum = mm<V, larger_t>::set1(0);
-                auto inV = config.source.template begin<hamming_simd_t>();
-                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
-                while (inV <= (inVend - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
-                        if (inV->isValid()) {
-                            mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
-                            mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                        }
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV) {
-                    if (inV->isValid()) {
-                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
-                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
-                    } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                    }
-                }
-                auto sum = mm<V, larger_t>::sum(mmSum);
-                if (inV < inVend) {
-                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
-                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
-                    for (; inS < inSend; ++inS) {
-                        if (inS->isValid()) {
-                            sum += inS->data;
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
-                        }
-                    }
-                }
-                auto dataOut = test.bufScratchPad.template begin<larger_t>();
-                *dataOut = sum;
-                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
-                test.RunEncode(encConf);
-            }
-            void operator()(
-                    AggregateConfiguration::Min) {
-                auto mmMin = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::max());
-                auto inV = config.source.template begin<hamming_simd_t>();
-                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
-                while (inV <= (inVend - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
-                        if (inV->isValid()) {
-                            mmMin = mm<V, DATAIN>::min(mmMin, inV->data);
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                        }
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV) {
-                    if (inV->isValid()) {
-                        mmMin = mm<V, DATAIN>::min(mmMin, inV->data);
-                    } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                    }
-                }
-                DATAIN min = mm<V, DATAIN>::min(mmMin);
-                if (inV < inVend) {
-                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
-                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
-                    for (; inS < inSend; ++inS) {
-                        if (inS->isValid()) {
-                            min = (inS->data < min) ? inS->data : min;
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
-                        }
-                    }
-                }
-                auto dataOut = test.bufScratchPad.template begin<DATAIN>();
-                *dataOut = min;
-                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
-                test.RunEncode(encConf);
-            }
-            void operator()(
-                    AggregateConfiguration::Max) {
-                auto mmTmp = mm<V, DATAIN>::set1(std::numeric_limits<DATAIN>::min());
-                auto inV = config.source.template begin<hamming_simd_t>();
-                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
-                while (inV <= (inVend - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
-                        if (inV->isValid()) {
-                            mmTmp = mm<V, DATAIN>::max(mmTmp, inV->data);
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                        }
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV) {
-                    if (inV->isValid()) {
-                        mmTmp = mm<V, DATAIN>::max(mmTmp, inV->data);
-                    } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                    }
-                }
-                DATAIN max = mm<V, DATAIN>::max(mmTmp);
-                if (inV < inVend) {
-                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
-                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
-                    for (; inS < inSend; ++inS) {
-                        if (inS->isValid()) {
-                            max = (inS->data > max) ? inS->data : max;
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
-                        }
-                    }
-                }
-                auto dataOut = test.bufScratchPad.template begin<DATAIN>();
-                *dataOut = max;
-                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
-                test.RunEncode(encConf);
-            }
-            void operator()(
-                    AggregateConfiguration::Avg) {
-                auto mmSum = mm<V, larger_t>::set1(0);
-                auto inV = config.source.template begin<hamming_simd_t>();
-                const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
-                while (inV <= (inVend - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
-                        if (inV->isValid()) {
-                            mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
-                            mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                        }
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV) {
-                    if (inV->isValid()) {
-                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_lo(inV->data));
-                        mmSum = mm_op<V, larger_t, add>::compute(mmSum, mm<V, DATAIN>::cvt_larger_hi(inV->data));
-                    } else {
-                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                    }
-                }
-                auto sum = mm<V, larger_t>::sum(mmSum);
-                if (inV < inVend) {
-                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
-                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
-                    for (; inS < inSend; ++inS) {
-                        if (inS->isValid()) {
-                            sum += inS->data;
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
-                        }
-                    }
-                }
-                auto dataOut = test.bufScratchPad.template begin<larger_t>();
-                *dataOut = sum / config.numValues;
-                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
-                test.RunEncode(encConf);
-            }
-        };
-
         void RunAggregateChecked(
                 const AggregateConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                std::visit(AggregatorChecked(*this, config, iteration), config.mode);
+                std::visit(Aggregator<true>(*this, config, iteration), config.mode);
             }
         }
 
@@ -687,7 +438,6 @@ namespace coding_benchmark {
                 }
             }
         }
-    }
-    ;
+    };
 
 }
