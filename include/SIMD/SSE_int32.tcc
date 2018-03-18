@@ -499,7 +499,7 @@ namespace coding_benchmark {
                         auto tmp1 = _mm_div_pd(mmA1, mmB1);
                         auto tmp2 = _mm_div_pd(mmA2, mmB2);
                         auto tmp3 = _mm_cvtpd_epi32(tmp1);
-                        auto tmp4 = _mm_cvtpd_epi32(tmp2);
+                        auto tmp4 = _mm_slli_si128(_mm_cvtpd_epi32(tmp2), 8); // move left for blending in the next step
                         return _mm_blendv_epi8(tmp3, tmp4, _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0)); // combine the results
                     }
                 };
