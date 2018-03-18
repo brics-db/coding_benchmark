@@ -517,8 +517,10 @@ namespace coding_benchmark {
                 static inline __m128i div(
                         __m128i a,
                         __m128i b) {
-                    auto mm0 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(a)), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(b)));
-                    auto mm1 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(a, 8))), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(b, 8))));
+                    // _mm_div_ps does ROUNDING!
+                    auto mmA = _mm_min_epi16(a, _mm_sub_epi16(a, _mm_srai_epi16(b, 1))); // repair the rounding and make sure we dont underflow
+                    auto mm0 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(mmA)), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(b)));
+                    auto mm1 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(mmA, 8))), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(b, 8))));
                     auto mx0 = _mm_cvtps_pi16(mm0);
                     auto mx1 = _mm_cvtps_pi16(mm1);
                     return _mm_set_epi64(mx1, mx0);

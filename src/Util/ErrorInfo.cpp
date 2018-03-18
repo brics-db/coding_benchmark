@@ -26,6 +26,8 @@ ErrorInfo::ErrorInfo(
           line(line),
           i(i),
           iter(iter),
+          diff(std::nullopt),
+          position(std::nullopt),
           message(std::nullopt) {
 }
 
@@ -39,6 +41,37 @@ ErrorInfo::ErrorInfo(
           line(line),
           i(i),
           iter(iter),
+          diff(std::nullopt),
+          position(std::nullopt),
+          message(message) {
+}
+
+ErrorInfo::ErrorInfo(
+        ssize_t diff,
+        ssize_t position,
+        const char* file,
+        size_t line)
+        : file(file),
+          line(line),
+          i(std::nullopt),
+          iter(std::nullopt),
+          diff(diff),
+          position(position),
+          message(std::nullopt) {
+}
+
+ErrorInfo::ErrorInfo(
+        ssize_t diff,
+        ssize_t position,
+        const char* file,
+        size_t line,
+        const char* message)
+        : file(file),
+          line(line),
+          i(std::nullopt),
+          iter(std::nullopt),
+          diff(diff),
+          position(position),
           message(message) {
 }
 
@@ -48,6 +81,8 @@ ErrorInfo::ErrorInfo(
           line(other.line),
           i(other.i),
           iter(other.iter),
+          diff(other.diff),
+          position(other.position),
           message(other.message) {
 }
 
@@ -64,9 +99,14 @@ ErrorInfo & ErrorInfo::operator=(
 const char*
 ErrorInfo::what() {
     std::stringstream ss;
-    ss << "[" << file << "@" << line << "]: i=" << i << " iter=" << iter;
+    ss << "[" << file << "@" << line << "]: ";
+    if (i) {
+        ss << "i=" << i.value() << " iter=" << iter.value();
+    } else {
+        ss << "position=" << position.value() << " diff=" << diff.value();
+    }
     if (message) {
-        ss << "\n\tmessage: " << *message;
+        ss << "\n\tmessage: " << message.value();
     }
     std::string s = ss.str();
     char* msg = new char[s.length() + 1];

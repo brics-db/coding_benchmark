@@ -15,6 +15,7 @@
 #include <cstring>
 #include <iostream>
 #include <functional>
+#include <cstddef>
 
 #ifdef OMP
 #include <omp.h>
@@ -377,6 +378,22 @@ struct SetForMode<Conf, T, max, max> {
     }
 };
 
+static void compare(
+        const AlignedBlock & block1,
+        const AlignedBlock & block2,
+        size_t numBytes) {
+    auto beg1 = block1.template begin<char>();
+    auto end1 = beg1 + numBytes;
+    auto beg2 = block2.template begin<char>();
+    auto end2 = beg2 + numBytes;
+    auto ret = std::mismatch(beg1, end1, beg2, end2);
+    if (ret.first != end1) {
+        throw ErrorInfo(static_cast<ssize_t>(*ret.first - *ret.second), static_cast<ssize_t>(std::distance(beg1, ret.first)), __FILE__, __LINE__, "1");
+    } else if (ret.second != end2) {
+        throw ErrorInfo(static_cast<ssize_t>(*ret.first - *ret.second), static_cast<ssize_t>(std::distance(beg2, ret.second)), __FILE__, __LINE__, "2");
+    }
+}
+
 // Execute test:
 TestInfos TestBase::Execute(
         const TestConfiguration & configTest,
@@ -418,10 +435,7 @@ TestInfos TestBase::Execute(
             }
             const DecodeConfiguration ccEnc = DecodeConfiguration(tc, bufEncoded, bufDecoded);
             this->RunDecodeChecked(ccEnc);
-            auto ret = memcmp(this->bufRaw.begin(), this->bufDecoded.begin(), this->bufRaw.nBytes);
-            if (ret != 0) {
-                throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
-            }
+            compare(this->bufRaw, this->bufDecoded, this->bufRaw.nBytes);
         };
         InternalExecute(*this, sw, tiEnc, [this,&encConf] {this->PreEncode(encConf);}, [this,&encConf] {this->RunEncode(encConf);}, postFunc);
     }
@@ -449,10 +463,7 @@ TestInfos TestBase::Execute(
                     this->RunCheck(ccChk);
                     const DecodeConfiguration ccDec(tc, bufResult, bufDecoded);
                     this->RunDecode(ccDec);
-                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), this->bufArith.nBytes);
-                    if (ret != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
-                    }
+                    compare(this->bufArith, this->bufDecoded, this->bufArith.nBytes);
                 };
                 auto setFunc = [&conf,&tiAdd,&tiSub,&tiMul,&tiDiv] (int64_t nanos) {
                     SetForMode<ArithmeticConfiguration, int64_t>::run(conf, nanos, {&tiAdd,&tiSub,&tiMul,&tiDiv});
@@ -484,10 +495,7 @@ TestInfos TestBase::Execute(
                     this->RunCheck(ccChk);
                     const DecodeConfiguration ccDec(tc, bufResult, bufDecoded);
                     this->RunDecode(ccDec);
-                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), this->bufArith.nBytes);
-                    if (ret != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
-                    }
+                    compare(this->bufArith, this->bufDecoded, this->bufArith.nBytes);
                 };
                 auto setFunc = [&conf,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (int64_t nanos) {
                     SetForMode<ArithmeticConfiguration, int64_t>::run(conf, nanos, {&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk});
@@ -517,10 +525,7 @@ TestInfos TestBase::Execute(
                     }
                     const DecodeConfiguration ccDec(tcAggr, bufResult, bufDecoded);
                     this->RunDecode(ccDec);
-                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), 2 * this->getEncodedDataTypeSize()); /* For sum and average, we cannot yet handle the larger types! */
-                    if (ret != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
-                    }
+                    compare(this->bufArith, this->bufDecoded, 2 * this->getEncodedDataTypeSize());
                 };
                 auto setFunc = [&conf,&tiSum,&tiMin,&tiMax,&tiAvg] (int64_t nanos) {
                     SetForMode<AggregateConfiguration, int64_t>::run(conf, nanos, {&tiSum,&tiMin,&tiMax,&tiAvg});
@@ -550,10 +555,7 @@ TestInfos TestBase::Execute(
                     }
                     const DecodeConfiguration ccDec(tcAggr, bufResult, bufDecoded);
                     this->RunDecode(ccDec);
-                    auto ret = memcmp(this->bufArith.begin(), this->bufDecoded.begin(), 2 * this->getEncodedDataTypeSize()); /* For sum and average, we cannot yet handle the larger types! */
-                    if (ret != 0) {
-                        throw ErrorInfo(__FILE__, __LINE__, ret, static_cast<size_t>(-1));
-                    }
+                    compare(this->bufArith, this->bufDecoded, 2 * this->getEncodedDataTypeSize());
                 };
                 auto setFunc = [&conf,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (int64_t nanos) {
                     SetForMode<AggregateConfiguration, int64_t>::run(conf, nanos, {&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk});
@@ -569,17 +571,44 @@ TestInfos TestBase::Execute(
 
     if (configTest.enableReencodeChk && this->DoReencodeChecked()) {
         std::clog << ", reencode checked" << std::flush;
-        InternalExecute(*this, sw, tiReencChk, [this,&reencConf] {this->PreReencodeChecked(reencConf);}, [this,&reencConf] {this->RunReencodeChecked(reencConf);}, [this] {/* TODO */});
+        auto preFunc = [this,&reencConf] {
+            this->PreReencodeChecked(reencConf);
+        };
+        auto runFunc = [this,&reencConf] {
+            this->RunReencodeChecked(reencConf);
+        };
+        auto postFunc = [this] {
+            /* TODO */
+        };
+        InternalExecute(*this, sw, tiReencChk, preFunc, runFunc, postFunc);
     }
 
     if (configTest.enableDecode && this->DoDecode()) {
         std::clog << ", decode" << std::flush;
-        InternalExecute(*this, sw, tiDec, [this,&decConf] {this->PreDecode(decConf);}, [this,&decConf] {this->RunDecode(decConf);}, [this] {/* TODO */});
+        auto preFunc = [this,&decConf] {
+            this->PreDecode(decConf);
+        };
+        auto runFunc = [this,&decConf] {
+            this->RunDecode(decConf);
+        };
+        auto postFunc = [this] {
+            /* TODO */
+        };
+        InternalExecute(*this, sw, tiDec, preFunc, runFunc, postFunc);
     }
 
     if (configTest.enableDecodeChk && this->DoDecodeChecked()) {
         std::clog << ", decode checked" << std::flush;
-        InternalExecute(*this, sw, tiDecChk, [this,&decConf] {this->PreDecodeChecked(decConf);}, [this,&decConf] {this->RunDecodeChecked(decConf);}, [this] {/* TODO */});
+        auto preFunc = [this,&decConf] {
+            this->PreDecodeChecked(decConf);
+        };
+        auto runFunc = [this,&decConf] {
+            this->RunDecodeChecked(decConf);
+        };
+        auto postFunc = [this] {
+            /* TODO */
+        };
+        InternalExecute(*this, sw, tiDecChk, preFunc, runFunc, postFunc);
     }
 
     return TestInfos(datawidth, this->name, getSIMDtypeName(), tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk,

@@ -490,8 +490,10 @@ namespace coding_benchmark {
                             __m128i b) {
                         // return _mm_cvtps_epi32(_mm_div_ps(_mm_cvtepi32_ps(a), _mm_cvtepi32_ps(b)));
                         // let's do it more exact
-                        auto mmA1 = _mm_cvtepi32_pd(a);
-                        auto mmA2 = _mm_cvtepi32_pd(_mm_srli_si128(a, 8));
+                        // _mm_div_pd does ROUNDING!
+                        auto mmA = _mm_min_epi32(a, _mm_sub_epi32(a, _mm_srai_epi32(b, 1))); // repair the rounding and make sure we dont underflow
+                        auto mmA1 = _mm_cvtepi32_pd(mmA);
+                        auto mmA2 = _mm_cvtepi32_pd(_mm_srli_si128(mmA, 8));
                         auto mmB1 = _mm_cvtepi32_pd(b);
                         auto mmB2 = _mm_cvtepi32_pd(_mm_srli_si128(b, 8));
                         auto tmp1 = _mm_div_pd(mmA1, mmB1);
