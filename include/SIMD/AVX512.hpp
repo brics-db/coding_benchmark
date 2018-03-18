@@ -115,8 +115,8 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m512i, T, std::equal_to> :
-                public avx512::mm512op<T, std::less> {
-            typedef avx512::mm512op<T, std::less> BASE;
+                public avx512::mm512op<T, std::equal_to> {
+            typedef avx512::mm512op<T, std::equal_to> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;
@@ -124,8 +124,8 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m512i, T, std::not_equal_to> :
-                public avx512::mm512op<T, std::less> {
-            typedef avx512::mm512op<T, std::less> BASE;
+                public avx512::mm512op<T, std::not_equal_to> {
+            typedef avx512::mm512op<T, std::not_equal_to> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;
@@ -151,8 +151,17 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m512i, T, coding_benchmark::xor_is> :
-                public avx512::mm512op<T, coding_benchmark::or_is> {
-            typedef avx512::mm512op<T, coding_benchmark::or_is> BASE;
+                public avx512::mm512op<T, coding_benchmark::xor_is> {
+            typedef avx512::mm512op<T, coding_benchmark::xor_is> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m512i, T, coding_benchmark::is_not> :
+                public avx512::mm512op<T, coding_benchmark::is_not> {
+            typedef avx512::mm512op<T, coding_benchmark::is_not> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;

@@ -117,8 +117,8 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, std::equal_to> :
-                public sse::mm128op<T, std::less> {
-            typedef sse::mm128op<T, std::less> BASE;
+                public sse::mm128op<T, std::equal_to> {
+            typedef sse::mm128op<T, std::equal_to> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;
@@ -126,8 +126,8 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, std::not_equal_to> :
-                public sse::mm128op<T, std::less> {
-            typedef sse::mm128op<T, std::less> BASE;
+                public sse::mm128op<T, std::not_equal_to> {
+            typedef sse::mm128op<T, std::not_equal_to> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;
@@ -153,8 +153,8 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::xor_is> :
-                public sse::mm128op<T, coding_benchmark::or_is> {
-            typedef sse::mm128op<T, coding_benchmark::or_is> BASE;
+                public sse::mm128op<T, coding_benchmark::xor_is> {
+            typedef sse::mm128op<T, coding_benchmark::xor_is> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;
@@ -162,8 +162,8 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::is_not> :
-                public sse::mm128op<T, coding_benchmark::or_is> {
-            typedef sse::mm128op<T, coding_benchmark::or_is> BASE;
+                public sse::mm128op<T, coding_benchmark::is_not> {
+            typedef sse::mm128op<T, coding_benchmark::is_not> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;

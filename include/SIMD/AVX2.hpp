@@ -145,6 +145,24 @@ namespace coding_benchmark {
         };
 
         template<typename T>
+        struct mm_op<__m256i, T, coding_benchmark::xor_is> :
+                public avx2::mm256op<T, coding_benchmark::xor_is> {
+            typedef avx2::mm256op<T, coding_benchmark::xor_is> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
+        struct mm_op<__m256i, T, coding_benchmark::is_not> :
+                public avx2::mm256op<T, coding_benchmark::is_not> {
+            typedef avx2::mm256op<T, coding_benchmark::is_not> BASE;
+            using BASE::mask_t;
+            using BASE::cmp;
+            using BASE::cmp_mask;
+        };
+
+        template<typename T>
         struct mm_op<__m256i, T, coding_benchmark::add> :
                 public avx2::mm256op<T, coding_benchmark::add> {
             typedef avx2::mm256op<T, coding_benchmark::add> BASE;
