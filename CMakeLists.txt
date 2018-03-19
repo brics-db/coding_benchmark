@@ -101,8 +101,8 @@ src/XOR/XOR_avx2_16x16_16.cpp src/XOR/XOR_avx2_16x16_16x16.cpp src/XOR/XOR_avx2_
 src/AN/AN_scalar_8_16_u_inv.cpp src/AN/AN_scalar_8_16_s_inv.cpp \
 src/AN/AN_scalar_16_32_s_divmod.cpp src/AN/AN_scalar_16_32_s_inv.cpp src/AN/AN_scalar_16_32_u_divmod.cpp src/AN/AN_scalar_16_32_u_inv.cpp \
 src/AN/AN_scalar_32_64_s_inv.cpp src/AN/AN_scalar_32_64_u_inv.cpp \
-src/AN/AN_sse42_8x16_8x32_s_divmod.cpp src/AN/AN_sse42_8x16_8x32_s_inv.cpp src/AN/AN_sse42_8x16_8x32_u_divmod.cpp src/AN/AN_sse42_8x16_8x32_u_inv.cpp \
-src/AN/AN_avx2_16x16_16x32_s_divmod.cpp src/AN/AN_avx2_16x16_16x32_s_inv.cpp src/AN/AN_avx2_16x16_16x32_u_divmod.cpp src/AN/AN_avx2_16x16_16x32_u_inv.cpp \
+src/AN/AN_sse42_16_32_s_divmod.cpp src/AN/AN_sse42_16_32_s_inv.cpp src/AN/AN_sse42_16_32_u_divmod.cpp src/AN/AN_sse42_16_32_u_inv.cpp \
+src/AN/AN_avx2_16_32_s_divmod.cpp src/AN/AN_avx2_16_32_s_inv.cpp src/AN/AN_avx2_16_32_u_divmod.cpp src/AN/AN_avx2_16_32_u_inv.cpp \
 src/CRC/CRC_base.cpp src/CRC/CRC32_scalar_16.cpp src/CRC/CRC32_scalar_32.cpp" "")
 
 add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Util/Test.cpp" benchbase)

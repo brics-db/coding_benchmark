@@ -96,75 +96,13 @@ namespace coding_benchmark {
             }
         }
 
-        bool DoArithmetic(
-                const ArithmeticConfiguration & config) override {
-            return std::visit(ArithmeticSelector(), config.mode);
-        }
-
+        template<bool check>
         struct Arithmetor {
             using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
             Hamming_scalar & test;
             const ArithmeticConfiguration & config;
-            Arithmetor(
-                    Hamming_scalar & test,
-                    const ArithmeticConfiguration & config)
-                    : test(test),
-                      config(config) {
-            }
-            template<template<typename = void> class func>
-            void impl() {
-                func<> functor;
-                auto data = config.source.template begin<hamming_scalar_t>();
-                auto dataEnd = data + config.numValues;
-                auto dataOut = config.target.template begin<hamming_scalar_t>();
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        auto tmp = functor(data->data, config.operand);
-                        dataOut->store(tmp);
-                    }
-                }
-                for (; data < dataEnd; ++data, ++dataOut) {
-                    auto tmp = functor(data->data, config.operand);
-                    dataOut->store(tmp);
-                }
-            }
-            void operator()(
-                    ArithmeticConfiguration::Add) {
-                impl<add>();
-            }
-            void operator()(
-                    ArithmeticConfiguration::Sub) {
-                impl<sub>();
-            }
-            void operator()(
-                    ArithmeticConfiguration::Mul) {
-                impl<mul>();
-            }
-            void operator()(
-                    ArithmeticConfiguration::Div) {
-                impl<div>();
-            }
-        };
-
-        void RunArithmetic(
-                const ArithmeticConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                std::visit(Arithmetor(*this, config), config.mode);
-            }
-        }
-
-        bool DoArithmeticChecked(
-                const ArithmeticConfiguration & config) override {
-            return std::visit(ArithmeticSelector(), config.mode);
-        }
-
-        struct ArithmetorChecked {
-            using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
-            Hamming_scalar & test;
-            const ArithmeticConfiguration & config;
             const size_t iteration;
-            ArithmetorChecked(
+            Arithmetor(
                     Hamming_scalar & test,
                     const ArithmeticConfiguration & config,
                     const size_t iteration)
@@ -182,7 +120,7 @@ namespace coding_benchmark {
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut, ++i) {
                         auto tmp = data->data;
-                        if (data->isValid()) {
+                        if ((!check) || data->isValid()) {
                             dataOut->store(functor(tmp, config.operand));
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, data - config.source.template begin<hamming_scalar_t>(), iteration);
@@ -191,7 +129,7 @@ namespace coding_benchmark {
                 }
                 for (; data < dataEnd; ++data, ++dataOut) {
                     auto tmp = data->data;
-                    if (data->isValid()) {
+                    if ((!check) || data->isValid()) {
                         dataOut->store(functor(tmp, config.operand));
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, data - config.source.template begin<hamming_scalar_t>(), iteration);
@@ -216,93 +154,40 @@ namespace coding_benchmark {
             }
         };
 
+        bool DoArithmetic(
+                const ArithmeticConfiguration & config) override {
+            return std::visit(ArithmeticSelector(), config.mode);
+        }
+
+        void RunArithmetic(
+                const ArithmeticConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(Arithmetor<false>(*this, config, iteration), config.mode);
+            }
+        }
+
+        bool DoArithmeticChecked(
+                const ArithmeticConfiguration & config) override {
+            return std::visit(ArithmeticSelector(), config.mode);
+        }
+
         void RunArithmeticChecked(
                 const ArithmeticConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                std::visit(ArithmetorChecked(*this, config, iteration), config.mode);
+                std::visit(Arithmetor<true>(*this, config, iteration), config.mode);
             }
         }
 
-        bool DoAggregate(
-                const AggregateConfiguration & config) override {
-            return std::visit(AggregateSelector(), config.mode);
-        }
-
+        template<bool check>
         struct Aggregator {
             using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
             typedef typename Larger<DATAIN>::larger_t larger_t;
             Hamming_scalar & test;
             const AggregateConfiguration & config;
-            Aggregator(
-                    Hamming_scalar & test,
-                    const AggregateConfiguration & config)
-                    : test(test),
-                      config(config) {
-            }
-            template<typename Aggregate, typename Initializer, typename Kernel, typename Finalizer>
-            void impl(
-                    Initializer && funcInit,
-                    Kernel && funcKernel,
-                    Finalizer && funcFinal) {
-                auto dataIn = config.source.template begin<hamming_scalar_t>();
-                const auto dataInEnd = dataIn + config.numValues;
-                Aggregate value = funcInit();
-                while (dataIn <= (dataInEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k) {
-                        value = funcKernel(value, *dataIn++);
-                    }
-                }
-                while (dataIn < dataInEnd) {
-                    value = funcKernel(value, *dataIn++);
-                }
-                auto final = funcFinal(value, config.numValues);
-                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
-                *dataOut = final;
-                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
-                test.RunEncode(encConf);
-            }
-            void operator()(
-                    AggregateConfiguration::Sum) {
-                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;}, [] (larger_t sum, const size_t numValues) {return sum;});
-            }
-            void operator()(
-                    AggregateConfiguration::Min) {
-                impl<DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::max();}, [] (DATAIN minimum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data < minimum ? dataIn.data : minimum;},
-                        [] (DATAIN minimum, const size_t numValues) {return minimum;});
-            }
-            void operator()(
-                    AggregateConfiguration::Max) {
-                impl<DATAIN>([] {return (DATAIN) std::numeric_limits<DATAIN>::min();}, [] (DATAIN maximum, hamming_scalar_t dataIn) -> DATAIN {return dataIn.data > maximum ? dataIn.data : maximum;},
-                        [] (DATAIN maximum, const size_t numValues) {return maximum;});
-            }
-            void operator()(
-                    AggregateConfiguration::Avg) {
-                impl<larger_t>([] {return (larger_t) 0;}, [] (larger_t sum, hamming_scalar_t dataIn) -> larger_t {return sum + dataIn.data;},
-                        [] (larger_t sum, const size_t numValues) {return sum / numValues;});
-            }
-        };
-
-        void RunAggregate(
-                const AggregateConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                std::visit(Aggregator(*this, config), config.mode);
-            }
-        }
-
-        bool DoAggregateChecked(
-                const AggregateConfiguration & config) override {
-            return std::visit(AggregateSelector(), config.mode);
-        }
-
-        struct AggregatorChecked {
-            using hamming_scalar_t = Hamming_scalar::hamming_scalar_t;
-            typedef typename Larger<DATAIN>::larger_t larger_t;
-            Hamming_scalar & test;
-            const AggregateConfiguration & config;
             const size_t iteration;
-            AggregatorChecked(
+            Aggregator(
                     Hamming_scalar & test,
                     const AggregateConfiguration & config,
                     const size_t iteration)
@@ -320,7 +205,7 @@ namespace coding_benchmark {
                 Aggregate value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        if (dataIn->isValid()) {
+                        if ((!check) || dataIn->isValid()) {
                             value = funcKernel(value, *dataIn++);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, dataIn - config.source.template begin<hamming_scalar_t>(), iteration);
@@ -328,7 +213,7 @@ namespace coding_benchmark {
                     }
                 }
                 while (dataIn < dataInEnd) {
-                    if (dataIn->isValid()) {
+                    if ((!check) || dataIn->isValid()) {
                         value = funcKernel(value, *dataIn++);
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, dataIn - config.target.template begin<hamming_scalar_t>(), iteration);
@@ -361,11 +246,56 @@ namespace coding_benchmark {
             }
         };
 
+        bool DoAggregate(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
+        void RunAggregate(
+                const AggregateConfiguration & config) override {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                std::visit(Aggregator<false>(*this, config, iteration), config.mode);
+            }
+        }
+
+        bool DoAggregateChecked(
+                const AggregateConfiguration & config) override {
+            return std::visit(AggregateSelector(), config.mode);
+        }
+
         void RunAggregateChecked(
                 const AggregateConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                std::visit(AggregatorChecked(*this, config, iteration), config.mode);
+                std::visit(Aggregator<true>(*this, config, iteration), config.mode);
+            }
+        }
+
+        template<bool check>
+        void RunDecodeInternal(
+                const DecodeConfiguration & config) {
+            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
+                auto data = config.source.template begin<hamming_scalar_t>();
+                auto dataEnd = data + config.numValues;
+                auto dataOut = config.target.template begin<DATAIN>();
+                while (data <= (dataEnd - UNROLL)) {
+                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
+                        if ((!check) || data->isValid()) {
+                            *dataOut = data->data;
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                        }
+                    }
+                }
+                for (; data < dataEnd; ++data, ++dataOut) {
+                    if ((!check) || data->isValid()) {
+                        *dataOut = data->data;
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
+                    }
+                }
             }
         }
 
@@ -375,20 +305,7 @@ namespace coding_benchmark {
 
         void RunDecode(
                 const DecodeConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                auto data = config.source.template begin<hamming_scalar_t>();
-                auto dataEnd = data + config.numValues;
-                auto dataOut = config.target.template begin<DATAIN>();
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        *dataOut = data->data;
-                    }
-                }
-                for (; data < dataEnd; ++data, ++dataOut) {
-                    *dataOut = data->data;
-                }
-            }
+            RunDecodeInternal<false>(config);
         }
 
         bool DoDecodeChecked() override {
@@ -397,28 +314,7 @@ namespace coding_benchmark {
 
         void RunDecodeChecked(
                 const DecodeConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                auto data = config.source.template begin<hamming_scalar_t>();
-                auto dataEnd = data + config.numValues;
-                auto dataOut = config.target.template begin<DATAIN>();
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        if (data->isValid()) {
-                            *dataOut = data->data;
-                        } else {
-                            throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
-                        }
-                    }
-                }
-                for (; data < dataEnd; ++data, ++dataOut) {
-                    if (data->isValid()) {
-                        *dataOut = data->data;
-                    } else {
-                        throw ErrorInfo(__FILE__, __LINE__, (dataEnd - data), iteration);
-                    }
-                }
-            }
+            RunDecodeInternal<true>(config);
         }
     };
 

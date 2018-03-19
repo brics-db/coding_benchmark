@@ -41,10 +41,7 @@
 #include <XOR/XOR_simd.hpp>
 
 #include <AN/AN_scalar.hpp>
-#include <AN/AN_sse42.hpp>
-#ifdef __AVX2__
-#include <AN/AN_avx2.hpp>
-#endif
+#include <AN/AN_simd.hpp>
 
 #include <Hamming/Hamming_scalar.hpp>
 #include <Hamming/Hamming_simd.hpp>
@@ -138,13 +135,13 @@ int main(
     // 16-bit data vectorized tests
     std::clog << "# 16-bit SSE4.2 tests:" << std::endl;
     TestCase<XOR_sse42_8x16_8x16, UNROLL_LO, UNROLL_HI>("XOR_sse42_8x16_8x16", "XOR SSE4.2", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
-    TestCase<AN_sse42_8x16_8x32_u_divmod, UNROLL_LO, UNROLL_HI>("AN_sse42_8x16_8x32_u_divmod", "AN SSE4.2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
+    TestCase<AN_sse42_16_32_u_divmod, UNROLL_LO, UNROLL_HI>("AN_sse42_16_32_u_divmod", "AN SSE4.2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
             dataGenConfig, vecTestInfos, refIdx);
-    TestCase<AN_sse42_8x16_8x32_s_divmod, UNROLL_LO, UNROLL_HI>("AN_sse42_8x16_8x32_s_divmod", "AN SSE4.2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
+    TestCase<AN_sse42_16_32_s_divmod, UNROLL_LO, UNROLL_HI>("AN_sse42_16_32_s_divmod", "AN SSE4.2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
             dataGenConfig, vecTestInfos, refIdx);
-    TestCase<AN_sse42_8x16_8x32_u_inv, UNROLL_LO, UNROLL_HI>("AN_sse42_8x16_8x32_u_inv", "AN SSE4.2 U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
+    TestCase<AN_sse42_16_32_u_inv, UNROLL_LO, UNROLL_HI>("AN_sse42_16_32_u_inv", "AN SSE4.2 U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
             vecTestInfos, refIdx);
-    TestCase<AN_sse42_8x16_8x32_s_inv, UNROLL_LO, UNROLL_HI>("AN_sse42_8x16_8x32_s_inv", "AN SSE4.2 S Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
+    TestCase<AN_sse42_16_32_s_inv, UNROLL_LO, UNROLL_HI>("AN_sse42_16_32_s_inv", "AN SSE4.2 S Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
             vecTestInfos, refIdx);
     TestCase<Hamming_sse42_16, UNROLL_LO, UNROLL_HI>("Hamming_sse42_16", "Hamming SSE4.2", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
 #endif
@@ -152,13 +149,13 @@ int main(
 #ifdef __AVX2__
     std::clog << "# 16-bit AVX2 tests:" << std::endl;
     TestCase<XOR_avx2_16x16_16x16, UNROLL_LO, UNROLL_HI>("XOR_avx2_16x16_16x16", "XOR AVX2", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
-    TestCase<AN_avx2_16x16_16x32_u_divmod, UNROLL_LO, UNROLL_HI>("AN_avx2_16x16_16x32_u_divmod", "AN AVX2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
+    TestCase<AN_avx2_16_32_u_divmod, UNROLL_LO, UNROLL_HI>("AN_avx2_16_32_u_divmod", "AN AVX2 U DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
             dataGenConfig, vecTestInfos, refIdx);
-    TestCase<AN_avx2_16x16_16x32_s_divmod, UNROLL_LO, UNROLL_HI>("AN_avx2_16x16_16x32_s_divmod", "AN AVX2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
+    TestCase<AN_avx2_16_32_s_divmod, UNROLL_LO, UNROLL_HI>("AN_avx2_16_32_s_divmod", "AN AVX2 S DivMod", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig,
             dataGenConfig, vecTestInfos, refIdx);
-    TestCase<AN_avx2_16x16_16x32_u_inv, UNROLL_LO, UNROLL_HI>("AN_avx2_16x16_16x32_u_inv", "AN AVX2 U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
+    TestCase<AN_avx2_16_32_u_inv, UNROLL_LO, UNROLL_HI>("AN_avx2_16_32_u_inv", "AN AVX2 U Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
             vecTestInfos, refIdx);
-    TestCase<AN_avx2_16x16_16x32_s_inv, UNROLL_LO, UNROLL_HI>("AN_avx2_16x16_16x32_s_inv", "AN AVX2 S Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
+    TestCase<AN_avx2_16_32_s_inv, UNROLL_LO, UNROLL_HI>("AN_avx2_16_32_s_inv", "AN AVX2 S Inv", bufRawdata16, bufEncoded16, bufResult16, AUser, AUserInv, testConfig, dataGenConfig,
             vecTestInfos, refIdx);
     TestCase<Hamming_avx2_16, UNROLL_LO, UNROLL_HI>("Hamming_avx2_16", "Hamming AVX2", bufRawdata16, bufEncoded16, bufResult16, testConfig, dataGenConfig, vecTestInfos, refIdx);
 #endif

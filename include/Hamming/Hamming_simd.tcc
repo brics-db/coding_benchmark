@@ -13,10 +13,11 @@
 // limitations under the License.
 
 /*
- * Hamming_simd.tcc
+ * File:   Hamming_simd.tcc
+ * Author: Till Kolditz <till.kolditz@gmail.com>
  *
- *  Created on: 13.12.2017
- *      Author: Till Kolditz - Till.Kolditz@gmail.com
+ * Created on 13-12-2017
+ * Renamed in 19-03-2018 16:06
  */
 
 #pragma once
@@ -165,26 +166,18 @@ namespace coding_benchmark {
                 auto outV = config.target.template begin<hamming_simd_t>();
                 while (inV <= (inVend - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++inV, ++outV) {
-                        if constexpr (check) {
-                            if (inV->isValid()) {
-                                outV->store(mm_op<VEC, DATAIN, Functor>::compute(inV->data, mmOperand));
-                            } else {
-                                throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
-                            }
-                        } else {
-                            outV->store(mm_op<VEC, DATAIN, Functor>::compute(inV->data, mmOperand));
-                        }
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV, ++outV) {
-                    if constexpr (check) {
-                        if (inV->isValid()) {
+                        if ((!check) || inV->isValid()) {
                             outV->store(mm_op<VEC, DATAIN, Functor>::compute(inV->data, mmOperand));
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                         }
-                    } else {
+                    }
+                }
+                for (; inV < (inVend - 1); ++inV, ++outV) {
+                    if ((!check) || inV->isValid()) {
                         outV->store(mm_op<VEC, DATAIN, Functor>::compute(inV->data, mmOperand));
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                     }
                 }
                 if (inV < inVend) {
@@ -193,14 +186,10 @@ namespace coding_benchmark {
                     const auto inSend = reinterpret_cast<hamming_scalar_t* const >(inVend);
                     auto outS = reinterpret_cast<hamming_scalar_t*>(outV);
                     for (; inS < inSend; ++outS, ++inS) {
-                        if constexpr (check) {
-                            if (inS->isValid()) {
-                                outS->store(functor(inS->data, config.operand));
-                            } else {
-                                throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
-                            }
-                        } else {
+                        if ((!check) || inS->isValid()) {
                             outS->store(functor(inS->data, config.operand));
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
                         }
                     }
                 }
@@ -277,26 +266,18 @@ namespace coding_benchmark {
                 const auto inVend = test.template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
                 while (inV <= (inVend - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
-                        if constexpr (check) {
-                            if (inV->isValid()) {
-                                mmAggr = funcKernelVector(mmAggr, inV++->data);
-                            } else {
-                                throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<hamming_scalar_t*>(inV) - config.source.template begin<hamming_scalar_t>(), iteration);
-                            }
-                        } else {
-                            mmAggr = funcKernelVector(mmAggr, inV++->data);
-                        }
-                    }
-                }
-                while (inV < (inVend - 1)) {
-                    if constexpr (check) {
-                        if (inV->isValid()) {
+                        if ((!check) || inV->isValid()) {
                             mmAggr = funcKernelVector(mmAggr, inV++->data);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<hamming_scalar_t*>(inV) - config.source.template begin<hamming_scalar_t>(), iteration);
                         }
-                    } else {
+                    }
+                }
+                while (inV < (inVend - 1)) {
+                    if ((!check) || inV->isValid()) {
                         mmAggr = funcKernelVector(mmAggr, inV++->data);
+                    } else {
+                        throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<hamming_scalar_t*>(inV) - config.source.template begin<hamming_scalar_t>(), iteration);
                     }
                 }
                 Aggregate aggr = funcVectorToScalar(mmAggr);
@@ -304,14 +285,10 @@ namespace coding_benchmark {
                     auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
                     const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
                     while (inS < inSend) {
-                        if constexpr (check) {
-                            if (inS->isValid()) {
-                                aggr = funcKernelScalar(aggr, inS++->data);
-                            } else {
-                                throw ErrorInfo(__FILE__, __LINE__, inS - config.source.template begin<hamming_scalar_t>(), iteration);
-                            }
-                        } else {
+                        if ((!check) || inS->isValid()) {
                             aggr = funcKernelScalar(aggr, inS++->data);
+                        } else {
+                            throw ErrorInfo(__FILE__, __LINE__, inS - config.source.template begin<hamming_scalar_t>(), iteration);
                         }
                     }
                 }
@@ -329,13 +306,13 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Min) {
-                impl<DATAIN>([] {return mm<VEC, DATAIN>::set1(std::numeric_limits<DATAIN>::max());}, [](VEC mmMin, VEC inV) { return mm<VEC, DATAIN>::min(mmMin, inV);},
-                        [](VEC mmMin){return mm<VEC, DATAIN>::min(mmMin);}, [](DATAIN min, DATAIN tmp){return std::min(min, tmp);}, [](DATAIN min, size_t numValues){return min;});
+                impl<DATAIN>([] {return mm<VEC, DATAIN>::set1(std::numeric_limits<DATAIN>::max());}, [](VEC mmMin, VEC inV) {return mm<VEC, DATAIN>::min(mmMin, inV);},
+                        [](VEC mmMin) {return mm<VEC, DATAIN>::min(mmMin);}, [](DATAIN min, DATAIN tmp) {return std::min(min, tmp);}, [](DATAIN min, size_t numValues) {return min;});
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                impl<DATAIN>([] {return mm<VEC, DATAIN>::set1(std::numeric_limits<DATAIN>::min());}, [](VEC mmMax, VEC inV) { return mm<VEC, DATAIN>::max(mmMax, inV);},
-                        [](VEC mmMax){return mm<VEC, DATAIN>::max(mmMax);}, [](DATAIN max, DATAIN tmp){return std::max(max, tmp);}, [](DATAIN max, size_t numValues){return max;});
+                impl<DATAIN>([] {return mm<VEC, DATAIN>::set1(std::numeric_limits<DATAIN>::min());}, [](VEC mmMax, VEC inV) {return mm<VEC, DATAIN>::max(mmMax, inV);},
+                        [](VEC mmMax) {return mm<VEC, DATAIN>::max(mmMax);}, [](DATAIN max, DATAIN tmp) {return std::max(max, tmp);}, [](DATAIN max, size_t numValues) {return max;});
             }
             void operator()(
                     AggregateConfiguration::Avg) {
@@ -367,12 +344,9 @@ namespace coding_benchmark {
             }
         }
 
-        bool DoDecode() override {
-            return true;
-        }
-
-        void RunDecode(
-                const DecodeConfiguration & config) override {
+        template<bool check>
+        void RunDecodeInternal(
+                const DecodeConfiguration & config) {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 auto inV = config.source.template begin<hamming_simd_t>();
@@ -380,37 +354,7 @@ namespace coding_benchmark {
                 auto outV = config.target.template begin<VEC>();
                 while (inV <= (inVend - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++inV) {
-                        *outV++ = inV->data;
-                    }
-                }
-                for (; inV < (inVend - 1); ++inV) {
-                    *outV++ = inV->data;
-                }
-                if (inV < inVend) {
-                    auto inS = reinterpret_cast<hamming_scalar_t*>(inV);
-                    const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
-                    auto outS = reinterpret_cast<DATAIN*>(outV);
-                    for (; inS < inSend; ++inS) {
-                        *outS++ = inS->data;
-                    }
-                }
-            }
-        }
-
-        bool DoDecodeChecked() override {
-            return true;
-        }
-
-        void RunDecodeChecked(
-                const DecodeConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                auto inV = config.source.template begin<hamming_simd_t>();
-                const auto inVend = this->template ComputeEnd<hamming_scalar_t, hamming_simd_t>(inV, config);
-                auto outV = config.target.template begin<VEC>();
-                while (inV <= (inVend - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++inV) {
-                        if (inV->isValid()) {
+                        if ((!check) || inV->isValid()) {
                             *outV++ = inV->data;
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
@@ -418,7 +362,7 @@ namespace coding_benchmark {
                     }
                 }
                 for (; inV < (inVend - 1); ++inV) {
-                    if (inV->isValid()) {
+                    if ((!check) || inV->isValid()) {
                         *outV++ = inV->data;
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
@@ -429,7 +373,7 @@ namespace coding_benchmark {
                     const auto inSend = reinterpret_cast<hamming_scalar_t * const >(inVend);
                     auto outS = reinterpret_cast<DATAIN*>(outV);
                     for (; inS < inSend; ++inS) {
-                        if (inS->isValid()) {
+                        if ((!check) || inS->isValid()) {
                             *outS++ = inS->data;
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
@@ -437,6 +381,24 @@ namespace coding_benchmark {
                     }
                 }
             }
+        }
+
+        bool DoDecode() override {
+            return true;
+        }
+
+        void RunDecode(
+                const DecodeConfiguration & config) override {
+            RunDecodeInternal<false>(config);
+        }
+
+        bool DoDecodeChecked() override {
+            return true;
+        }
+
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            RunDecodeInternal<true>(config);
         }
     };
 

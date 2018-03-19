@@ -99,6 +99,12 @@ namespace coding_benchmark {
                         return _mm_set_epi64x(v0 + inc, v0);
                     }
 
+                    template<int I>
+                    static inline T extract(
+                            __m128i a) {
+                        return _mm_extract_epi64(a, I);
+                    }
+
                     static inline T min(
                             __m128i a) {
                         T x0 = _mm_extract_epi64(a, 0);
@@ -166,16 +172,31 @@ namespace coding_benchmark {
 
                     static inline __m128i cvt_larger_lo(
                             __m128i a) {
-                        return _mm_and_si128(a, _mm_set_epi64x(0ull, 0xFFFFFFFFFFFFFFFFull));
+                        if constexpr (std::is_signed_v<T>) {
+                            T a0 = static_cast<T>(_mm_extract_epi64(a, 0));
+                            return _mm_set_epi64x(a0 < 0 ? T(-1) : T(0), a0);
+                        } else {
+                            return _mm_and_si128(a, _mm_set_epi64x(0ull, 0xFFFFFFFFFFFFFFFFull));
+                        }
                     }
 
                     static inline __m128i cvt_larger_hi(
                             __m128i a) {
-                        return _mm_srli_si128(a, 8);
+                        if constexpr (std::is_signed_v<T>) {
+                            T a0 = static_cast<T>(_mm_extract_epi64(a, 1));
+                            return _mm_set_epi64x(a0 < 0 ? T(-1) : T(0), a0);
+                        } else {
+                            return _mm_srli_si128(a, 8);
+                        }
+                    }
+
+                    static inline __m128i cvt_smaller(
+                            __m128i a) {
+                        return _mm_cvtepi64_epi32(a);
                     }
 
                 private:
-                    static const __m128i * const SHUFFLE_TABLE;
+            static const __m128i * const SHUFFLE_TABLE;
                 };
 
                 template<typename T, template<typename > class Op>
@@ -437,6 +458,7 @@ namespace coding_benchmark {
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
+                using BASE::extract;
                 using BASE::min;
                 using BASE::max;
                 using BASE::sum;
@@ -447,6 +469,7 @@ namespace coding_benchmark {
                 using BASE::popcount3;
                 using BASE::cvt_larger_hi;
                 using BASE::cvt_larger_lo;
+                using BASE::cvt_smaller;
             };
 
             template<>
@@ -581,6 +604,7 @@ namespace coding_benchmark {
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
+                using BASE::extract;
                 using BASE::min;
                 using BASE::max;
                 using BASE::sum;
@@ -591,6 +615,7 @@ namespace coding_benchmark {
                 using BASE::popcount3;
                 using BASE::cvt_larger_hi;
                 using BASE::cvt_larger_lo;
+                using BASE::cvt_smaller;
             };
 
             template<>

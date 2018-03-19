@@ -234,6 +234,12 @@ namespace coding_benchmark {
                                 v0 + 5 * inc, v0 + 4 * inc, v0 + 3 * inc, v0 + 2 * inc, v0 + inc, v0);
                     }
 
+                    template<int I>
+                    static inline T extract(
+                            __m128i a) {
+                        return _mm_extract_epi8(a, I);
+                    }
+
                     static inline __m128i min(
                             __m128i a) {
                         return get_min_int8<T>(a);
@@ -322,17 +328,30 @@ namespace coding_benchmark {
 
                     static inline __m128i cvt_larger_lo(
                             __m128i a) {
-                        return _mm_cvtepi8_epi16(a);
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm_cvtepi8_epi16(a);
+                        } else {
+                            return _mm_cvtepu8_epi16(a);
+                        }
                     }
 
                     static inline __m128i cvt_larger_hi(
                             __m128i a) {
-                        return _mm_cvtepi8_epi16(_mm_srli_si128(a, 8));
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm_cvtepi8_epi16(_mm_srli_si128(a, 8));
+                        } else {
+                            return _mm_cvtepu8_epi16(_mm_srli_si128(a, 8));
+                        }
+                    }
+
+                    static inline __m128i cvt_smaller(
+                            __m128i a) {
+                        return a; // WE CANNOT CONVERT SMALLER
                     }
 
                 private:
-            static const uint64_t * const SHUFFLE_TABLE_L;
-            static const uint64_t * const SHUFFLE_TABLE_H;
+    static const uint64_t * const SHUFFLE_TABLE_L;
+    static const uint64_t * const SHUFFLE_TABLE_H;
                 };
 
                 template<typename T, template<typename > class Op>
@@ -605,6 +624,7 @@ namespace coding_benchmark {
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
+                using BASE::extract;
                 using BASE::min;
                 using BASE::max;
                 using BASE::sum;
@@ -615,6 +635,7 @@ namespace coding_benchmark {
                 using BASE::popcount3;
                 using BASE::cvt_larger_hi;
                 using BASE::cvt_larger_lo;
+                using BASE::cvt_smaller;
             };
 
             template<>
@@ -749,6 +770,7 @@ namespace coding_benchmark {
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
+                using BASE::extract;
                 using BASE::min;
                 using BASE::max;
                 using BASE::sum;
@@ -759,6 +781,7 @@ namespace coding_benchmark {
                 using BASE::popcount3;
                 using BASE::cvt_larger_hi;
                 using BASE::cvt_larger_lo;
+                using BASE::cvt_smaller;
             };
 
             template<>

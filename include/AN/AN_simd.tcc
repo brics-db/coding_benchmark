@@ -13,92 +13,130 @@
 // limitations under the License.
 
 /*
- * File:   AN_sse42_8x16_8x32.hpp
+ * File:   AN_simd.tcc
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
- * Created on 13. Dezember 2016, 01:01
+ * Created on 13-12-2016 01:01
+ * Renamed in 19-03-2018 16:06
  */
 
 #pragma once
 
 #include <stdexcept>
 
-#ifndef AN_SSE42
-#error "Clients must not include this file directly, but file <AN/AN_sse42.hpp>!"
+#ifndef AN_SIMD
+#error "Clients must not include this file directly, but file <AN/AN_simd.hpp>!"
 #endif
 
 #include <AN/ANTest.hpp>
-#include <SIMD/SSE.hpp>
 #include <Util/Functors.hpp>
 #include <Util/Helpers.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Util/AggregateSelector.hpp>
+#ifdef __SSE4_2__
+#include <SIMD/SSE.hpp>
+#endif
+#ifdef __AVX2__
+#include <SIMD/AVX2.hpp>
+#endif
+#ifdef __AVX512F__
+#include <SIMD/AVX512.hpp>
+#endif
 
 using namespace coding_benchmark::simd;
 
 namespace coding_benchmark {
 
-    template<typename DATARAW, typename DATAENC, size_t UNROLL>
-    struct AN_sse42_8x16_8x32 :
-            public ANTest<DATARAW, DATAENC, UNROLL>,
-            public SSE42Test {
+    template <typename DATARAW, typename DATAENC, typename VEC>
+    void writeout(VEC mmIn, DATARAW* mmOut);
 
-        typedef __m128i VEC;
+#ifdef __SSE4_2__
+    inline void writeout_16_32_128(
+            __m128i mmIn,
+            uint16_t* mmOut) {
+        static __m128i mmShuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0D0C090805040100);
+        *reinterpret_cast<uint64_t*>(mmOut) = _mm_extract_epi64(_mm_shuffle_epi8(mmIn, mmShuffle), 0);
+    }
+
+    template<>
+    inline void writeout<uint16_t, uint32_t, __m128i>(
+            __m128i mmIn,
+            uint16_t* mmOut) {
+        writeout_16_32_128(mmIn, mmOut);
+    }
+
+    template<>
+    inline void writeout<int16_t, int32_t, __m128i>(
+            __m128i mmIn,
+            int16_t* mmOut) {
+        writeout_16_32_128(mmIn, reinterpret_cast<uint16_t*>(mmOut));
+    }
+#endif /* __SSE4_2__ */
+
+#ifdef __AVX2__
+    inline void writeout_16_32_256(
+            __m256i mmIn,
+            uint16_t* mmOut) {
+        static __m256i mmShuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0D0C090805040100, 0xFFFFFFFFFFFFFFFF, 0x0D0C090805040100);
+        uint64_t * out64 = reinterpret_cast<uint64_t*>(mmOut);
+        __m256i mm = _mm256_shuffle_epi8(mmIn, mmShuffle);
+        *out64++ = _mm256_extract_epi64(mm, 0);
+        *out64 = _mm256_extract_epi64(mm, 2);
+    }
+
+    template<>
+    inline void writeout<uint16_t, uint32_t, __m256i>(
+            __m256i mmIn,
+            uint16_t* mmOut) {
+        writeout_16_32_256(mmIn, mmOut);
+    }
+
+    template<>
+    inline void writeout<int16_t, int32_t, __m256i>(
+            __m256i mmIn,
+            int16_t* mmOut) {
+        writeout_16_32_256(mmIn, reinterpret_cast<uint16_t*>(mmOut));
+    }
+#endif /* __AVX2__ */
+
+    template<typename DATARAW, typename DATAENC, typename VEC, size_t UNROLL>
+    struct AN_simd :
+            public ANTest<DATARAW, DATAENC, UNROLL>,
+            public SIMDTest<VEC> {
 
         using ANTest<DATARAW, DATAENC, UNROLL>::ANTest;
 
-        virtual ~AN_sse42_8x16_8x32() {
+        virtual ~AN_simd() {
         }
-
-        /*
-        template<typename T>
-        VEC * const ComputeEnd(
-                VEC * mmBeg,
-                const SubTestConfiguration & config) const {
-            return reinterpret_cast<VEC*>(reinterpret_cast<T*>(mmBeg) + config.numValues);
-        }
-        */
 
         void RunEncode(
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                auto *mmData = config.source.template begin<VEC>();
-                auto * const mmDataEnd = this->template ComputeEnd<DATARAW>(mmData, config);
-                auto *mmOut = config.target.template begin<VEC>();
-                auto mmA = _mm_set1_epi32(this->A);
+                auto *inV = config.source.template begin<VEC>();
+                auto * const inVend = this->template ComputeEnd<DATARAW>(inV, config);
+                auto *outV = config.target.template begin<VEC>();
+                auto mmA = mm<VEC, DATAENC>::set1(this->A);
 
-                const constexpr bool isSigned = std::is_signed_v<DATARAW>;
-
-                while (mmData <= (mmDataEnd - UNROLL)) {
+                while (inV <= (inVend - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        auto mmIn = _mm_lddqu_si128(mmData++);
-                        if (isSigned) {
-                            _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepi16_epi32(mmIn), mmA));
-                            _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepi16_epi32(_mm_srli_si128(mmIn, sizeof(VEC) / 2)), mmA));
-                        } else {
-                            _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepu16_epi32(mmIn), mmA));
-                            _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepu16_epi32(_mm_srli_si128(mmIn, sizeof(VEC) / 2)), mmA));
-                        }
+                        auto mmIn = *inV++;
+                        *outV++ = mm_op<VEC, DATAENC, mul>::compute(mm<VEC, DATARAW>::cvt_larger_lo(mmIn), mmA);
+                        *outV++ = mm_op<VEC, DATAENC, mul>::compute(mm<VEC, DATARAW>::cvt_larger_hi(mmIn), mmA);
                     }
                 }
                 // remaining numbers
-                while (mmData <= (mmDataEnd - 1)) {
-                    auto mmIn = _mm_lddqu_si128(mmData++);
-                    if (isSigned) {
-                        _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepi16_epi32(mmIn), mmA));
-                        _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepi16_epi32(_mm_srli_si128(mmIn, sizeof(VEC) / 2)), mmA));
-                    } else {
-                        _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepu16_epi32(mmIn), mmA));
-                        _mm_storeu_si128(mmOut++, _mm_mullo_epi32(_mm_cvtepu16_epi32(_mm_srli_si128(mmIn, sizeof(VEC) / 2)), mmA));
-                    }
+                while (inV <= (inVend - 1)) {
+                    auto mmIn = *inV++;
+                    *outV++ = mm_op<VEC, DATAENC, mul>::compute(mm<VEC, DATARAW>::cvt_larger_lo(mmIn), mmA);
+                    *outV++ = mm_op<VEC, DATAENC, mul>::compute(mm<VEC, DATARAW>::cvt_larger_hi(mmIn), mmA);
                 }
-                if (mmData < mmDataEnd) {
-                    auto data16End = reinterpret_cast<DATARAW*>(mmDataEnd);
-                    auto out32 = reinterpret_cast<DATAENC*>(mmOut);
-                    auto data16 = reinterpret_cast<DATARAW*>(mmData);
-                    while (data16 < data16End) {
-                        *out32++ = *data16++ * this->A;
+                if (inV < inVend) {
+                    auto inS = reinterpret_cast<DATARAW*>(inV);
+                    auto inSend = reinterpret_cast<DATARAW*>(inVend);
+                    auto outS = reinterpret_cast<DATAENC*>(outV);
+                    while (inS < inSend) {
+                        *outS++ = *inS++ * this->A;
                     }
                 }
             }
@@ -110,19 +148,19 @@ namespace coding_benchmark {
         }
 
         struct Arithmetor {
-            AN_sse42_8x16_8x32 & test;
+            AN_simd & test;
             const ArithmeticConfiguration & config;
             Arithmetor(
-                    AN_sse42_8x16_8x32 & test,
+                    AN_simd & test,
                     const ArithmeticConfiguration & config)
                     : test(test),
                       config(config) {
             }
             template<template<typename = void> class Functor>
             void impl() {
-                auto in128 = config.source.template begin<VEC>();
-                const auto in128end = test.template ComputeEnd<DATAENC>(in128, config);
-                auto out128 = config.target.template begin<VEC>();
+                auto inV = config.source.template begin<VEC>();
+                const auto inVend = test.template ComputeEnd<DATAENC>(inV, config);
+                auto outV = config.target.template begin<VEC>();
                 auto mmA __attribute__((unused)) = mm<VEC, DATAENC>::set1(test.A);
                 DATAENC operand = config.operand;
                 if constexpr (std::is_same_v<Functor<void>, add<void>> || std::is_same_v<Functor<void>, sub<void>> || std::is_same_v<Functor<void>, div<void>>) {
@@ -133,35 +171,35 @@ namespace coding_benchmark {
                     throw std::runtime_error("Functor not known!");
                 }
                 VEC mmOperand = mm<VEC, DATAENC>::set1(operand);
-                while (in128 <= (in128end - UNROLL)) {
+                while (inV <= (inVend - UNROLL)) {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        auto x = mm_op<VEC, DATAENC, Functor>::compute(*in128++, mmOperand);
+                        auto x = mm_op<VEC, DATAENC, Functor>::compute(*inV++, mmOperand);
                         if constexpr (std::is_same_v<Functor<void>, div<void>>) {
                             x = mm_op<VEC, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
                         }
-                        *out128++ = x;
+                        *outV++ = x;
                     }
                 }
                 // remaining numbers
-                while (in128 <= (in128end - 1)) {
-                    auto x = mm_op<VEC, DATAENC, Functor>::compute(*in128++, mmOperand);
+                while (inV <= (inVend - 1)) {
+                    auto x = mm_op<VEC, DATAENC, Functor>::compute(*inV++, mmOperand);
                     if constexpr (std::is_same_v<Functor<void>, div<void>>) {
                         x = mm_op<VEC, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
                     }
-                    *out128++ = x;
+                    *outV++ = x;
                 }
-                if (in128 < in128end) {
+                if (inV < inVend) {
                     Functor<> functor;
-                    auto in32 = reinterpret_cast<DATAENC*>(in128);
-                    const auto in32end = reinterpret_cast<DATAENC* const >(in128end);
-                    auto out32 = reinterpret_cast<DATAENC*>(out128);
-                    while (in32 < in32end) {
-                        auto x = functor(*in32++, operand);
+                    auto inS = reinterpret_cast<DATAENC*>(inV);
+                    const auto inSend = reinterpret_cast<DATAENC* const >(inVend);
+                    auto outS = reinterpret_cast<DATAENC*>(outV);
+                    while (inS < inSend) {
+                        auto x = functor(*inS++, operand);
                         if (std::is_same_v<Functor<void>, div<void>>) {
                             x *= test.A; // make sure we get a code word again
                         }
-                        *out32++ = x;
+                        *outS++ = x;
                     }
                 }
             }
@@ -198,10 +236,10 @@ namespace coding_benchmark {
 
         struct Aggregator {
             typedef typename Larger<DATAENC>::larger_t larger_t;
-            AN_sse42_8x16_8x32 & test;
+            AN_simd & test;
             const AggregateConfiguration & config;
             Aggregator(
-                    AN_sse42_8x16_8x32 & test,
+                    AN_simd & test,
                     const AggregateConfiguration & config)
                     : test(test),
                       config(config) {
