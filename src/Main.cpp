@@ -38,10 +38,7 @@
 #include <Copy/CopyTest.hpp>
 
 #include <XOR/XOR_scalar.hpp>
-#include <XOR/XOR_sse42.hpp>
-#ifdef __AVX2__
-#include <XOR/XOR_avx2.hpp>
-#endif
+#include <XOR/XOR_simd.hpp>
 
 #include <AN/AN_scalar.hpp>
 #include <AN/AN_sse42.hpp>

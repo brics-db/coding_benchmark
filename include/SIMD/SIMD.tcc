@@ -13,10 +13,11 @@
 // limitations under the License.
 
 /*
- * File:   SIMD.hpp
+ * File:   SIMD.tcc
  * Author: Till Kolditz <till.kolditz@gmail.com>
  *
  * Created on 09-08-2017 00:18
+ * Renamed on 19-03-2018 10:41
  */
 
 #pragma once

@@ -279,6 +279,9 @@ struct SIMDTestBase {
     }
 };
 
+template<typename V>
+struct SIMDTest;
+
 #ifdef __SSE4_2__
 
 extern template
@@ -295,9 +298,22 @@ struct SSE42Test :
     virtual bool HasCapabilities() override;
 };
 
-#endif
+template<>
+struct SIMDTest<__m128i> : public SSE42Test {
+
+    virtual ~SIMDTest() {};
+
+    using SSE42Test::getSIMDtypeName;
+    using SSE42Test::HasCapabilities;
+    using SSE42Test::SIMDTestBase::ComputeEnd;
+};
+
+#endif /* __SSE4_2__ */
 
 #ifdef __AVX2__
+
+extern template
+struct SIMDTestBase<__m256i>;
 
 struct AVX2Test :
         virtual public TestBase0,
@@ -310,9 +326,22 @@ struct AVX2Test :
     virtual bool HasCapabilities() override;
 };
 
-#endif
+template<>
+struct SIMDTest<__m256i> : public AVX2Test {
 
-#ifdef __AVX512_F__
+    virtual ~SIMDTest() {};
+
+    using AVX2Test::getSIMDtypeName;
+    using AVX2Test::HasCapabilities;
+    using AVX2Test::SIMDTestBase::ComputeEnd;
+};
+
+#endif /* __AVX2__ */
+
+#ifdef __AVX512F__
+
+extern template
+struct SIMDTestBase<__m512i>;
 
 struct AVX512Test :
         virtual public TestBase0,
@@ -325,39 +354,6 @@ struct AVX512Test :
     virtual bool HasCapabilities() override;
 };
 
-#endif
-
-template<typename V>
-struct SIMDTest;
-
-#ifdef __SSE4_2__
-
-template<>
-struct SIMDTest<__m128i> : public SSE42Test {
-
-    virtual ~SIMDTest() {};
-
-    using SSE42Test::getSIMDtypeName;
-    using SSE42Test::HasCapabilities;
-};
-
-#endif
-
-#ifdef __AVX2__
-
-template<>
-struct SIMDTest<__m256i> : public AVX2Test {
-
-    virtual ~SIMDTest() {};
-
-    using AVX2Test::getSIMDtypeName;
-    using AVX2Test::HasCapabilities;
-};
-
-#endif
-
-#ifdef __AVX512F__
-
 template<>
 struct SIMDTest<__m512i> : public AVX512Test {
 
@@ -365,9 +361,10 @@ struct SIMDTest<__m512i> : public AVX512Test {
 
     using AVX512Test::getSIMDtypeName;
     using AVX512Test::HasCapabilities;
+    using AVX512Test::SIMDTestBase::ComputeEnd;
 };
 
-#endif
+#endif /* __AVX512F__ */
 
 template<typename DATARAW, typename DATAENC>
 class Test :

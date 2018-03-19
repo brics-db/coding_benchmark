@@ -33,7 +33,7 @@
 #include <Util/Intrinsics.hpp>
 #include <Util/Functors.hpp>
 
-#include <SIMD/SIMD.hpp>
+#include <SIMD/SIMD.tcc>
 #include <SIMD/SSE_base.tcc>
 #include <SIMD/SSE_int08.tcc>
 #include <SIMD/SSE_int16.tcc>

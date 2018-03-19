@@ -287,15 +287,12 @@ bool SSE42Test::HasCapabilities() {
     return cpu.SSE42 && cpu.OS_X64;
 }
 
-#endif
+#endif /* __SSE4_2__ */
 
 #ifdef __AVX2__
 
 template
 struct SIMDTestBase<__m256i > ;
-
-SIMDTestBase<__m256i >::~SIMDTestBase() {
-}
 
 AVX2Test::~AVX2Test() {
 }
@@ -311,15 +308,12 @@ bool AVX2Test::HasCapabilities() {
     return cpu.AVX2 && cpu.OS_X64 && cpu.OS_AVX;
 }
 
-#endif
+#endif /* __AVX2__ */
 
-#ifdef __AVX512_F__
+#ifdef __AVX512F__
 
 template
-struct SIMDTestBase<__m512i > ;
-
-SIMDTestBase<__m512i >::~SIMDTestBase() {
-}
+struct SIMDTestBase<__m512i >;
 
 AVX512Test::~AVX512Test() {
 }
@@ -335,7 +329,7 @@ bool AVX512Test::HasCapabilities() {
     return (cpu.AVX512_BW | cpu.AVX512_CD | cpu.AVX512_DQ | cpu.AVX512_ER | cpu.AVX512_F | cpu.AVX512_IFMA | cpu.AVX512_PF | cpu.AVX512_VBMI | cpu.AVX512_VL) && cpu.OS_X64 && cpu.OS_AVX512;
 }
 
-#endif
+#endif /* __AVX512F__ */
 
 template<typename Conf, size_t max = std::variant_size_v<typename Conf::Mode>, size_t num = 1>
 struct ConfigurationModeExecutor {

@@ -21,7 +21,7 @@
 
 #ifdef __AVX2__
 
-#include <XOR/XOR_avx2.hpp>
+#include <XOR/XOR_simd.hpp>
 
 namespace coding_benchmark {
 
