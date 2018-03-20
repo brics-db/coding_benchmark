@@ -78,7 +78,7 @@ namespace coding_benchmark {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
                 auto data = config.target.template begin<hamming_scalar_t>();
-                const auto dataEnd = config.target.template end<hamming_scalar_t>();
+                const auto dataEnd = data + config.numValues;
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data) {
                         if (data->isValid()) {

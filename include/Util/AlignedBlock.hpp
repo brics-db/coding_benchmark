@@ -24,10 +24,8 @@ struct AlignedBlock {
     const size_t alignment;
 
 private:
-    std::shared_ptr<char> baseptr;
+    std::shared_ptr<char[]> baseptr;
     void* const data;
-
-public:
 
     AlignedBlock()
             : nBytes(0),
@@ -36,6 +34,7 @@ public:
               data(nullptr) {
     }
 
+public:
     AlignedBlock(
             size_t nBytes,
             size_t alignment)
@@ -53,10 +52,25 @@ public:
               data(other.data) {
     }
 
+    AlignedBlock(
+            AlignedBlock && other)
+            : nBytes(other.nBytes),
+              alignment(other.alignment),
+              baseptr(std::move(other.baseptr)),
+              data(other.data) {
+    }
+
     AlignedBlock & operator=(
             AlignedBlock & other) {
         this->~AlignedBlock();
         new (this) AlignedBlock(other);
+        return *this;
+    }
+
+    AlignedBlock & operator=(
+            AlignedBlock && other) {
+        this->~AlignedBlock();
+        new (this) AlignedBlock(std::forward<AlignedBlock>(other));
         return *this;
     }
 
@@ -79,6 +93,7 @@ public:
     virtual ~AlignedBlock() {
         // force to set everything to zero to avoid bad use-after-free
         // we call the constructor, because I want data to be a constant pointer
+        baseptr.reset();
         new (this) AlignedBlock();
     }
 };
