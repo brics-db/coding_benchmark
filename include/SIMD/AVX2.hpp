@@ -25,13 +25,6 @@
 
 #define LIB_COLUMN_OPERATORS_SIMD_AVX2_HPP_
 
-#include <cstdint>
-#include <cstdlib>
-#include <functional>
-
-#include <Util/Intrinsics.hpp>
-#include <Util/Functors.hpp>
-
 #include <SIMD/SSE.hpp>
 #include <SIMD/AVX2_base.tcc>
 #include <SIMD/AVX2_int08.tcc>
@@ -41,6 +34,113 @@
 
 namespace coding_benchmark {
     namespace simd {
+
+        template<>
+        struct mm<__m256i> {
+            static inline __m256i setzero(
+                    ) {
+                return _mm256_setzero_si256();
+            }
+
+            static inline __m256i loadu(
+                    __m256i * src) {
+                return _mm256_lddqu_si256(src);
+            }
+
+            static inline void storeu(
+                    __m256i * dst,
+                    __m256i src) {
+                _mm256_storeu_si256(dst, src);
+            }
+
+            static inline uint8_t loadu(
+                    uint8_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    uint8_t * dst,
+                    uint8_t src) {
+                *dst = src;
+            }
+
+            static inline int8_t loadu(
+                    int8_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    int8_t * dst,
+                    int8_t src) {
+                *dst = src;
+            }
+
+            static inline uint16_t loadu(
+                    uint16_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    uint16_t * dst,
+                    uint16_t src) {
+                *dst = src;
+            }
+
+            static inline int16_t loadu(
+                    int16_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    int16_t * dst,
+                    int16_t src) {
+                *dst = src;
+            }
+
+            static inline uint32_t loadu(
+                    uint32_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    uint32_t * dst,
+                    uint32_t src) {
+                *dst = src;
+            }
+
+            static inline int32_t loadu(
+                    int32_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    int32_t * dst,
+                    int32_t src) {
+                *dst = src;
+            }
+
+            static inline uint64_t loadu(
+                    uint64_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    uint64_t * dst,
+                    uint64_t src) {
+                *dst = src;
+            }
+
+            static inline int64_t loadu(
+                    int64_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    int64_t * dst,
+                    int64_t src) {
+                *dst = src;
+            }
+        };
 
         template<typename T>
         struct mm<__m256i, T> :
@@ -59,17 +159,6 @@ namespace coding_benchmark {
             using BASE::sum;
             using BASE::pack_right;
             using BASE::pack_right2;
-
-            static inline __m256i loadu(
-                    __m256i * src) {
-                return _mm256_lddqu_si256(src);
-            }
-
-            static inline void storeu(
-                    __m256i * dst,
-                    __m256i src) {
-                _mm256_storeu_si256(dst, src);
-            }
         };
 
         template<typename T>

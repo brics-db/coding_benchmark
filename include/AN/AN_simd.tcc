@@ -47,10 +47,33 @@ using namespace coding_benchmark::simd;
 
 namespace coding_benchmark {
 
-    template <typename DATARAW, typename DATAENC, typename VEC>
-    void writeout(VEC mmIn, DATARAW* mmOut);
+    template<typename DATARAW, typename DATAENC, typename VEC>
+    void writeout(
+            VEC mmIn,
+            DATARAW* mmOut);
 
 #ifdef __SSE4_2__
+    inline void writeout_8_16_128(
+            __m128i mmIn,
+            uint8_t* mmOut) {
+        static __m128i mmShuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0E0C0A0806040200);
+        *reinterpret_cast<uint64_t*>(mmOut) = _mm_extract_epi64(_mm_shuffle_epi8(mmIn, mmShuffle), 0);
+    }
+
+    template<>
+    inline void writeout<uint8_t, uint16_t, __m128i >(
+            __m128i mmIn,
+            uint8_t* mmOut) {
+        writeout_8_16_128(mmIn, mmOut);
+    }
+
+    template<>
+    inline void writeout<int8_t, int16_t, __m128i >(
+            __m128i mmIn,
+            int8_t* mmOut) {
+        writeout_8_16_128(mmIn, reinterpret_cast<uint8_t*>(mmOut));
+    }
+
     inline void writeout_16_32_128(
             __m128i mmIn,
             uint16_t* mmOut) {
@@ -59,21 +82,66 @@ namespace coding_benchmark {
     }
 
     template<>
-    inline void writeout<uint16_t, uint32_t, __m128i>(
+    inline void writeout<uint16_t, uint32_t, __m128i >(
             __m128i mmIn,
             uint16_t* mmOut) {
         writeout_16_32_128(mmIn, mmOut);
     }
 
     template<>
-    inline void writeout<int16_t, int32_t, __m128i>(
+    inline void writeout<int16_t, int32_t, __m128i >(
             __m128i mmIn,
             int16_t* mmOut) {
         writeout_16_32_128(mmIn, reinterpret_cast<uint16_t*>(mmOut));
     }
+
+    inline void writeout_32_64_128(
+            __m128i mmIn,
+            uint32_t* mmOut) {
+        static __m128i mmShuffle = _mm_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0B0A090803020100);
+        *reinterpret_cast<uint64_t*>(mmOut) = _mm_extract_epi64(_mm_shuffle_epi8(mmIn, mmShuffle), 0);
+    }
+
+    template<>
+    inline void writeout<uint32_t, uint64_t, __m128i >(
+            __m128i mmIn,
+            uint32_t* mmOut) {
+        writeout_32_64_128(mmIn, mmOut);
+    }
+
+    template<>
+    inline void writeout<int32_t, int64_t, __m128i >(
+            __m128i mmIn,
+            int32_t* mmOut) {
+        writeout_32_64_128(mmIn, reinterpret_cast<uint32_t*>(mmOut));
+    }
 #endif /* __SSE4_2__ */
 
 #ifdef __AVX2__
+    inline void writeout_8_16_256(
+            __m256i mmIn,
+            uint8_t* mmOut) {
+        static __m256i mmShuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0E0C0A0806040200, 0xFFFFFFFFFFFFFFFF, 0x0E0C0A0806040200);
+        uint64_t * out64 = reinterpret_cast<uint64_t*>(mmOut);
+        __m256i mm = _mm256_shuffle_epi8(mmIn, mmShuffle);
+        *out64++ = _mm256_extract_epi64(mm, 0);
+        *out64 = _mm256_extract_epi64(mm, 2);
+    }
+
+    template<>
+    inline void writeout<uint8_t, uint16_t, __m256i >(
+            __m256i mmIn,
+            uint8_t* mmOut) {
+        writeout_8_16_256(mmIn, mmOut);
+    }
+
+    template<>
+    inline void writeout<int8_t, int16_t, __m256i >(
+            __m256i mmIn,
+            int8_t* mmOut) {
+        writeout_8_16_256(mmIn, reinterpret_cast<uint8_t*>(mmOut));
+    }
+
     inline void writeout_16_32_256(
             __m256i mmIn,
             uint16_t* mmOut) {
@@ -85,17 +153,41 @@ namespace coding_benchmark {
     }
 
     template<>
-    inline void writeout<uint16_t, uint32_t, __m256i>(
+    inline void writeout<uint16_t, uint32_t, __m256i >(
             __m256i mmIn,
             uint16_t* mmOut) {
         writeout_16_32_256(mmIn, mmOut);
     }
 
     template<>
-    inline void writeout<int16_t, int32_t, __m256i>(
+    inline void writeout<int16_t, int32_t, __m256i >(
             __m256i mmIn,
             int16_t* mmOut) {
         writeout_16_32_256(mmIn, reinterpret_cast<uint16_t*>(mmOut));
+    }
+
+    inline void writeout_32_64_256(
+            __m256i mmIn,
+            uint32_t* mmOut) {
+        static __m256i mmShuffle = _mm256_set_epi64x(0xFFFFFFFFFFFFFFFF, 0x0B0A090803020100, 0xFFFFFFFFFFFFFFFF, 0x0B0A090803020100);
+        uint64_t * out64 = reinterpret_cast<uint64_t*>(mmOut);
+        __m256i mm = _mm256_shuffle_epi8(mmIn, mmShuffle);
+        *out64++ = _mm256_extract_epi64(mm, 0);
+        *out64 = _mm256_extract_epi64(mm, 2);
+    }
+
+    template<>
+    inline void writeout<uint32_t, uint64_t, __m256i >(
+            __m256i mmIn,
+            uint32_t* mmOut) {
+        writeout_32_64_256(mmIn, mmOut);
+    }
+
+    template<>
+    inline void writeout<int32_t, int64_t, __m256i >(
+            __m256i mmIn,
+            int32_t* mmOut) {
+        writeout_32_64_256(mmIn, reinterpret_cast<uint32_t*>(mmOut));
     }
 #endif /* __AVX2__ */
 
@@ -278,7 +370,7 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                impl<larger_t>([] {return simd::mm<VEC, larger_t>::set1(0);}, [](VEC mmSum, VEC mmTmp) {
+                impl<larger_t>([] {return simd::mm<VEC>::setzero();}, [](VEC mmSum, VEC mmTmp) {
                     auto mmLo = simd::mm<VEC, DATAENC>::cvt_larger_lo(mmTmp);
                     mmLo = simd::mm_op<VEC, larger_t, add>::compute(mmSum, mmLo);
                     auto mmHi = simd::mm<VEC, DATAENC>::cvt_larger_hi(mmTmp);
@@ -297,7 +389,7 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                impl<larger_t>([] {return simd::mm<VEC, larger_t>::set1(0);}, [](VEC mmSum, VEC mmTmp) {
+                impl<larger_t>([] {return simd::mm<VEC>::setzero();}, [](VEC mmSum, VEC mmTmp) {
                     auto mmLo = simd::mm<VEC, DATAENC>::cvt_larger_lo(mmTmp);
                     mmLo = simd::mm_op<VEC, larger_t, add>::compute(mmSum, mmLo);
                     auto mmHi = simd::mm<VEC, DATAENC>::cvt_larger_hi(mmTmp);

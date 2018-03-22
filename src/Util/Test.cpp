@@ -313,7 +313,7 @@ bool AVX2Test::HasCapabilities() {
 #ifdef __AVX512F__
 
 template
-struct SIMDTestBase<__m512i >;
+struct SIMDTestBase<__m512i > ;
 
 AVX512Test::~AVX512Test() {
 }
@@ -331,25 +331,22 @@ bool AVX512Test::HasCapabilities() {
 
 #endif /* __AVX512F__ */
 
-template<typename Conf, size_t max = std::variant_size_v<typename Conf::Mode>, size_t num = 1>
+template<typename Conf, typename Func, size_t max = std::variant_size_v<typename Conf::Mode>, size_t num = 1>
 struct ConfigurationModeExecutor {
     static void run(
             Conf & conf,
-            std::function<void(
-                    Conf &)> && lambda) {
+            Func lambda) {
         conf.mode = typename std::variant_alternative<num - 1, typename Conf::Mode>::type();
         lambda(conf);
-        ConfigurationModeExecutor<Conf, max, num + 1>::run(conf, std::forward<std::function<void(
-                Conf &)>>(lambda));
+        ConfigurationModeExecutor<Conf, Func, max, num + 1>::run(conf, lambda);
     }
 };
 
-template<typename Conf, size_t max>
-struct ConfigurationModeExecutor<Conf, max, max> {
+template<typename Conf, typename Func, size_t max>
+struct ConfigurationModeExecutor<Conf, Func, max, max> {
     static void run(
             Conf & conf,
-            std::function<void(
-                    Conf &)> && lambda) {
+            Func lambda) {
         conf.mode = typename std::variant_alternative<max - 1, typename Conf::Mode>::type();
         lambda(conf);
     }
@@ -542,15 +539,15 @@ TestInfos TestBase::Execute(
                     compare(this->bufArith, this->bufDecoded, this->bufArith.nBytes);
                 };
                 auto setFunc = [&conf,&tiAdd,&tiSub,&tiMul,&tiDiv] (int64_t nanos) {
-                    SetForMode<ArithmeticConfiguration, int64_t>::run(conf, nanos, {&tiAdd,&tiSub,&tiMul,&tiDiv});
+                    SetForMode<ArithmeticConfiguration, int64_t>::run(conf, nanos, { {&tiAdd,&tiSub,&tiMul,&tiDiv}});
                 };
                 auto catchFunc = [&conf,&tiAdd,&tiSub,&tiMul,&tiDiv] (const char * msg) {
-                    SetForMode<ArithmeticConfiguration, const char *>::run(conf, msg, {&tiAdd,&tiSub,&tiMul,&tiDiv});
+                    SetForMode<ArithmeticConfiguration, const char *>::run(conf, msg, { {&tiAdd,&tiSub,&tiMul,&tiDiv}});
                 };
                 InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             };
         };
-        ConfigurationModeExecutor<ArithmeticConfiguration>::run(arithConf, func);
+        ConfigurationModeExecutor<ArithmeticConfiguration, typeof(func)>::run(arithConf, func);
     }
 
     if (configTest.enableArithmeticChk) {
@@ -574,15 +571,15 @@ TestInfos TestBase::Execute(
                     compare(this->bufArith, this->bufDecoded, this->bufArith.nBytes);
                 };
                 auto setFunc = [&conf,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (int64_t nanos) {
-                    SetForMode<ArithmeticConfiguration, int64_t>::run(conf, nanos, {&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk});
+                    SetForMode<ArithmeticConfiguration, int64_t>::run(conf, nanos, { {&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk}});
                 };
                 auto catchFunc = [&conf,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (const char * msg) {
-                    SetForMode<ArithmeticConfiguration, const char *>::run(conf, msg, {&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk});
+                    SetForMode<ArithmeticConfiguration, const char *>::run(conf, msg, { {&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk}});
                 };
                 InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             }
         };
-        ConfigurationModeExecutor<ArithmeticConfiguration>::run(arithConf, func);
+        ConfigurationModeExecutor<ArithmeticConfiguration, typeof(func)>::run(arithConf, func);
     }
 
     if (configTest.enableAggregate) {
@@ -604,15 +601,15 @@ TestInfos TestBase::Execute(
                     compare(this->bufArith, this->bufDecoded, 2 * this->getEncodedDataTypeSize());
                 };
                 auto setFunc = [&conf,&tiSum,&tiMin,&tiMax,&tiAvg] (int64_t nanos) {
-                    SetForMode<AggregateConfiguration, int64_t>::run(conf, nanos, {&tiSum,&tiMin,&tiMax,&tiAvg});
+                    SetForMode<AggregateConfiguration, int64_t>::run(conf, nanos, { {&tiSum,&tiMin,&tiMax,&tiAvg}});
                 };
                 auto catchFunc = [&conf,&tiSum,&tiMin,&tiMax,&tiAvg] (const char * msg) {
-                    SetForMode<AggregateConfiguration, const char *>::run(conf, msg, {&tiSum,&tiMin,&tiMax,&tiAvg});
+                    SetForMode<AggregateConfiguration, const char *>::run(conf, msg, { {&tiSum,&tiMin,&tiMax,&tiAvg}});
                 };
                 InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             }
         };
-        ConfigurationModeExecutor<AggregateConfiguration>::run(aggrConf, func);
+        ConfigurationModeExecutor<AggregateConfiguration, typeof(func)>::run(aggrConf, func);
     }
 
     if (configTest.enableAggregateChk) {
@@ -634,15 +631,15 @@ TestInfos TestBase::Execute(
                     compare(this->bufArith, this->bufDecoded, 2 * this->getEncodedDataTypeSize());
                 };
                 auto setFunc = [&conf,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (int64_t nanos) {
-                    SetForMode<AggregateConfiguration, int64_t>::run(conf, nanos, {&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk});
+                    SetForMode<AggregateConfiguration, int64_t>::run(conf, nanos, { {&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk}});
                 };
                 auto catchFunc = [&conf,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (const char * msg) {
-                    SetForMode<AggregateConfiguration, const char *>::run(conf, msg, {&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk});
+                    SetForMode<AggregateConfiguration, const char *>::run(conf, msg, { {&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk}});
                 };
                 InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             }
         };
-        ConfigurationModeExecutor<AggregateConfiguration>::run(aggrConf, func);
+        ConfigurationModeExecutor<AggregateConfiguration, typeof(func)>::run(aggrConf, func);
     }
 
     if (configTest.enableReencodeChk && this->DoReencodeChecked()) {

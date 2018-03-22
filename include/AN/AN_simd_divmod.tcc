@@ -30,57 +30,28 @@
 
 namespace coding_benchmark {
 
-    template<typename VEC, typename T, int I>
-    struct Extractor;
-
-#ifdef __SSE4_2__
-    template<int I>
-    struct Extractor<__m128i, uint32_t, I> {
-        static inline uint32_t extract(__m128i v) {
-            return _mm_extract_epi32(v, I);
-        }
-    };
-
-    template<int I>
-    struct Extractor<__m128i, int32_t, I> {
-        static inline int32_t extract(__m128i v) {
-            return _mm_extract_epi32(v, I);
-        }
-    };
-#endif /* __SSE4_2__ */
-
-#ifdef __AVX2__
-    template<int I>
-    struct Extractor<__m256i, uint32_t, I> {
-        static inline uint32_t extract(__m256i v) {
-            return _mm256_extract_epi32(v, I);
-        }
-    };
-
-    template<int I>
-    struct Extractor<__m256i, int32_t, I> {
-        static inline int32_t extract(__m256i v) {
-            return _mm256_extract_epi32(v, I);
-        }
-    };
-#endif /* __AVX2__ */
-
-    template <typename T, typename VEC, size_t I, size_t MAX>
+    template<typename T, typename VEC, size_t I, size_t MAX>
     struct Detector {
-        static bool isValid(VEC mmIn, T A) {
-            return (Extractor<VEC, T, I>::extract(mmIn) % A == 0) && Detector<T, VEC, I + 1, MAX>::isValid(mmIn, A);
+        static bool isValid(
+                VEC mmIn,
+                T A) {
+            return (mm<VEC, T>::template extract<I>(mmIn) % A == 0) && Detector<T, VEC, I + 1, MAX>::isValid(mmIn, A);
         }
     };
 
-    template <typename T, typename VEC, size_t I>
+    template<typename T, typename VEC, size_t I>
     struct Detector<T, VEC, I, I> {
-        static bool isValid(VEC mmIn, T A) {
-            return (Extractor<VEC, T, I>::extract(mmIn) % A == 0);
+        static bool isValid(
+                VEC mmIn,
+                T A) {
+            return (mm<VEC, T>::template extract<I>(mmIn) % A == 0);
         }
     };
 
-    template <typename T, typename VEC>
-    bool isValid(VEC mmIn, T A) {
+    template<typename T, typename VEC>
+    bool isValid(
+            VEC mmIn,
+            T A) {
         return Detector<T, VEC, 0, (sizeof(VEC) / sizeof(T) - 1)>::isValid(mmIn, A);
     }
 

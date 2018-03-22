@@ -134,29 +134,29 @@ namespace coding_benchmark {
                 auto outV = config.target.template begin<CS>();
                 if (config.numValues >= NUM_VALUES_PER_BLOCK) {
                     for (; i <= (config.numValues - NUM_VALUES_PER_BLOCK); i += NUM_VALUES_PER_BLOCK) {
-                        VEC checksum = simd::mm<VEC, DATA>::set1(0);
+                        VEC checksum = simd::mm<VEC>::setzero();
                         auto pDataOut = reinterpret_cast<VEC *>(outV);
                         for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                            auto tmp = *inV++;
-                            *pDataOut++ = tmp;
+                            auto tmp = simd::mm<VEC>::loadu(inV++);
+                            simd::mm<VEC>::storeu(pDataOut++, tmp);
                             checksum = simd::mm_op<VEC, DATA, xor_is>::cmp(checksum, tmp);
                         }
                         outV = reinterpret_cast<CS*>(pDataOut);
-                        *outV++ = XOR<VEC, CS>::computeFinalChecksum(checksum);
+                        simd::mm<VEC>::storeu(outV++, XOR<VEC, CS>::computeFinalChecksum(checksum));
                     }
                 }
                 // checksum remaining values which do not fit in the block size
                 if (config.numValues >= NUM_VALUES_PER_SIMDREG && i <= (config.numValues - NUM_VALUES_PER_SIMDREG)) {
-                    VEC checksum = simd::mm<VEC, DATA>::set1(0);
+                    VEC checksum = simd::mm<VEC>::setzero();
                     auto dataOut2 = reinterpret_cast<VEC *>(outV);
                     do {
-                        auto tmp = *inV++;
+                        auto tmp = simd::mm<VEC>::loadu(inV++);
                         *dataOut2++ = tmp;
                         checksum = simd::mm_op<VEC, DATA, xor_is>::cmp(checksum, tmp);
                         i += NUM_VALUES_PER_SIMDREG;
                     } while (i <= (config.numValues - NUM_VALUES_PER_SIMDREG));
                     outV = reinterpret_cast<CS*>(dataOut2);
-                    *outV++ = XOR<VEC, CS>::computeFinalChecksum(checksum);
+                    simd::mm<VEC>::storeu(outV++, XOR<VEC, CS>::computeFinalChecksum(checksum));
                 }
                 // checksum remaining integers which do not fit in the SIMD register
                 if (i < config.numValues) {
@@ -185,9 +185,9 @@ namespace coding_benchmark {
                 auto inV = config.target.template begin<VEC>();
                 if (config.numValues >= NUM_VALUES_PER_BLOCK) {
                     for (; i <= (config.numValues - NUM_VALUES_PER_BLOCK); i += NUM_VALUES_PER_BLOCK) {
-                        VEC checksum = simd::mm<VEC, DATA>::set1(0);
+                        VEC checksum = simd::mm<VEC>::setzero();
                         for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                            checksum = simd::mm_op<VEC, DATA, xor_is>::cmp(checksum, *inV++);
+                            checksum = simd::mm_op<VEC, DATA, xor_is>::cmp(checksum, simd::mm<VEC>::loadu(inV++));
                         }
                         auto pChksum = reinterpret_cast<CS*>(inV);
                         if (XORdiff<CS>::checksumsDiffer(*pChksum, XOR<VEC, CS>::computeFinalChecksum(checksum))) {
@@ -198,9 +198,9 @@ namespace coding_benchmark {
                 }
                 // checksum remaining values which do not fit in the block size
                 if (config.numValues >= NUM_VALUES_PER_SIMDREG && i <= (config.numValues - NUM_VALUES_PER_SIMDREG)) {
-                    VEC checksum = simd::mm<VEC, DATA>::set1(0);
+                    VEC checksum = simd::mm<VEC>::setzero();
                     do {
-                        checksum = simd::mm_op<VEC, DATA, xor_is>::cmp(checksum, *inV++);
+                        checksum = simd::mm_op<VEC, DATA, xor_is>::cmp(checksum, simd::mm<VEC>::loadu(inV++));
                         i += NUM_VALUES_PER_SIMDREG;
                     } while (i <= (config.numValues - NUM_VALUES_PER_SIMDREG));
                     auto pChksum = reinterpret_cast<CS*>(inV);
@@ -249,16 +249,16 @@ namespace coding_benchmark {
                 auto mmOperand = simd::mm<VEC, DATA>::set1(config.operand);
                 if (config.numValues >= NUM_VALUES_PER_BLOCK) {
                     for (; i <= (config.numValues - NUM_VALUES_PER_BLOCK); i += NUM_VALUES_PER_BLOCK) {
-                        VEC __attribute__((unused)) oldChecksum = simd::mm<VEC, DATA>::set1(0);
-                        VEC newChecksum = simd::mm<VEC, DATA>::set1(0);
+                        VEC __attribute__((unused)) oldChecksum = simd::mm<VEC>::setzero();
+                        VEC newChecksum = simd::mm<VEC>::setzero();
                         for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                            auto mmTmp = *inV++;
+                            auto mmTmp = simd::mm<VEC>::loadu(inV++);
                             if constexpr (check) {
                                 oldChecksum = simd::mm_op<VEC, DATA, xor_is>::cmp(oldChecksum, mmTmp);
                             }
                             mmTmp = simd::mm_op<VEC, DATA, Functor>::compute(mmTmp, mmOperand);
                             newChecksum = simd::mm_op<VEC, DATA, xor_is>::cmp(newChecksum, mmTmp);
-                            *outV++ = mmTmp;
+                            simd::mm<VEC>::storeu(outV++, mmTmp);
                         }
                         CS * const pStoredChecksum = reinterpret_cast<CS*>(inV);
                         if constexpr (check) {
@@ -274,16 +274,16 @@ namespace coding_benchmark {
                 }
                 // checksum remaining values which do not fit in the block size
                 if (config.numValues >= NUM_VALUES_PER_SIMDREG && i <= (config.numValues - NUM_VALUES_PER_SIMDREG)) {
-                    VEC __attribute__((unused)) oldChecksum = simd::mm<VEC, DATA>::set1(0);
-                    VEC newChecksum = simd::mm<VEC, DATA>::set1(0);
+                    VEC __attribute__((unused)) oldChecksum = simd::mm<VEC>::setzero();
+                    VEC newChecksum = simd::mm<VEC>::setzero();
                     do {
-                        auto mmTmp = *inV++;
+                        auto mmTmp = simd::mm<VEC>::loadu(inV++);
                         if constexpr (check) {
                             oldChecksum = simd::mm_op<VEC, DATA, xor_is>::cmp(oldChecksum, mmTmp);
                         }
                         mmTmp = simd::mm_op<VEC, DATA, Functor>::compute(mmTmp, mmOperand);
                         newChecksum = simd::mm_op<VEC, DATA, xor_is>::cmp(newChecksum, mmTmp);
-                        *outV++ = mmTmp;
+                        simd::mm<VEC>::storeu(outV++, mmTmp);
                         i += NUM_VALUES_PER_SIMDREG;
                     } while (i <= (config.numValues - NUM_VALUES_PER_SIMDREG));
                     CS * const pStoredChecksum = reinterpret_cast<CS*>(inV);
@@ -386,9 +386,9 @@ namespace coding_benchmark {
                 auto mmValue = funcInitVector();
                 if (config.numValues >= NUM_VALUES_PER_BLOCK) {
                     for (; i <= (config.numValues - NUM_VALUES_PER_BLOCK); i += NUM_VALUES_PER_BLOCK) {
-                        VEC __attribute__((unused)) oldChecksum = simd::mm<VEC, DATA>::set1(0);
+                        VEC __attribute__((unused)) oldChecksum = simd::mm<VEC>::setzero();
                         for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                            auto mmTmp = *inV++;
+                            auto mmTmp = simd::mm<VEC>::loadu(inV++);
                             if constexpr (check) {
                                 oldChecksum = simd::mm_op<VEC, DATA, xor_is>::cmp(oldChecksum, mmTmp);
                             }
@@ -405,9 +405,9 @@ namespace coding_benchmark {
                 }
                 // checksum remaining values which do not fit in the block size
                 if (config.numValues >= NUM_VALUES_PER_SIMDREG && i <= (config.numValues - NUM_VALUES_PER_SIMDREG)) {
-                VEC __attribute__((unused)) oldChecksum = simd::mm<VEC, DATA>::set1(0);
+                VEC __attribute__((unused)) oldChecksum = simd::mm<VEC>::setzero();
                     do {
-                        auto mmTmp = *inV++;
+                        auto mmTmp = simd::mm<VEC>::loadu(inV++);
                         if constexpr (check) {
                             oldChecksum = simd::mm_op<VEC, DATA, xor_is>::cmp(oldChecksum, mmTmp);
                         }
@@ -448,7 +448,7 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Sum) {
-                impl<larger_t>([] {return simd::mm<VEC, larger_t>::set1(0);}, [](VEC mmSum, VEC mmTmp) {
+                impl<larger_t>([] {return simd::mm<VEC>::setzero();}, [](VEC mmSum, VEC mmTmp) {
                     auto mmLo = simd::mm<VEC, DATA>::cvt_larger_lo(mmTmp);
                     mmLo = simd::mm_op<VEC, larger_t, add>::compute(mmSum, mmLo);
                     auto mmHi = simd::mm<VEC, DATA>::cvt_larger_hi(mmTmp);
@@ -467,7 +467,7 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Avg) {
-                impl<larger_t>([] {return simd::mm<VEC, larger_t>::set1(0);}, [](VEC mmSum, VEC mmTmp) {
+                impl<larger_t>([] {return simd::mm<VEC>::setzero();}, [](VEC mmSum, VEC mmTmp) {
                     auto mmLo = simd::mm<VEC, DATA>::cvt_larger_lo(mmTmp);
                     mmLo = simd::mm_op<VEC, larger_t, add>::compute(mmSum, mmLo);
                     auto mmHi = simd::mm<VEC, DATA>::cvt_larger_hi(mmTmp);
@@ -513,13 +513,13 @@ private:
                 auto outV = config.target.template begin<VEC>();
                 if (config.numValues >= NUM_VALUES_PER_BLOCK) {
                     for (; i <= (config.numValues - NUM_VALUES_PER_BLOCK); i += NUM_VALUES_PER_BLOCK) {
-                        VEC __attribute__((unused)) checksum = simd::mm<VEC, DATA>::set1(0);
+                        VEC __attribute__((unused)) checksum = simd::mm<VEC>::setzero();
                         for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                            VEC mmTmp = *inV++;
+                            VEC mmTmp = simd::mm<VEC>::loadu(inV++);
                             if constexpr (check) {
                                 checksum = simd::mm_op<VEC, DATA, xor_is>::cmp(checksum, mmTmp);
                             }
-                            *outV++ = mmTmp;
+                            simd::mm<VEC>::storeu(outV++, mmTmp);
                         }
                         auto pChksum = reinterpret_cast<CS*>(inV);
                         if constexpr (check) {
@@ -532,13 +532,13 @@ private:
                 }
                 // checksum remaining values which do not fit in the block size
                 if (config.numValues >= NUM_VALUES_PER_SIMDREG && i <= (config.numValues - NUM_VALUES_PER_SIMDREG)) {
-                    VEC __attribute__((unused)) checksum = simd::mm<VEC, DATA>::set1(0);
+                    VEC __attribute__((unused)) checksum = simd::mm<VEC>::setzero();
                     do {
-                        VEC mmTmp = *inV++;
+                        VEC mmTmp = simd::mm<VEC>::loadu(inV++);
                         if constexpr (check) {
                             checksum = simd::mm_op<VEC, DATA, xor_is>::cmp(checksum, mmTmp);
                         }
-                        *outV++ = mmTmp;
+                        simd::mm<VEC>::storeu(outV++, mmTmp);
                         i += NUM_VALUES_PER_SIMDREG;
                     } while (i <= (config.numValues - NUM_VALUES_PER_SIMDREG));
                     auto pChksum = reinterpret_cast<CS*>(inV);

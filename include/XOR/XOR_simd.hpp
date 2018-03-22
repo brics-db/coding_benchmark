@@ -46,9 +46,9 @@ namespace coding_benchmark {
 
     template<size_t BLOCKSIZE>
     struct XOR_sse42_4x32_4x32 :
-            public XOR_simd<uint32_t, uint32_t, __m128i, BLOCKSIZE> {
+            public XOR_simd<uint32_t, __m128i, __m128i, BLOCKSIZE> {
 
-        using XOR_simd<uint32_t, uint32_t, __m128i, BLOCKSIZE>::XOR_simd;
+        using XOR_simd<uint32_t, __m128i, __m128i, BLOCKSIZE>::XOR_simd;
 
         virtual ~XOR_sse42_4x32_4x32() {
         }

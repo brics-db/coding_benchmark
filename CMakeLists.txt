@@ -98,42 +98,75 @@ src/XOR/XOR_base.cpp \
 src/XOR/XOR_scalar_16_16.cpp src/XOR/XOR_scalar_16_8.cpp src/XOR/XOR_scalar_32_32.cpp src/XOR/XOR_scalar_32_8.cpp \
 src/XOR/XOR_simd.cpp src/XOR/XOR_sse42_4x32_32.cpp src/XOR/XOR_sse42_4x32_4x32.cpp src/XOR/XOR_sse42_8x16_16.cpp src/XOR/XOR_sse42_8x16_8x16.cpp \
 src/XOR/XOR_avx2_16x16_16.cpp src/XOR/XOR_avx2_16x16_16x16.cpp src/XOR/XOR_avx2_8x32_32.cpp src/XOR/XOR_avx2_8x32_8x32.cpp \
-src/AN/AN_scalar_8_16_u_inv.cpp src/AN/AN_scalar_8_16_s_inv.cpp \
-src/AN/AN_scalar_16_32_s_divmod.cpp src/AN/AN_scalar_16_32_s_inv.cpp src/AN/AN_scalar_16_32_u_divmod.cpp src/AN/AN_scalar_16_32_u_inv.cpp \
-src/AN/AN_scalar_32_64_s_inv.cpp src/AN/AN_scalar_32_64_u_inv.cpp \
-src/AN/AN_sse42_16_32_s_divmod.cpp src/AN/AN_sse42_16_32_s_inv.cpp src/AN/AN_sse42_16_32_u_divmod.cpp src/AN/AN_sse42_16_32_u_inv.cpp \
-src/AN/AN_avx2_16_32_s_divmod.cpp src/AN/AN_avx2_16_32_s_inv.cpp src/AN/AN_avx2_16_32_u_divmod.cpp src/AN/AN_avx2_16_32_u_inv.cpp \
+src/AN/AN_scalar_8_16_u_inv.cpp src/AN/AN_scalar_8_16_s_inv.cpp src/AN/AN_scalar_16_32_s_inv.cpp src/AN/AN_scalar_16_32_u_inv.cpp src/AN/AN_scalar_32_64_s_inv.cpp src/AN/AN_scalar_32_64_u_inv.cpp \
+src/AN/AN_scalar_8_16_u_divmod.cpp src/AN/AN_scalar_8_16_s_divmod.cpp src/AN/AN_scalar_16_32_s_divmod.cpp src/AN/AN_scalar_16_32_u_divmod.cpp src/AN/AN_scalar_32_64_s_divmod.cpp src/AN/AN_scalar_32_64_u_divmod.cpp \
+src/AN/AN_sse42_8_16_u_inv.cpp src/AN/AN_sse42_8_16_s_inv.cpp src/AN/AN_sse42_16_32_s_inv.cpp src/AN/AN_sse42_16_32_u_inv.cpp src/AN/AN_sse42_32_64_s_inv.cpp src/AN/AN_sse42_32_64_u_inv.cpp \
+src/AN/AN_sse42_8_16_u_divmod.cpp src/AN/AN_sse42_8_16_s_divmod.cpp src/AN/AN_sse42_16_32_s_divmod.cpp src/AN/AN_sse42_16_32_u_divmod.cpp src/AN/AN_sse42_32_64_s_divmod.cpp src/AN/AN_sse42_32_64_u_divmod.cpp \
+src/AN/AN_avx2_8_16_u_inv.cpp src/AN/AN_avx2_8_16_s_inv.cpp src/AN/AN_avx2_16_32_s_inv.cpp src/AN/AN_avx2_16_32_u_inv.cpp src/AN/AN_avx2_32_64_s_inv.cpp src/AN/AN_avx2_32_64_u_inv.cpp \
+src/AN/AN_avx2_8_16_u_divmod.cpp src/AN/AN_avx2_8_16_s_divmod.cpp src/AN/AN_avx2_16_32_s_divmod.cpp src/AN/AN_avx2_16_32_u_divmod.cpp src/AN/AN_avx2_32_64_s_divmod.cpp src/AN/AN_avx2_32_64_u_divmod.cpp \
 src/CRC/CRC_base.cpp src/CRC/CRC32_scalar_16.cpp src/CRC/CRC32_scalar_32.cpp" "")
 
 add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Util/Test.cpp" benchbase)
 
-add_algorithm(benchmark "src/Main.cpp src/Util/Test.cpp" benchbase)
-
-add_algorithm(benchmark32 "src/Main.cpp src/Util/Test.cpp" benchbase)
-TARGET_COMPILE_DEFINITIONS(benchmark32 PRIVATE "TEST32")
-
-add_algorithm(benchmark_novec "src/Main.cpp src/Util/Test.cpp" benchbase)
-TARGET_COMPILE_OPTIONS(benchmark_novec PUBLIC "-fno-tree-vectorize")
-
-add_algorithm(benchmark32_novec "src/Main.cpp src/Util/Test.cpp" benchbase)
-TARGET_COMPILE_DEFINITIONS(benchmark32_novec PRIVATE "TEST32")
-TARGET_COMPILE_OPTIONS(benchmark32_novec PUBLIC "-fno-tree-vectorize")
-
-FIND_PACKAGE(OpenMP)
-IF(OPENMP_FOUND)
-	add_algorithm(benchmarkOMP2 "src/Main.cpp src/Util/Test.cpp" benchbase)
-	TARGET_COMPILE_DEFINITIONS(benchmarkOMP2 PRIVATE "OMP" "OMPNUMTHREADS=2")
-	append_target_property(benchmarkOMP2 "COMPILE_FLAGS" "${OpenMP_CXX_FLAGS}")
-	append_target_property(benchmarkOMP2 "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
-
-	add_algorithm(benchmarkOMP "src/Main.cpp src/Util/Test.cpp" benchbase)
-	TARGET_COMPILE_DEFINITIONS(benchmarkOMP PRIVATE "OMP")
-	append_target_property(benchmarkOMP "COMPILE_FLAGS" "${OpenMP_CXX_FLAGS}")
-	append_target_property(benchmarkOMP "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
-ENDIF(OPENMP_FOUND)
-
 FIND_PACKAGE(Boost)
 IF(Boost_FOUND)
+	#add_algorithm(benchmark8 "src/Main.cpp src/Util/Test.cpp" benchbase)
+	#TARGET_COMPILE_DEFINITIONS(benchmark8 PRIVATE "TEST8")
+	#TARGET_COMPILE_OPTIONS(benchmark8 PUBLIC "-fno-tree-vectorize")
+
+	add_algorithm(benchmark16 "src/Main.cpp src/Util/Test.cpp" benchbase)
+	TARGET_COMPILE_DEFINITIONS(benchmark16 PRIVATE "TEST16")
+	TARGET_COMPILE_OPTIONS(benchmark16 PUBLIC "-fno-tree-vectorize")
+
+	add_algorithm(benchmark32 "src/Main.cpp src/Util/Test.cpp" benchbase)
+	TARGET_COMPILE_DEFINITIONS(benchmark32 PRIVATE "TEST32")
+	TARGET_COMPILE_OPTIONS(benchmark32 PUBLIC "-fno-tree-vectorize")
+
+	FIND_PACKAGE(OpenMP)
+	IF(OPENMP_FOUND)
+		#add_algorithm(benchmark8_OMP2 "src/Main.cpp src/Util/Test.cpp" benchbase)
+		#TARGET_COMPILE_DEFINITIONS(benchmark8_OMP2 PRIVATE "OMP" "OMPNUMTHREADS=2")
+		#TARGET_COMPILE_DEFINITIONS(benchmark8_OMP2 PRIVATE "TEST8")
+		#TARGET_COMPILE_OPTIONS(benchmark8_OMP2 PUBLIC "-fno-tree-vectorize")
+		#append_target_property(benchmark8_OMP2 "COMPILE_FLAGS" "${OpenMP_CXX_FLAGS}")
+		#append_target_property(benchmark8_OMP2 "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
+
+		#add_algorithm(benchmark8_OMP "src/Main.cpp src/Util/Test.cpp" benchbase)
+		#TARGET_COMPILE_DEFINITIONS(benchmark8_OMP PRIVATE "OMP")
+		#TARGET_COMPILE_DEFINITIONS(benchmark8_OMP PRIVATE "TEST16")
+		#TARGET_COMPILE_OPTIONS(benchmark8_OMP PUBLIC "-fno-tree-vectorize")
+		#append_target_property(benchmark8_OMP "COMPILE_FLAGS" "${OpenMP_CXX_FLAGS}")
+		#append_target_property(benchmark8_OMP "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
+
+		add_algorithm(benchmark16_OMP2 "src/Main.cpp src/Util/Test.cpp" benchbase)
+		TARGET_COMPILE_DEFINITIONS(benchmark16_OMP2 PRIVATE "OMP" "OMPNUMTHREADS=2")
+		TARGET_COMPILE_DEFINITIONS(benchmark16_OMP2 PRIVATE "TEST16")
+		TARGET_COMPILE_OPTIONS(benchmark16_OMP2 PUBLIC "-fno-tree-vectorize")
+		append_target_property(benchmark16_OMP2 "COMPILE_FLAGS" "${OpenMP_CXX_FLAGS}")
+		append_target_property(benchmark16_OMP2 "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
+
+		add_algorithm(benchmark16_OMP "src/Main.cpp src/Util/Test.cpp" benchbase)
+		TARGET_COMPILE_DEFINITIONS(benchmark16_OMP PRIVATE "OMP")
+		TARGET_COMPILE_DEFINITIONS(benchmark16_OMP PRIVATE "TEST16")
+		TARGET_COMPILE_OPTIONS(benchmark16_OMP PUBLIC "-fno-tree-vectorize")
+		append_target_property(benchmark16_OMP "COMPILE_FLAGS" "${OpenMP_CXX_FLAGS}")
+		append_target_property(benchmark16_OMP "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
+
+		add_algorithm(benchmark32_OMP2 "src/Main.cpp src/Util/Test.cpp" benchbase)
+		TARGET_COMPILE_DEFINITIONS(benchmark32_OMP2 PRIVATE "OMP" "OMPNUMTHREADS=2")
+		TARGET_COMPILE_DEFINITIONS(benchmark32_OMP2 PRIVATE "TEST32")
+		TARGET_COMPILE_OPTIONS(benchmark32_OMP2 PUBLIC "-fno-tree-vectorize")
+		append_target_property(benchmark32_OMP2 "COMPILE_FLAGS" "${OpenMP_CXX_FLAGS}")
+		append_target_property(benchmark32_OMP2 "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
+
+		add_algorithm(benchmark32_OMP "src/Main.cpp src/Util/Test.cpp" benchbase)
+		TARGET_COMPILE_DEFINITIONS(benchmark32_OMP PRIVATE "OMP")
+		TARGET_COMPILE_DEFINITIONS(benchmark32_OMP PRIVATE "TEST32")
+		TARGET_COMPILE_OPTIONS(benchmark32_OMP PUBLIC "-fno-tree-vectorize")
+		append_target_property(benchmark32_OMP "COMPILE_FLAGS" "${OpenMP_CXX_FLAGS}")
+		append_target_property(benchmark32_OMP "LINK_FLAGS" "${OpenMP_CXX_FLAGS}")
+	ENDIF(OPENMP_FOUND)
+
     add_algorithm(TestModuloInverseComputation "src/TestModuloInverseComputation.cpp src/Util/Stopwatch.cpp")
     add_algorithm(TestModuloInverseComputation2 "src/TestModuloInverseComputation2.cpp src/Util/Stopwatch.cpp")
 ELSE(Boost_FOUND)

@@ -296,3 +296,9 @@ struct CopyTest32 :
         public CopyTest<uint32_t, UNROLL> {
     using CopyTest<uint32_t, UNROLL>::CopyTest;
 };
+
+template<size_t UNROLL>
+struct CopyTest64 :
+        public CopyTest<uint64_t, UNROLL> {
+    using CopyTest<uint64_t, UNROLL>::CopyTest;
+};
