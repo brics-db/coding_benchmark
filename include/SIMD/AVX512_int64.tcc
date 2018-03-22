@@ -508,7 +508,7 @@ namespace coding_benchmark {
 #else
                         auto r0 = mm_op<__m256i, T, coding_benchmark::mul>::mullo(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0));
                         auto r1 = mm_op<__m256i, T, coding_benchmark::mul>::mullo(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1));
-                        return _mm512_insertf32x8(_mm512_castsi256_si512(r0), r1, 1);
+                        return _mm512_inserti32x8(_mm512_castsi256_si512(r0), r1, 1);
 #endif
                     }
                 };
@@ -534,7 +534,7 @@ namespace coding_benchmark {
 #else
                         auto r0 = mm_op<__m256i, T, coding_benchmark::div>::div(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0));
                         auto r1 = mm_op<__m256i, T, coding_benchmark::div>::div(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1));
-                        return _mm512_insertf32x8(_mm512_castsi256_si512(r0), r1, 1);
+                        return _mm512_inserti32x8(_mm512_castsi256_si512(r0), r1, 1);
 #endif
                     }
                 };

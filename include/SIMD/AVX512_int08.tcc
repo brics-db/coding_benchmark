@@ -272,10 +272,9 @@ namespace coding_benchmark {
 #ifdef __AVX512BW__
                         return _mm512_cmpge_epi8_mask(a, b);
 #else
-                        auto mm256 = coding_benchmark::simd::mm<__m256i, T>::geq_mask(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0));
-                        auto mm = _mm512_castps256_ps512(mm256);
-                        mm256 = coding_benchmark::simd::mm<__m256i, T>::geq_mask(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1));
-                        return _mm512_inserti64x4(mm, mm256, 1);
+                        auto mask0 = static_cast<uint64_t>(mm<__m256i, T>::geq_mask(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0)));
+                        auto mask1 = static_cast<uint64_t>(mm<__m256i, T>::geq_mask(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1)));
+                        return (mask1 << 32) | mask0;
 #endif
                     }
 
@@ -653,7 +652,7 @@ namespace coding_benchmark {
                         return _mm512_add_epi8(a, b);
 #else
                         auto mm256 = coding_benchmark::simd::mm_op<__m256i, T, coding_benchmark::add>::add(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0));
-                        auto mm = _mm512_castps256_ps512(mm256);
+                        auto mm = _mm512_castsi256_si512(mm256);
                         mm256 = coding_benchmark::simd::mm_op<__m256i, T, coding_benchmark::add>::add(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1));
                         return _mm512_inserti64x4(mm, mm256, 1);
 #endif
@@ -676,7 +675,7 @@ namespace coding_benchmark {
                         return _mm512_sub_epi8(a, b);
 #else
                         auto mm256 = coding_benchmark::simd::mm_op<__m256i, T, coding_benchmark::sub>::sub(_mm512_extracti64x4_epi64(a, 0), _mm512_extracti64x4_epi64(b, 0));
-                        auto mm = _mm512_castps256_ps512(mm256);
+                        auto mm = _mm512_castsi256_si512(mm256);
                         mm256 = coding_benchmark::simd::mm_op<__m256i, T, coding_benchmark::sub>::sub(_mm512_extracti64x4_epi64(a, 1), _mm512_extracti64x4_epi64(b, 1));
                         return _mm512_inserti64x4(mm, mm256, 1);
 #endif
