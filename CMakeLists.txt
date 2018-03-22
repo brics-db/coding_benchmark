@@ -108,16 +108,16 @@ src/CRC/CRC_base.cpp src/CRC/CRC32_scalar_16.cpp src/CRC/CRC32_scalar_32.cpp" ""
 
 add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Util/Test.cpp" benchbase)
 
+#add_algorithm(benchmark8 "src/Main.cpp src/Util/Test.cpp" benchbase)
+#TARGET_COMPILE_DEFINITIONS(benchmark8 PRIVATE "TEST8")
+#TARGET_COMPILE_OPTIONS(benchmark8 PUBLIC "-fno-tree-vectorize")
+
+add_algorithm(benchmark16 "src/Main.cpp src/Util/Test.cpp" benchbase)
+TARGET_COMPILE_DEFINITIONS(benchmark16 PRIVATE "TEST16")
+TARGET_COMPILE_OPTIONS(benchmark16 PUBLIC "-fno-tree-vectorize")
+
 FIND_PACKAGE(Boost)
 IF(Boost_FOUND)
-	#add_algorithm(benchmark8 "src/Main.cpp src/Util/Test.cpp" benchbase)
-	#TARGET_COMPILE_DEFINITIONS(benchmark8 PRIVATE "TEST8")
-	#TARGET_COMPILE_OPTIONS(benchmark8 PUBLIC "-fno-tree-vectorize")
-
-	add_algorithm(benchmark16 "src/Main.cpp src/Util/Test.cpp" benchbase)
-	TARGET_COMPILE_DEFINITIONS(benchmark16 PRIVATE "TEST16")
-	TARGET_COMPILE_OPTIONS(benchmark16 PUBLIC "-fno-tree-vectorize")
-
 	add_algorithm(benchmark32 "src/Main.cpp src/Util/Test.cpp" benchbase)
 	TARGET_COMPILE_DEFINITIONS(benchmark32 PRIVATE "TEST32")
 	TARGET_COMPILE_OPTIONS(benchmark32 PUBLIC "-fno-tree-vectorize")
