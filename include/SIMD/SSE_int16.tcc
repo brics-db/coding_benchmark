@@ -278,11 +278,6 @@ namespace coding_benchmark {
                 }
             }
 
-            static inline __m128i cvt_smaller(
-                    __m128i a) {
-                return _mm_cvtepi16_epi8(a);
-            }
-
         private:
     static const __m128i * const SHUFFLE_TABLE;
             };
@@ -569,7 +564,6 @@ namespace coding_benchmark {
             using BASE::popcount3;
             using BASE::cvt_larger_hi;
             using BASE::cvt_larger_lo;
-            using BASE::cvt_smaller;
         };
 
         template<>
@@ -715,7 +709,6 @@ namespace coding_benchmark {
             using BASE::popcount3;
             using BASE::cvt_larger_hi;
             using BASE::cvt_larger_lo;
-            using BASE::cvt_smaller;
         };
 
         template<>

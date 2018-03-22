@@ -150,15 +150,22 @@ namespace coding_benchmark {
 
             using BASE::mask_t;
             using BASE::popcnt_t;
+            using BASE::FULL_MASK;
 
-            using BASE::set;
             using BASE::set1;
+            using BASE::set;
             using BASE::set_inc;
+            using BASE::extract;
             using BASE::min;
             using BASE::max;
             using BASE::sum;
             using BASE::pack_right;
             using BASE::pack_right2;
+            using BASE::popcount;
+            using BASE::popcount2;
+            using BASE::popcount3;
+            using BASE::cvt_larger_hi;
+            using BASE::cvt_larger_lo;
         };
 
         template<typename T>

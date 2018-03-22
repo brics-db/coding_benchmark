@@ -166,7 +166,6 @@ namespace coding_benchmark {
             using BASE::popcount3;
             using BASE::cvt_larger_hi;
             using BASE::cvt_larger_lo;
-            using BASE::cvt_smaller;
         };
 
         template<typename T>

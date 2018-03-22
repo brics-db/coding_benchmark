@@ -344,14 +344,9 @@ namespace coding_benchmark {
                         }
                     }
 
-                    static inline __m128i cvt_smaller(
-                            __m128i a) {
-                        return a; // WE CANNOT CONVERT SMALLER
-                    }
-
                 private:
-    static const uint64_t * const SHUFFLE_TABLE_L;
-    static const uint64_t * const SHUFFLE_TABLE_H;
+                    static const uint64_t * const SHUFFLE_TABLE_L;
+                    static const uint64_t * const SHUFFLE_TABLE_H;
                 };
 
                 template<typename T, template<typename > class Op>
@@ -635,7 +630,6 @@ namespace coding_benchmark {
                 using BASE::popcount3;
                 using BASE::cvt_larger_hi;
                 using BASE::cvt_larger_lo;
-                using BASE::cvt_smaller;
             };
 
             template<>
@@ -781,7 +775,6 @@ namespace coding_benchmark {
                 using BASE::popcount3;
                 using BASE::cvt_larger_hi;
                 using BASE::cvt_larger_lo;
-                using BASE::cvt_smaller;
             };
 
             template<>
