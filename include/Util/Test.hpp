@@ -24,6 +24,7 @@
 #include <variant>
 #include <type_traits>
 #include <sstream>
+#include <random>
 
 #ifdef OMP
 #include <omp.h>
@@ -31,21 +32,56 @@
 
 #include <Util/AlignedBlock.hpp>
 #include <Util/TestInfo.hpp>
+#include <Util/Helpers.hpp>
+#include <Util/Functors.hpp>
 #include <Util/ErrorInfo.hpp>
 #include <Util/Intrinsics.hpp>
 #include <Util/TestConfiguration.hpp>
 
-struct DataGenerationConfiguration {
-    const std::optional<size_t> numEffectiveLSBs;
+class Randomizer {
+    static Randomizer instance;
 
-    DataGenerationConfiguration()
-            : numEffectiveLSBs(std::nullopt) {
-    }
+    std::random_device rDev;
+    std::default_random_engine rEng;
+    std::uniform_int_distribution<int> rDist;
+
+    Randomizer();
+
+public:
+    static int getUniformInt();
+};
+
+class DataGenerationConfiguration {
+
+public:
+    const std::optional<size_t> numEffectiveBitsData;
+    const std::optional<size_t> numIneffectiveLSBsData;
+    const std::optional<size_t> numEffectiveBitsArithOperand;
+    const std::optional<size_t> numIneffectiveLSBsArithOperand;
+
+    DataGenerationConfiguration();
 
     DataGenerationConfiguration(
-            const size_t numEffectiveLSBs)
-            : numEffectiveLSBs(numEffectiveLSBs) {
-    }
+            const size_t numEffectiveLSBs);
+
+    DataGenerationConfiguration(
+            const size_t numEffectiveLSBs,
+            const size_t numIneffectiveLSBsData);
+
+    DataGenerationConfiguration(
+            const size_t numEffectiveLSBs,
+            const size_t numIneffectiveLSBsData,
+            const size_t numEffectiveBitsArithOperand);
+
+    DataGenerationConfiguration(
+            const size_t numEffectiveLSBs,
+            const size_t numIneffectiveLSBsData,
+            const size_t numEffectiveBitsArithOperand,
+            const size_t numIneffectiveLSBsArithOperand);
+
+    int getUniformData() const;
+
+    int getUniformArithOperand() const;
 };
 
 struct TestBase0 {
@@ -58,15 +94,40 @@ struct TestBase0 {
     virtual bool HasCapabilities() = 0;
 };
 
-struct TestBase :
+// Forward Declaration needed in TestBase
+template<typename DATARAW, typename DATAENC>
+class Test;
+
+class TestBase :
         virtual public TestBase0 {
+
+    template<typename, typename >
+    friend class Test;
+
+    bool internalPreEncodeCalled;
+    bool internalPreCheckCalled;
+    bool internalPreFilterCalled;
+    bool internalPreFilterCheckedCalled;
+    bool internalPreArithmeticCalled;
+    bool internalPreArithmeticCheckedCalled;
+    bool internalPreAggregateCalled;
+    bool internalPreAggregateCheckedCalled;
+    bool internalPreReencodeCheckedCalled;
+    bool internalPreDecodeCalled;
+    bool internalPreDecodeCheckedCalled;
 
 protected:
     size_t datawidth;
     std::string name;
     AlignedBlock bufRaw;
+    AlignedBlock bufScratchPad;
     AlignedBlock bufEncoded;
     AlignedBlock bufResult;
+
+private:
+    // internal buffers hidden on purpose from client code!
+    AlignedBlock bufArith; // store results for UNENCODED arithmetic and aggregate operations, done on bufRaw (for these we use the simple implementation from CopyTest) to allow to compare the result against the encoded version
+    AlignedBlock bufDecoded; // buffer for the unencoding of results. This is used to decode the results from e.g. arithmetic and aggregate operations and then compare against bufArith
 
 public:
     TestBase(
@@ -84,13 +145,13 @@ public:
     virtual void ResetBuffers(
             const DataGenerationConfiguration & config) = 0;
 
-    virtual size_t getInputTypeSize() = 0;
+    virtual size_t getRawDataTypeSize() = 0;
 
-    virtual size_t getOutputTypeSize() = 0;
+    virtual size_t getEncodedDataTypeSize() = 0;
 
     // Encoding
     virtual void PreEncode(
-            const EncodeConfiguration & config);
+            const EncodeConfiguration & config) = 0;
 
     virtual void RunEncode(
             const EncodeConfiguration & config) = 0;
@@ -99,7 +160,7 @@ public:
     virtual bool DoCheck();
 
     virtual void PreCheck(
-            const CheckConfiguration & config);
+            const CheckConfiguration & config) = 0;
 
     virtual void RunCheck(
             const CheckConfiguration & config);
@@ -108,7 +169,7 @@ public:
     virtual bool DoFilter();
 
     virtual void PreFilter(
-            const FilterConfiguration & config);
+            const FilterConfiguration & config) = 0;
 
     virtual void RunFilter(
             const FilterConfiguration & config);
@@ -117,7 +178,7 @@ public:
     virtual bool DoFilterChecked();
 
     virtual void PreFilterChecked(
-            const FilterConfiguration & config);
+            const FilterConfiguration & config) = 0;
 
     virtual void RunFilterChecked(
             const FilterConfiguration & config);
@@ -127,7 +188,7 @@ public:
             const ArithmeticConfiguration & config);
 
     virtual void PreArithmetic(
-            const ArithmeticConfiguration & config);
+            const ArithmeticConfiguration & config) = 0;
 
     virtual void RunArithmetic(
             const ArithmeticConfiguration & config);
@@ -137,7 +198,7 @@ public:
             const ArithmeticConfiguration & config);
 
     virtual void PreArithmeticChecked(
-            const ArithmeticConfiguration & config);
+            const ArithmeticConfiguration & config) = 0;
 
     virtual void RunArithmeticChecked(
             const ArithmeticConfiguration & config);
@@ -147,7 +208,7 @@ public:
             const AggregateConfiguration & config);
 
     virtual void PreAggregate(
-            const AggregateConfiguration & config);
+            const AggregateConfiguration & config) = 0;
 
     virtual void RunAggregate(
             const AggregateConfiguration & config);
@@ -157,7 +218,7 @@ public:
             const AggregateConfiguration & config);
 
     virtual void PreAggregateChecked(
-            const AggregateConfiguration & config);
+            const AggregateConfiguration & config) = 0;
 
     virtual void RunAggregateChecked(
             const AggregateConfiguration & config);
@@ -166,7 +227,7 @@ public:
     virtual bool DoReencodeChecked();
 
     virtual void PreReencodeChecked(
-            const ReencodeConfiguration & config);
+            const ReencodeConfiguration & config) = 0;
 
     virtual void RunReencodeChecked(
             const ReencodeConfiguration & config);
@@ -175,7 +236,7 @@ public:
     virtual bool DoDecode();
 
     virtual void PreDecode(
-            const DecodeConfiguration & config);
+            const DecodeConfiguration & config) = 0;
 
     virtual void RunDecode(
             const DecodeConfiguration & config);
@@ -184,7 +245,7 @@ public:
     virtual bool DoDecodeChecked();
 
     virtual void PreDecodeChecked(
-            const DecodeConfiguration & config);
+            const DecodeConfiguration & config) = 0;
 
     virtual void RunDecodeChecked(
             const DecodeConfiguration & config);
@@ -205,8 +266,30 @@ struct ScalarTest :
     virtual bool HasCapabilities() override;
 };
 
+template<typename VEC>
+struct SIMDTestBase {
+    virtual ~SIMDTestBase() {
+    }
+
+    template<typename T, typename V = VEC>
+    V * const ComputeEnd(
+            V * mmBeg,
+            const SubTestConfiguration & config) const {
+        return reinterpret_cast<V*>(reinterpret_cast<T*>(mmBeg) + config.numValues);
+    }
+};
+
+template<typename V>
+struct SIMDTest;
+
+#ifdef __SSE4_2__
+
+extern template
+struct SIMDTestBase<__m128i>;
+
 struct SSE42Test :
-        virtual public TestBase0 {
+        virtual public TestBase0,
+        public virtual SIMDTestBase<__m128i> {
 
     virtual ~SSE42Test();
 
@@ -215,8 +298,26 @@ struct SSE42Test :
     virtual bool HasCapabilities() override;
 };
 
+template<>
+struct SIMDTest<__m128i> : public SSE42Test {
+
+    virtual ~SIMDTest() {};
+
+    using SSE42Test::getSIMDtypeName;
+    using SSE42Test::HasCapabilities;
+    using SSE42Test::SIMDTestBase::ComputeEnd;
+};
+
+#endif /* __SSE4_2__ */
+
+#ifdef __AVX2__
+
+extern template
+struct SIMDTestBase<__m256i>;
+
 struct AVX2Test :
-        virtual public TestBase0 {
+        virtual public TestBase0,
+        public virtual SIMDTestBase<__m256i> {
 
     virtual ~AVX2Test();
 
@@ -225,8 +326,26 @@ struct AVX2Test :
     virtual bool HasCapabilities() override;
 };
 
+template<>
+struct SIMDTest<__m256i> : public AVX2Test {
+
+    virtual ~SIMDTest() {};
+
+    using AVX2Test::getSIMDtypeName;
+    using AVX2Test::HasCapabilities;
+    using AVX2Test::SIMDTestBase::ComputeEnd;
+};
+
+#endif /* __AVX2__ */
+
+#ifdef __AVX512F__
+
+extern template
+struct SIMDTestBase<__m512i>;
+
 struct AVX512Test :
-        virtual public TestBase0 {
+        virtual public TestBase0,
+        public virtual SIMDTestBase<__m512i> {
 
     virtual ~AVX512Test();
 
@@ -235,37 +354,6 @@ struct AVX512Test :
     virtual bool HasCapabilities() override;
 };
 
-template<typename V>
-struct SIMDTest;
-
-#ifdef __SSE4_2__
-
-template<>
-struct SIMDTest<__m128i> : public SSE42Test {
-
-    virtual ~SIMDTest() {};
-
-    using SSE42Test::getSIMDtypeName;
-    using SSE42Test::HasCapabilities;
-};
-
-#endif
-
-#ifdef __AVX2__
-
-template<>
-struct SIMDTest<__m256i> : public AVX2Test {
-
-    virtual ~SIMDTest() {};
-
-    using AVX2Test::getSIMDtypeName;
-    using AVX2Test::HasCapabilities;
-};
-
-#endif
-
-#ifdef __AVX512F__
-
 template<>
 struct SIMDTest<__m512i> : public AVX512Test {
 
@@ -273,14 +361,16 @@ struct SIMDTest<__m512i> : public AVX512Test {
 
     using AVX512Test::getSIMDtypeName;
     using AVX512Test::HasCapabilities;
+    using AVX512Test::SIMDTestBase::ComputeEnd;
 };
 
-#endif
+#endif /* __AVX512F__ */
 
 template<typename DATARAW, typename DATAENC>
-struct Test :
+class Test :
         public TestBase {
 
+public:
     Test(
             const std::string & name,
             AlignedBlock & bufRaw,
@@ -292,31 +382,261 @@ struct Test :
     virtual ~Test() {
     }
 
-    virtual size_t getInputTypeSize() override {
+    virtual size_t getRawDataTypeSize() override {
         return sizeof(DATARAW);
     }
 
-    virtual size_t getOutputTypeSize() override {
+    virtual size_t getEncodedDataTypeSize() override {
         return sizeof(DATAENC);
     }
 
-    size_t getNumValues() {
+    size_t getNumValues() const {
         return this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
     }
 
     void ResetBuffers(
             const DataGenerationConfiguration & dataGenConfig) override {
         DATARAW mask = static_cast<DATARAW>(-1);
-        if (dataGenConfig.numEffectiveLSBs) {
-            mask = static_cast<DATARAW>((1ull << *dataGenConfig.numEffectiveLSBs) - 1ull);
+        if (dataGenConfig.numEffectiveBitsData) {
+            mask = static_cast<DATARAW>((1ull << dataGenConfig.numEffectiveBitsData.value()) - 1ull);
         }
-        auto pInEnd = bufRaw.template end<DATARAW>();
+        if (dataGenConfig.numIneffectiveLSBsData) {
+            mask &= ~static_cast<DATARAW>((1ull << dataGenConfig.numIneffectiveLSBsData.value()) - 1ull);
+        }
+        auto pInEnd = this->bufRaw.template end<DATARAW>();
         DATARAW value = static_cast<DATARAW>(12783);
-        for (DATARAW* pIn = bufRaw.template begin<DATARAW>(); pIn < pInEnd; ++pIn) {
-            *pIn = mask & value;
-            value = value * static_cast<DATARAW>(7577) + static_cast<DATARAW>(10467);
+        DATARAW* pIn = this->bufRaw.template begin<DATARAW>();
+        while (pIn < pInEnd) {
+            DATARAW x;
+            do {
+                x = mask & value;
+                value = value * static_cast<DATARAW>(7577) + static_cast<DATARAW>(10467);
+            } while (x == 0);
+            *pIn++ = x;
         }
-        memset(bufEncoded.begin(), 0, bufEncoded.nBytes);
-        memset(bufResult.begin(), 0, bufResult.nBytes);
+        this->bufEncoded.clear();
+        this->bufResult.clear();
+        this->bufArith.clear();
+        this->bufDecoded.clear();
+    }
+
+    void PreEncode(
+            const EncodeConfiguration & config) {
+        config.target.clear();
+        this->bufScratchPad.clear();
+        this->internalPreEncodeCalled = true;
+    }
+
+    void PreCheck(
+            const CheckConfiguration & config) {
+        this->bufScratchPad.clear();
+        this->internalPreCheckCalled = true;
+    }
+
+    void PreFilter(
+            const FilterConfiguration & config) {
+        config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
+        this->internalPreFilterCalled = true;
+    }
+
+    void PreFilterChecked(
+            const FilterConfiguration & config) {
+        config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
+        this->internalPreFilterCheckedCalled = true;
+    }
+
+private:
+    struct Arithmetor {
+        Test & test;
+        const ArithmeticConfiguration & config;
+        Arithmetor(
+                Test & test,
+                const ArithmeticConfiguration & config)
+                : test(test),
+                  config(config) {
+        }
+        void operator()(
+                ArithmeticConfiguration::Add) {
+            auto beg = config.source.template begin<DATARAW>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATARAW>();
+            while (beg < end) {
+                *out++ = *beg++ + config.operand;
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Sub) {
+            auto beg = config.source.template begin<DATARAW>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATARAW>();
+            while (beg < end) {
+                *out++ = *beg++ - config.operand;
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Mul) {
+            auto beg = config.source.template begin<DATARAW>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATARAW>();
+            while (beg < end) {
+                *out++ = *beg++ * config.operand;
+            }
+        }
+        void operator()(
+                ArithmeticConfiguration::Div) {
+            auto beg = config.source.template begin<DATARAW>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATARAW>();
+            while (beg < end) {
+                *out++ = *beg++ / config.operand;
+            }
+        }
+    };
+
+public:
+    void PreArithmetic(
+            const ArithmeticConfiguration & config) {
+        config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
+        // here we prepare the adapted raw data (with the given arithmetic operation) aginst which
+        // the encoded data (modified also by the given arithmetic operation) can be checked.
+        // The encoded operation will store its result in bufResult, so we can check bufArith against
+        // bufResult then.
+        this->bufArith.clear();
+        this->bufDecoded.clear();
+        ArithmeticConfiguration ac(config, this->bufRaw, this->bufArith, config.mode, config.operand);
+        std::visit(Arithmetor(*this, ac), ac.mode);
+        this->internalPreArithmeticCalled = true;
+    }
+
+    void PreArithmeticChecked(
+            const ArithmeticConfiguration & config) {
+        config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
+        // here we prepare the adapted raw data (with the given arithmetic operation) aginst which
+        // the encoded data (modified also by the given arithmetic operation) can be checked.
+        // The encoded operation will store its result in bufResult, so we can check bufArith against
+        // bufResult then.
+        this->bufArith.clear();
+        this->bufDecoded.clear();
+        ArithmeticConfiguration ac(config, this->bufRaw, this->bufArith, config.mode, config.operand);
+        std::visit(Arithmetor(*this, ac), ac.mode);
+        this->internalPreArithmeticCheckedCalled = true;
+    }
+
+private:
+
+    struct Aggregator {
+        typedef typename Larger<DATARAW>::larger_t larger_t;
+        const Test & test;
+        const AggregateConfiguration & config;
+        Aggregator(
+                const Test & test,
+                const AggregateConfiguration & config)
+                : test(test),
+                  config(config) {
+        }
+        void operator()(
+                AggregateConfiguration::Sum) {
+            larger_t sum = larger_t(0);
+            auto beg = config.source.template begin<DATARAW>();
+            const auto end = beg + config.numValues;
+            auto out = config.target.template begin<larger_t>();
+            while (beg < end) {
+                sum += *beg++;
+            }
+            *out = sum;
+        }
+        void operator()(
+                AggregateConfiguration::Min) {
+            DATARAW min(std::numeric_limits<DATARAW>::max());
+            auto beg = config.source.template begin<DATARAW>();
+            const auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATARAW>();
+            while (beg < end) {
+                min = std::min(min, *beg++);
+            }
+            *out = min;
+        }
+        void operator()(
+                AggregateConfiguration::Max) {
+            DATARAW max(std::numeric_limits<DATARAW>::min());
+            auto beg = config.source.template begin<DATARAW>();
+            const auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATARAW>();
+            while (beg < end) {
+                max = std::max(max, *beg++);
+            }
+            *out = max;
+        }
+        void operator()(
+                AggregateConfiguration::Avg) {
+            larger_t sum = larger_t(0);
+            auto beg = config.source.template begin<DATARAW>();
+            const auto end = beg + config.numValues;
+            auto out = config.target.template begin<larger_t>();
+            while (beg < end) {
+                sum += *beg++;
+            }
+            *out = sum / config.numValues;
+        }
+    };
+
+public:
+
+    void PreAggregate(
+            const AggregateConfiguration & config) {
+        config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
+        // here we prepare the adapted raw data (with the given aggregate operation) aginst which
+        // the encoded data (modified also by the given aggregate operation) can be checked.
+        // The encoded operation will store its result in bufResult, so we can check bufArith against
+        // bufResult then.
+        this->bufArith.clear();
+        this->bufDecoded.clear();
+        AggregateConfiguration ac(config, this->bufRaw, this->bufArith, config.mode);
+        std::visit(Aggregator(*this, ac), ac.mode);
+        this->internalPreAggregateCalled = true;
+    }
+
+    void PreAggregateChecked(
+            const AggregateConfiguration & config) {
+        config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
+        // here we prepare the adapted raw data (with the given aggregate operation) aginst which
+        // the encoded data (modified also by the given aggregate operation) can be checked.
+        // The encoded operation will store its result in bufResult, so we can check bufArith against
+        // bufResult then.
+        this->bufArith.clear();
+        this->bufDecoded.clear();
+        AggregateConfiguration ac(config, this->bufRaw, this->bufArith, config.mode);
+        std::visit(Aggregator(*this, ac), ac.mode);
+        this->internalPreAggregateCheckedCalled = true;
+    }
+
+    void PreReencodeChecked(
+            const ReencodeConfiguration & config) {
+        config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
+        // TODO after Run: decode to bufDecoded and compare against bufRaw
+        this->internalPreReencodeCheckedCalled = true;
+    }
+
+    void PreDecode(
+            const DecodeConfiguration & config) {
+        config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
+        // TODO after Run: compare config.target against bufRaw
+        this->internalPreDecodeCalled = true;
+    }
+
+    void PreDecodeChecked(
+            const DecodeConfiguration & config) {
+        config.target.clear(); // make sure the target buffer is empty
+        this->bufScratchPad.clear();
+        // TODO after Run: compare config.target against bufRaw
+        this->internalPreDecodeCheckedCalled = true;
     }
 };

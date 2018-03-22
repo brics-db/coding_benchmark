@@ -25,15 +25,7 @@
 
 #define LIB_COLUMN_OPERATORS_SIMD_SSE_HPP_
 
-#include <cstdint>
-#include <cstdlib>
-#include <functional>
-#include <type_traits>
-
-#include <Util/Intrinsics.hpp>
-#include <Util/Functors.hpp>
-
-#include <SIMD/SIMD.hpp>
+#include <SIMD/SIMD.tcc>
 #include <SIMD/SSE_base.tcc>
 #include <SIMD/SSE_int08.tcc>
 #include <SIMD/SSE_int16.tcc>
@@ -43,29 +35,12 @@
 namespace coding_benchmark {
     namespace simd {
 
-        template<typename T>
-        struct mm<__m128i, T> :
-                public sse::mm128<T> {
-
-            typedef sse::mm128<T> BASE;
-
-            using BASE::mask_t;
-            using BASE::popcnt_t;
-            using BASE::FULL_MASK;
-
-            using BASE::set;
-            using BASE::set1;
-            using BASE::set_inc;
-            using BASE::min;
-            using BASE::max;
-            using BASE::sum;
-            using BASE::pack_right;
-            using BASE::pack_right2;
-            using BASE::popcount;
-            using BASE::popcount2;
-            using BASE::popcount3;
-            using BASE::cvt_larger_lo;
-            using BASE::cvt_larger_hi;
+        template<>
+        struct mm<__m128i> {
+            static inline __m128i setzero(
+                    ) {
+                return _mm_setzero_si128();
+            }
 
             static inline __m128i loadu(
                     __m128i * src) {
@@ -77,6 +52,120 @@ namespace coding_benchmark {
                     __m128i src) {
                 _mm_storeu_si128(dst, src);
             }
+
+            static inline uint8_t loadu(
+                    uint8_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    uint8_t * dst,
+                    uint8_t src) {
+                *dst = src;
+            }
+
+            static inline int8_t loadu(
+                    int8_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    int8_t * dst,
+                    int8_t src) {
+                *dst = src;
+            }
+
+            static inline uint16_t loadu(
+                    uint16_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    uint16_t * dst,
+                    uint16_t src) {
+                *dst = src;
+            }
+
+            static inline int16_t loadu(
+                    int16_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    int16_t * dst,
+                    int16_t src) {
+                *dst = src;
+            }
+
+            static inline uint32_t loadu(
+                    uint32_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    uint32_t * dst,
+                    uint32_t src) {
+                *dst = src;
+            }
+
+            static inline int32_t loadu(
+                    int32_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    int32_t * dst,
+                    int32_t src) {
+                *dst = src;
+            }
+
+            static inline uint64_t loadu(
+                    uint64_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    uint64_t * dst,
+                    uint64_t src) {
+                *dst = src;
+            }
+
+            static inline int64_t loadu(
+                    int64_t * src) {
+                return *src;
+            }
+
+            static inline void storeu(
+                    int64_t * dst,
+                    int64_t src) {
+                *dst = src;
+            }
+        };
+
+        template<typename T>
+        struct mm<__m128i, T> :
+                public sse::mm128<T> {
+
+            typedef sse::mm128<T> BASE;
+
+            using BASE::mask_t;
+            using BASE::popcnt_t;
+            using BASE::FULL_MASK;
+
+            using BASE::set1;
+            using BASE::set;
+            using BASE::set_inc;
+            using BASE::extract;
+            using BASE::min;
+            using BASE::max;
+            using BASE::sum;
+            using BASE::pack_right;
+            using BASE::pack_right2;
+            using BASE::popcount;
+            using BASE::popcount2;
+            using BASE::popcount3;
+            using BASE::cvt_larger_hi;
+            using BASE::cvt_larger_lo;
         };
 
         template<typename T>
@@ -117,8 +206,8 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, std::equal_to> :
-                public sse::mm128op<T, std::less> {
-            typedef sse::mm128op<T, std::less> BASE;
+                public sse::mm128op<T, std::equal_to> {
+            typedef sse::mm128op<T, std::equal_to> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;
@@ -126,8 +215,8 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, std::not_equal_to> :
-                public sse::mm128op<T, std::less> {
-            typedef sse::mm128op<T, std::less> BASE;
+                public sse::mm128op<T, std::not_equal_to> {
+            typedef sse::mm128op<T, std::not_equal_to> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;
@@ -153,8 +242,8 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::xor_is> :
-                public sse::mm128op<T, coding_benchmark::or_is> {
-            typedef sse::mm128op<T, coding_benchmark::or_is> BASE;
+                public sse::mm128op<T, coding_benchmark::xor_is> {
+            typedef sse::mm128op<T, coding_benchmark::xor_is> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;
@@ -162,8 +251,8 @@ namespace coding_benchmark {
 
         template<typename T>
         struct mm_op<__m128i, T, coding_benchmark::is_not> :
-                public sse::mm128op<T, coding_benchmark::or_is> {
-            typedef sse::mm128op<T, coding_benchmark::or_is> BASE;
+                public sse::mm128op<T, coding_benchmark::is_not> {
+            typedef sse::mm128op<T, coding_benchmark::is_not> BASE;
             using BASE::mask_t;
             using BASE::cmp;
             using BASE::cmp_mask;

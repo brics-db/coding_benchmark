@@ -54,7 +54,8 @@ int main() {
     AlignedBlock bufResult(numElements * sizeof(uint64_t), 64);
     std::vector<std::vector<TestInfos>> vecTestInfos;
     vecTestInfos.reserve(32); // Reserve space to store sub-vectors!
-    TestConfiguration testConfig(iterations);
+
+    TestConfiguration testConfig(iterations, numElements);
     DataGenerationConfiguration dataGenConfig;
 
     TestCase<Hamming_compute_scalar_16, UNROLL_LO, UNROLL_HI>("Hamming_compute_scalar_16", "Scalar 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);

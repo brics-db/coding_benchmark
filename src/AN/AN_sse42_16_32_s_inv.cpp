@@ -13,37 +13,37 @@
 // limitations under the License.
 
 /*
- * AN_sse42_8x16_8x32_u_divmod.cpp
+ * AN_sse42_16_32_s_inv.cpp
  *
  *  Created on: 07.01.2018
  *      Author: Till Kolditz - Till.Kolditz@gmail.com
  */
 
-#include <AN/AN_sse42.hpp>
+#include <AN/AN_simd.hpp>
 
 namespace coding_benchmark {
 
     template
-    struct AN_sse42_8x16_8x32_u_divmod<1> ;
+    struct AN_sse42_16_32_s_inv<1> ;
     template
-    struct AN_sse42_8x16_8x32_u_divmod<2> ;
+    struct AN_sse42_16_32_s_inv<2> ;
     template
-    struct AN_sse42_8x16_8x32_u_divmod<4> ;
+    struct AN_sse42_16_32_s_inv<4> ;
     template
-    struct AN_sse42_8x16_8x32_u_divmod<8> ;
+    struct AN_sse42_16_32_s_inv<8> ;
     template
-    struct AN_sse42_8x16_8x32_u_divmod<16> ;
+    struct AN_sse42_16_32_s_inv<16> ;
     template
-    struct AN_sse42_8x16_8x32_u_divmod<32> ;
+    struct AN_sse42_16_32_s_inv<32> ;
     template
-    struct AN_sse42_8x16_8x32_u_divmod<64> ;
+    struct AN_sse42_16_32_s_inv<64> ;
     template
-    struct AN_sse42_8x16_8x32_u_divmod<128> ;
+    struct AN_sse42_16_32_s_inv<128> ;
     template
-    struct AN_sse42_8x16_8x32_u_divmod<256> ;
+    struct AN_sse42_16_32_s_inv<256> ;
     template
-    struct AN_sse42_8x16_8x32_u_divmod<512> ;
+    struct AN_sse42_16_32_s_inv<512> ;
     template
-    struct AN_sse42_8x16_8x32_u_divmod<1024> ;
+    struct AN_sse42_16_32_s_inv<1024> ;
 
 }

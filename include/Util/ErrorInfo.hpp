@@ -18,13 +18,16 @@
 #include <cstddef>
 #include <optional>
 
-class ErrorInfo : public std::exception {
+class ErrorInfo :
+        public std::exception {
 
 public:
     std::string file;
     size_t line;
-    size_t i;
-    size_t iter;
+    std::optional<size_t> i;
+    std::optional<size_t> iter;
+    std::optional<ssize_t> diff;
+    std::optional<ssize_t> position;
     std::optional<std::string> message;
 
     ErrorInfo(
@@ -38,6 +41,19 @@ public:
             size_t line,
             size_t i,
             size_t iter,
+            const char* message);
+
+    ErrorInfo(
+            ssize_t diff,
+            ssize_t position,
+            const char* file,
+            size_t line);
+
+    ErrorInfo(
+            ssize_t diff,
+            ssize_t position,
+            const char* file,
+            size_t line,
             const char* message);
 
     ErrorInfo(

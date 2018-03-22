@@ -49,9 +49,9 @@ namespace coding_benchmark {
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto dataIn = this->bufRaw.template begin<DATA>();
-                auto dataInEnd = this->bufRaw.template end<DATA>();
-                auto crcOut = this->bufEncoded.template begin<CS>();
+                auto dataIn = config.source.template begin<DATA>();
+                auto dataInEnd = dataIn + config.numValues;
+                auto crcOut = config.target.template begin<CS>();
                 while (dataIn <= (dataInEnd - BLOCKSIZE)) {
                     CS crc = 0;
                     auto dataOut = reinterpret_cast<DATA*>(crcOut);
@@ -86,10 +86,9 @@ namespace coding_benchmark {
                 const CheckConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto crcIn = this->bufEncoded.template begin<CS>();
-                for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
+                auto crcIn = config.target.template begin<CS>();
+                for (; i <= (config.numValues - BLOCKSIZE); i += BLOCKSIZE) {
                     auto dataIn = reinterpret_cast<DATA*>(crcIn); // first, iterate over sizeof(IN)-bit values
                     CS crc = 0;
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
@@ -102,13 +101,13 @@ namespace coding_benchmark {
                     ++crcIn; // fourth, advance after the checksum to the next block of values
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn = reinterpret_cast<DATA*>(crcIn); // first, iterate over sizeof(IN)-bit values
                     CS crc = 0;
                     do {
                         ++i;
                         crc = CRC<DATA, CS>::compute(crc, *dataIn++);
-                    } while (i < numValues);
+                    } while (i < config.numValues);
                     crcIn = reinterpret_cast<CS*>(dataIn); // second, advance data2 up to the checksum
                     if (crc != *crcIn) {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
@@ -134,11 +133,10 @@ namespace coding_benchmark {
             template<template<typename = void> class func>
             void impl() {
                 func<> functor;
-                size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto crcIn = test.bufEncoded.template begin<CS>();
-                auto dataOut = test.bufResult.template begin<DATA>();
-                for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
+                auto crcIn = config.source.template begin<CS>();
+                auto dataOut = config.target.template begin<DATA>();
+                for (; i <= (config.numValues - BLOCKSIZE); i += BLOCKSIZE) {
                     CS crc = 0;
                     auto dataIn = reinterpret_cast<DATA*>(crcIn);
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
@@ -152,10 +150,10 @@ namespace coding_benchmark {
                     crcIn = reinterpret_cast<CS*>(dataIn) + 1; // ignore the original checksum
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i < numValues) {
+                if (i < config.numValues) {
                     CS crc = 0;
                     auto dataIn2 = reinterpret_cast<DATA*>(crcIn);
-                    for (; i < numValues; ++i) {
+                    for (; i < config.numValues; ++i) {
                         const auto tmp = functor(*dataIn2++, config.operand);
                         *dataOut++ = tmp;
                         crc = CRC<DATA, CS>::compute(crc, tmp);
@@ -210,11 +208,10 @@ namespace coding_benchmark {
             template<template<typename = void> class func>
             void impl() {
                 func<> functor;
-                size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto crcIn = test.bufEncoded.template begin<CS>();
-                auto dataOut = test.bufResult.template begin<DATA>();
-                for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
+                auto crcIn = config.source.template begin<CS>();
+                auto dataOut = config.target.template begin<DATA>();
+                for (; i <= (config.numValues - BLOCKSIZE); i += BLOCKSIZE) {
                     CS crcOld = 0;
                     CS crcNew = 0;
                     auto dataIn = reinterpret_cast<DATA*>(crcIn);
@@ -235,11 +232,11 @@ namespace coding_benchmark {
                     dataOut = reinterpret_cast<DATA*>(crcOut);
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i < numValues) {
+                if (i < config.numValues) {
                     CS crcOld = 0;
                     CS crcNew = 0;
                     auto dataIn = reinterpret_cast<DATA*>(crcIn);
-                    for (size_t k = 0; k < BLOCKSIZE; ++k) {
+                    for (; i < config.numValues; ++i) {
                         const auto tmp1 = *dataIn++;
                         crcOld = CRC<DATA, CS>::compute(crcOld, tmp1);
                         const auto tmp2 = functor(tmp1, config.operand);
@@ -299,32 +296,32 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            template<typename Aggregate, typename Initializer, typename Kernel, typename Finalizer>
             void impl(
                     Initializer && funcInit,
                     Kernel && funcKernel,
                     Finalizer && funcFinal) {
-                size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto crcIn = test.bufEncoded.template begin<CS>();
-                auto dataOut = test.bufResult.template begin<Tout>();
-                Tout value = funcInit();
-                for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
+                auto crcIn = config.source.template begin<CS>();
+                Aggregate value = funcInit();
+                for (; i <= (config.numValues - BLOCKSIZE); i += BLOCKSIZE) {
                     auto dataIn = reinterpret_cast<DATA*>(crcIn);
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
                         value = funcKernel(value, *dataIn++);
                     }
                     crcIn = reinterpret_cast<CS*>(dataIn) + 1; // here, simply jump over the checksum
                 }
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn = reinterpret_cast<DATA*>(crcIn);
-                    for (; i < numValues; ++i) {
+                    for (; i < config.numValues; ++i) {
                         value = funcKernel(value, *dataIn++);
                     }
                 }
-                Tout final = funcFinal(value, numValues);
-                *dataOut++ = final;
-                *reinterpret_cast<CS*>(dataOut) = CRC<Tout, CS>::compute(0, final); // the "checksum"
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
@@ -337,7 +334,7 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                impl<DATA>([] {return std::numeric_limits<DATA>::min();}, [] (DATA maximum, DATA dataIn) {return dataIn < maximum ? dataIn : maximum;},
+                impl<DATA>([] {return std::numeric_limits<DATA>::min();}, [] (DATA maximum, DATA dataIn) {return dataIn > maximum ? dataIn : maximum;},
                         [] (DATA maximum, const size_t numValues) {return maximum;});
             }
             void operator()(
@@ -373,17 +370,15 @@ namespace coding_benchmark {
                       config(config),
                       iteration(iteration) {
             }
-            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            template<typename Aggregate, typename Initializer, typename Kernel, typename Finalizer>
             void impl(
                     Initializer && funcInit,
                     Kernel && funcKernel,
                     Finalizer && funcFinal) {
-                size_t numValues = test.template getNumValues();
                 size_t i = 0;
-                auto crcIn = test.bufEncoded.template begin<CS>();
-                auto dataOut = test.bufResult.template begin<Tout>();
-                Tout value = funcInit();
-                for (; i <= (numValues - BLOCKSIZE); i += BLOCKSIZE) {
+                auto crcIn = config.source.template begin<CS>();
+                Aggregate value = funcInit();
+                for (; i <= (config.numValues - BLOCKSIZE); i += BLOCKSIZE) {
                     auto dataIn = reinterpret_cast<DATA*>(crcIn);
                     CS crcOld = 0;
                     CS crcNew = 0;
@@ -399,11 +394,11 @@ namespace coding_benchmark {
                     }
                     ++crcIn;
                 }
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn = reinterpret_cast<DATA*>(crcIn);
                     CS crcOld = 0;
                     CS crcNew = 0;
-                    for (; i < numValues; ++i) {
+                    for (; i < config.numValues; ++i) {
                         DATA tmp = *dataIn++;
                         crcOld = CRC<DATA, CS>::compute(crcOld, tmp);
                         value = funcKernel(value, tmp);
@@ -414,9 +409,11 @@ namespace coding_benchmark {
                         throw ErrorInfo(__FILE__, __LINE__, i, iteration);
                     }
                 }
-                Tout final = funcFinal(value, numValues);
-                *dataOut++ = final;
-                *reinterpret_cast<CS*>(dataOut) = CRC<Tout, CS>::compute(0, final); // the "checksum"
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {
@@ -429,7 +426,7 @@ namespace coding_benchmark {
             }
             void operator()(
                     AggregateConfiguration::Max) {
-                impl<DATA>([] {return std::numeric_limits<DATA>::min();}, [] (DATA maximum, DATA dataIn) {return dataIn < maximum ? dataIn : maximum;},
+                impl<DATA>([] {return std::numeric_limits<DATA>::min();}, [] (DATA maximum, DATA dataIn) {return dataIn > maximum ? dataIn : maximum;},
                         [] (DATA maximum, const size_t numValues) {return maximum;});
             }
             void operator()(
@@ -451,21 +448,22 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto crcIn = this->bufEncoded.template begin<CS>();
-                auto dataOut = this->bufResult.template begin<DATA>();
-                while (i <= (numValues - BLOCKSIZE)) {
-                    auto dataIn = reinterpret_cast<DATA*>(crcIn);
-                    for (size_t k = 0; k < BLOCKSIZE; ++k) {
-                        *dataOut++ = *dataIn++;
+                auto crcIn = config.source.template begin<CS>();
+                auto dataOut = config.target.template begin<DATA>();
+                if (config.numValues >= BLOCKSIZE) {
+                    while (i <= (config.numValues - BLOCKSIZE)) {
+                        auto dataIn = reinterpret_cast<DATA*>(crcIn);
+                        for (size_t k = 0; k < BLOCKSIZE; ++k) {
+                            *dataOut++ = *dataIn++;
+                        }
+                        i += BLOCKSIZE;
+                        crcIn = reinterpret_cast<CS*>(dataIn) + 1; // ignore the checksum
                     }
-                    i += BLOCKSIZE;
-                    crcIn = reinterpret_cast<CS*>(dataIn) + 1; // ignore the checksum
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i < numValues) {
-                    for (auto dataIn2 = reinterpret_cast<DATA*>(crcIn); i < numValues; ++i) {
+                if (i < config.numValues) {
+                    for (auto dataIn2 = reinterpret_cast<DATA*>(crcIn); i < config.numValues; ++i) {
                         *dataOut++ = *dataIn2++;
                     }
                 }
@@ -480,11 +478,10 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                size_t numValues = this->getNumValues();
                 size_t i = 0;
-                auto crcIn = this->bufEncoded.template begin<CS>();
-                auto dataOut = this->bufResult.template begin<DATA>();
-                while (i <= (numValues - BLOCKSIZE)) {
+                auto crcIn = config.source.template begin<CS>();
+                auto dataOut = config.target.template begin<DATA>();
+                while (i <= (config.numValues - BLOCKSIZE)) {
                     auto dataIn = reinterpret_cast<DATA*>(crcIn);
                     CS crc = 0;
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {
@@ -500,7 +497,7 @@ namespace coding_benchmark {
                     ++crcIn;
                 }
                 // checksum remaining values which do not fit in the block size
-                if (i < numValues) {
+                if (i < config.numValues) {
                     auto dataIn = reinterpret_cast<DATA*>(crcIn);
                     CS crc = 0;
                     for (size_t k = 0; k < BLOCKSIZE; ++k) {

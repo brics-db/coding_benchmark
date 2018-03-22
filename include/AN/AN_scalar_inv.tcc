@@ -46,10 +46,9 @@ namespace coding_benchmark {
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                const size_t numValues = this->getNumValues();
-                auto dataIn = this->bufEncoded.template begin<DATAENC>();
-                const auto dataInEnd = dataIn + numValues;
-                auto dataOut = this->bufResult.template begin<DATARAW>();
+                auto dataIn = config.source.template begin<DATAENC>();
+                const auto dataInEnd = dataIn + config.numValues;
+                auto dataOut = config.target.template begin<DATARAW>();
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         *dataOut++ = static_cast<DATARAW>(*dataIn++ * this->A_INV);

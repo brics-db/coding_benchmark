@@ -22,8 +22,6 @@
 #pragma once
 
 #include <AN/ANTest.hpp>
-#include <Util/Functors.hpp>
-#include <Util/Helpers.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Util/AggregateSelector.hpp>
 
@@ -43,10 +41,9 @@ namespace coding_benchmark {
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                const size_t numValues = this->getNumValues();
-                auto dataIn = this->bufRaw.template begin<DATARAW>();
-                const auto dataInEnd = dataIn + numValues;
-                auto dataOut = this->bufEncoded.template begin<DATAENC>();
+                auto dataIn = config.source.template begin<DATARAW>();
+                const auto dataInEnd = dataIn + config.numValues;
+                auto dataOut = config.target.template begin<DATAENC>();
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         *dataOut++ = static_cast<DATAENC>(static_cast<DATAENC>(*dataIn++) * this->A);
@@ -73,21 +70,35 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            template<template<typename = void> class func>
+            template<template<typename = void> class Functor>
             void impl() {
-                func<> functor;
-                const size_t numValues = test.template getNumValues();
-                auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                const auto dataInEnd = dataIn + numValues;
-                auto dataOut = test.bufResult.template begin<DATAENC>();
-                DATAENC operandEnc = config.operand * test.A;
+                Functor<> functor;
+                auto dataIn = config.source.template begin<DATAENC>();
+                const auto dataInEnd = dataIn + config.numValues;
+                auto dataOut = config.target.template begin<DATAENC>();
+                DATAENC operand = config.operand;
+                if constexpr (std::is_same_v<Functor<void>, add<void>> || std::is_same_v<Functor<void>, sub<void>> || std::is_same_v<Functor<void>, div<void>>) {
+                    operand *= test.A;
+                } else if constexpr (std::is_same_v<Functor<void>, mul<void>>) {
+                    // do not encode operand here, otherwise we will have non-code values after the operation!
+                } else {
+                    throw std::runtime_error("Functor not known!");
+                }
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
-                        *dataOut++ = functor(*dataIn++, operandEnc);
+                        DATAENC x = functor(*dataIn++, operand);
+                        if constexpr (std::is_same_v<Functor<void>, div<void>>) {
+                            x *= test.A; // make sure we get a code word again
+                        }
+                        *dataOut++ = x;
                     }
                 }
                 while (dataIn < dataInEnd) {
-                    *dataOut++ = functor(*dataIn++, operandEnc);
+                    DATAENC x = functor(*dataIn++, operand);
+                    if constexpr (std::is_same_v<Functor<void>, div<void>>) {
+                        x *= test.A; // make sure we get a code word again
+                    }
+                    *dataOut++ = x;
                 }
             }
             void operator()(
@@ -131,16 +142,14 @@ namespace coding_benchmark {
                     : test(test),
                       config(config) {
             }
-            template<typename Tout, typename Initializer, typename Kernel, typename Finalizer>
+            template<typename Aggregate, typename Initializer, typename Kernel, typename Finalizer>
             void impl(
                     Initializer && funcInit,
                     Kernel && funcKernel,
                     Finalizer && funcFinal) {
-                const size_t numValues = test.template getNumValues();
-                auto dataIn = test.bufEncoded.template begin<DATAENC>();
-                const auto dataInEnd = dataIn + numValues;
-                auto dataOut = test.bufResult.template begin<Tout>();
-                Tout value = funcInit();
+                auto dataIn = config.source.template begin<DATAENC>();
+                const auto dataInEnd = dataIn + config.numValues;
+                Aggregate value = funcInit();
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         value = funcKernel(value, *dataIn++);
@@ -149,7 +158,11 @@ namespace coding_benchmark {
                 while (dataIn < dataInEnd) {
                     value = funcKernel(value, *dataIn++);
                 }
-                *dataOut = funcFinal(value, numValues);
+                auto final = funcFinal(value, config.numValues);
+                auto dataOut = test.bufScratchPad.template begin<Aggregate>();
+                *dataOut = final / test.A;
+                EncodeConfiguration encConf(1, 2, test.bufScratchPad, config.target);
+                test.RunEncode(encConf);
             }
             void operator()(
                     AggregateConfiguration::Sum) {

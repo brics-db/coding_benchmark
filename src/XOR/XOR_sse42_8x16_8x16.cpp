@@ -19,7 +19,7 @@
  *      Author: Till Kolditz - Till.Kolditz@gmail.com
  */
 
-#include <XOR/XOR_sse42.hpp>
+#include <XOR/XOR_simd.hpp>
 
 namespace coding_benchmark {
 

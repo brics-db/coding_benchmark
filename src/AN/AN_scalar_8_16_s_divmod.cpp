@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Till Kolditz
+// Copyright (c) 2018 Till Kolditz
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,41 +13,37 @@
 // limitations under the License.
 
 /*
- * AN_avx2_16x16_16x32_s_inv.cpp
+ * AN_scalar_8_16_s_divmod.cpp
  *
- *  Created on: 07.01.2018
+ *  Created on: 22.03.2018
  *      Author: Till Kolditz - Till.Kolditz@gmail.com
  */
 
-#ifdef __AVX2__
-
-#include <AN/AN_avx2.hpp>
+#include <AN/AN_scalar.hpp>
 
 namespace coding_benchmark {
 
     template
-    struct AN_avx2_16x16_16x32_s_inv<1>;
+    struct AN_scalar_8_16_s_divmod<1> ;
     template
-    struct AN_avx2_16x16_16x32_s_inv<2>;
+    struct AN_scalar_8_16_s_divmod<2> ;
     template
-    struct AN_avx2_16x16_16x32_s_inv<4>;
+    struct AN_scalar_8_16_s_divmod<4> ;
     template
-    struct AN_avx2_16x16_16x32_s_inv<8>;
+    struct AN_scalar_8_16_s_divmod<8> ;
     template
-    struct AN_avx2_16x16_16x32_s_inv<16>;
+    struct AN_scalar_8_16_s_divmod<16> ;
     template
-    struct AN_avx2_16x16_16x32_s_inv<32>;
+    struct AN_scalar_8_16_s_divmod<32> ;
     template
-    struct AN_avx2_16x16_16x32_s_inv<64>;
+    struct AN_scalar_8_16_s_divmod<64> ;
     template
-    struct AN_avx2_16x16_16x32_s_inv<128>;
+    struct AN_scalar_8_16_s_divmod<128> ;
     template
-    struct AN_avx2_16x16_16x32_s_inv<256>;
+    struct AN_scalar_8_16_s_divmod<256> ;
     template
-    struct AN_avx2_16x16_16x32_s_inv<512>;
+    struct AN_scalar_8_16_s_divmod<512> ;
     template
-    struct AN_avx2_16x16_16x32_s_inv<1024>;
+    struct AN_scalar_8_16_s_divmod<1024> ;
 
 }
-
-#endif

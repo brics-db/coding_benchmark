@@ -105,6 +105,12 @@ namespace coding_benchmark {
                         return _mm256_set_epi32(v0 + 7 * inc, v0 + 6 * inc, v0 + 5 * inc, v0 + 4 * inc, v0 + 3 * inc, v0 + 2 * inc, v0 + inc, v0);
                     }
 
+                    template<int I>
+                    static inline T extract(
+                            __m256i a) {
+                        return _mm256_extract_epi32(a, I);
+                    }
+
                     static inline __m256i min(
                             __m256i a,
                             __m256i b) {
@@ -207,12 +213,20 @@ namespace coding_benchmark {
 
                     static inline __m256i cvt_larger_lo(
                             __m256i a) {
-                        return _mm256_cvtepi32_epi64(_mm256_extractf128_si256(a, 0));
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm256_cvtepi32_epi64(_mm256_extractf128_si256(a, 0));
+                        } else {
+                            return _mm256_cvtepu32_epi64(_mm256_extractf128_si256(a, 0));
+                        }
                     }
 
                     static inline __m256i cvt_larger_hi(
                             __m256i a) {
-                        return _mm256_cvtepi32_epi64(_mm256_extractf128_si256(a, 1));
+                        if constexpr (std::is_signed_v<T>) {
+                            return _mm256_cvtepi32_epi64(_mm256_extractf128_si256(a, 1));
+                        } else {
+                            return _mm256_cvtepu32_epi64(_mm256_extractf128_si256(a, 1));
+                        }
                     }
 
                 private:
@@ -484,6 +498,7 @@ namespace coding_benchmark {
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
+                using BASE::extract;
                 using BASE::min;
                 using BASE::max;
                 using BASE::sum;
@@ -628,6 +643,7 @@ namespace coding_benchmark {
                 using BASE::set1;
                 using BASE::set;
                 using BASE::set_inc;
+                using BASE::extract;
                 using BASE::min;
                 using BASE::max;
                 using BASE::sum;

@@ -179,6 +179,12 @@ namespace coding_benchmark {
                         return _mm_set_epi16(v0 + 7 * inc, v0 + 6 * inc, v0 + 5 * inc, v0 + 4 * inc, v0 + 3 * inc, v0 + 2 * inc, v0 + inc, v0);
                     }
 
+                    template<int I>
+                    static inline T extract(
+                            __m128i a) {
+                        return _mm_extract_epi16(a, I);
+                    }
+
                     static inline T min(
                             __m128i a) {
                         return get_min_int16<T>(a);
@@ -256,16 +262,24 @@ namespace coding_benchmark {
 
             static inline __m128i cvt_larger_lo(
                     __m128i a) {
-                return _mm_cvtepi16_epi32(a);
+                if constexpr (std::is_signed_v<T>) {
+                    return _mm_cvtepi16_epi32(a);
+                } else {
+                    return _mm_cvtepu16_epi32(a);
+                }
             }
 
             static inline __m128i cvt_larger_hi(
                     __m128i a) {
-                return _mm_cvtepi16_epi32(_mm_srli_si128(a, 8));
+                if constexpr (std::is_signed_v<T>) {
+                    return _mm_cvtepi16_epi32(_mm_srli_si128(a, 8));
+                } else {
+                    return _mm_cvtepu16_epi32(_mm_srli_si128(a, 8));
+                }
             }
 
         private:
-            static const __m128i * const SHUFFLE_TABLE;
+    static const __m128i * const SHUFFLE_TABLE;
             };
 
             template<typename T, template<typename > class Op>
@@ -517,8 +531,10 @@ namespace coding_benchmark {
                 static inline __m128i div(
                         __m128i a,
                         __m128i b) {
-                    auto mm0 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(a)), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(b)));
-                    auto mm1 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(a, 8))), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(b, 8))));
+                    // _mm_div_ps does ROUNDING!
+                    auto mmA = _mm_min_epi16(a, _mm_sub_epi16(a, _mm_srai_epi16(b, 1))); // repair the rounding and make sure we dont underflow
+                    auto mm0 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(mmA)), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(b)));
+                    auto mm1 = _mm_div_ps(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(mmA, 8))), _mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_srli_si128(b, 8))));
                     auto mx0 = _mm_cvtps_pi16(mm0);
                     auto mx1 = _mm_cvtps_pi16(mm1);
                     return _mm_set_epi64(mx1, mx0);
@@ -537,6 +553,7 @@ namespace coding_benchmark {
             using BASE::set1;
             using BASE::set;
             using BASE::set_inc;
+            using BASE::extract;
             using BASE::min;
             using BASE::max;
             using BASE::sum;
@@ -681,6 +698,7 @@ namespace coding_benchmark {
             using BASE::set1;
             using BASE::set;
             using BASE::set_inc;
+            using BASE::extract;
             using BASE::min;
             using BASE::max;
             using BASE::sum;

@@ -14,7 +14,7 @@
 
 #pragma once
 
-#if not defined(XOR_BASE) and not defined(XOR_SCALAR) and not defined(XOR_SSE42) and not defined(XOR_AVX2)
+#if not defined(XOR_BASE) and not defined(XOR_SCALAR) and not defined(XOR_SIMD) and not defined(XOR_AVX2)
 #error "Clients must not include this file directly, but e.g. file <XOR/XOR_scalar.hpp> or <XOR/XOR_sse42.hpp> or <XOR/XOR_avx2.hpp>!"
 #endif
 

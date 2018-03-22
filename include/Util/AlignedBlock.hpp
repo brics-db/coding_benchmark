@@ -3,9 +3,9 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,10 +24,8 @@ struct AlignedBlock {
     const size_t alignment;
 
 private:
-    std::shared_ptr<char> baseptr;
-    void* data;
-
-public:
+    std::shared_ptr<char[]> baseptr;
+    void* const data;
 
     AlignedBlock()
             : nBytes(0),
@@ -36,15 +34,14 @@ public:
               data(nullptr) {
     }
 
+public:
     AlignedBlock(
             size_t nBytes,
             size_t alignment)
             : nBytes(nBytes),
               alignment(alignment),
               baseptr(new char[nBytes + alignment]),
-              data(nullptr) {
-        size_t tmp = reinterpret_cast<size_t>(baseptr.get());
-        data = baseptr.get() + (alignment - (tmp & (alignment - 1)));
+              data(baseptr.get() + (alignment - (reinterpret_cast<size_t>(baseptr.get()) & (alignment - 1)))) {
     }
 
     AlignedBlock(
@@ -55,6 +52,14 @@ public:
               data(other.data) {
     }
 
+    AlignedBlock(
+            AlignedBlock && other)
+            : nBytes(other.nBytes),
+              alignment(other.alignment),
+              baseptr(std::move(other.baseptr)),
+              data(other.data) {
+    }
+
     AlignedBlock & operator=(
             AlignedBlock & other) {
         this->~AlignedBlock();
@@ -62,9 +67,16 @@ public:
         return *this;
     }
 
+    AlignedBlock & operator=(
+            AlignedBlock && other) {
+        this->~AlignedBlock();
+        new (this) AlignedBlock(std::forward<AlignedBlock>(other));
+        return *this;
+    }
+
     template<typename T = void>
-    T*
-    begin() {
+    constexpr T*
+    begin() const {
         return static_cast<T*>(data);
     }
 
@@ -74,8 +86,14 @@ public:
         return reinterpret_cast<T*>(static_cast<char*>(data) + nBytes);
     }
 
+    void clear() const { // OK this is quite shitty but we need it when AlignedBlock is a member of a function's const argument
+        memset(data, 0, nBytes);
+    }
+
     virtual ~AlignedBlock() {
-        data = nullptr;
-        // baseptr is now a std::shared_ptr and auto-deallocated, which deletes its contents as well
+        // force to set everything to zero to avoid bad use-after-free
+        // we call the constructor, because I want data to be a constant pointer
+        baseptr.reset();
+        new (this) AlignedBlock();
     }
 };

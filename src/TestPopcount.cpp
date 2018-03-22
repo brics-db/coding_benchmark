@@ -384,7 +384,7 @@ int main() {
     AlignedBlock bufResult(numElements * sizeof(uint64_t), 64); // this only stores the popcounts
     std::vector<std::vector<TestInfos>> vecTestInfos;
     vecTestInfos.reserve(32); // Reserve space to store sub-vectors!
-    TestConfiguration testConfig(iterations);
+    TestConfiguration testConfig(iterations, numElements);
     DataGenerationConfiguration dataGenConfig;
 
     TestCase<popcount_scalar_8, UNROLL_LO, UNROLL_HI>("popcount_scalar_8", "Scalar 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);

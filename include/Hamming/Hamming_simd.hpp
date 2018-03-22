@@ -21,6 +21,8 @@
 
 #pragma once
 
+#if defined(__SSE4_2__) or defined(__AVX2__) or defined(__AVX512F__)
+
 #define HAMMING_SIMD
 
 #include <Hamming/Hamming_simd.tcc>
@@ -228,3 +230,5 @@ namespace coding_benchmark {
 #endif
 
 }
+
+#endif

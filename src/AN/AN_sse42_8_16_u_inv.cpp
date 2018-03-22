@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Till Kolditz
+// Copyright (c) 2018 Till Kolditz
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,37 +13,37 @@
 // limitations under the License.
 
 /*
- * AN_sse42_8x16_8x32_s_divmod.cpp
+ * AN_sse42_8_16_u_inv.cpp
  *
- *  Created on: 07.01.2018
+ *  Created on: 22.03.2018
  *      Author: Till Kolditz - Till.Kolditz@gmail.com
  */
 
-#include <AN/AN_sse42.hpp>
+#include <AN/AN_simd.hpp>
 
 namespace coding_benchmark {
 
     template
-    struct AN_sse42_8x16_8x32_s_divmod<1> ;
+    struct AN_sse42_8_16_u_inv<1> ;
     template
-    struct AN_sse42_8x16_8x32_s_divmod<2> ;
+    struct AN_sse42_8_16_u_inv<2> ;
     template
-    struct AN_sse42_8x16_8x32_s_divmod<4> ;
+    struct AN_sse42_8_16_u_inv<4> ;
     template
-    struct AN_sse42_8x16_8x32_s_divmod<8> ;
+    struct AN_sse42_8_16_u_inv<8> ;
     template
-    struct AN_sse42_8x16_8x32_s_divmod<16> ;
+    struct AN_sse42_8_16_u_inv<16> ;
     template
-    struct AN_sse42_8x16_8x32_s_divmod<32> ;
+    struct AN_sse42_8_16_u_inv<32> ;
     template
-    struct AN_sse42_8x16_8x32_s_divmod<64> ;
+    struct AN_sse42_8_16_u_inv<64> ;
     template
-    struct AN_sse42_8x16_8x32_s_divmod<128> ;
+    struct AN_sse42_8_16_u_inv<128> ;
     template
-    struct AN_sse42_8x16_8x32_s_divmod<256> ;
+    struct AN_sse42_8_16_u_inv<256> ;
     template
-    struct AN_sse42_8x16_8x32_s_divmod<512> ;
+    struct AN_sse42_8_16_u_inv<512> ;
     template
-    struct AN_sse42_8x16_8x32_s_divmod<1024> ;
+    struct AN_sse42_8_16_u_inv<1024> ;
 
 }

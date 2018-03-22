@@ -97,7 +97,7 @@ int main(
 
     std::vector<std::vector<TestInfos>> vecTestInfos;
 
-    TestConfiguration testConfig(iterations);
+    TestConfiguration testConfig(iterations, numElements);
     DataGenerationConfiguration dataGenConfig(8);
 
     WarmUp<CopyTest8, UNROLL_LO, UNROLL_HI>("CopyTest8", "Copy 8>8", input8, encoded8, result8, testConfig, dataGenConfig);

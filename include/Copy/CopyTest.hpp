@@ -25,8 +25,6 @@
 #include <variant>
 
 #include <Util/Test.hpp>
-#include <Util/ErrorInfo.hpp>
-#include <Util/Intrinsics.hpp>
 #include <Util/ArithmeticSelector.hpp>
 #include <Util/AggregateSelector.hpp>
 
@@ -40,15 +38,16 @@ struct CopyTest :
     virtual ~CopyTest() {
     }
 
-    size_t getNumBytes() {
-        return sizeof(DATA) * (this->bufRaw.template end<DATA>() - this->bufRaw.template begin<DATA>());
+    size_t getNumBytes(
+            const SubTestConfiguration & config) const {
+        return sizeof(DATA) * config.numValues;
     }
 
     void RunEncode(
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            memmove(this->bufEncoded.begin(), this->bufRaw.begin(), getNumBytes());
+            memmove(config.target.begin(), config.source.begin(), getNumBytes(config));
         }
     }
 
@@ -60,7 +59,7 @@ struct CopyTest :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            int ret = memcmp(this->bufEncoded.begin(), this->bufRaw.begin(), getNumBytes());
+            int ret = memcmp(config.source.begin(), config.target.begin(), getNumBytes(config));
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
@@ -83,38 +82,38 @@ struct CopyTest :
         }
         void operator()(
                 ArithmeticConfiguration::Add) {
-            auto beg = ct.bufEncoded.template begin<DATA>();
-            auto end = ct.bufEncoded.template end<DATA>();
-            auto out = ct.bufResult.template begin<DATA>();
-            for (; beg < end; ++beg) {
-                *out = *beg + config.operand;
+            auto beg = config.source.template begin<DATA>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATA>();
+            while (beg < end) {
+                *out++ = *beg++ + config.operand;
             }
         }
         void operator()(
                 ArithmeticConfiguration::Sub) {
-            auto beg = ct.bufEncoded.template begin<DATA>();
-            auto end = ct.bufEncoded.template end<DATA>();
-            auto out = ct.bufResult.template begin<DATA>();
-            for (; beg < end; ++beg) {
-                *out = *beg - config.operand;
+            auto beg = config.source.template begin<DATA>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATA>();
+            while (beg < end) {
+                *out++ = *beg++ - config.operand;
             }
         }
         void operator()(
                 ArithmeticConfiguration::Mul) {
-            auto beg = ct.bufEncoded.template begin<DATA>();
-            auto end = ct.bufEncoded.template end<DATA>();
-            auto out = ct.bufResult.template begin<DATA>();
-            for (; beg < end; ++beg) {
-                *out = *beg * config.operand;
+            auto beg = config.source.template begin<DATA>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATA>();
+            while (beg < end) {
+                *out++ = *beg++ * config.operand;
             }
         }
         void operator()(
                 ArithmeticConfiguration::Div) {
-            auto beg = ct.bufEncoded.template begin<DATA>();
-            auto end = ct.bufEncoded.template end<DATA>();
-            auto out = ct.bufResult.template begin<DATA>();
-            for (; beg < end; ++beg) {
-                *out = *beg / config.operand;
+            auto beg = config.source.template begin<DATA>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATA>();
+            while (beg < end) {
+                *out++ = *beg++ / config.operand;
             }
         }
     };
@@ -136,7 +135,7 @@ struct CopyTest :
             const ArithmeticConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            int ret = memcmp(this->bufEncoded.begin(), this->bufRaw.begin(), getNumBytes());
+            int ret = memcmp(config.source.begin(), this->bufRaw.begin(), getNumBytes(config));
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
@@ -150,54 +149,61 @@ struct CopyTest :
     }
 
     struct Aggregator {
-        CopyTest & ct;
+        typedef typename Larger<DATA>::larger_t larger_t;
+        const CopyTest & ct;
+        const AggregateConfiguration & config;
         Aggregator(
-                CopyTest & ct)
-                : ct(ct) {
+                const CopyTest & ct,
+                const AggregateConfiguration & config)
+                : ct(ct),
+                  config(config) {
         }
         void operator()(
                 AggregateConfiguration::Sum) {
-            DATA sum = DATA(0);
-            auto beg = ct.bufEncoded.template begin<DATA>();
-            auto end = ct.bufEncoded.template end<DATA>();
-            auto out = ct.bufResult.template begin<DATA>();
-            for (; beg < end; ++beg) {
-                sum += *beg;
+            larger_t sum = larger_t(0);
+            auto beg = config.source.template begin<DATA>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATA>();
+            while (beg < end) {
+                sum += *beg++;
             }
-            *out = sum;
+            *out++ = static_cast<DATA>(sum);
+            *out = static_cast<DATA>(sum >> (sizeof(DATA) * CHAR_BIT));
         }
         void operator()(
                 AggregateConfiguration::Min) {
             DATA min(std::numeric_limits<DATA>::max());
-            auto beg = ct.bufEncoded.template begin<DATA>();
-            auto end = ct.bufEncoded.template end<DATA>();
-            auto out = ct.bufResult.template begin<DATA>();
-            for (; beg < end; ++beg) {
-                min = std::min(min, *beg);
+            auto beg = config.source.template begin<DATA>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATA>();
+            while (beg < end) {
+                min = std::min(min, *beg++);
             }
             *out = min;
         }
         void operator()(
                 AggregateConfiguration::Max) {
             DATA max(std::numeric_limits<DATA>::min());
-            auto beg = ct.bufEncoded.template begin<DATA>();
-            auto end = ct.bufEncoded.template end<DATA>();
-            auto out = ct.bufResult.template begin<DATA>();
-            for (; beg < end; ++beg) {
-                max = std::max(max, *beg);
+            auto beg = config.source.template begin<DATA>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<DATA>();
+            while (beg < end) {
+                max = std::max(max, *beg++);
             }
             *out = max;
         }
         void operator()(
                 AggregateConfiguration::Avg) {
-            DATA sum = DATA(0);
-            auto beg = ct.bufEncoded.template begin<DATA>();
-            auto end = ct.bufEncoded.template end<DATA>();
-            auto out = ct.bufResult.template begin<DATA>();
-            for (; beg < end; ++beg) {
-                sum += *beg;
+            larger_t sum = larger_t(0);
+            auto beg = config.source.template begin<DATA>();
+            auto end = beg + config.numValues;
+            auto out = config.target.template begin<larger_t>();
+            while (beg < end) {
+                sum += *beg++;
             }
-            *out = sum / ct.getNumValues();
+            larger_t avg = sum / config.numValues;
+            *out++ = static_cast<DATA>(avg);
+            *out = static_cast<DATA>(avg >> (sizeof(DATA) * CHAR_BIT));
         }
     };
 
@@ -205,7 +211,7 @@ struct CopyTest :
             const AggregateConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            std::visit(Aggregator(*this), config.mode);
+            std::visit(Aggregator(*this, config), config.mode);
         }
     }
 
@@ -218,11 +224,11 @@ struct CopyTest :
             const AggregateConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            int ret = memcmp(this->bufRaw.begin(), this->bufEncoded.begin(), getNumBytes());
+            int ret = memcmp(config.source.begin(), this->bufRaw.begin(), getNumBytes(config));
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
-            std::visit(Aggregator(*this), config.mode);
+            std::visit(Aggregator(*this, config), config.mode);
         }
     }
 
@@ -234,12 +240,12 @@ struct CopyTest :
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numBytes = getNumBytes();
-            int ret = memcmp(this->bufRaw.begin(), this->bufEncoded.begin(), numBytes);
+            size_t numBytes = getNumBytes(config);
+            int ret = memcmp(config.source.begin(), this->bufRaw.begin(), numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
-            memmove(this->bufResult.begin(), this->bufEncoded.begin(), numBytes);
+            memmove(config.target.begin(), config.source.begin(), numBytes);
         }
     }
 
@@ -251,7 +257,7 @@ struct CopyTest :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            memmove(this->bufResult.begin(), this->bufEncoded.begin(), getNumBytes());
+            memmove(config.target.begin(), config.source.begin(), getNumBytes(config));
         }
     }
 
@@ -263,12 +269,12 @@ struct CopyTest :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numBytes = getNumBytes();
-            int ret = memcmp(this->bufEncoded.begin(), this->bufRaw.begin(), numBytes);
+            size_t numBytes = getNumBytes(config);
+            int ret = memcmp(config.source.begin(), this->bufRaw.begin(), numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
-            memmove(this->bufResult.begin(), this->bufEncoded.begin(), numBytes);
+            memmove(config.target.begin(), config.source.begin(), numBytes);
         }
     }
 };
@@ -289,4 +295,10 @@ template<size_t UNROLL>
 struct CopyTest32 :
         public CopyTest<uint32_t, UNROLL> {
     using CopyTest<uint32_t, UNROLL>::CopyTest;
+};
+
+template<size_t UNROLL>
+struct CopyTest64 :
+        public CopyTest<uint64_t, UNROLL> {
+    using CopyTest<uint64_t, UNROLL>::CopyTest;
 };
