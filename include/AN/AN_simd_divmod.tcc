@@ -370,10 +370,6 @@ namespace coding_benchmark {
             RunDecodeInternal<false>(config);
         }
 
-        bool DoDecodeChecked() override {
-            return true;
-        }
-
         void RunDecodeChecked(
                 const DecodeConfiguration & config) override {
             RunDecodeInternal<true>(config);

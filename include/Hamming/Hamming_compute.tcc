@@ -27,165 +27,65 @@
 
 namespace coding_benchmark {
 
-    template<typename DATAIN, size_t UNROLL>
+    template<typename DATAIN, size_t UNROLL, size_t StoreVersion = 1>
     struct Hamming_compute_scalar :
             public Test<DATAIN, hamming_t<DATAIN, DATAIN>>,
             public ScalarTest {
-        typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
-        typedef typename hamming_scalar_t::code_t code_t;
+        Hamming_scalar<DATAIN, UNROLL, StoreVersion> impl;
 
-        using Test<DATAIN, hamming_scalar_t>::Test;
+        Hamming_compute_scalar(
+                const std::string & name,
+                AlignedBlock & bufRaw,
+                AlignedBlock & bufEncoded,
+                AlignedBlock & bufResult)
+                : Test<DATAIN, hamming_t<DATAIN, DATAIN>>(name, bufRaw, bufEncoded, bufResult),
+                  ScalarTest(),
+                  impl(name, bufRaw, bufEncoded, bufResult) {
+        }
 
         virtual ~Hamming_compute_scalar() {
         }
 
         void RunEncode(
                 const EncodeConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                auto data = this->bufRaw.template begin<DATAIN>();
-                auto dataEnd = this->bufRaw.template end<DATAIN>();
-                auto dataOut = this->bufEncoded.template begin<hamming_scalar_t>();
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        dataOut->store(*data);
-                    }
-                }
-                for (; data < dataEnd; ++data, ++dataOut) {
-                    dataOut->store(*data);
-                }
-            }
+            impl.RunEncode(config);
+        }
+
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            impl.RunDecodeChecked(config);
         }
     };
 
 #ifdef __SSE4_2__
 
-    template<typename DATAIN, size_t UNROLL>
-    struct Hamming_compute_sse42_1 :
+    template<typename DATAIN, size_t UNROLL, size_t StoreVersion>
+    struct Hamming_compute_sse42 :
             public Test<DATAIN, hamming_t<DATAIN, __m128i >>,
             public SSE42Test {
+        Hamming_simd<DATAIN, __m128i, UNROLL, StoreVersion> impl;
 
-        typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
-        typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
+        Hamming_compute_sse42(
+                const std::string & name,
+                AlignedBlock & bufRaw,
+                AlignedBlock & bufEncoded,
+                AlignedBlock & bufResult)
+                : Test<DATAIN, hamming_t<DATAIN, __m128i >>(name, bufRaw, bufEncoded, bufResult),
+                  SSE42Test(),
+                  impl(name, bufRaw, bufEncoded, bufResult) {
+        }
 
-        static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
-
-        using Test<DATAIN, hamming_sse42_t>::Test;
-
-        virtual ~Hamming_compute_sse42_1() {
+        virtual ~Hamming_compute_sse42() {
         }
 
         void RunEncode(
                 const EncodeConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                auto data = this->bufRaw.template begin<__m128i>();
-                auto dataEnd = this->bufRaw.template end<__m128i>();
-                auto dataOut = this->bufEncoded.template begin<hamming_sse42_t>();
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        dataOut->store(*data);
-                    }
-                }
-                for (; data <= (dataEnd - 1); ++data, ++dataOut) {
-                    dataOut->store(*data);
-                }
-                if (data < dataEnd) {
-                    auto data2 = reinterpret_cast<DATAIN*>(data);
-                    auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
-                    auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                    for (; data2 < dataEnd2; ++data2, ++dataOut2) {
-                        dataOut2->store(*data2);
-                    }
-                }
-            }
-        }
-    };
-
-    template<typename DATAIN, size_t UNROLL>
-    struct Hamming_compute_sse42_2 :
-            public Test<DATAIN, hamming_t<DATAIN, __m128i >>,
-            public SSE42Test {
-
-        typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
-        typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
-
-        static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
-
-        using Test<DATAIN, hamming_sse42_t>::Test;
-
-        virtual ~Hamming_compute_sse42_2() {
+            impl.RunEncode(config);
         }
 
-        void RunEncode(
-                const EncodeConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                auto data = this->bufRaw.template begin<__m128i>();
-                auto dataEnd = this->bufRaw.template end<__m128i>();
-                auto dataOut = this->bufEncoded.template begin<hamming_sse42_t>();
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        dataOut->store2(*data);
-                    }
-                }
-                for (; data <= (dataEnd - 1); ++data, ++dataOut) {
-                    dataOut->store2(*data);
-                }
-                if (data < dataEnd) {
-                    auto data2 = reinterpret_cast<DATAIN*>(data);
-                    auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
-                    auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                    for (; data2 < dataEnd2; ++data2, ++dataOut2) {
-                        dataOut2->store2(*data2);
-                    }
-                }
-            }
-        }
-    };
-
-    template<typename DATAIN, size_t UNROLL>
-    struct Hamming_compute_sse42_3 :
-            public Test<DATAIN, hamming_t<DATAIN, __m128i >>,
-            public SSE42Test {
-
-        typedef hamming_t<DATAIN, __m128i> hamming_sse42_t;
-        typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
-
-    static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m128i) / sizeof (DATAIN);
-    static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
-
-        using Test<DATAIN, hamming_sse42_t>::Test;
-
-        virtual ~Hamming_compute_sse42_3() {
-        }
-
-        void RunEncode(
-                const EncodeConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                auto data = this->bufRaw.template begin<__m128i>();
-                auto dataEnd = this->bufRaw.template end<__m128i>();
-                auto dataOut = this->bufEncoded.template begin<hamming_sse42_t>();
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        dataOut->store3(*data);
-                    }
-                }
-                for (; data <= (dataEnd - 1); ++data, ++dataOut) {
-                    dataOut->store3(*data);
-                }
-                if (data < dataEnd) {
-                    auto data2 = reinterpret_cast<DATAIN*>(data);
-                    auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
-                    auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                    for (; data2 < dataEnd2; ++data2, ++dataOut2) {
-                        dataOut2->store3(*data2);
-                    }
-                }
-            }
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            impl.RunDecodeChecked(config);
         }
     };
 
@@ -193,134 +93,35 @@ namespace coding_benchmark {
 
 #ifdef __AVX2__
 
-    template<typename DATAIN, size_t UNROLL>
-    struct Hamming_compute_avx2_1 :
+    template<typename DATAIN, size_t UNROLL, size_t StoreVersion>
+    struct Hamming_compute_avx2 :
             public Test<DATAIN, hamming_t<DATAIN, __m256i >>,
             public AVX2Test {
+        Hamming_simd<DATAIN, __m256i, UNROLL, StoreVersion> impl;
 
-        typedef hamming_t<DATAIN, __m256i> hamming_avx2_t;
-        typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
+        Hamming_compute_avx2(
+                const std::string & name,
+                AlignedBlock & bufRaw,
+                AlignedBlock & bufEncoded,
+                AlignedBlock & bufResult)
+                : Test<DATAIN, hamming_t<DATAIN, __m256i >>(name, bufRaw, bufEncoded, bufResult),
+                  AVX2Test(),
+                  impl(name, bufRaw, bufEncoded, bufResult) {
+        }
 
-        static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATAIN);
-        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
-
-        using Test<DATAIN, hamming_avx2_t>::Test;
-
-        virtual ~Hamming_compute_avx2_1() {
+        virtual ~Hamming_compute_avx2() {
         }
 
         void RunEncode(
                 const EncodeConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                auto data = this->bufRaw.template begin<__m256i >();
-                auto dataEnd = this->bufRaw.template end<__m256i >();
-                auto dataOut = this->bufEncoded.template begin<hamming_avx2_t>();
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        dataOut->store(*data);
-                    }
-                }
-                for (; data <= (dataEnd - 1); ++data, ++dataOut) {
-                    dataOut->store(*data);
-                }
-                if (data < dataEnd) {
-                    auto data2 = reinterpret_cast<DATAIN*>(data);
-                    auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
-                    auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                    for (; data2 < dataEnd2; ++data2, ++dataOut2) {
-                        dataOut2->store(*data2);
-                    }
-                }
-            }
+            impl.RunEncode(config);
+        }
+
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            impl.RunDecodeChecked(config);
         }
     };
-
-    template<typename DATAIN, size_t UNROLL>
-    struct Hamming_compute_avx2_2 :
-            public Test<DATAIN, hamming_t<DATAIN, __m256i >>,
-            public AVX2Test {
-
-        typedef hamming_t<DATAIN, __m256i> hamming_avx2_t;
-        typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
-
-        static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATAIN);
-        static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
-
-        using Test<DATAIN, hamming_avx2_t>::Test;
-
-        virtual ~Hamming_compute_avx2_2() {
-        }
-
-        void RunEncode(
-                const EncodeConfiguration & config) override {
-            for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-                _ReadWriteBarrier();
-                auto data = this->bufRaw.template begin<__m256i >();
-                auto dataEnd = this->bufRaw.template end<__m256i >();
-                auto dataOut = this->bufEncoded.template begin<hamming_avx2_t>();
-                while (data <= (dataEnd - UNROLL)) {
-                    for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        dataOut->store2(*data);
-                    }
-                }
-                for (; data <= (dataEnd - 1); ++data, ++dataOut) {
-                    dataOut->store2(*data);
-                }
-                if (data < dataEnd) {
-                    auto data2 = reinterpret_cast<DATAIN*>(data);
-                    auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
-                    auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                    for (; data2 < dataEnd2; ++data2, ++dataOut2) {
-                        dataOut2->store2(*data2);
-                    }
-                }
-            }
-        }
-    };
-
-    template<typename DATAIN, size_t UNROLL>
-    struct Hamming_compute_avx2_3 :
-            public Test<DATAIN, hamming_t<DATAIN, __m256i >>,
-            public AVX2Test {
-
-        typedef hamming_t<DATAIN, __m256i> hamming_avx2_t;
-    typedef hamming_t<DATAIN, DATAIN> hamming_scalar_t;
-
-    static const constexpr size_t VALUES_PER_VECTOR = sizeof(__m256i) / sizeof (DATAIN);
-    static const constexpr size_t VALUES_PER_UNROLL = UNROLL * VALUES_PER_VECTOR;
-
-    using Test<DATAIN, hamming_avx2_t>::Test;
-
-    virtual ~Hamming_compute_avx2_3() {
-    }
-
-    void RunEncode(
-            const EncodeConfiguration & config) override {
-        for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
-            _ReadWriteBarrier();
-            auto data = this->bufRaw.template begin<__m256i >();
-            auto dataEnd = this->bufRaw.template end<__m256i >();
-            auto dataOut = this->bufEncoded.template begin<hamming_avx2_t>();
-            while (data <= (dataEnd - UNROLL)) {
-                for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                    dataOut->store3(*data);
-                }
-            }
-            for (; data <= (dataEnd - 1); ++data, ++dataOut) {
-                dataOut->store3(*data);
-            }
-            if (data < dataEnd) {
-                auto data2 = reinterpret_cast<DATAIN*>(data);
-                auto dataEnd2 = reinterpret_cast<DATAIN*>(dataEnd);
-                auto dataOut2 = reinterpret_cast<hamming_scalar_t*>(dataOut);
-                for (; data2 < dataEnd2; ++data2, ++dataOut2) {
-                    dataOut2->store3(*data2);
-                }
-            }
-        }
-    }
-};
 
 #endif
 

@@ -47,7 +47,7 @@ struct CopyTest2 :
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->getNumValues();
+            const size_t numValues = config.numValues;
             size_t i = 0;
             auto dataRaw = this->bufRaw.template begin<DATARAW>();
             auto dataEnc = this->bufEncoded.template begin<DATAENC>();
@@ -72,7 +72,7 @@ struct CopyTest2 :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->getNumValues();
+            const size_t numValues = config.numValues;
             size_t i = 0;
             auto dataRaw = this->bufRaw.template begin<DATARAW>();
             auto dataEnc = config.target.template begin<DATAENC>();
@@ -101,7 +101,7 @@ struct CopyTest2 :
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->getNumValues();
+            const size_t numValues = config.numValues;
             size_t i = 0;
             auto dataRaw = this->bufRaw.template begin<DATARAW>();
             auto dataEnc = this->bufEncoded.template begin<DATAENC>();
@@ -133,7 +133,7 @@ struct CopyTest2 :
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->getNumValues();
+            const size_t numValues = config.numValues;
             size_t i = 0;
             auto dataEnc = this->bufEncoded.template begin<DATAENC>();
             auto dataRes = this->bufResult.template begin<DATARAW>();
@@ -150,15 +150,11 @@ struct CopyTest2 :
         }
     }
 
-    bool DoDecodeChecked() override {
-        return true;
-    }
-
     void RunDecodeChecked(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            const size_t numValues = this->getNumValues();
+            const size_t numValues = config.numValues;
             size_t i = 0;
             auto dataRaw = this->bufRaw.template begin<DATARAW>();
             auto dataEnc = this->bufEncoded.template begin<DATAENC>();

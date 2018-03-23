@@ -242,13 +242,11 @@ public:
             const DecodeConfiguration & config);
 
     // Check-And-Decode
-    virtual bool DoDecodeChecked();
-
     virtual void PreDecodeChecked(
             const DecodeConfiguration & config) = 0;
 
     virtual void RunDecodeChecked(
-            const DecodeConfiguration & config);
+            const DecodeConfiguration & config) = 0;
 
     // Execute test:
     virtual TestInfos Execute(
@@ -285,17 +283,17 @@ struct SIMDTest;
 #ifdef __SSE4_2__
 
 extern template
-struct SIMDTestBase<__m128i>;
+struct SIMDTestBase<__m128i > ;
 
 struct SSE42Test :
         virtual public TestBase0,
         public virtual SIMDTestBase<__m128i> {
 
-    virtual ~SSE42Test();
+virtual ~SSE42Test();
 
-    const virtual std::string & getSIMDtypeName() override;
+const virtual std::string & getSIMDtypeName() override;
 
-    virtual bool HasCapabilities() override;
+virtual bool HasCapabilities() override;
 };
 
 template<>
@@ -313,17 +311,17 @@ struct SIMDTest<__m128i> : public SSE42Test {
 #ifdef __AVX2__
 
 extern template
-struct SIMDTestBase<__m256i>;
+struct SIMDTestBase<__m256i > ;
 
 struct AVX2Test :
         virtual public TestBase0,
         public virtual SIMDTestBase<__m256i> {
 
-    virtual ~AVX2Test();
+virtual ~AVX2Test();
 
-    const virtual std::string & getSIMDtypeName() override;
+const virtual std::string & getSIMDtypeName() override;
 
-    virtual bool HasCapabilities() override;
+virtual bool HasCapabilities() override;
 };
 
 template<>
@@ -341,17 +339,17 @@ struct SIMDTest<__m256i> : public AVX2Test {
 #ifdef __AVX512F__
 
 extern template
-struct SIMDTestBase<__m512i>;
+struct SIMDTestBase<__m512i > ;
 
 struct AVX512Test :
         virtual public TestBase0,
         public virtual SIMDTestBase<__m512i> {
 
-    virtual ~AVX512Test();
+virtual ~AVX512Test();
 
-    const virtual std::string & getSIMDtypeName() override;
+const virtual std::string & getSIMDtypeName() override;
 
-    virtual bool HasCapabilities() override;
+virtual bool HasCapabilities() override;
 };
 
 template<>
@@ -390,17 +388,21 @@ public:
         return sizeof(DATAENC);
     }
 
-    size_t getNumValues() const {
-        return this->bufRaw.template end<DATARAW>() - this->bufRaw.template begin<DATARAW>();
-    }
-
     void ResetBuffers(
             const DataGenerationConfiguration & dataGenConfig) override {
-        DATARAW mask = static_cast<DATARAW>(-1);
-        if (dataGenConfig.numEffectiveBitsData) {
+        DATARAW mask;
+        if constexpr (std::is_signed_v<DATARAW>) {
+            mask = std::numeric_limits<DATARAW>::min();
+        } else {
+            mask = std::numeric_limits<DATARAW>::max();
+        }
+        if (dataGenConfig.numEffectiveBitsData && dataGenConfig.numEffectiveBitsData.value() < (sizeof(DATARAW) * CHAR_BIT)) {
             mask = static_cast<DATARAW>((1ull << dataGenConfig.numEffectiveBitsData.value()) - 1ull);
         }
         if (dataGenConfig.numIneffectiveLSBsData) {
+            if (dataGenConfig.numEffectiveBitsData && dataGenConfig.numEffectiveBitsData.value() <= dataGenConfig.numIneffectiveLSBsData) {
+                throw std::runtime_error("dataGenConfig.numEffectiveBitsData <= dataGenConfig.numIneffectiveLSBsData makes no sense!");
+            }
             mask &= ~static_cast<DATARAW>((1ull << dataGenConfig.numIneffectiveLSBsData.value()) - 1ull);
         }
         auto pInEnd = this->bufRaw.template end<DATARAW>();

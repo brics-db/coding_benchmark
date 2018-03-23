@@ -47,7 +47,9 @@ struct CopyTest :
             const EncodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            memmove(config.target.begin(), config.source.begin(), getNumBytes(config));
+            auto numBytes = getNumBytes(config);
+            memmove(config.target.begin(), config.source.begin(), numBytes);
+            memmove(config.target.template begin<char>() + numBytes, config.source.begin(), numBytes); // just duplicate
         }
     }
 
@@ -59,7 +61,8 @@ struct CopyTest :
             const CheckConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            int ret = memcmp(config.source.begin(), config.target.begin(), getNumBytes(config));
+            auto numBytes = getNumBytes(config);
+            int ret = memcmp(config.target.begin(), config.target.template begin<char>() + numBytes, numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
@@ -83,7 +86,7 @@ struct CopyTest :
         void operator()(
                 ArithmeticConfiguration::Add) {
             auto beg = config.source.template begin<DATA>();
-            auto end = beg + config.numValues;
+            auto end = beg + 2 * config.numValues;
             auto out = config.target.template begin<DATA>();
             while (beg < end) {
                 *out++ = *beg++ + config.operand;
@@ -92,7 +95,7 @@ struct CopyTest :
         void operator()(
                 ArithmeticConfiguration::Sub) {
             auto beg = config.source.template begin<DATA>();
-            auto end = beg + config.numValues;
+            auto end = beg + 2 * config.numValues;
             auto out = config.target.template begin<DATA>();
             while (beg < end) {
                 *out++ = *beg++ - config.operand;
@@ -101,7 +104,7 @@ struct CopyTest :
         void operator()(
                 ArithmeticConfiguration::Mul) {
             auto beg = config.source.template begin<DATA>();
-            auto end = beg + config.numValues;
+            auto end = beg + 2 * config.numValues;
             auto out = config.target.template begin<DATA>();
             while (beg < end) {
                 *out++ = *beg++ * config.operand;
@@ -110,7 +113,7 @@ struct CopyTest :
         void operator()(
                 ArithmeticConfiguration::Div) {
             auto beg = config.source.template begin<DATA>();
-            auto end = beg + config.numValues;
+            auto end = beg + 2 * config.numValues;
             auto out = config.target.template begin<DATA>();
             while (beg < end) {
                 *out++ = *beg++ / config.operand;
@@ -135,7 +138,8 @@ struct CopyTest :
             const ArithmeticConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            int ret = memcmp(config.source.begin(), this->bufRaw.begin(), getNumBytes(config));
+            auto numBytes = getNumBytes(config);
+            int ret = memcmp(config.source.begin(), config.source.template begin<char>() + numBytes, numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
@@ -163,22 +167,23 @@ struct CopyTest :
             larger_t sum = larger_t(0);
             auto beg = config.source.template begin<DATA>();
             auto end = beg + config.numValues;
-            auto out = config.target.template begin<DATA>();
+            auto out = config.target.template begin<larger_t>();
             while (beg < end) {
                 sum += *beg++;
             }
-            *out++ = static_cast<DATA>(sum);
-            *out = static_cast<DATA>(sum >> (sizeof(DATA) * CHAR_BIT));
+            *out++ = sum;
+            *out = sum;
         }
         void operator()(
                 AggregateConfiguration::Min) {
             DATA min(std::numeric_limits<DATA>::max());
             auto beg = config.source.template begin<DATA>();
             auto end = beg + config.numValues;
-            auto out = config.target.template begin<DATA>();
+            auto out = config.target.template begin<larger_t>();
             while (beg < end) {
                 min = std::min(min, *beg++);
             }
+            *out++ = min;
             *out = min;
         }
         void operator()(
@@ -186,10 +191,11 @@ struct CopyTest :
             DATA max(std::numeric_limits<DATA>::min());
             auto beg = config.source.template begin<DATA>();
             auto end = beg + config.numValues;
-            auto out = config.target.template begin<DATA>();
+            auto out = config.target.template begin<larger_t>();
             while (beg < end) {
                 max = std::max(max, *beg++);
             }
+            *out++ = max;
             *out = max;
         }
         void operator()(
@@ -202,8 +208,8 @@ struct CopyTest :
                 sum += *beg++;
             }
             larger_t avg = sum / config.numValues;
-            *out++ = static_cast<DATA>(avg);
-            *out = static_cast<DATA>(avg >> (sizeof(DATA) * CHAR_BIT));
+            *out++ = avg;
+            *out = avg;
         }
     };
 
@@ -224,7 +230,8 @@ struct CopyTest :
             const AggregateConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            int ret = memcmp(config.source.begin(), this->bufRaw.begin(), getNumBytes(config));
+            auto numBytes = getNumBytes(config);
+            int ret = memcmp(config.source.begin(), config.source.template begin<char>() + numBytes, numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
@@ -240,12 +247,13 @@ struct CopyTest :
             const ReencodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numBytes = getNumBytes(config);
-            int ret = memcmp(config.source.begin(), this->bufRaw.begin(), numBytes);
+            auto numBytes = getNumBytes(config);
+            int ret = memcmp(config.source.begin(), config.source.template begin<char>() + numBytes, numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }
             memmove(config.target.begin(), config.source.begin(), numBytes);
+            memmove(config.target.template begin<char>() + numBytes, config.source.begin(), numBytes); // just duplicate
         }
     }
 
@@ -261,16 +269,12 @@ struct CopyTest :
         }
     }
 
-    bool DoDecodeChecked() override {
-        return true;
-    }
-
     void RunDecodeChecked(
             const DecodeConfiguration & config) override {
         for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
             _ReadWriteBarrier();
-            size_t numBytes = getNumBytes(config);
-            int ret = memcmp(config.source.begin(), this->bufRaw.begin(), numBytes);
+            auto numBytes = getNumBytes(config);
+            int ret = memcmp(config.source.begin(), config.source.template begin<char>() + numBytes, numBytes);
             if (ret != 0) {
                 throw ErrorInfo(__FILE__, __LINE__, ret, iteration);
             }

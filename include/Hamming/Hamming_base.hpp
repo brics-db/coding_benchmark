@@ -68,36 +68,69 @@ namespace coding_benchmark {
 #ifdef __AVX2__
     template<>
     struct hamming_typehelper_t<uint16_t, __m256i> {
-        typedef __m128i code_t;
-    };
+    typedef __m128i code_t;
+};
 
     template<>
     struct hamming_typehelper_t<uint32_t, __m256i> {
-        typedef uint64_t code_t;
-    };
+    typedef uint64_t code_t;
+};
 
     template<>
     struct hamming_typehelper_t<uint64_t, __m256i> {
-        typedef uint32_t code_t;
-    };
+    typedef uint32_t code_t;
+};
 #endif
 
 #ifdef __AVX512F__
     template<>
     struct hamming_typehelper_t<uint16_t, __m512i> {
-        typedef __m256i code_t;
-    };
+    typedef __m256i code_t;
+};
 
     template<>
     struct hamming_typehelper_t<uint32_t, __m512i> {
-        typedef __m128i code_t;
-    };
+    typedef __m128i code_t;
+};
 
     template<>
     struct hamming_typehelper_t<uint64_t, __m512i> {
-        typedef uint64_t code_t;
-    };
+    typedef uint64_t code_t;
+};
 #endif
+
+    template<typename data_t, typename granularity_t>
+    struct hamming_t;
+
+    template<typename data_t, typename granularity_t, int I>
+    struct hamming_store_t;
+
+    template<typename data_t, typename granularity_t>
+    struct hamming_store_t<data_t, granularity_t, 1> {
+        static inline void store(
+                hamming_t<data_t, granularity_t> & dest,
+                granularity_t data) {
+            dest.store(data);
+        }
+    };
+
+    template<typename data_t, typename granularity_t>
+    struct hamming_store_t<data_t, granularity_t, 2> {
+        static inline void store(
+                hamming_t<data_t, granularity_t> & dest,
+                granularity_t data) {
+            dest.store2(data);
+        }
+    };
+
+    template<typename data_t, typename granularity_t>
+    struct hamming_store_t<data_t, granularity_t, 3> {
+        static inline void store(
+                hamming_t<data_t, granularity_t> & dest,
+                granularity_t data) {
+            dest.store3(data);
+        }
+    };
 
     template<typename data_t, typename granularity_t>
     struct hamming_t {
@@ -113,6 +146,12 @@ namespace coding_benchmark {
 
         void store3(
                 granularity_t data);
+
+        template<size_t I>
+        void storeI(
+                granularity_t data) {
+            hamming_store_t<data_t, granularity_t, I>::store(*this, data);
+        }
 
         bool isValid();
 

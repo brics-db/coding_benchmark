@@ -343,10 +343,6 @@ namespace coding_benchmark {
             InternalCoder<false, true>(config);
         }
 
-        bool DoDecodeChecked() override {
-            return true;
-        }
-
         void RunDecodeChecked(
                 const DecodeConfiguration & config) override {
             InternalCoder<true, true>(config);

@@ -475,10 +475,6 @@ namespace coding_benchmark {
             }
         }
 
-        virtual bool DoDecodeChecked() override {
-            return true;
-        }
-
         void RunDecodeChecked(
                 const DecodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
