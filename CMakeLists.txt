@@ -180,3 +180,6 @@ TARGET_COMPILE_OPTIONS(TestComputeHamming PUBLIC "-fno-tree-vectorize")
 
 add_algorithm(TestPopcount "src/TestPopcount.cpp src/Util/Test.cpp" benchbase)
 TARGET_COMPILE_OPTIONS(TestPopcount PUBLIC "-fno-tree-vectorize")
+
+add_algorithm(TestString "src/TestString.cpp src/Util/Stopwatch.cpp")
+TARGET_COMPILE_OPTIONS(TestString PUBLIC "-fno-tree-vectorize")
