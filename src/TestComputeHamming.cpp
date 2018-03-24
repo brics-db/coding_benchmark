@@ -39,8 +39,8 @@
 using namespace coding_benchmark;
 
 int main() {
-    const constexpr size_t numElements = 1000001;
-    const constexpr size_t iterations = 10;
+    const constexpr size_t numElements = 100001;
+    const constexpr size_t iterations = 1;
     const constexpr size_t UNROLL_LO = 1;
     const constexpr size_t UNROLL_HI = 1024;
 
@@ -56,6 +56,7 @@ int main() {
     vecTestInfos.reserve(32); // Reserve space to store sub-vectors!
 
     TestConfiguration testConfig(iterations, numElements);
+    testConfig.disableAll();
     DataGenerationConfiguration dataGenConfig;
 
     TestCase<Hamming_compute_scalar_16, UNROLL_LO, UNROLL_HI>("Hamming_compute_scalar_16", "Scalar 16", bufRawdata16, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);

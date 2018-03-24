@@ -80,7 +80,7 @@ int main(
         return result;
     }
     _ReadWriteBarrier();
-    uint64_t AUserInv64 = ext_euclidean(static_cast<uint64_t>(AUser), 64);
+    uint64_t AUserInv64 = static_cast<uint64_t>(ext_euclidean(static_cast<uint128_t>(AUser), 64));
     uint16_t AUserInv16 = ext_euclidean(AUser, 16);
 
     AlignedBlock input8(numElements * sizeof(uint8_t), 64);

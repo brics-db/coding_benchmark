@@ -255,7 +255,7 @@ namespace coding_benchmark {
             static inline popcnt_t popcount3(
                     __m128i a) {
                 return (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 7))) << 56) | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 6))) << 48)
-                        | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 5))) << 40) | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 4))) << 23)
+                        | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 5))) << 40) | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 4))) << 32)
                         | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 3))) << 24) | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 2))) << 16)
                         | (static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 1))) << 8) | static_cast<uint64_t>(_mm_popcnt_u32(_mm_extract_epi16(a, 0)));
             }

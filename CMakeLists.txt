@@ -89,7 +89,9 @@ MACRO(append_target_property arg_target arg_property arg_setting)
 ENDMACRO(append_target_property)
 
 add_static_lib(benchbase "src/Util/Output.cpp src/Util/ErrorInfo.cpp src/Util/TestInfo.cpp src/Util/Stopwatch.cpp src/Util/CPU.cpp src/SIMD/SSE.cpp src/SIMD/AVX2.cpp src/SIMD/AVX512.cpp \
-src/Hamming/Hamming_compute.cpp \
+src/Hamming/Hamming_compute_scalar_16.cpp src/Hamming/Hamming_compute_scalar_32.cpp \
+src/Hamming/Hamming_compute_sse42_1_16.cpp src/Hamming/Hamming_compute_sse42_1_32.cpp src/Hamming/Hamming_compute_sse42_2_16.cpp src/Hamming/Hamming_compute_sse42_2_32.cpp src/Hamming/Hamming_compute_sse42_3_16.cpp src/Hamming/Hamming_compute_sse42_3_32.cpp \
+src/Hamming/Hamming_compute_avx2_1_16.cpp src/Hamming/Hamming_compute_avx2_1_32.cpp src/Hamming/Hamming_compute_avx2_2_16.cpp src/Hamming/Hamming_compute_avx2_2_32.cpp src/Hamming/Hamming_compute_avx2_3_16.cpp src/Hamming/Hamming_compute_avx2_3_32.cpp \
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_scalar_16.cpp src/Hamming/Hamming_scalar_32.cpp \
 src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_sse42_16.cpp src/Hamming/Hamming_sse42_32.cpp \
 src/Hamming/Hamming_avx2.cpp src/Hamming/Hamming_avx2_16.cpp src/Hamming/Hamming_avx2_32.cpp \
@@ -174,9 +176,7 @@ ELSE(Boost_FOUND)
 ENDIF(Boost_FOUND)
 
 add_algorithm(TestComputeHamming "src/TestComputeHamming.cpp src/Util/Test.cpp" benchbase)
-add_algorithm(TestComputeHamming_novec "src/TestComputeHamming.cpp src/Util/Test.cpp" benchbase)
-TARGET_COMPILE_OPTIONS(TestComputeHamming_novec PUBLIC "-fno-tree-vectorize")
+TARGET_COMPILE_OPTIONS(TestComputeHamming PUBLIC "-fno-tree-vectorize")
 
 add_algorithm(TestPopcount "src/TestPopcount.cpp src/Util/Test.cpp" benchbase)
-add_algorithm(TestPopcount_novec "src/TestPopcount.cpp src/Util/Test.cpp" benchbase)
-TARGET_COMPILE_OPTIONS(TestPopcount_novec PUBLIC "-fno-tree-vectorize")
+TARGET_COMPILE_OPTIONS(TestPopcount PUBLIC "-fno-tree-vectorize")

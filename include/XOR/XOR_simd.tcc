@@ -581,10 +581,6 @@ public:
             this->Decode<false>(config);
         }
 
-        bool DoDecodeChecked() override {
-            return true;
-        }
-
         virtual void RunDecodeChecked(
                 const DecodeConfiguration & config) override {
             this->Decode<true>(config);

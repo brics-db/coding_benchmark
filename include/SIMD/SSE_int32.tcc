@@ -235,8 +235,8 @@ namespace coding_benchmark {
 
                     static inline popcnt_t popcount3(
                             __m128i a) {
-                        return (_mm_popcnt_u32(_mm_extract_epi32(a, 3) << 24) | (_mm_popcnt_u32(_mm_extract_epi32(a, 2)) << 16) | (_mm_popcnt_u32(_mm_extract_epi32(a, 1)) << 8)
-                                | _mm_popcnt_u32(_mm_extract_epi32(a, 0)));
+                        return (static_cast<popcnt_t>(_mm_popcnt_u32(_mm_extract_epi32(a, 3)) << 24) | (static_cast<popcnt_t>(_mm_popcnt_u32(_mm_extract_epi32(a, 2))) << 16)
+                                | (static_cast<popcnt_t>(_mm_popcnt_u32(_mm_extract_epi32(a, 1))) << 8) | static_cast<popcnt_t>(_mm_popcnt_u32(_mm_extract_epi32(a, 0))));
                     }
 
                     static inline __m128i cvt_larger_lo(
@@ -258,7 +258,7 @@ namespace coding_benchmark {
                     }
 
                 private:
-                    static const __m128i * const SHUFFLE_TABLE;
+    static const __m128i * const SHUFFLE_TABLE;
                 };
 
                 template<typename T, template<typename > class Op>

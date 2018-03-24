@@ -246,15 +246,6 @@ void TestBase::RunDecode(
         const DecodeConfiguration & config) {
 }
 
-// Check-And-Decode
-bool TestBase::DoDecodeChecked() {
-    return false;
-}
-
-void TestBase::RunDecodeChecked(
-        const DecodeConfiguration & config) {
-}
-
 ScalarTest::~ScalarTest() {
 }
 
@@ -497,17 +488,17 @@ TestInfos TestBase::Execute(
 
     TestInfo tiEnc, tiCheck, tiAdd, tiSub, tiMul, tiDiv, tiAddChk, tiSubChk, tiMulChk, tiDivChk, tiSum, tiMin, tiMax, tiAvg, tiSumChk, tiMinChk, tiMaxChk, tiAvgChk, tiReencChk, tiDec, tiDecChk;
 
-    TestConfiguration tc(1, configTest.numValues); // we need to check the result buffer only once!
-    TestConfiguration tcAggr(1, 2); // we need to check the result buffer only once and for the aggregates only a single value! We check 2 values, because sum and avg require larger ones. The test must respect this!
+    TestConfiguration tcSingleIter(1, configTest.numValues); // we need to check the result buffer only once!
+    TestConfiguration tcTwoValue(1, 2); // we need to check the result buffer only once and for the aggregates only a single value! We check 2 values, because sum and avg require larger ones. The test must respect this!
 
     {
         std::clog << "encode" << std::flush;
-        auto postFunc = [this,&tc] {
+        auto postFunc = [this,&tcSingleIter] {
             if (!this->internalPreEncodeCalled) {
                 throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreEncode() was not called!");
             }
-            const DecodeConfiguration ccEnc = DecodeConfiguration(tc, bufEncoded, bufDecoded);
-            this->RunDecodeChecked(ccEnc);
+            const DecodeConfiguration ccDec = DecodeConfiguration(tcSingleIter, bufEncoded, bufDecoded);
+            this->RunDecodeChecked(ccDec);
             compare(this->bufRaw, this->bufDecoded, this->bufRaw.nBytes);
         };
         InternalExecute(*this, sw, tiEnc, [this,&encConf] {this->PreEncode(encConf);}, [this,&encConf] {this->RunEncode(encConf);}, postFunc);
@@ -519,7 +510,7 @@ TestInfos TestBase::Execute(
     }
 
     if (configTest.enableArithmetic) {
-        auto func = [this,&sw,&tiAdd,&tiSub,&tiMul,&tiDiv,&tc] (ArithmeticConfiguration & conf) {
+        auto func = [this,&sw,&tiAdd,&tiSub,&tiMul,&tiDiv,&tcSingleIter] (ArithmeticConfiguration & conf) {
             if (DoArithmetic(conf)) {
                 std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode);
                 auto preFunc = [this,&conf] {
@@ -528,14 +519,12 @@ TestInfos TestBase::Execute(
                 auto runFunc = [this,&conf] {
                     this->RunArithmetic(conf);
                 };
-                auto postFunc = [this,&tc] {
+                auto postFunc = [this,&tcSingleIter] {
                     if (!this->internalPreArithmeticCalled) {
                         throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreArithmetic() was not called!");
                     }
-                    const CheckConfiguration ccChk(tc, bufArith, bufResult);
-                    this->RunCheck(ccChk);
-                    const DecodeConfiguration ccDec(tc, bufResult, bufDecoded);
-                    this->RunDecode(ccDec);
+                    const DecodeConfiguration ccDec(tcSingleIter, bufResult, bufDecoded);
+                    this->RunDecodeChecked(ccDec);
                     compare(this->bufArith, this->bufDecoded, this->bufArith.nBytes);
                 };
                 auto setFunc = [&conf,&tiAdd,&tiSub,&tiMul,&tiDiv] (int64_t nanos) {
@@ -551,7 +540,7 @@ TestInfos TestBase::Execute(
     }
 
     if (configTest.enableArithmeticChk) {
-        auto func = [this,&sw,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk,&tc] (ArithmeticConfiguration & conf) {
+        auto func = [this,&sw,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk,&tcSingleIter] (ArithmeticConfiguration & conf) {
             if (DoArithmeticChecked(conf)) {
                 std::clog << ", " << std::visit(ArithmeticConfigurationModeName(), conf.mode) << " checked";
                 auto preFunc = [this,&conf] {
@@ -560,14 +549,12 @@ TestInfos TestBase::Execute(
                 auto runFunc = [this,&conf] {
                     this->RunArithmeticChecked(conf);
                 };
-                auto postFunc = [this,&tc] {
+                auto postFunc = [this,&tcSingleIter] {
                     if (!this->internalPreArithmeticCheckedCalled) {
                         throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreArithmeticChecked() was not called!");
                     }
-                    const CheckConfiguration ccChk(tc, bufArith, bufResult);
-                    this->RunCheck(ccChk);
-                    const DecodeConfiguration ccDec(tc, bufResult, bufDecoded);
-                    this->RunDecode(ccDec);
+                    const DecodeConfiguration ccDec(tcSingleIter, bufResult, bufDecoded);
+                    this->RunDecodeChecked(ccDec);
                     compare(this->bufArith, this->bufDecoded, this->bufArith.nBytes);
                 };
                 auto setFunc = [&conf,&tiAddChk,&tiSubChk,&tiMulChk,&tiDivChk] (int64_t nanos) {
@@ -583,7 +570,7 @@ TestInfos TestBase::Execute(
     }
 
     if (configTest.enableAggregate) {
-        auto func = [this,&sw,&tiSum,&tiMin,&tiMax,&tiAvg,&tcAggr] (AggregateConfiguration & conf) {
+        auto func = [this,&sw,&tiSum,&tiMin,&tiMax,&tiAvg,&tcTwoValue] (AggregateConfiguration & conf) {
             if (DoAggregate(conf)) {
                 std::clog << ", " << std::visit(AggregateConfigurationModeName(), conf.mode);
                 auto preFunc = [this,&conf] {
@@ -592,12 +579,12 @@ TestInfos TestBase::Execute(
                 auto runFunc = [this,&conf] {
                     RunAggregate(conf);
                 };
-                auto postFunc = [this,&tcAggr] {
+                auto postFunc = [this,&tcTwoValue] {
                     if (!this->internalPreAggregateCalled) {
                         throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreAggregate() was not called!");
                     }
-                    const DecodeConfiguration ccDec(tcAggr, bufResult, bufDecoded);
-                    this->RunDecode(ccDec);
+                    const DecodeConfiguration ccDec(tcTwoValue, bufResult, bufDecoded);
+                    this->RunDecodeChecked(ccDec);
                     compare(this->bufArith, this->bufDecoded, 2 * this->getEncodedDataTypeSize());
                 };
                 auto setFunc = [&conf,&tiSum,&tiMin,&tiMax,&tiAvg] (int64_t nanos) {
@@ -613,7 +600,7 @@ TestInfos TestBase::Execute(
     }
 
     if (configTest.enableAggregateChk) {
-        auto func = [this,&sw,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk,&tcAggr] (AggregateConfiguration & conf) {
+        auto func = [this,&sw,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk,&tcTwoValue] (AggregateConfiguration & conf) {
             if (DoAggregateChecked(conf)) {
                 std::clog << ", " << std::visit(AggregateConfigurationModeName(), conf.mode) << " checked";
                 auto preFunc = [this,&conf] {
@@ -622,12 +609,12 @@ TestInfos TestBase::Execute(
                 auto runFunc = [this,&conf] {
                     RunAggregateChecked(conf);
                 };
-                auto postFunc = [this,&tcAggr] {
+                auto postFunc = [this,&tcTwoValue] {
                     if (!this->internalPreAggregateCheckedCalled) {
                         throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreAggregateChecked() was not called!");
                     }
-                    const DecodeConfiguration ccDec(tcAggr, bufResult, bufDecoded);
-                    this->RunDecode(ccDec);
+                    const DecodeConfiguration ccDec(tcTwoValue, bufResult, bufDecoded);
+                    this->RunDecodeChecked(ccDec);
                     compare(this->bufArith, this->bufDecoded, 2 * this->getEncodedDataTypeSize());
                 };
                 auto setFunc = [&conf,&tiSumChk,&tiMinChk,&tiMaxChk,&tiAvgChk] (int64_t nanos) {
@@ -655,7 +642,7 @@ TestInfos TestBase::Execute(
                 throw ErrorInfo(__FILE__, __LINE__, static_cast<size_t>(-1), static_cast<size_t>(-1), "Test::PreReencodeChecked() was not called!");
             }
             const DecodeConfiguration ccDec(configTest, bufResult, bufDecoded);
-            this->RunDecode(ccDec);
+            this->RunDecodeChecked(ccDec);
             compare(this->bufRaw, this->bufDecoded, configTest.numValues);
         };
         InternalExecute(*this, sw, tiReencChk, preFunc, runFunc, postFunc);
@@ -678,7 +665,7 @@ TestInfos TestBase::Execute(
         InternalExecute(*this, sw, tiDec, preFunc, runFunc, postFunc);
     }
 
-    if (configTest.enableDecodeChk && this->DoDecodeChecked()) {
+    if (configTest.enableDecodeChk) {
         std::clog << ", decode checked" << std::flush;
         auto preFunc = [this,&decConf] {
             this->PreDecodeChecked(decConf);

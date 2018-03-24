@@ -27,9 +27,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_scalar_16 :
-            public Hamming_compute_scalar<uint16_t, UNROLL> {
+            public Hamming_compute_scalar<uint16_t, UNROLL, 1> {
 
-        using Hamming_compute_scalar<uint16_t, UNROLL>::Hamming_compute_scalar;
+        using Hamming_compute_scalar<uint16_t, UNROLL, 1>::Hamming_compute_scalar;
 
         virtual ~Hamming_compute_scalar_16() {
         }
@@ -38,9 +38,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_scalar_32 :
-            public Hamming_compute_scalar<uint32_t, UNROLL> {
+            public Hamming_compute_scalar<uint32_t, UNROLL, 1> {
 
-        using Hamming_compute_scalar<uint32_t, UNROLL>::Hamming_compute_scalar;
+        using Hamming_compute_scalar<uint32_t, UNROLL, 1>::Hamming_compute_scalar;
 
         virtual ~Hamming_compute_scalar_32() {
         }
@@ -51,9 +51,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_sse42_1_16 :
-            public Hamming_compute_sse42_1<uint16_t, UNROLL> {
+            public Hamming_compute_sse42<uint16_t, UNROLL, 1> {
 
-        using Hamming_compute_sse42_1<uint16_t, UNROLL>::Hamming_compute_sse42_1;
+        using Hamming_compute_sse42<uint16_t, UNROLL, 1>::Hamming_compute_sse42;
 
         virtual ~Hamming_compute_sse42_1_16() {
         }
@@ -62,9 +62,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_sse42_1_32 :
-            public Hamming_compute_sse42_1<uint32_t, UNROLL> {
+            public Hamming_compute_sse42<uint32_t, UNROLL, 1> {
 
-        using Hamming_compute_sse42_1<uint32_t, UNROLL>::Hamming_compute_sse42_1;
+        using Hamming_compute_sse42<uint32_t, UNROLL, 1>::Hamming_compute_sse42;
 
         virtual ~Hamming_compute_sse42_1_32() {
         }
@@ -73,9 +73,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_sse42_2_16 :
-            public Hamming_compute_sse42_2<uint16_t, UNROLL> {
+            public Hamming_compute_sse42<uint16_t, UNROLL, 2> {
 
-        using Hamming_compute_sse42_2<uint16_t, UNROLL>::Hamming_compute_sse42_2;
+        using Hamming_compute_sse42<uint16_t, UNROLL, 2>::Hamming_compute_sse42;
 
         virtual ~Hamming_compute_sse42_2_16() {
         }
@@ -84,9 +84,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_sse42_2_32 :
-            public Hamming_compute_sse42_2<uint32_t, UNROLL> {
+            public Hamming_compute_sse42<uint32_t, UNROLL, 2> {
 
-        using Hamming_compute_sse42_2<uint32_t, UNROLL>::Hamming_compute_sse42_2;
+        using Hamming_compute_sse42<uint32_t, UNROLL, 2>::Hamming_compute_sse42;
 
         virtual ~Hamming_compute_sse42_2_32() {
         }
@@ -95,9 +95,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_sse42_3_16 :
-            public Hamming_compute_sse42_3<uint16_t, UNROLL> {
+            public Hamming_compute_sse42<uint16_t, UNROLL, 3> {
 
-        using Hamming_compute_sse42_3<uint16_t, UNROLL>::Hamming_compute_sse42_3;
+        using Hamming_compute_sse42<uint16_t, UNROLL, 3>::Hamming_compute_sse42;
 
         virtual ~Hamming_compute_sse42_3_16() {
         }
@@ -106,9 +106,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_sse42_3_32 :
-            public Hamming_compute_sse42_3<uint32_t, UNROLL> {
+            public Hamming_compute_sse42<uint32_t, UNROLL, 3> {
 
-        using Hamming_compute_sse42_3<uint32_t, UNROLL>::Hamming_compute_sse42_3;
+        using Hamming_compute_sse42<uint32_t, UNROLL, 3>::Hamming_compute_sse42;
 
         virtual ~Hamming_compute_sse42_3_32() {
         }
@@ -121,9 +121,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_avx2_1_16 :
-            public Hamming_compute_avx2_1<uint16_t, UNROLL> {
+            public Hamming_compute_avx2<uint16_t, UNROLL, 1> {
 
-        using Hamming_compute_avx2_1<uint16_t, UNROLL>::Hamming_compute_avx2_1;
+        using Hamming_compute_avx2<uint16_t, UNROLL, 1>::Hamming_compute_avx2;
 
         virtual ~Hamming_compute_avx2_1_16() {
         }
@@ -132,9 +132,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_avx2_1_32 :
-            public Hamming_compute_avx2_1<uint32_t, UNROLL> {
+            public Hamming_compute_avx2<uint32_t, UNROLL, 1> {
 
-        using Hamming_compute_avx2_1<uint32_t, UNROLL>::Hamming_compute_avx2_1;
+        using Hamming_compute_avx2<uint32_t, UNROLL, 1>::Hamming_compute_avx2;
 
         virtual ~Hamming_compute_avx2_1_32() {
         }
@@ -143,9 +143,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_avx2_2_16 :
-            public Hamming_compute_avx2_2<uint16_t, UNROLL> {
+            public Hamming_compute_avx2<uint16_t, UNROLL, 2> {
 
-        using Hamming_compute_avx2_2<uint16_t, UNROLL>::Hamming_compute_avx2_2;
+        using Hamming_compute_avx2<uint16_t, UNROLL, 2>::Hamming_compute_avx2;
 
         virtual ~Hamming_compute_avx2_2_16() {
         }
@@ -154,9 +154,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_avx2_2_32 :
-            public Hamming_compute_avx2_2<uint32_t, UNROLL> {
+            public Hamming_compute_avx2<uint32_t, UNROLL, 2> {
 
-        using Hamming_compute_avx2_2<uint32_t, UNROLL>::Hamming_compute_avx2_2;
+        using Hamming_compute_avx2<uint32_t, UNROLL, 2>::Hamming_compute_avx2;
 
         virtual ~Hamming_compute_avx2_2_32() {
         }
@@ -165,9 +165,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_avx2_3_16 :
-            public Hamming_compute_avx2_3<uint16_t, UNROLL> {
+            public Hamming_compute_avx2<uint16_t, UNROLL, 3> {
 
-        using Hamming_compute_avx2_3<uint16_t, UNROLL>::Hamming_compute_avx2_3;
+        using Hamming_compute_avx2<uint16_t, UNROLL, 3>::Hamming_compute_avx2;
 
         virtual ~Hamming_compute_avx2_3_16() {
         }
@@ -176,9 +176,9 @@ namespace coding_benchmark {
 
     template<size_t UNROLL>
     struct Hamming_compute_avx2_3_32 :
-            public Hamming_compute_avx2_3<uint32_t, UNROLL> {
+            public Hamming_compute_avx2<uint32_t, UNROLL, 3> {
 
-        using Hamming_compute_avx2_3<uint32_t, UNROLL>::Hamming_compute_avx2_3;
+        using Hamming_compute_avx2<uint32_t, UNROLL, 3>::Hamming_compute_avx2;
 
         virtual ~Hamming_compute_avx2_3_32() {
         }

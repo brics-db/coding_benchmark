@@ -26,6 +26,7 @@
 #include <vector>
 #include <cinttypes>
 #include <exception>
+#include <climits>
 
 #include <boost/multiprecision/cpp_int.hpp>
 
@@ -62,7 +63,7 @@ template<typename T>
 T ext_euclidean(
         T b0,
         size_t codewidth) {
-    if ((sizeof(T) * 8) <= codewidth) {
+    if ((sizeof(T) * CHAR_BIT) <= codewidth) {
         throw std::runtime_error("The template datatype is too small!");
     }
     T a0(1);

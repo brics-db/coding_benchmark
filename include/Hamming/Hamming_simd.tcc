@@ -59,7 +59,7 @@ namespace coding_benchmark {
     extern template struct hamming_t<uint32_t, __m512i > ;
 #endif
 
-    template<typename DATAIN, typename VEC, size_t UNROLL>
+    template<typename DATAIN, typename VEC, size_t UNROLL, size_t StoreVersion = 1>
     struct Hamming_simd :
             public Test<DATAIN, hamming_t<DATAIN, VEC>>,
             public SIMDTest<VEC> {
@@ -81,18 +81,18 @@ namespace coding_benchmark {
                 auto outV = config.target.template begin<hamming_simd_t>();
                 while (inV <= (inVend - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++outV) {
-                        outV->store(*inV++);
+                        outV->template storeI<StoreVersion>(*inV++);
                     }
                 }
                 for (; inV <= (inVend - 1); ++outV) {
-                    outV->store(*inV++);
+                    outV->template storeI<StoreVersion>(*inV++);
                 }
                 if (inV < inVend) {
                     auto inS = reinterpret_cast<DATAIN*>(inV);
                     const auto inSend = reinterpret_cast<DATAIN* const >(inVend);
                     auto outS = reinterpret_cast<hamming_scalar_t*>(outV);
                     for (; inS < inSend; ++outS) {
-                        outS->store(*inS++);
+                        outS->template storeI<StoreVersion>(*inS++);
                     }
                 }
             }
@@ -167,7 +167,7 @@ namespace coding_benchmark {
                 while (inV <= (inVend - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++inV, ++outV) {
                         if ((!check) || inV->isValid()) {
-                            outV->store(mm_op<VEC, DATAIN, Functor>::compute(inV->data, mmOperand));
+                            outV->template storeI<StoreVersion>(mm_op<VEC, DATAIN, Functor>::compute(inV->data, mmOperand));
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                         }
@@ -175,7 +175,7 @@ namespace coding_benchmark {
                 }
                 for (; inV < (inVend - 1); ++inV, ++outV) {
                     if ((!check) || inV->isValid()) {
-                        outV->store(mm_op<VEC, DATAIN, Functor>::compute(inV->data, mmOperand));
+                        outV->template storeI<StoreVersion>(mm_op<VEC, DATAIN, Functor>::compute(inV->data, mmOperand));
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inV) - config.source.template begin<DATAIN>(), iteration);
                     }
@@ -187,7 +187,7 @@ namespace coding_benchmark {
                     auto outS = reinterpret_cast<hamming_scalar_t*>(outV);
                     for (; inS < inSend; ++outS, ++inS) {
                         if ((!check) || inS->isValid()) {
-                            outS->store(functor(inS->data, config.operand));
+                            outS->template storeI<StoreVersion>(functor(inS->data, config.operand));
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAIN*>(inS) - config.source.template begin<DATAIN>(), iteration);
                         }
@@ -390,10 +390,6 @@ namespace coding_benchmark {
         void RunDecode(
                 const DecodeConfiguration & config) override {
             RunDecodeInternal<false>(config);
-        }
-
-        bool DoDecodeChecked() override {
-            return true;
         }
 
         void RunDecodeChecked(

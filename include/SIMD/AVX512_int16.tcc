@@ -668,7 +668,7 @@ namespace coding_benchmark {
                         auto mm0 = mm_op<__m256i, T, coding_benchmark::mul>::mullo(mmA0, mmB0);
                         auto mm1 = mm_op<__m256i, T, coding_benchmark::mul>::mullo(mmA1, mmB1);
                         auto c = _mm512_castsi256_si512(mm0);
-                        return _mm512_insertf64x4(c, mm1, 1);
+                        return _mm512_inserti64x4(c, mm1, 1);
 #endif
                     }
                 };
@@ -692,7 +692,7 @@ namespace coding_benchmark {
                         auto mm0 = mm_op<__m256i, T, coding_benchmark::div>::div(mmA0, mmB0);
                         auto mm1 = mm_op<__m256i, T, coding_benchmark::div>::div(mmA1, mmB1);
                         auto c = _mm512_castsi256_si512(mm0);
-                        return _mm512_insertf64x4(c, mm1, 1);
+                        return _mm512_inserti64x4(c, mm1, 1);
                     }
                 };
 

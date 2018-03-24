@@ -38,7 +38,7 @@ namespace coding_benchmark {
     extern template struct hamming_t<uint32_t, uint32_t> ;
     extern template struct hamming_t<uint64_t, uint64_t> ;
 
-    template<typename DATAIN, size_t UNROLL>
+    template<typename DATAIN, size_t UNROLL, size_t StoreVersion = 1>
     struct Hamming_scalar :
             public Test<DATAIN, hamming_t<DATAIN, DATAIN>>,
             public ScalarTest {
@@ -60,11 +60,11 @@ namespace coding_benchmark {
                 auto dataOut = config.target.template begin<hamming_scalar_t>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut) {
-                        dataOut->store(*data);
+                        dataOut->template storeI<StoreVersion>(*data);
                     }
                 }
                 for (; data < dataEnd; ++data, ++dataOut) {
-                    dataOut->store(*data);
+                    dataOut->template storeI<StoreVersion>(*data);
                 }
             }
         }
@@ -121,7 +121,7 @@ namespace coding_benchmark {
                     for (size_t k = 0; k < UNROLL; ++k, ++data, ++dataOut, ++i) {
                         auto tmp = data->data;
                         if ((!check) || data->isValid()) {
-                            dataOut->store(functor(tmp, config.operand));
+                            dataOut->template storeI<StoreVersion>(functor(tmp, config.operand));
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, data - config.source.template begin<hamming_scalar_t>(), iteration);
                         }
@@ -130,7 +130,7 @@ namespace coding_benchmark {
                 for (; data < dataEnd; ++data, ++dataOut) {
                     auto tmp = data->data;
                     if ((!check) || data->isValid()) {
-                        dataOut->store(functor(tmp, config.operand));
+                        dataOut->template storeI<StoreVersion>(functor(tmp, config.operand));
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, data - config.source.template begin<hamming_scalar_t>(), iteration);
                     }
@@ -306,10 +306,6 @@ namespace coding_benchmark {
         void RunDecode(
                 const DecodeConfiguration & config) override {
             RunDecodeInternal<false>(config);
-        }
-
-        bool DoDecodeChecked() override {
-            return true;
         }
 
         void RunDecodeChecked(

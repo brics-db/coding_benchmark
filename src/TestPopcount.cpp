@@ -65,11 +65,11 @@ namespace coding_benchmark {
         static inline uint8_t popcnt(
                 TIn value) {
             if constexpr (sizeof(TIn) <= sizeof(unsigned int)) {
-                return __builtin_popcount(static_cast<unsigned int>(value));
+                return __builtin_popcount(value);
             } else if constexpr (sizeof(TIn) <= sizeof(unsigned long int)) {
-                return __builtin_popcountl(static_cast<unsigned long int>(value));
+                return __builtin_popcountl(value);
             } else if constexpr (sizeof(TIn) <= sizeof(unsigned long long int)) {
-                return __builtin_popcountll(static_cast<unsigned long long int>(value));
+                return __builtin_popcountll(value);
             }
             throw std::runtime_error("Type not supported for popcount!");
         }
@@ -78,9 +78,9 @@ namespace coding_benchmark {
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto data = this->bufRaw.template begin<TIn>();
-                auto dataEnd = this->bufRaw.template end<TIn>();
-                auto dataOut = this->bufEncoded.template begin<uint8_t>();
+                auto data = config.source.template begin<TIn>();
+                auto dataEnd = data + config.numValues;
+                auto dataOut = config.target.template begin<uint8_t>();
                 while (data <= (dataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         *dataOut++ = popcnt(*data++);
@@ -90,6 +90,12 @@ namespace coding_benchmark {
                     *dataOut++ = popcnt(*data++);
                 }
             }
+        }
+
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            // just simulate for conformity
+            memmove(config.target.begin(), this->bufRaw.begin(), config.numValues * sizeof(TIn));
         }
     };
 
@@ -122,9 +128,9 @@ namespace coding_benchmark {
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto mmData = this->bufRaw.template begin<SIMD>();
-                auto mmDataEnd = this->bufRaw.template end<SIMD>();
-                auto mmDataOut = this->bufEncoded.template begin<mm_popcnt_t>();
+                auto mmData = config.source.template begin<SIMD>();
+                auto mmDataEnd = config.source.template end<SIMD>();
+                auto mmDataOut = config.target.template begin<mm_popcnt_t>();
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         *mmDataOut++ = MM::popcount(*mmData++);
@@ -133,15 +139,19 @@ namespace coding_benchmark {
                 while (mmData <= (mmDataEnd - 1)) {
                     *mmDataOut++ = MM::popcount(*mmData++);
                 }
-                if (mmData < mmDataEnd) {
-                    auto data = reinterpret_cast<TIn*>(mmData);
-                    auto dataEnd = reinterpret_cast<TIn*>(mmDataEnd);
-                    auto dataOut = reinterpret_cast<typename popcount_scalar<TIn, UNROLL>::popcnt_t*>(mmDataOut);
-                    while (data < dataEnd) {
-                        *dataOut++ = popcount_scalar<TIn, UNROLL>::popcnt(*data++);
-                    }
+                auto data = reinterpret_cast<TIn*>(mmData);
+                auto dataEnd = reinterpret_cast<TIn*>(mmDataEnd);
+                auto dataOut = reinterpret_cast<typename popcount_scalar<TIn, UNROLL>::popcnt_t*>(mmDataOut);
+                while (data < dataEnd) {
+                    *dataOut++ = popcount_scalar<TIn, 1>::popcnt(*data++);
                 }
             }
+        }
+
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            // just simulate for conformity
+            memmove(config.target.begin(), this->bufRaw.begin(), config.numValues * sizeof(TIn));
         }
     };
 
@@ -161,9 +171,9 @@ namespace coding_benchmark {
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto mmData = this->bufRaw.template begin<SIMD>();
-                auto mmDataEnd = this->bufRaw.template end<SIMD>();
-                auto mmDataOut = this->bufEncoded.template begin<mm_popcnt_t>();
+                auto mmData = config.source.template begin<SIMD>();
+                auto mmDataEnd = config.source.template end<SIMD>();
+                auto mmDataOut = config.target.template begin<mm_popcnt_t>();
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         *mmDataOut++ = MM::popcount2(*mmData++);
@@ -172,15 +182,19 @@ namespace coding_benchmark {
                 while (mmData <= (mmDataEnd - 1)) {
                     *mmDataOut++ = MM::popcount2(*mmData++);
                 }
-                if (mmData < mmDataEnd) {
-                    auto data = reinterpret_cast<TIn*>(mmData);
-                    auto dataEnd = reinterpret_cast<TIn*>(mmDataEnd);
-                    auto dataOut = reinterpret_cast<typename popcount_scalar<TIn, UNROLL>::popcnt_t*>(mmDataOut);
-                    while (data < dataEnd) {
-                        *dataOut++ = popcount_scalar<TIn, UNROLL>::popcnt(*data++);
-                    }
+                auto data = reinterpret_cast<TIn*>(mmData);
+                auto dataEnd = reinterpret_cast<TIn*>(mmDataEnd);
+                auto dataOut = reinterpret_cast<typename popcount_scalar<TIn, UNROLL>::popcnt_t*>(mmDataOut);
+                while (data < dataEnd) {
+                    *dataOut++ = popcount_scalar<TIn, 1>::popcnt(*data++);
                 }
             }
+        }
+
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            // just simulate for conformity
+            memmove(config.target.begin(), this->bufRaw.begin(), config.numValues * sizeof(TIn));
         }
     };
 
@@ -200,9 +214,9 @@ namespace coding_benchmark {
                 const EncodeConfiguration & config) override {
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
                 _ReadWriteBarrier();
-                auto mmData = this->bufRaw.template begin<SIMD>();
-                auto mmDataEnd = this->bufRaw.template end<SIMD>();
-                auto mmDataOut = this->bufEncoded.template begin<mm_popcnt_t>();
+                auto mmData = config.source.template begin<SIMD>();
+                auto mmDataEnd = config.source.template end<SIMD>();
+                auto mmDataOut = config.target.template begin<mm_popcnt_t>();
                 while (mmData <= (mmDataEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         *mmDataOut++ = MM::popcount3(*mmData++);
@@ -211,15 +225,19 @@ namespace coding_benchmark {
                 while (mmData <= (mmDataEnd - 1)) {
                     *mmDataOut++ = MM::popcount3(*mmData++);
                 }
-                if (mmData < mmDataEnd) {
-                    auto data = reinterpret_cast<TIn*>(mmData);
-                    auto dataEnd = reinterpret_cast<TIn*>(mmDataEnd);
-                    auto dataOut = reinterpret_cast<typename popcount_scalar<TIn, UNROLL>::popcnt_t*>(mmDataOut);
-                    while (data < dataEnd) {
-                        *dataOut++ = popcount_scalar<TIn, UNROLL>::popcnt(*data++);
-                    }
+                auto data = reinterpret_cast<TIn*>(mmData);
+                auto dataEnd = reinterpret_cast<TIn*>(mmDataEnd);
+                auto dataOut = reinterpret_cast<typename popcount_scalar<TIn, UNROLL>::popcnt_t*>(mmDataOut);
+                while (data < dataEnd) {
+                    *dataOut++ = popcount_scalar<TIn, 1>::popcnt(*data++);
                 }
             }
+        }
+
+        void RunDecodeChecked(
+                const DecodeConfiguration & config) override {
+            // just simulate for conformity
+            memmove(config.target.begin(), this->bufRaw.begin(), config.numValues * sizeof(TIn));
         }
     };
 
@@ -367,8 +385,8 @@ namespace coding_benchmark {
 using namespace coding_benchmark;
 
 int main() {
-    const constexpr size_t numElements = 1000001;
-    const constexpr size_t iterations = 10;
+    const constexpr size_t numElements = 100001;
+    const constexpr size_t iterations = 1;
     const constexpr size_t UNROLL_LO = 1;
     const constexpr size_t UNROLL_HI = 1024;
 
@@ -385,6 +403,7 @@ int main() {
     std::vector<std::vector<TestInfos>> vecTestInfos;
     vecTestInfos.reserve(32); // Reserve space to store sub-vectors!
     TestConfiguration testConfig(iterations, numElements);
+    testConfig.disableAll();
     DataGenerationConfiguration dataGenConfig;
 
     TestCase<popcount_scalar_8, UNROLL_LO, UNROLL_HI>("popcount_scalar_8", "Scalar 8", bufRawdata8, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos);
@@ -460,4 +479,6 @@ int main() {
 #endif
 
     printResults<false>(vecTestInfos, OutputConfiguration(false, false));
+    std::cout << "\n\n";
+    printResults<true>(vecTestInfos, OutputConfiguration(false, false));
 }
