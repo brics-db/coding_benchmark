@@ -371,7 +371,9 @@ int _mm_strcmp_AN(
     const unsigned short Ainv = static_cast<unsigned short>(ext_euclidean(uint32_t(A), 16));
     __m128i mmAinv = _mm_set1_epi16(Ainv);
     __m128i mmMax = _mm_set1_epi16(std::numeric_limits<unsigned char>::max());
+#ifndef NDEBUG
     const unsigned short* const s2Org = s2;
+#endif
     const long diff = s1 - s2;
     s2 -= shortsPerMM128;
 
@@ -415,7 +417,9 @@ int _mm_strcmp_AN_accu(
     __m128i mmAccu22 = _mm_set1_epi64x(0);
     __m128i mmAccu23 = _mm_set1_epi64x(0);
     __m128i mmAccu24 = _mm_set1_epi64x(0);
+#ifndef NDEBUG
     const unsigned short* const s2Org = s2;
+#endif
     const long diff = s1 - s2;
     s2 -= shortsPerMM128;
 
@@ -476,7 +480,9 @@ int _mm_strcmp_AN(
     const unsigned int Ainv = static_cast<unsigned int>(ext_euclidean(uint64_t(A), 32));
     __m128i mmAinv = _mm_set1_epi32(Ainv);
     __m128i mmMax = _mm_set1_epi32(std::numeric_limits<unsigned short>::max());
+#ifndef NDEBUG
     const unsigned int* const i2Org = i2;
+#endif
     const long diff = i1 - i2;
     i2 -= intsPerMM128;
 
@@ -516,7 +522,9 @@ int _mm_strcmp_AN_accu(
     __m128i mmAccu12 = _mm_set1_epi64x(0);
     __m128i mmAccu21 = _mm_set1_epi64x(0);
     __m128i mmAccu22 = _mm_set1_epi64x(0);
+#ifndef NDEBUG
     const unsigned int* const i2Org = i2;
+#endif
     const long diff = i1 - i2;
     i2 -= intsPerMM128;
 
@@ -573,32 +581,14 @@ T XOR(
 
 template<typename T>
 __m128i _mm_XOR(
-        const __m128i * mm) {
+        const __m128i * mm,
+        const size_t NUM) {
     __m128i mmXOR = _mm_setzero_si128();
-//    __m128i mmZero = _mm_setzero_si128();
-//    __m128i mmValue;
-//    do {
-//        mmValue = _mm_lddqu_si128(mm++);
-//        mmXOR = _mm_xor_si128(mmXOR, mmValue);
-//    } while (_mm_movemask_epi8(_mm_cmpeq_epi8(mmValue, mmZero)) == 0);
-//    return mmXOR;
-    --mm;
-    const constexpr int _SIDD_THIS_OPS = sizeof(T) == 1 ? (std::is_signed_v<T> ? _SIDD_SBYTE_OPS : _SIDD_UBYTE_OPS) : (std::is_signed_v<T> ? _SIDD_SWORD_OPS : _SIDD_UWORD_OPS);
-
-    // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
-    // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
-
-    loopXOR:
-    // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
-    __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (mm += 1));
-    mmXOR = _mm_xor_si128(mmXOR, ct16chars);
-    int __attribute__((unused)) offset = _mm_cmpistri(ct16chars, ct16chars, _SIDD_THIS_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
-    __asm__ __volatile__ goto( "ja %l[loopXOR] \n jc %l[not_equalXOR]" : : : "memory" : loopXOR, not_equalXOR );
+    const __m128i * const mmEnd = mm + (NUM / (sizeof(__m128i) / sizeof(T)));
+    while (mm <= (mmEnd - 1)) {
+        mmXOR = _mm_xor_si128(mmXOR, _mm_lddqu_si128(mm++));
+    }
     return mmXOR;
-
-    not_equalXOR:
-    //
-    throw std::runtime_error("In _mm_XOR(__m128i)");
 }
 
 template<typename T>
@@ -656,9 +646,10 @@ int _mm_strcmp_XOR(
     __m128i mmXOR1 = _mm_setzero_si128();
     __m128i mmXOR2 = _mm_setzero_si128();
     const char* const ctEnd = ct + NUM;
+#ifndef NDEBUG
     const char* const csOrg = cs;
     const char* const ctOrg = ct;
-
+#endif
     const long diff = cs - ct;
     ct -= charsPerMM128;
 
@@ -699,6 +690,14 @@ int _mm_strcmp_XOR(
         __m128i cs16chars = _mm_lddqu_si128((const __m128i *) (ct + diff));
         mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
     } while (ct < ctEnd);
+#ifndef NDEBUG
+    if (static_cast<size_t>((ct + diff + charsPerMM128) - csOrg) != NUM) {
+        std::cerr << "\tpos1=" << ((ct + diff + charsPerMM128) - csOrg) << " != " << NUM << std::endl;
+    }
+    if (static_cast<size_t>((ct + charsPerMM128) - ctOrg) != NUM) {
+        std::cerr << "\tpos2=" << ((ct + charsPerMM128) - ctOrg) << " != " << NUM << std::endl;
+    }
+#endif
     if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1))) {
         if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2))) {
             return ct[diff + offset] - ct[offset];
@@ -719,8 +718,10 @@ int _mm_strcmp_XOR(
     __m128i mmXOR1 = _mm_setzero_si128();
     __m128i mmXOR2 = _mm_setzero_si128();
     const unsigned short* const ctEnd = ct + NUM;
+#ifndef NDEBUG
     const unsigned short* const csOrg = cs;
     const unsigned short* const ctOrg = ct;
+#endif
 
     const long diff = cs - ct;
     ct -= shortsPerMM128;
@@ -762,6 +763,14 @@ int _mm_strcmp_XOR(
         __m128i cs8shorts = _mm_lddqu_si128((const __m128i *) (ct + diff));
         mmXOR2 = _mm_xor_si128(mmXOR2, cs8shorts);
     } while (ct < ctEnd);
+#ifndef NDEBUG
+    if (static_cast<size_t>((ct + diff + charsPerMM128) - csOrg) != NUM) {
+        std::cerr << "\tpos1=" << ((ct + diff + charsPerMM128) - csOrg) << " != " << NUM << std::endl;
+    }
+    if (static_cast<size_t>((ct + charsPerMM128) - ctOrg) != NUM) {
+        std::cerr << "\tpos2=" << ((ct + charsPerMM128) - ctOrg) << " != " << NUM << std::endl;
+    }
+#endif
     if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1))) {
         if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2))) {
             return ct[diff + offset] - ct[offset];
@@ -900,8 +909,8 @@ int main(
         time = sw.Current();
         std::cout << "Kankovski," << res << "," << time << ',' << time_base << '\n';
 
-        __m128i old_xor_mm1 = _mm_XOR<char>(reinterpret_cast<const __m128i *>(uc1));
-        __m128i old_xor_mm2 = _mm_XOR<char>(reinterpret_cast<const __m128i *>(uc2));
+        __m128i old_xor_mm1 = _mm_XOR<unsigned char>(reinterpret_cast<const __m128i *>(uc1), NUM);
+        __m128i old_xor_mm2 = _mm_XOR<unsigned char>(reinterpret_cast<const __m128i *>(uc2), NUM);
         sw.Reset();
         res = _mm_strcmp_XOR(uc1, uc2, old_xor_mm1, old_xor_mm2, NUM);
         time = sw.Current();
@@ -946,15 +955,17 @@ int main(
         AlignedBlock buf_short_4(NUM_BYTES_SHORT, 16);
         DataGenerationConfiguration config3(8); // make sure we have no zero-bytes
         ResetBlock<unsigned char>(config3, buf_short_3);
-        *(buf_short_3.template end<unsigned short>() - 1) = 0;
         ResetBlock<unsigned char>(config3, buf_short_4);
-        *(buf_short_4.template end<unsigned short>() - 1) = 0;
         const unsigned short * us1 = buf_short_3.template begin<const unsigned short>();
         const unsigned short * us2 = buf_short_4.template begin<const unsigned short>();
-        test_buffer(us1, "buf_short_3", NUM_BYTES_CHAR);
-        test_buffer(us2, "buf_short_4", NUM_BYTES_CHAR);
+        *(buf_short_3.template end<unsigned char>() - 1) = 0;
+        *(buf_short_4.template end<unsigned char>() - 1) = 0;
         test_buffer(reinterpret_cast<const char*>(us1), "buf_char_3", NUM_BYTES_SHORT);
         test_buffer(reinterpret_cast<const char*>(us2), "buf_char_4", NUM_BYTES_SHORT);
+        *(buf_short_3.template end<unsigned short>() - 1) = 0;
+        *(buf_short_4.template end<unsigned short>() - 1) = 0;
+        test_buffer(us1, "buf_short_3", NUM_BYTES_CHAR);
+        test_buffer(us2, "buf_short_4", NUM_BYTES_CHAR);
 
         sw.Reset();
         res = std::strcmp(reinterpret_cast<const char*>(us1), reinterpret_cast<const char*>(us2));
@@ -978,8 +989,8 @@ int main(
         time = sw.Current();
         std::cout << "Kankovski," << res << ',' << time << ',' << time_base << '\n';
 
-        auto old_xor_mm1 = _mm_XOR<unsigned short>(reinterpret_cast<const __m128i *>(us1));
-        auto old_xor_mm2 = _mm_XOR<unsigned short>(reinterpret_cast<const __m128i *>(us2));
+        auto old_xor_mm1 = _mm_XOR<unsigned short>(reinterpret_cast<const __m128i *>(us1), NUM);
+        auto old_xor_mm2 = _mm_XOR<unsigned short>(reinterpret_cast<const __m128i *>(us2), NUM);
         sw.Reset();
         res = _mm_strcmp_XOR(us1, us2, old_xor_mm1, old_xor_mm2, NUM);
         time = sw.Current();
