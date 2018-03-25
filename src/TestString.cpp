@@ -26,6 +26,7 @@
 #include <optional>
 #include <random>
 #include <limits>
+#include <type_traits>
 
 #include <immintrin.h>
 
@@ -33,113 +34,150 @@
 #include <Util/AlignedBlock.hpp>
 #include <Util/Euclidean.hpp>
 
+const constexpr long charsPerMM128 = 16; // asm ("rdx") does not work
+const constexpr long shortsPerMM128 = 8; // asm ("rdx") does not work
+const constexpr long intsPerMM128 = 4; // asm ("rdx") does not work
+
 /* https://www.strchr.com/strcmp_and_strlen_using_sse_4.2 */
 int _mm_strcmp(
         const char* cs,
-        const char* ct) {
+        const char* ct,
+        const size_t __attribute__((unused)) NUM) {
     const long diff = cs - ct;
-    const constexpr long nextbytes = 16; // asm ("rdx") does not work
-    ct -= nextbytes;
+    ct -= charsPerMM128;
 
     // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
     // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
 
     loop:
     // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
-    __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
+    __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (ct += charsPerMM128));
     int offset = _mm_cmpistri(ct16chars, *(const __m128i * ) (ct + diff), _SIDD_SBYTE_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loop] \n jc %l[not_equal]" : : : "memory" : loop, not_equal );
+#ifndef NDEBUG
+    if ((((ct + charsPerMM128) + diff) - NUM) != cs) {
+        std::cerr << "\tpos=" << (((ct + charsPerMM128) + diff) - cs) << " != " << NUM << std::endl;
+    }
+#endif
     return 0;
 
     not_equal: return ct[diff + offset] - ct[offset];
 }
 int _mm_strcmp(
         const unsigned char* cs,
-        const unsigned char* ct) {
+        const unsigned char* ct,
+        const size_t __attribute__((unused)) NUM) {
     const long diff = cs - ct;
-    const constexpr long nextbytes = 16; // asm ("rdx") does not work
-    ct -= nextbytes;
+    ct -= charsPerMM128;
 
     // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
-    // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
+    // __asm__ __volatile__( "mov $16, %0" : "=r"(charsPerMM128) );
 
     loop:
     // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
-    __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
+    __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (ct += charsPerMM128));
     int offset = _mm_cmpistri(ct16chars, *(const __m128i * ) (ct + diff), _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loop] \n jc %l[not_equal]" : : : "memory" : loop, not_equal );
+#ifndef NDEBUG
+    if ((((ct + charsPerMM128) + diff) - NUM) != cs) {
+        std::cerr << "\tpos=" << (((ct + charsPerMM128) + diff) - cs) << " != " << NUM << std::endl;
+    }
+#endif
     return 0;
 
     not_equal: return ct[diff + offset] - ct[offset];
 }
 int _mm_strcmp(
         const short* cs,
-        const short* ct) {
+        const short* ct,
+        const size_t __attribute__((unused)) NUM) {
     const long diff = cs - ct;
-    const constexpr long nextbytes = 8; // asm ("rdx") does not work
-    ct -= nextbytes;
+    ct -= shortsPerMM128;
 
     // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
-    // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
+    // __asm__ __volatile__( "mov $16, %0" : "=r"(shortsPerMM128) );
 
     loop:
     // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
-    __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
+    __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (ct += shortsPerMM128));
     int offset = _mm_cmpistri(ct16chars, *(const __m128i * ) (ct + diff), _SIDD_SWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loop] \n jc %l[not_equal]" : : : "memory" : loop, not_equal );
+#ifndef NDEBUG
+    if ((((ct + shortsPerMM128) + diff) - NUM) != cs) {
+        std::cerr << "\tpos=" << (((ct + charsPerMM128) + diff) - cs) << " != " << NUM << std::endl;
+    }
+#endif
     return 0;
 
     not_equal: return ct[diff + offset] - ct[offset];
 }
 int _mm_strcmp(
         const unsigned short* cs,
-        const unsigned short* ct) {
+        const unsigned short* ct,
+        const size_t __attribute__((unused)) NUM) {
     const long diff = cs - ct;
-    const constexpr long nextbytes = 8; // asm ("rdx") does not work
-    ct -= nextbytes;
+    ct -= shortsPerMM128;
 
     // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
     // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
 
     loop:
     // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
-    __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
+    __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (ct += shortsPerMM128));
     int offset = _mm_cmpistri(ct16chars, *(const __m128i * ) (ct + diff), _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loop] \n jc %l[not_equal]" : : : "memory" : loop, not_equal );
+#ifndef NDEBUG
+    if (((ct + shortsPerMM128 + diff) - NUM) != cs) {
+        std::cerr << "\tpos=" << ((ct + charsPerMM128 + diff) - cs) << " != " << NUM << std::endl;
+    }
+#endif
     return 0;
 
     not_equal: return ct[diff + offset] - ct[offset];
 }
 
+template<typename T>
 int strcmp2(
-        const char *s1,
-        const char *s2) {
+        const T *s1,
+        const T *s2,
+        const size_t __attribute__((unused)) NUM) {
+    const T * ps1 = s1;
+    const T * ps2 = s2;
     while (1) {
-        int res = ((*s1 == 0) || (*s1 != *s2));
+        int res = ((*ps1 == 0) || (*ps1 != *ps2));
         if (__builtin_expect((res), 0)) {
             break;
         }
-        ++s1;
-        ++s2;
+        ++ps1;
+        ++ps2;
     }
+#ifndef NDEBUG
+    if (static_cast<size_t>(ps1 - s1) != (NUM - 1)) { // the loop does LATE increment
+        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
+    }
+    if (static_cast<size_t>(ps2 - s2) != (NUM - 1)) { // the loop does LATE increment
+        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
+    }
+#endif
     return (*s1 - *s2);
 }
 
 int strcmp2_AN(
         const unsigned short *s1,
         const unsigned short *s2,
-        const unsigned short A) {
+        const unsigned short A,
+        const size_t __attribute__((unused)) NUM) {
     const unsigned short Ainv = static_cast<unsigned short>(ext_euclidean(uint32_t(A), 16));
     const unsigned short * ps1 = s1;
     const unsigned short * ps2 = s2;
     while (1) {
         int s1dec = static_cast<unsigned short>(*ps1 * Ainv);
         int s2dec = static_cast<unsigned short>(*ps2 * Ainv);
-        if (s1dec > 256) {
+        if (s1dec > std::numeric_limits<unsigned char>::max()) {
             std::cerr << "@" << (ps1 - s1) << ": s1dec=" << s1dec << '\n';
             throw std::runtime_error("first string is corrupt");
         }
-        if (s2dec > 256) {
+        if (s2dec > std::numeric_limits<unsigned char>::max()) {
             std::cerr << "@" << (ps2 - s2) << ": s2dec=" << s2dec << '\n';
             throw std::runtime_error("second string is corrupt");
         }
@@ -150,13 +188,22 @@ int strcmp2_AN(
         ++ps1;
         ++ps2;
     }
+#ifndef NDEBUG
+    if (static_cast<size_t>(ps1 - s1) != (NUM - 1)) { // the loop does LATE increment
+        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
+    }
+    if (static_cast<size_t>(ps2 - s2) != (NUM - 1)) { // the loop does LATE increment
+        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
+    }
+#endif
     return (*ps1 - *ps2);
 }
 
 int strcmp2_AN_accu(
         const unsigned short *s1,
         const unsigned short *s2,
-        const unsigned short A) {
+        const unsigned short A,
+        const size_t __attribute__((unused)) NUM) {
     const unsigned short Ainv = static_cast<unsigned short>(ext_euclidean(uint32_t(A), 16));
     const size_t accuAinv = Private::extractor<size_t, uint128_t>::doIt(ext_euclidean(uint128_t(A), 64));
     const unsigned short * ps1 = s1;
@@ -164,8 +211,18 @@ int strcmp2_AN_accu(
     size_t accu1 = 0;
     size_t accu2 = 0;
     while (1) {
+#ifndef NDEBUG
+        if ((accu1 + *ps1) < accu1) {
+            std::cerr << "overflow: accu1=" << std::hex << std::showbase << accu1 << " *ps1=" << *ps1 << std::dec << std::noshowbase << std::endl;
+        }
+#endif
         accu1 += *ps1;
         unsigned short s1dec = static_cast<unsigned short>(*ps1 * Ainv);
+#ifndef NDEBUG
+        if ((accu2 + *ps2) < accu2) {
+            std::cerr << "overflow: accu2=" << std::hex << std::showbase << accu1 << " *ps2=" << *ps1 << std::dec << std::noshowbase << std::endl;
+        }
+#endif
         accu2 += *ps2;
         unsigned short s2dec = static_cast<unsigned short>(*ps2 * Ainv);
         int res = ((s1dec == 0) || (s1dec != s2dec));
@@ -176,56 +233,121 @@ int strcmp2_AN_accu(
         ++ps2;
     }
     // we assume at most a 10-bit A for the string characters here, so we can at most accumulate up to 2^54.
-    if ((accu1 * accuAinv) >= (1ull << 54)) {
-        std::cerr << std::hex << "accuAinv=0x" << accuAinv << " accu1=0x" << accu1 << " accu2=0x" << accu2 << std::dec << '\n';
+    const constexpr size_t MAX = (1ull << 54) - 1ull;
+    if ((accu1 * accuAinv) > MAX) {
+#ifndef NDEBUG
+        std::cerr << std::hex << std::showbase << "accuAinv=" << accuAinv << " A*inv=" << (size_t(A) * accuAinv) << " accu1=" << accu1 << " dec1=" << (accu1 * accuAinv) << " accu2=" << accu2
+                << " dec2=" << (accu2 * accuAinv) << std::dec << std::noshowbase << '\n';
+#endif
         throw std::runtime_error("first string is corrupt");
     }
-    if ((accu2 * accuAinv) >= (1ull << 54)) {
-        std::cerr << std::hex << "accuAinv=0x" << accuAinv << " accu1=0x" << accu1 << " accu2=0x" << accu2 << std::dec << '\n';
+    if ((accu2 * accuAinv) > MAX) {
+#ifndef NDEBUG
+        std::cerr << std::hex << std::showbase << "accuAinv=" << accuAinv << " A*inv=" << (size_t(A) * accuAinv) << " accu1=" << accu1 << " dec1=" << (accu1 * accuAinv) << " accu2=" << accu2
+                << " dec2=" << (accu2 * accuAinv) << std::dec << std::noshowbase << '\n';
+#endif
         throw std::runtime_error("second string is corrupt");
     }
+#ifndef NDEBUG
+    if (static_cast<size_t>(ps1 - s1) != (NUM - 1)) { // the loop does LATE increment
+        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
+    }
+    if (static_cast<size_t>(ps2 - s2) != (NUM - 1)) { // the loop does LATE increment
+        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
+    }
+#endif
     return (*ps1 - *ps2);
 }
 
-int _mm_strcmp_AN(
-        const unsigned short* cs,
-        const unsigned short* ct,
-        const unsigned short A) {
-    const unsigned short Ainv = static_cast<unsigned short>(ext_euclidean(uint32_t(A), 16));
-    __m128i mmAinv = _mm_set1_epi16(Ainv);
-    __m128i mmMax = _mm_set1_epi16(std::numeric_limits<unsigned char>::max());
-    const long diff = cs - ct;
-    const constexpr long nextbytes = 8; // asm ("rdx") does not work
-    ct -= nextbytes;
+int strcmp2_AN(
+        const unsigned int *s1,
+        const unsigned int *s2,
+        const unsigned short A,
+        const size_t __attribute__((unused)) NUM) {
+    const unsigned int Ainv = static_cast<unsigned int>(ext_euclidean(uint64_t(A), 32));
+    const unsigned int * ps1 = s1;
+    const unsigned int * ps2 = s2;
+    while (1) {
+        auto s1dec = static_cast<unsigned int>(*ps1 * Ainv);
+        auto s2dec = static_cast<unsigned int>(*ps2 * Ainv);
+        if (s1dec > std::numeric_limits<unsigned short>::max()) {
+            std::cerr << "@" << (ps1 - s1) << ": s1dec=" << s1dec << '\n';
+            throw std::runtime_error("first string is corrupt");
+        }
+        if (s2dec > std::numeric_limits<unsigned short>::max()) {
+            std::cerr << "@" << (ps2 - s2) << ": s2dec=" << s2dec << '\n';
+            throw std::runtime_error("second string is corrupt");
+        }
+        int res = ((s1dec == 0) || (s1dec != s2dec));
+        if (__builtin_expect((res), 0)) {
+            break;
+        }
+        ++ps1;
+        ++ps2;
+    }
+#ifndef NDEBUG
+    if (static_cast<size_t>(ps1 - s1) != (NUM - 1)) { // the loop does LATE increment
+        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
+    }
+    if (static_cast<size_t>(ps2 - s2) != (NUM - 1)) { // the loop does LATE increment
+        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
+    }
+#endif
+    return (*ps1 - *ps2);
+}
 
-    // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
-    // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
-
-    loopAN:
-    // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
-    __m128i ct16chars1 = _mm_loadu_si128((const __m128i *) (ct + nextbytes));
-    __m128i ct16chars2 = _mm_loadu_si128((const __m128i *) (ct + 2 * nextbytes));
-    ct16chars1 = _mm_mullo_epi16(ct16chars1, mmAinv);
-    ct16chars2 = _mm_mullo_epi16(ct16chars2, mmAinv);
-    if (_mm_movemask_epi8(_mm_cmpgt_epi16(ct16chars1, mmMax)) | _mm_movemask_epi8(_mm_cmpgt_epi16(ct16chars2, mmMax))) {
+int strcmp2_AN_accu(
+        const unsigned int *s1,
+        const unsigned int *s2,
+        const unsigned short A,
+        const size_t __attribute__((unused)) NUM) {
+    const unsigned int Ainv = static_cast<unsigned short>(ext_euclidean(uint64_t(A), 32));
+    const size_t accuAinv = Private::extractor<size_t, uint128_t>::doIt(ext_euclidean(uint128_t(A), 64));
+    const unsigned int * ps1 = s1;
+    const unsigned int * ps2 = s2;
+    size_t accu1 = 0;
+    size_t accu2 = 0;
+    while (1) {
+        accu1 += *ps1;
+        auto s1dec = static_cast<unsigned int>(*ps1 * Ainv);
+#ifndef NDEBUG
+        if ((accu2 + *ps2) < accu2) {
+            std::cerr << "overflow: accu2=" << std::hex << std::showbase << accu1 << " *ps2=" << *ps1 << std::dec << std::noshowbase << std::endl;
+        }
+#endif
+        accu2 += *ps2;
+        auto s2dec = static_cast<unsigned int>(*ps2 * Ainv);
+#ifndef NDEBUG
+        if ((accu2 + *ps2) < accu2) {
+            std::cerr << "overflow: accu2=" << std::hex << std::showbase << accu1 << " *ps2=" << *ps1 << std::dec << std::noshowbase << std::endl;
+        }
+#endif
+        int res = ((s1dec == 0) || (s1dec != s2dec));
+        if (__builtin_expect((res), 0)) {
+            break;
+        }
+        ++ps1;
+        ++ps2;
+    }
+    // we assume at most a 10-bit A for the string characters here, so we can at most accumulate up to 2^54.
+    const constexpr size_t MAX = (1ull << 54) - 1ull;
+    if ((accu1 * accuAinv) > MAX) {
+        std::cerr << std::hex << "accuAinv=0x" << accuAinv << " accu1=0x" << accu1 << " accu2=0x" << accu2 << std::dec << '\n';
         throw std::runtime_error("first string is corrupt");
     }
-    __m128i cs16chars1 = _mm_loadu_si128((const __m128i *) (ct + diff + nextbytes));
-    __m128i cs16chars2 = _mm_loadu_si128((const __m128i *) (ct + diff + 2 * nextbytes));
-    cs16chars1 = _mm_mullo_epi16(cs16chars1, mmAinv);
-    cs16chars2 = _mm_mullo_epi16(cs16chars2, mmAinv);
-    if (_mm_movemask_epi8(_mm_cmpgt_epi16(cs16chars1, mmMax)) | _mm_movemask_epi8(_mm_cmpgt_epi16(cs16chars2, mmMax))) {
-        throw std::runtime_error("first string is corrupt");
+    if ((accu2 * accuAinv) > MAX) {
+        std::cerr << std::hex << "accuAinv=0x" << accuAinv << " accu1=0x" << accu1 << " accu2=0x" << accu2 << std::dec << '\n';
+        throw std::runtime_error("second string is corrupt");
     }
-    ct += 2 * nextbytes;
-    int offset = _mm_cmpistri(ct16chars1, cs16chars1, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
-    __asm__ __volatile__ goto( "ja %l[secondAN] \n jc %l[not_equalAN]" : : : "memory" : secondAN, not_equalAN );
-
-    secondAN: offset = _mm_cmpistri(ct16chars2, cs16chars2, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
-    __asm__ __volatile__ goto( "ja %l[loopAN] \n jc %l[not_equalAN]" : : : "memory" : loopAN, not_equalAN );
-    return 0;
-
-    not_equalAN: return ct[diff + offset] - ct[offset];
+#ifndef NDEBUG
+    if (static_cast<size_t>(ps1 - s1) != (NUM - 1)) { // the loop does LATE increment
+        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
+    }
+    if (static_cast<size_t>(ps2 - s2) != (NUM - 1)) { // the loop does LATE increment
+        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
+    }
+#endif
+    return (*ps1 - *ps2);
 }
 
 __m128i add_test_overflow(
@@ -233,18 +355,56 @@ __m128i add_test_overflow(
         __m128i b) {
     auto res = _mm_add_epi64(a, b);
     if (_mm_extract_epi64(res, 0) < _mm_extract_epi64(a, 0)) {
-        std::cerr << std::showbase << std::hex << "\t\t0: " << _mm_extract_epi64(a, 0) << '+' << _mm_extract_epi64(b, 0) << '=' << _mm_extract_epi64(res, 0) << '\n' << std::noshowbase << std::dec;
+        std::cerr << std::showbase << std::hex << "#\t0: " << _mm_extract_epi64(a, 0) << '+' << _mm_extract_epi64(b, 0) << '=' << _mm_extract_epi64(res, 0) << '\n' << std::noshowbase << std::dec;
     }
     if (_mm_extract_epi64(res, 1) < _mm_extract_epi64(a, 1)) {
-        std::cerr << std::showbase << std::hex << "\t\t1: " << _mm_extract_epi64(a, 1) << '+' << _mm_extract_epi64(b, 1) << '=' << _mm_extract_epi64(res, 1) << '\n' << std::noshowbase << std::dec;
+        std::cerr << std::showbase << std::hex << "#\t1: " << _mm_extract_epi64(a, 1) << '+' << _mm_extract_epi64(b, 1) << '=' << _mm_extract_epi64(res, 1) << '\n' << std::noshowbase << std::dec;
     }
     return res;
 }
 
+int _mm_strcmp_AN(
+        const unsigned short* s1,
+        const unsigned short* s2,
+        const unsigned short A,
+        const size_t __attribute__((unused)) NUM) {
+    const unsigned short Ainv = static_cast<unsigned short>(ext_euclidean(uint32_t(A), 16));
+    __m128i mmAinv = _mm_set1_epi16(Ainv);
+    __m128i mmMax = _mm_set1_epi16(std::numeric_limits<unsigned char>::max());
+    const unsigned short* const s2Org = s2;
+    const long diff = s1 - s2;
+    s2 -= shortsPerMM128;
+
+    // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
+    // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
+
+    loopAN:
+    // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
+    __m128i ct16chars1 = _mm_lddqu_si128((const __m128i *) (s2 += shortsPerMM128));
+    if (_mm_movemask_epi8(_mm_cmpgt_epi16(_mm_mullo_epi16(ct16chars1, mmAinv), mmMax))) {
+        throw std::runtime_error("first string is corrupt");
+    }
+    __m128i cs16chars1 = _mm_lddqu_si128((const __m128i *) (s2 + diff));
+    if (_mm_movemask_epi8(_mm_cmpgt_epi16(_mm_mullo_epi16(cs16chars1, mmAinv), mmMax))) {
+        throw std::runtime_error("first string is corrupt");
+    }
+    int offset = _mm_cmpistri(ct16chars1, cs16chars1, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
+    __asm__ __volatile__ goto( "ja %l[loopAN] \n jc %l[not_equalAN]" : : : "memory" : loopAN, not_equalAN );
+#ifndef NDEBUG
+    if (static_cast<size_t>((s2 + shortsPerMM128) - s2Org) != NUM) {
+        std::cerr << "\tpos=" << ((s2 + shortsPerMM128) - s2Org) << " != " << NUM << std::endl;
+    }
+#endif
+    return 0;
+
+    not_equalAN: return s2[diff + offset] - s2[offset];
+}
+
 int _mm_strcmp_AN_accu(
-        const unsigned short* cs,
-        const unsigned short* ct,
-        const unsigned short A) {
+        const unsigned short* s1,
+        const unsigned short* s2,
+        const unsigned short A,
+        const size_t __attribute__((unused)) NUM) {
     const size_t accuAinv = Private::extractor<size_t, uint128_t>::doIt(ext_euclidean(uint128_t(A), 64));
     const constexpr size_t maxAccu = (1ull << 54) - 1ull; // we assume at most an 8-bit A for the string characters here, so we can at most accumulate up to 2^56.
     __m128i mmAccu11 = _mm_set1_epi64x(0);
@@ -255,26 +415,26 @@ int _mm_strcmp_AN_accu(
     __m128i mmAccu22 = _mm_set1_epi64x(0);
     __m128i mmAccu23 = _mm_set1_epi64x(0);
     __m128i mmAccu24 = _mm_set1_epi64x(0);
-    const long diff = cs - ct;
-    const constexpr long nextbytes = 8; // asm ("rdx") does not work
-    ct -= nextbytes;
+    const unsigned short* const s2Org = s2;
+    const long diff = s1 - s2;
+    s2 -= shortsPerMM128;
 
     // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
     // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
 
     loopANaccu:
     // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
-    __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
+    __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (s2 += shortsPerMM128));
     mmAccu11 = _mm_add_epi64(mmAccu11, _mm_cvtepu16_epi64(ct16chars));
     mmAccu12 = _mm_add_epi64(mmAccu12, _mm_cvtepu16_epi64(_mm_srli_si128(ct16chars, 4)));
     mmAccu13 = _mm_add_epi64(mmAccu13, _mm_cvtepu16_epi64(_mm_srli_si128(ct16chars, 8)));
     mmAccu14 = _mm_add_epi64(mmAccu14, _mm_cvtepu16_epi64(_mm_srli_si128(ct16chars, 12)));
-    __m128i cs16chars = _mm_loadu_si128((const __m128i *) (ct + diff));
+    __m128i cs16chars = _mm_lddqu_si128((const __m128i *) (s2 + diff));
     mmAccu21 = _mm_add_epi64(mmAccu21, _mm_cvtepu16_epi64(cs16chars));
     mmAccu22 = _mm_add_epi64(mmAccu22, _mm_cvtepu16_epi64(_mm_srli_si128(cs16chars, 4)));
     mmAccu23 = _mm_add_epi64(mmAccu23, _mm_cvtepu16_epi64(_mm_srli_si128(cs16chars, 8)));
     mmAccu24 = _mm_add_epi64(mmAccu24, _mm_cvtepu16_epi64(_mm_srli_si128(cs16chars, 12)));
-    int offset = _mm_cmpistri(ct16chars, cs16chars, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
+    int offset = _mm_cmpistri(ct16chars, cs16chars, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loopANaccu] \n jc %l[not_equalANaccu]" : : : "memory" : loopANaccu, not_equalANaccu );
 
     {
@@ -286,6 +446,11 @@ int _mm_strcmp_AN_accu(
         if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
             throw std::runtime_error("second string is corrupt");
         }
+#ifndef NDEBUG
+        if (static_cast<size_t>((s2 + shortsPerMM128) - s2Org) != NUM) {
+            std::cerr << "\tpos=" << ((s2 + shortsPerMM128) - s2Org) << " != " << NUM << std::endl;
+        }
+#endif
         return 0;
     }
 
@@ -299,7 +464,100 @@ int _mm_strcmp_AN_accu(
             throw std::runtime_error("second string is corrupt");
         }
         const unsigned short Ainv = static_cast<unsigned short>(ext_euclidean(uint32_t(A), 16));
-        return (Ainv * ct[diff + offset]) - (Ainv * ct[offset]);
+        return (Ainv * s2[diff + offset]) - (Ainv * s2[offset]);
+    }
+}
+
+int _mm_strcmp_AN(
+        const unsigned int* i1,
+        const unsigned int* i2,
+        const unsigned short A,
+        const size_t __attribute__((unused)) NUM) {
+    const unsigned int Ainv = static_cast<unsigned int>(ext_euclidean(uint64_t(A), 32));
+    __m128i mmAinv = _mm_set1_epi32(Ainv);
+    __m128i mmMax = _mm_set1_epi32(std::numeric_limits<unsigned short>::max());
+    const unsigned int* const i2Org = i2;
+    const long diff = i1 - i2;
+    i2 -= intsPerMM128;
+
+    // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
+    // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
+
+    loopAN:
+    // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
+    __m128i ct4ints = _mm_lddqu_si128((const __m128i *) (i2 += intsPerMM128));
+    if (_mm_movemask_epi8(_mm_cmpgt_epi32(_mm_mullo_epi32(ct4ints, mmAinv), mmMax))) {
+        throw std::runtime_error("first string is corrupt");
+    }
+    __m128i cs4ints = _mm_lddqu_si128((const __m128i *) (i2 + diff));
+    if (_mm_movemask_epi8(_mm_cmpgt_epi32(_mm_mullo_epi32(cs4ints, mmAinv), mmMax))) {
+        throw std::runtime_error("second string is corrupt");
+    }
+    int offset = _mm_cmpistri(ct4ints, cs4ints, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
+    __asm__ __volatile__ goto( "ja %l[loopAN] \n jc %l[not_equalAN]" : : : "memory" : loopAN, not_equalAN );
+#ifndef NDEBUG
+    if (static_cast<size_t>((i2 + intsPerMM128) - i2Org) != NUM) {
+        std::cerr << "\tpos=" << ((i2 + intsPerMM128) - i2Org) << " != " << NUM << std::endl;
+    }
+#endif
+    return 0;
+
+    not_equalAN: return i2[diff + offset] - i2[offset];
+}
+
+int _mm_strcmp_AN_accu(
+        const unsigned int* i1,
+        const unsigned int* i2,
+        const unsigned short A,
+        const size_t __attribute__((unused)) NUM) {
+    const size_t accuAinv = Private::extractor<size_t, uint128_t>::doIt(ext_euclidean(uint128_t(A), 64));
+    const constexpr size_t maxAccu = (1ull << 48) - 1ull; // we assume at most an 8-bit A for the string characters here, so we can at most accumulate up to 2^56.
+    __m128i mmAccu11 = _mm_set1_epi64x(0);
+    __m128i mmAccu12 = _mm_set1_epi64x(0);
+    __m128i mmAccu21 = _mm_set1_epi64x(0);
+    __m128i mmAccu22 = _mm_set1_epi64x(0);
+    const unsigned int* const i2Org = i2;
+    const long diff = i1 - i2;
+    i2 -= intsPerMM128;
+
+    // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
+    // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
+
+    loopANaccu:
+    // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
+    __m128i ct4ints = _mm_lddqu_si128((const __m128i *) (i2 += intsPerMM128));
+    mmAccu11 = _mm_add_epi64(mmAccu11, _mm_cvtepu32_epi64(ct4ints));
+    mmAccu12 = _mm_add_epi64(mmAccu12, _mm_cvtepu32_epi64(_mm_srli_si128(ct4ints, 8)));
+    __m128i cs4ints = _mm_lddqu_si128((const __m128i *) (i2 + diff));
+    mmAccu21 = _mm_add_epi64(mmAccu21, _mm_cvtepu32_epi64(cs4ints));
+    mmAccu22 = _mm_add_epi64(mmAccu22, _mm_cvtepu32_epi64(_mm_srli_si128(cs4ints, 8)));
+    int offset = _mm_cmpistri(ct4ints, cs4ints, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
+    __asm__ __volatile__ goto( "ja %l[loopANaccu] \n jc %l[not_equalANaccu]" : : : "memory" : loopANaccu, not_equalANaccu );
+
+    {
+        auto mmAccu = _mm_add_epi64(mmAccu11, mmAccu12);
+        if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
+            throw std::runtime_error("first string is corrupt");
+        }
+        mmAccu = _mm_add_epi64(mmAccu21, mmAccu22);
+        if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
+            throw std::runtime_error("second string is corrupt");
+        }
+#ifndef NDEBUG
+        if (static_cast<size_t>((i2 + intsPerMM128) - i2Org) != NUM) {
+            std::cerr << "\tpos=" << ((i2 + intsPerMM128) - i2Org) << " != " << NUM << std::endl;
+        }
+#endif
+        return 0;
+    }
+
+    not_equalANaccu: {
+        auto mmAccu = _mm_add_epi64(mmAccu11, mmAccu12);
+        if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
+            throw std::runtime_error("first string is corrupt");
+        }
+        const unsigned short Ainv = static_cast<unsigned short>(ext_euclidean(uint32_t(A), 16));
+        return (Ainv * i2[diff + offset]) - (Ainv * i2[offset]);
     }
 }
 
@@ -313,19 +571,34 @@ T XOR(
     return res;
 }
 
-template<>
-__m128i XOR(
+template<typename T>
+__m128i _mm_XOR(
         const __m128i * mm) {
     __m128i mmXOR = _mm_setzero_si128();
-    __m128i mmZero = _mm_setzero_si128();
-    while (true) {
-        __m128i mmValue = _mm_loadu_si128(mm++);
-        mmXOR = _mm_xor_si128(mmXOR, mmValue);
-        if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmValue, mmZero))) {
-            break;
-        }
-    }
+//    __m128i mmZero = _mm_setzero_si128();
+//    __m128i mmValue;
+//    do {
+//        mmValue = _mm_lddqu_si128(mm++);
+//        mmXOR = _mm_xor_si128(mmXOR, mmValue);
+//    } while (_mm_movemask_epi8(_mm_cmpeq_epi8(mmValue, mmZero)) == 0);
+//    return mmXOR;
+    --mm;
+    const constexpr int _SIDD_THIS_OPS = sizeof(T) == 1 ? (std::is_signed_v<T> ? _SIDD_SBYTE_OPS : _SIDD_UBYTE_OPS) : (std::is_signed_v<T> ? _SIDD_SWORD_OPS : _SIDD_UWORD_OPS);
+
+    // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
+    // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
+
+    loopXOR:
+    // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
+    __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (mm += 1));
+    mmXOR = _mm_xor_si128(mmXOR, ct16chars);
+    int __attribute__((unused)) offset = _mm_cmpistri(ct16chars, ct16chars, _SIDD_THIS_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
+    __asm__ __volatile__ goto( "ja %l[loopXOR] \n jc %l[not_equalXOR]" : : : "memory" : loopXOR, not_equalXOR );
     return mmXOR;
+
+    not_equalXOR:
+    //
+    throw std::runtime_error("In _mm_XOR(__m128i)");
 }
 
 template<typename T>
@@ -363,10 +636,18 @@ int strcmp2_XOR(
     if (new_xor2 != old_xor2) {
         throw new std::runtime_error("old_xor2 != new_xor2");
     }
+#ifndef NDEBUG
+    if (static_cast<size_t>(ps1 - s1) != NUM) {
+        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
+    }
+    if (static_cast<size_t>(ps2 - s2) != NUM) {
+        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
+    }
+#endif
     return (*ps1 - *ps2);
 }
 
-int _mm_strcmp_xor(
+int _mm_strcmp_XOR(
         const char* cs,
         const char* ct,
         __m128i old_xor1,
@@ -374,70 +655,62 @@ int _mm_strcmp_xor(
         const size_t NUM) {
     __m128i mmXOR1 = _mm_setzero_si128();
     __m128i mmXOR2 = _mm_setzero_si128();
-    const char* const csEnd = cs + NUM;
     const char* const ctEnd = ct + NUM;
+    const char* const csOrg = cs;
+    const char* const ctOrg = ct;
 
     const long diff = cs - ct;
-    const constexpr long nextbytes = 16; // asm ("rdx") does not work
-    ct -= nextbytes;
+    ct -= charsPerMM128;
 
     // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
     // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
 
     loopXORchar:
     // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
-    __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
+    __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (ct += charsPerMM128));
     mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
-    __m128i cs16chars = _mm_loadu_si128((const __m128i *) (ct + diff));
+    __m128i cs16chars = _mm_lddqu_si128((const __m128i *) (ct + diff));
     mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
     int offset = _mm_cmpistri(ct16chars, cs16chars, _SIDD_SBYTE_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loopXORchar] \n jc %l[not_equalXORchar]" : : : "memory" : loopXORchar, not_equalXORchar );
-    {
-        const char* const ctOld = ct;
-        while (ct < ctEnd) {
-            __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
-            mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
-        }
-        cs = ctOld + diff;
-        while (cs < csEnd) {
-            __m128i cs16chars = _mm_loadu_si128((const __m128i *) (cs += nextbytes));
-            mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
-        }
-        if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1))) {
-            if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2))) {
-                return 0;
-            } else {
-                throw std::runtime_error("checksum 2 doesn't match!");
+    if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1)) == 0xFFFF) {
+        if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2)) == 0xFFFF) {
+#ifndef NDEBUG
+            if (static_cast<size_t>((ct + diff + charsPerMM128) - csOrg) != NUM) {
+                std::cerr << "\tpos1=" << ((ct + diff + charsPerMM128) - csOrg) << " != " << NUM << std::endl;
             }
+            if (static_cast<size_t>((ct + charsPerMM128) - ctOrg) != NUM) {
+                std::cerr << "\tpos2=" << ((ct + charsPerMM128) - ctOrg) << " != " << NUM << std::endl;
+            }
+#endif
+            return 0;
         } else {
-            throw std::runtime_error("checksum 1 doesn't match!");
+            throw std::runtime_error("checksum 2 doesn't match!");
         }
+    } else {
+        throw std::runtime_error("checksum 1 doesn't match!");
     }
 
-    not_equalXORchar: {
-        const char* const ctOld = ct;
-        while (ct < ctEnd) {
-            __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
-            mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
-        }
-        cs = ctOld + diff;
-        while (cs < ctEnd) {
-            __m128i cs16chars = _mm_loadu_si128((const __m128i *) (cs += nextbytes));
-            mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
-        }
-        if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1))) {
-            if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2))) {
-                return ct[diff + offset] - ct[offset];
-            } else {
-                throw std::runtime_error("checksum 2 doesn't match!");
-            }
+    not_equalXORchar:
+    //
+    do {
+        __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (ct += charsPerMM128));
+        mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
+        __m128i cs16chars = _mm_lddqu_si128((const __m128i *) (ct + diff));
+        mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
+    } while (ct < ctEnd);
+    if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1))) {
+        if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2))) {
+            return ct[diff + offset] - ct[offset];
         } else {
-            throw std::runtime_error("checksum 1 doesn't match!");
+            throw std::runtime_error("checksum 2 doesn't match!");
         }
+    } else {
+        throw std::runtime_error("checksum 1 doesn't match!");
     }
 }
 
-int _mm_strcmp_xor(
+int _mm_strcmp_XOR(
         const unsigned short* cs,
         const unsigned short* ct,
         __m128i old_xor1,
@@ -445,66 +718,58 @@ int _mm_strcmp_xor(
         const size_t NUM) {
     __m128i mmXOR1 = _mm_setzero_si128();
     __m128i mmXOR2 = _mm_setzero_si128();
-    const unsigned short* const csEnd = cs + NUM;
     const unsigned short* const ctEnd = ct + NUM;
+    const unsigned short* const csOrg = cs;
+    const unsigned short* const ctOrg = ct;
 
     const long diff = cs - ct;
-    const constexpr long nextbytes = 8; // asm ("rdx") does not work
-    ct -= nextbytes;
+    ct -= shortsPerMM128;
 
     // Force GCC to use a register for nextbytes? Makes the code much worse! (adds LEA)
     // __asm__ __volatile__( "mov $16, %0" : "=r"(nextbytes) );
 
     loopXORchar:
     // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
-    __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
-    mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
-    __m128i cs16chars = _mm_loadu_si128((const __m128i *) (ct + diff));
-    mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
-    int offset = _mm_cmpistri(ct16chars, cs16chars, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
+    __m128i ct8shorts = _mm_lddqu_si128((const __m128i *) (ct += shortsPerMM128));
+    mmXOR1 = _mm_xor_si128(mmXOR1, ct8shorts);
+    __m128i cs8shorts = _mm_lddqu_si128((const __m128i *) (ct + diff));
+    mmXOR2 = _mm_xor_si128(mmXOR2, cs8shorts);
+    int offset = _mm_cmpistri(ct8shorts, cs8shorts, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loopXORchar] \n jc %l[not_equalXORchar]" : : : "memory" : loopXORchar, not_equalXORchar );
-    {
-        const unsigned short* const ctOld = ct;
-        while (ct < ctEnd) {
-            __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
-            mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
-        }
-        cs = ctOld + diff;
-        while (cs < csEnd) {
-            __m128i cs16chars = _mm_loadu_si128((const __m128i *) (cs += nextbytes));
-            mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
-        }
-        if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1))) {
-            if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2))) {
-                return 0;
-            } else {
-                throw std::runtime_error("checksum 2 doesn't match!");
+    if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1)) == 0xFFFF) {
+        if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2)) == 0xFFFF) {
+#ifndef NDEBUG
+            if (static_cast<size_t>((ct + diff + shortsPerMM128) - csOrg) != NUM) {
+                std::cerr << "\tpos1=" << ((ct + diff + shortsPerMM128) - csOrg) << " != " << NUM << std::endl;
             }
+            if (static_cast<size_t>((ct + shortsPerMM128) - ctOrg) != NUM) {
+                std::cerr << "\tpos2=" << ((ct + shortsPerMM128) - ctOrg) << " != " << NUM << std::endl;
+            }
+#endif
+            return 0;
         } else {
-            throw std::runtime_error("checksum 1 doesn't match!");
+            throw std::runtime_error("checksum 2 doesn't match!");
         }
+    } else {
+        throw std::runtime_error("checksum 1 doesn't match!");
     }
 
-    not_equalXORchar: {
-        const unsigned short* const ctOld = ct;
-        while (ct < ctEnd) {
-            __m128i ct16chars = _mm_loadu_si128((const __m128i *) (ct += nextbytes));
-            mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
-        }
-        cs = ctOld + diff;
-        while (cs < ctEnd) {
-            __m128i cs16chars = _mm_loadu_si128((const __m128i *) (cs += nextbytes));
-            mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
-        }
-        if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1))) {
-            if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2))) {
-                return ct[diff + offset] - ct[offset];
-            } else {
-                throw std::runtime_error("checksum 2 doesn't match!");
-            }
+    not_equalXORchar:
+    //
+    do {
+        __m128i ct8shorts = _mm_lddqu_si128((const __m128i *) (ct += charsPerMM128));
+        mmXOR1 = _mm_xor_si128(mmXOR1, ct8shorts);
+        __m128i cs8shorts = _mm_lddqu_si128((const __m128i *) (ct + diff));
+        mmXOR2 = _mm_xor_si128(mmXOR2, cs8shorts);
+    } while (ct < ctEnd);
+    if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1))) {
+        if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2))) {
+            return ct[diff + offset] - ct[offset];
         } else {
-            throw std::runtime_error("checksum 1 doesn't match!");
+            throw std::runtime_error("checksum 2 doesn't match!");
         }
+    } else {
+        throw std::runtime_error("checksum 1 doesn't match!");
     }
 }
 
@@ -565,158 +830,199 @@ void ResetBlock(
     }
 }
 
+template<typename T>
+void test_buffer(
+        const T * beg,
+        const char * const name,
+        const size_t NUM) {
+    auto x = beg;
+    while (*x) {
+        ++x;
+    }
+    if (static_cast<size_t>(x - beg) != (NUM - 1)) {
+        std::cerr << "#zero value found in " << name << " at position " << (x - beg) << " instead of expected " << (NUM - 1) << std::endl;
+    }
+}
+
 int main(
         int argc,
         char** argv) {
     const constexpr size_t NUM = 64 * 1024 * 1024;
     const constexpr size_t NUM_BYTES_CHAR = NUM * sizeof(unsigned char);
     const constexpr size_t NUM_BYTES_SHORT = NUM * sizeof(unsigned short);
+    const constexpr size_t NUM_BYTES_INT = NUM * sizeof(unsigned int);
 
     Stopwatch sw;
     int res;
+    int64_t time_base;
     int64_t time;
 
-    std::cout << "Short buffer with " << NUM_BYTES_CHAR << " bytes:\n";
-    AlignedBlock buf1(NUM_BYTES_CHAR, 16);
-    AlignedBlock buf2(NUM_BYTES_CHAR, 16);
-    DataGenerationConfiguration config(8);
-    ResetBlock<unsigned char>(config, buf1);
-    *(buf1.template end<char>() - 1) = 0;
-    ResetBlock<unsigned char>(config, buf2);
-    *(buf2.template end<char>() - 1) = 0;
-    const char * uc1 = buf1.template begin<const char>();
-    const char * uc2 = buf2.template begin<const char>();
-    auto x = uc1;
-    while (*x) {
-        ++x;
-    }
-    if ((x - uc1) != (NUM - 1)) {
-        std::cerr << "zero value found in buf1 at position " << (x - uc1) << " instead of expected " << (NUM - 1) << std::endl;
-    }
-    x = uc2;
-    while (*x) {
-        ++x;
-    }
-    if ((x - uc2) != (NUM - 1)) {
-        std::cerr << "zero value found in buf2 at position " << (x - uc2) << " instead of expected " << (NUM - 1) << std::endl;
-    }
-
-    sw.Reset();
-    res = std::strcmp(uc1, uc2);
-    time = sw.Current();
-    std::cout << "\tstd::strcmp(buf1, buf2)\t" << res << "\t" << time << '\n';
-
-    sw.Reset();
-    res = _mm_strcmp(uc1, uc2);
-    time = sw.Current();
-    std::cout << "\t_mm_strcmp(buf1, buf2)\t" << res << "\t" << time << '\n';
-
-    sw.Reset();
-    res = strcmp2(uc1, uc2);
-    time = sw.Current();
-    std::cout << "\tstd::strcmp2(buf1, buf2)\t" << res << "\t" << time << '\n';
-
-    char old_xor_char1 = XOR(uc1);
-    char old_xor_char2 = XOR(uc2);
-    sw.Reset();
-    res = strcmp2_XOR(uc1, uc2, old_xor_char1, old_xor_char2, NUM);
-    time = sw.Current();
-    std::cout << "\tstrcmp2_XOR<char>(buf1, buf2, old_xor_char1, old_xor_char2, NUM)\t" << res << "\t" << time << '\n';
-
-    __m128i old_xor_mm1 = XOR(reinterpret_cast<const __m128i *>(uc1));
-    __m128i old_xor_mm2 = XOR(reinterpret_cast<const __m128i *>(uc2));
-    sw.Reset();
-    res = _mm_strcmp_xor(uc1, uc2, old_xor_mm1, old_xor_mm2, NUM);
-    time = sw.Current();
-    std::cout << "\t_mm_strcmp_xor(buf1, buf2, old_xor_mm1, old_xor_mm2, NUM)\t" << res << "\t" << time << '\n';
-
     char* ptr_end;
-    unsigned short A = 857;
+    unsigned short A = 233;
     // force the compiler to not assume A a constant
     if (argc > 1) {
         A = strtol(argv[1], &ptr_end, 10);
     }
 
-    std::cout << "Long buffer with " << NUM_BYTES_SHORT << " bytes:\n";
-    AlignedBlock buf3(NUM_BYTES_SHORT, 16);
-    AlignedBlock buf4(NUM_BYTES_SHORT, 16);
-    DataGenerationConfiguration config2(6, 0, A);
-    ResetBlock<unsigned short>(config2, buf3);
-    *(buf3.template end<unsigned short>() - 1) = 0;
-    ResetBlock<unsigned short>(config2, buf4);
-    *(buf4.template end<unsigned short>() - 1) = 0;
-    const unsigned short * us1 = buf3.template begin<const unsigned short>();
-    const unsigned short * us2 = buf4.template begin<const unsigned short>();
-    uc1 = reinterpret_cast<const char*>(us1);
-    uc2 = reinterpret_cast<const char*>(us2);
-    auto y = us1;
-    while (*y) {
-        ++y;
+    {
+        std::cout << "#Buffer with " << NUM << " 8-bit limbs --> " << NUM_BYTES_CHAR << " bytes for unprotected and XOR, " << NUM_BYTES_SHORT << " bytes for AN\n";
+        AlignedBlock buf_char_1(NUM_BYTES_CHAR, 16);
+        AlignedBlock buf_char_2(NUM_BYTES_CHAR, 16);
+        DataGenerationConfiguration config(8);
+        ResetBlock<unsigned char>(config, buf_char_1);
+        *(buf_char_1.template end<char>() - 1) = 0;
+        ResetBlock<unsigned char>(config, buf_char_2);
+        *(buf_char_2.template end<char>() - 1) = 0;
+        const char * uc1 = buf_char_1.template begin<const char>();
+        const char * uc2 = buf_char_2.template begin<const char>();
+        test_buffer(uc1, "buf_char_1", NUM);
+        test_buffer(uc2, "buf_char_2", NUM);
+
+        sw.Reset();
+        res = std::strcmp(uc1, uc2);
+        time = time_base = sw.Current();
+        std::cout << "std::strcmp," << res << ',' << time << ',' << time_base << '\n';
+
+        sw.Reset();
+        res = strcmp2(uc1, uc2, NUM);
+        time = sw.Current();
+        std::cout << "naive," << res << ',' << time << ',' << time_base << '\n';
+
+        char old_xor_char1 = XOR(uc1);
+        char old_xor_char2 = XOR(uc2);
+        sw.Reset();
+        res = strcmp2_XOR(uc1, uc2, old_xor_char1, old_xor_char2, NUM);
+        time = sw.Current();
+        std::cout << "naive XOR," << res << ',' << time << ',' << time_base << '\n';
+
+        sw.Reset();
+        res = _mm_strcmp(uc1, uc2, NUM);
+        time = sw.Current();
+        std::cout << "Kankovski," << res << "," << time << ',' << time_base << '\n';
+
+        __m128i old_xor_mm1 = _mm_XOR<char>(reinterpret_cast<const __m128i *>(uc1));
+        __m128i old_xor_mm2 = _mm_XOR<char>(reinterpret_cast<const __m128i *>(uc2));
+        sw.Reset();
+        res = _mm_strcmp_XOR(uc1, uc2, old_xor_mm1, old_xor_mm2, NUM);
+        time = sw.Current();
+        std::cout << "K. XOR," << res << ',' << time << ',' << time_base << '\n';
+
+        AlignedBlock buf_short_1(NUM_BYTES_SHORT, 16);
+        AlignedBlock buf_short_2(NUM_BYTES_SHORT, 16);
+        DataGenerationConfiguration config2(8, 0, A);
+        ResetBlock<unsigned short>(config2, buf_short_1);
+        *(buf_short_1.template end<unsigned short>() - 1) = 0;
+        ResetBlock<unsigned short>(config2, buf_short_2);
+        *(buf_short_2.template end<unsigned short>() - 1) = 0;
+        const unsigned short * us1 = buf_short_1.template begin<const unsigned short>();
+        const unsigned short * us2 = buf_short_2.template begin<const unsigned short>();
+        test_buffer(us1, "buf_short_1", NUM);
+        test_buffer(us2, "buf_short_2", NUM);
+
+        sw.Reset();
+        res = strcmp2_AN(us1, us2, A, NUM);
+        time = sw.Current();
+        std::cout << "naive AN," << res << ',' << time << ',' << time_base << '\n';
+
+        sw.Reset();
+        res = strcmp2_AN_accu(us1, us2, A, NUM);
+        time = sw.Current();
+        std::cout << "naive AN accu," << res << ',' << time << ',' << time_base << '\n';
+
+        sw.Reset();
+        res = _mm_strcmp_AN(us1, us2, A, NUM);
+        time = sw.Current();
+        std::cout << "K. AN," << res << ',' << time << ',' << time_base << '\n';
+
+        sw.Reset();
+        res = _mm_strcmp_AN_accu(us1, us2, A, NUM);
+        time = sw.Current();
+        std::cout << "K. AN accu," << res << ',' << time << ',' << time_base << '\n';
     }
-    if ((y - us1) != (NUM - 1)) {
-        std::cerr << "zero value found in buf3 at position " << (y - us1) << " instead of expected " << (NUM - 1) << std::endl;
+
+    {
+        std::cout << "\n\n#Buffer with " << NUM << " 16-bit limbs --> " << NUM_BYTES_SHORT << " bytes for unprotected and XOR, " << NUM_BYTES_INT << " bytes for AN\n";
+        AlignedBlock buf_short_3(NUM_BYTES_SHORT, 16);
+        AlignedBlock buf_short_4(NUM_BYTES_SHORT, 16);
+        DataGenerationConfiguration config3(8); // make sure we have no zero-bytes
+        ResetBlock<unsigned char>(config3, buf_short_3);
+        *(buf_short_3.template end<unsigned short>() - 1) = 0;
+        ResetBlock<unsigned char>(config3, buf_short_4);
+        *(buf_short_4.template end<unsigned short>() - 1) = 0;
+        const unsigned short * us1 = buf_short_3.template begin<const unsigned short>();
+        const unsigned short * us2 = buf_short_4.template begin<const unsigned short>();
+        test_buffer(us1, "buf_short_3", NUM_BYTES_CHAR);
+        test_buffer(us2, "buf_short_4", NUM_BYTES_CHAR);
+        test_buffer(reinterpret_cast<const char*>(us1), "buf_char_3", NUM_BYTES_SHORT);
+        test_buffer(reinterpret_cast<const char*>(us2), "buf_char_4", NUM_BYTES_SHORT);
+
+        sw.Reset();
+        res = std::strcmp(reinterpret_cast<const char*>(us1), reinterpret_cast<const char*>(us2));
+        time = time_base = sw.Current();
+        std::cout << "std::strcmp," << res << ',' << time << ',' << time_base << '\n';
+
+        sw.Reset();
+        res = strcmp2(us1, us2, NUM);
+        time = sw.Current();
+        std::cout << "naive," << res << ',' << time << ',' << time_base << '\n';
+
+        unsigned short old_xor_short1 = XOR(us1);
+        unsigned short old_xor_short2 = XOR(us2);
+        sw.Reset();
+        res = strcmp2_XOR(us1, us2, old_xor_short1, old_xor_short2, NUM);
+        time = sw.Current();
+        std::cout << "naive XOR," << res << ',' << time << ',' << time_base << '\n';
+
+        sw.Reset();
+        res = _mm_strcmp(us1, us2, NUM);
+        time = sw.Current();
+        std::cout << "Kankovski," << res << ',' << time << ',' << time_base << '\n';
+
+        auto old_xor_mm1 = _mm_XOR<unsigned short>(reinterpret_cast<const __m128i *>(us1));
+        auto old_xor_mm2 = _mm_XOR<unsigned short>(reinterpret_cast<const __m128i *>(us2));
+        sw.Reset();
+        res = _mm_strcmp_XOR(us1, us2, old_xor_mm1, old_xor_mm2, NUM);
+        time = sw.Current();
+        std::cout << "K. XOR," << res << ',' << time << ',' << time_base << '\n';
+
+        if (argc > 2) {
+            A = strtol(argv[2], &ptr_end, 10);
+        } else {
+            A = 63877;
+        }
+
+        AlignedBlock buf_int_1(NUM_BYTES_INT, 16);
+        AlignedBlock buf_int_2(NUM_BYTES_INT, 16);
+        DataGenerationConfiguration config4(16, 1, A); // make at least 2-bit limbs so that the upper short is never null!
+        ResetBlock<unsigned int>(config4, buf_int_1);
+        *(buf_int_1.template end<unsigned int>() - 1) = 0;
+        ResetBlock<unsigned int>(config4, buf_int_2);
+        *(buf_int_2.template end<unsigned int>() - 1) = 0;
+        const unsigned int * ui1 = buf_int_1.template begin<const unsigned int>();
+        const unsigned int * ui2 = buf_int_2.template begin<const unsigned int>();
+        test_buffer(ui1, "buf_int_1", NUM);
+        test_buffer(ui2, "buf_int_2", NUM);
+
+        sw.Reset();
+        res = strcmp2_AN(ui1, ui2, A, NUM);
+        time = sw.Current();
+        std::cout << "naive AN," << res << ',' << time << ',' << time_base << '\n';
+
+        sw.Reset();
+        res = strcmp2_AN_accu(ui1, ui2, A, NUM);
+        time = sw.Current();
+        std::cout << "naive AN accu," << res << ',' << time << ',' << time_base << '\n';
+
+        sw.Reset();
+        res = _mm_strcmp_AN(ui1, ui2, A, NUM);
+        time = sw.Current();
+        std::cout << "K. AN," << res << ',' << time << ',' << time_base << '\n';
+
+        sw.Reset();
+        res = _mm_strcmp_AN_accu(ui1, ui2, A, NUM);
+        time = sw.Current();
+        std::cout << "K. AN accu," << res << ',' << time << ',' << time_base << '\n';
     }
-    y = us2;
-    while (*y) {
-        ++y;
-    }
-    if ((y - us2) != (NUM - 1)) {
-        std::cerr << "zero value found in buf4 at position " << (y - us2) << " instead of expected " << (NUM - 1) << std::endl;
-    }
-
-    sw.Reset();
-    res = std::strcmp(uc1, uc2);
-    time = sw.Current();
-    std::cout << "\tstd::strcmp(buf3, buf4)\t" << res << "\t" << time << '\n';
-
-    sw.Reset();
-    res = _mm_strcmp(uc1, uc2);
-    time = sw.Current();
-    std::cout << "\t_mm_strcmp<char>(buf3, buf4)\t" << res << "\t" << time << '\n';
-
-    sw.Reset();
-    res = _mm_strcmp(us1, us2);
-    time = sw.Current();
-    std::cout << "\t_mm_strcmp<short>(buf3, buf4)\t" << res << "\t" << time << '\n';
-
-    sw.Reset();
-    res = strcmp2(uc1, uc2);
-    time = sw.Current();
-    std::cout << "\tstrcmp2(buf3, buf4)\t" << res << "\t" << time << '\n';
-
-    sw.Reset();
-    res = strcmp2_AN(us1, us2, A);
-    time = sw.Current();
-    std::cout << "\tstrcmp2_AN\t" << res << "\t" << time << '\n';
-
-    sw.Reset();
-    res = strcmp2_AN_accu(us1, us2, A);
-    time = sw.Current();
-    std::cout << "\tstrcmp2_AN_accu\t" << res << "\t" << time << '\n';
-
-    sw.Reset();
-    res = _mm_strcmp_AN(us1, us2, A);
-    time = sw.Current();
-    std::cout << "\t_mm_strcmp_AN\t" << res << "\t" << time << '\n';
-
-    sw.Reset();
-    res = _mm_strcmp_AN_accu(us1, us2, A);
-    time = sw.Current();
-    std::cout << "\t_mm_strcmp_AN_accu\t" << res << "\t" << time << '\n';
-
-    unsigned short old_xor_short1 = XOR(us1);
-    unsigned short old_xor_short2 = XOR(us2);
-    sw.Reset();
-    res = strcmp2_XOR(us1, us2, old_xor_short1, old_xor_short2, NUM);
-    time = sw.Current();
-    std::cout << "\tstrcmp2_XOR<unsigned short>(buf3, buf4, old_xor1, old_xor2, NUM)\t" << res << "\t" << time << '\n';
-
-    old_xor_mm1 = XOR(reinterpret_cast<const __m128i *>(us1));
-    old_xor_mm2 = XOR(reinterpret_cast<const __m128i *>(us2));
-    sw.Reset();
-    res = _mm_strcmp_xor(us1, us2, old_xor_mm1, old_xor_mm2, NUM);
-    time = sw.Current();
-    std::cout << "\t_mm_strcmp_xor(buf3, buf4, old_xor_mm1, old_xor_mm2, NUM)\t" << res << "\t" << time << '\n';
 
     return 0;
 }
