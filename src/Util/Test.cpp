@@ -42,7 +42,8 @@ DataGenerationConfiguration::DataGenerationConfiguration()
         : numEffectiveBitsData(std::nullopt),
           numIneffectiveLSBsData(std::nullopt),
           numEffectiveBitsArithOperand(std::nullopt),
-          numIneffectiveLSBsArithOperand(std::nullopt) {
+          numIneffectiveLSBsArithOperand(std::nullopt),
+          multiplicator(std::nullopt) {
 }
 
 DataGenerationConfiguration::DataGenerationConfiguration(
@@ -50,7 +51,8 @@ DataGenerationConfiguration::DataGenerationConfiguration(
         : numEffectiveBitsData(numEffectiveLSBs),
           numIneffectiveLSBsData(std::nullopt),
           numEffectiveBitsArithOperand(std::nullopt),
-          numIneffectiveLSBsArithOperand(std::nullopt) {
+          numIneffectiveLSBsArithOperand(std::nullopt),
+          multiplicator(std::nullopt) {
 }
 
 DataGenerationConfiguration::DataGenerationConfiguration(
@@ -59,7 +61,8 @@ DataGenerationConfiguration::DataGenerationConfiguration(
         : numEffectiveBitsData(numEffectiveLSBs),
           numIneffectiveLSBsData(numIneffectiveLSBsData),
           numEffectiveBitsArithOperand(std::nullopt),
-          numIneffectiveLSBsArithOperand(std::nullopt) {
+          numIneffectiveLSBsArithOperand(std::nullopt),
+          multiplicator(std::nullopt) {
 }
 
 DataGenerationConfiguration::DataGenerationConfiguration(
@@ -69,7 +72,21 @@ DataGenerationConfiguration::DataGenerationConfiguration(
         : numEffectiveBitsData(numEffectiveLSBs),
           numIneffectiveLSBsData(numIneffectiveLSBsData),
           numEffectiveBitsArithOperand(numEffectiveBitsArithOperand),
-          numIneffectiveLSBsArithOperand(std::nullopt) {
+          numIneffectiveLSBsArithOperand(std::nullopt),
+          multiplicator(std::nullopt) {
+}
+
+DataGenerationConfiguration::DataGenerationConfiguration(
+        const size_t numEffectiveLSBs,
+        const size_t numIneffectiveLSBsData,
+        const size_t numEffectiveBitsArithOperand,
+        const size_t numIneffectiveLSBsArithOperand,
+        const size_t multiplicator)
+        : numEffectiveBitsData(numEffectiveLSBs),
+          numIneffectiveLSBsData(numIneffectiveLSBsData),
+          numEffectiveBitsArithOperand(numEffectiveBitsArithOperand),
+          numIneffectiveLSBsArithOperand(numIneffectiveLSBsArithOperand),
+          multiplicator(multiplicator) {
 }
 
 DataGenerationConfiguration::DataGenerationConfiguration(
@@ -80,7 +97,8 @@ DataGenerationConfiguration::DataGenerationConfiguration(
         : numEffectiveBitsData(numEffectiveLSBs),
           numIneffectiveLSBsData(numIneffectiveLSBsData),
           numEffectiveBitsArithOperand(numEffectiveBitsArithOperand),
-          numIneffectiveLSBsArithOperand(numIneffectiveLSBsArithOperand) {
+          numIneffectiveLSBsArithOperand(numIneffectiveLSBsArithOperand),
+          multiplicator(std::nullopt) {
 }
 
 int DataGenerationConfiguration::getUniformData() const {
@@ -536,7 +554,7 @@ TestInfos TestBase::Execute(
                 InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             };
         };
-        ConfigurationModeExecutor<ArithmeticConfiguration, typeof(func)>::run(arithConf, func);
+        ConfigurationModeExecutor<ArithmeticConfiguration, decltype(func)>::run(arithConf, func);
     }
 
     if (configTest.enableArithmeticChk) {
@@ -566,7 +584,7 @@ TestInfos TestBase::Execute(
                 InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             }
         };
-        ConfigurationModeExecutor<ArithmeticConfiguration, typeof(func)>::run(arithConf, func);
+        ConfigurationModeExecutor<ArithmeticConfiguration, decltype(func)>::run(arithConf, func);
     }
 
     if (configTest.enableAggregate) {
@@ -596,7 +614,7 @@ TestInfos TestBase::Execute(
                 InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             }
         };
-        ConfigurationModeExecutor<AggregateConfiguration, typeof(func)>::run(aggrConf, func);
+        ConfigurationModeExecutor<AggregateConfiguration, decltype(func)>::run(aggrConf, func);
     }
 
     if (configTest.enableAggregateChk) {
@@ -626,7 +644,7 @@ TestInfos TestBase::Execute(
                 InternalExecuteMode(*this, sw, preFunc, runFunc, postFunc, setFunc, catchFunc);
             }
         };
-        ConfigurationModeExecutor<AggregateConfiguration, typeof(func)>::run(aggrConf, func);
+        ConfigurationModeExecutor<AggregateConfiguration, decltype(func)>::run(aggrConf, func);
     }
 
     if (configTest.enableReencodeChk && this->DoReencodeChecked()) {
