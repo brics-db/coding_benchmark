@@ -58,6 +58,7 @@ public:
     const std::optional<size_t> numIneffectiveLSBsData;
     const std::optional<size_t> numEffectiveBitsArithOperand;
     const std::optional<size_t> numIneffectiveLSBsArithOperand;
+    const std::optional<size_t> multiplicator;
 
     DataGenerationConfiguration();
 
@@ -78,6 +79,13 @@ public:
             const size_t numIneffectiveLSBsData,
             const size_t numEffectiveBitsArithOperand,
             const size_t numIneffectiveLSBsArithOperand);
+
+    DataGenerationConfiguration(
+            const size_t numEffectiveLSBs,
+            const size_t numIneffectiveLSBsData,
+            const size_t numEffectiveBitsArithOperand,
+            const size_t numIneffectiveLSBsArithOperand,
+            const size_t multiplicator);
 
     int getUniformData() const;
 
@@ -408,13 +416,24 @@ public:
         auto pInEnd = this->bufRaw.template end<DATARAW>();
         DATARAW value = static_cast<DATARAW>(12783);
         DATARAW* pIn = this->bufRaw.template begin<DATARAW>();
-        while (pIn < pInEnd) {
-            DATARAW x;
-            do {
-                x = mask & value;
-                value = value * static_cast<DATARAW>(7577) + static_cast<DATARAW>(10467);
-            } while (x == 0);
-            *pIn++ = x;
+        if (dataGenConfig.multiplicator) {
+            while (pIn < pInEnd) {
+                DATARAW x;
+                do {
+                    x = mask & value;
+                    value = value * static_cast<DATARAW>(7577) + static_cast<DATARAW>(10467);
+                } while (x == 0);
+                *pIn++ = (x * dataGenConfig.multiplicator.value());
+            }
+        } else {
+            while (pIn < pInEnd) {
+                DATARAW x;
+                do {
+                    x = mask & value;
+                    value = value * static_cast<DATARAW>(7577) + static_cast<DATARAW>(10467);
+                } while (x == 0);
+                *pIn++ = x;
+            }
         }
         this->bufEncoded.clear();
         this->bufResult.clear();

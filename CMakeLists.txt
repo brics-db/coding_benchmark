@@ -106,7 +106,8 @@ src/AN/AN_sse42_8_16_u_inv.cpp src/AN/AN_sse42_8_16_s_inv.cpp src/AN/AN_sse42_16
 src/AN/AN_sse42_8_16_u_divmod.cpp src/AN/AN_sse42_8_16_s_divmod.cpp src/AN/AN_sse42_16_32_s_divmod.cpp src/AN/AN_sse42_16_32_u_divmod.cpp src/AN/AN_sse42_32_64_s_divmod.cpp src/AN/AN_sse42_32_64_u_divmod.cpp \
 src/AN/AN_avx2_8_16_u_inv.cpp src/AN/AN_avx2_8_16_s_inv.cpp src/AN/AN_avx2_16_32_s_inv.cpp src/AN/AN_avx2_16_32_u_inv.cpp src/AN/AN_avx2_32_64_s_inv.cpp src/AN/AN_avx2_32_64_u_inv.cpp \
 src/AN/AN_avx2_8_16_u_divmod.cpp src/AN/AN_avx2_8_16_s_divmod.cpp src/AN/AN_avx2_16_32_s_divmod.cpp src/AN/AN_avx2_16_32_u_divmod.cpp src/AN/AN_avx2_32_64_s_divmod.cpp src/AN/AN_avx2_32_64_u_divmod.cpp \
-src/CRC/CRC_base.cpp src/CRC/CRC32_scalar_16.cpp src/CRC/CRC32_scalar_32.cpp" "")
+src/CRC/CRC_base.cpp src/CRC/CRC32_scalar_16.cpp src/CRC/CRC32_scalar_32.cpp \
+src/Strings/Strings.cpp src/Strings/StringsAN.cpp src/Strings/StringsXOR.cpp" "")
 
 add_algorithm(AN_Datalength_Comparison "src/AN_Datalength_Comparison.cpp src/Util/Test.cpp" benchbase)
 
@@ -181,5 +182,4 @@ TARGET_COMPILE_OPTIONS(TestComputeHamming PUBLIC "-fno-tree-vectorize")
 add_algorithm(TestPopcount "src/TestPopcount.cpp src/Util/Test.cpp" benchbase)
 TARGET_COMPILE_OPTIONS(TestPopcount PUBLIC "-fno-tree-vectorize")
 
-add_algorithm(TestString "src/TestString.cpp src/Util/Stopwatch.cpp")
-TARGET_COMPILE_OPTIONS(TestString PUBLIC "-fno-tree-vectorize")
+add_algorithm(TestString "src/TestString.cpp src/Util/Test.cpp" benchbase)
