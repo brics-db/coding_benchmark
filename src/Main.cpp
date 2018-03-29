@@ -281,7 +281,7 @@ int main(
     }
 #endif /* TEST32 */
 
-    printResults<false>(vecTestInfos);
+    printResults<false>(testConfig, vecTestInfos);
     std::cout << "\n\n";
-    printResults<true>(vecTestInfos);
+    printResults<true>(testConfig, vecTestInfos);
 }

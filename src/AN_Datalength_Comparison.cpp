@@ -118,7 +118,7 @@ int main(
     TestCase<AN_scalar_32_64_u_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_32_64_u_inv", "AN U 32>64", input32, encoded32, result32, AUser, AUserInv64, testConfig, dataGenConfig, vecTestInfos, refIdx);
     TestCase<AN_scalar_32_64_s_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_32_64_s_inv", "AN S 32>64", input32, encoded32, result32, AUser, AUserInv64, testConfig, dataGenConfig, vecTestInfos, refIdx);
 
-    printResults<false>(vecTestInfos, OutputConfiguration(false, true));
+    printResults<false>(testConfig, vecTestInfos, OutputConfiguration(false, true, true));
     std::cout << "\n\n";
-    printResults<true>(vecTestInfos, OutputConfiguration(false, true));
+    printResults<true>(testConfig, vecTestInfos, OutputConfiguration(false, true, true));
 }

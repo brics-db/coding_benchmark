@@ -28,8 +28,9 @@ void printUsage(
 
 template<bool doRelative>
 void printResults(
+        TestConfiguration testConfig,
         std::vector<std::vector<TestInfos>> & results,
-        OutputConfiguration config) {
+        OutputConfiguration outputConfig) {
     size_t numResults = results.size();
     size_t maxPos = 0;
     for (auto & v : results) {
@@ -136,7 +137,8 @@ void printResults(
     }
     // headline
     std::cout << "#   ";
-    size_t num = 0;
+    // shall we print the "total number of numbers" column? We will print is as the second column
+    size_t num = outputConfig.doPrintCountNumbersColumn;
     auto headlineWriter = [&log10NumTests,&num] (bool doIt, const char * const name) {
         if (doIt) {
             ++num;
@@ -236,12 +238,15 @@ void printResults(
 
     // print headline
     std::cout << "unroll/block";
+    if (outputConfig.doPrintCountNumbersColumn) {
+        std::cout << ",total numbers";
+    }
     // first all encode columns, then all check columns etc.size
     size_t i = 0;
     if (isEnc) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " enc");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " enc");
             ++i;
         }
         i = 0;
@@ -249,7 +254,7 @@ void printResults(
     if (isChk) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " check");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcmp" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " check");
             ++i;
         }
         i = 0;
@@ -257,7 +262,7 @@ void printResults(
     if (isAdd) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " add");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " add");
             ++i;
         }
         i = 0;
@@ -265,7 +270,7 @@ void printResults(
     if (isSub) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " sub");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " sub");
             ++i;
         }
         i = 0;
@@ -273,7 +278,7 @@ void printResults(
     if (isMul) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " mul");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " mul");
             ++i;
         }
         i = 0;
@@ -281,7 +286,7 @@ void printResults(
     if (isDiv) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " div");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " div");
             ++i;
         }
         i = 0;
@@ -289,7 +294,8 @@ void printResults(
     if (isAddChk) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " addChk");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcmp+memcpy" : ti.name)
+                    << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " addChk");
             ++i;
         }
         i = 0;
@@ -297,7 +303,8 @@ void printResults(
     if (isSubChk) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " subChk");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcmp+memcpy" : ti.name)
+                    << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " subChk");
             ++i;
         }
         i = 0;
@@ -305,7 +312,8 @@ void printResults(
     if (isMulChk) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " mulChk");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcmp+memcpy" : ti.name)
+                    << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " mulChk");
             ++i;
         }
         i = 0;
@@ -313,7 +321,8 @@ void printResults(
     if (isDivChk) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " divChk");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcmp+memcpy" : ti.name)
+                    << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " divChk");
             ++i;
         }
         i = 0;
@@ -321,7 +330,7 @@ void printResults(
     if (isSum) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " sum");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " sum");
             ++i;
         }
         i = 0;
@@ -329,7 +338,7 @@ void printResults(
     if (isMin) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " min");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " min");
             ++i;
         }
         i = 0;
@@ -337,7 +346,7 @@ void printResults(
     if (isMax) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " max");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " max");
             ++i;
         }
         i = 0;
@@ -345,7 +354,7 @@ void printResults(
     if (isSum) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " avg");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " avg");
             ++i;
         }
         i = 0;
@@ -353,7 +362,8 @@ void printResults(
     if (isSumChk) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " sumChk");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcmp+memcpy" : ti.name)
+                    << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " sumChk");
             ++i;
         }
         i = 0;
@@ -361,7 +371,8 @@ void printResults(
     if (isMinChk) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " minChk");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcmp+memcpy" : ti.name)
+                    << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " minChk");
             ++i;
         }
         i = 0;
@@ -369,7 +380,8 @@ void printResults(
     if (isMaxChk) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " maxChk");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcmp+memcpy" : ti.name)
+                    << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " maxChk");
             ++i;
         }
         i = 0;
@@ -377,7 +389,8 @@ void printResults(
     if (isAvgChk) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " avgChk");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcmp+memcpy" : ti.name)
+                    << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " avgChk");
             ++i;
         }
         i = 0;
@@ -385,7 +398,8 @@ void printResults(
     if (isReencChk) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcmp+memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " reencChk");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcmp+memcpy" : ti.name)
+                    << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " reencChk");
             ++i;
         }
         i = 0;
@@ -393,7 +407,7 @@ void printResults(
     if (isDec) {
         for (auto & v : results) {
             auto & ti = v[0];
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " dec");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " dec");
             ++i;
         }
         i = 0;
@@ -401,7 +415,7 @@ void printResults(
     for (auto & v : results) {
         auto & ti = v[0];
         if (isDecChk) {
-            std::cout << ',' << (((i == 0) && config.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && config.doRenameFirst) || !config.doAppendTestMethod) ? "" : " decChk");
+            std::cout << ',' << (((i == 0) && outputConfig.doRenameFirst) ? "memcpy" : ti.name) << ((((i == 0) && outputConfig.doRenameFirst) || !outputConfig.doAppendTestMethod) ? "" : " decChk");
         }
         ++i;
     }
@@ -413,6 +427,9 @@ void printResults(
     }
     for (size_t pos = 0, blocksize = 1; pos < maxPos; ++pos, blocksize *= 2) {
         std::cout << blocksize;
+        if (outputConfig.doPrintCountNumbersColumn) {
+            std::cout << ',' << (testConfig.numIterations * testConfig.numValues);
+        }
         if (isEnc) {
             for (auto & v : results) {
                 std::cout << ',';
@@ -775,9 +792,11 @@ void printResults(
 }
 
 template void printResults<true>(
+        TestConfiguration testConfig,
         std::vector<std::vector<TestInfos>> & results,
         OutputConfiguration config);
 
 template void printResults<false>(
+        TestConfiguration testConfig,
         std::vector<std::vector<TestInfos>> & results,
         OutputConfiguration config);

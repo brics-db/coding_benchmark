@@ -55,7 +55,7 @@ namespace coding_benchmark {
                 while (data <= (dataEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
                         DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
-                        if (dec >= dMin && dec <= dMax) {
+                        if ((dec >= dMin) & (dec <= dMax)) {
                             ++data;
                         } else {
                             std::stringstream ss;
@@ -67,7 +67,7 @@ namespace coding_benchmark {
                 // remaining numbers
                 while (data < dataEnd) {
                     DATAENC dec = static_cast<DATAENC>(*data * this->A_INV);
-                    if (dec >= dMin && dec <= dMax) {
+                    if ((dec >= dMin) & (dec <= dMax)) {
                         ++data;
                     } else {
                         std::stringstream ss;
@@ -114,7 +114,7 @@ namespace coding_benchmark {
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t k = 0; k < UNROLL; ++k) {
                         DATAENC dec = static_cast<DATAENC>(*dataIn * test.A_INV);
-                        if (dec >= dMin && dec <= dMax) {
+                        if ((dec >= dMin) & (dec <= dMax)) {
                             DATAENC x = functor(*dataIn++, operand);
                             if constexpr (std::is_same_v<Functor<void>, div<void>>) {
                                 x *= test.A; // make sure we get a code word again
@@ -130,7 +130,7 @@ namespace coding_benchmark {
                 // remaining numbers
                 while (dataIn < dataInEnd) {
                     DATAENC dec = static_cast<DATAENC>(*dataIn * test.A_INV);
-                    if (dec >= dMin && dec <= dMax) {
+                    if ((dec >= dMin) & (dec <= dMax)) {
                         DATAENC x = functor(*dataIn++, operand);
                         if constexpr (std::is_same_v<Functor<void>, div<void>>) {
                             x *= test.A; // make sure we get a code word again
@@ -200,7 +200,7 @@ namespace coding_benchmark {
                 while (dataIn <= (dataInEnd - UNROLL)) {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         DATAENC dec = static_cast<DATAENC>(*dataIn * test.A_INV);
-                        if (dec >= dMin && dec <= dMax) {
+                        if ((dec >= dMin) & (dec <= dMax)) {
                             value = funcKernel(value, *dataIn++);
                         } else {
                             std::stringstream ss;
@@ -211,7 +211,7 @@ namespace coding_benchmark {
                 }
                 while (dataIn < dataInEnd) {
                     DATAENC dec = static_cast<DATAENC>(*dataIn * test.A_INV);
-                    if (dec >= dMin && dec <= dMax) {
+                    if ((dec >= dMin) & (dec <= dMax)) {
                         value = funcKernel(value, *dataIn++);
                     } else {
                         std::stringstream ss;
@@ -271,7 +271,7 @@ namespace coding_benchmark {
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
-                        if (dec >= dMin && dec <= dMax) {
+                        if ((dec >= dMin) & (dec <= dMax)) {
                             *dataOut++ = static_cast<DATAENC>(*dataIn++ * reenc);
                         } else {
                             std::stringstream ss;
@@ -283,7 +283,7 @@ namespace coding_benchmark {
                 // remaining numbers
                 while (dataIn < dataInEnd) {
                     DATAENC dec = static_cast<DATAENC>(*dataIn * this->A_INV);
-                    if (dec >= dMin && dec <= dMax) {
+                    if ((dec >= dMin) & (dec <= dMax)) {
                         *dataOut++ = static_cast<DATAENC>(*dataIn++ * reenc);
                     } else {
                         std::stringstream ss;
@@ -308,7 +308,7 @@ namespace coding_benchmark {
                 while (dataIn <= (dataInEnd - UNROLL)) { // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         DATAENC dec = static_cast<DATAENC>(*dataIn++ * this->A_INV);
-                        if (dec >= dMin && dec <= dMax) {
+                        if ((dec >= dMin) & (dec <= dMax)) {
                             *dataOut++ = static_cast<DATARAW>(dec);
                         } else {
                             std::stringstream ss;
@@ -320,7 +320,7 @@ namespace coding_benchmark {
                 // remaining numbers
                 while (dataIn < dataInEnd) {
                     DATAENC dec = static_cast<DATAENC>(*dataIn++ * this->A_INV);
-                    if (dec >= dMin && dec <= dMax) {
+                    if ((dec >= dMin) & (dec <= dMax)) {
                         *dataOut++ = static_cast<DATARAW>(dec);
                     } else {
                         std::stringstream ss;

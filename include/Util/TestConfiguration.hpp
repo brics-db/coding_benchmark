@@ -23,6 +23,8 @@
 
 #include <variant>
 
+#include <Util/AlignedBlock.hpp>
+
 /**
  * This benchmark suite has a structure where there are individual ``tests'' which
  * contain several ``subtests''.

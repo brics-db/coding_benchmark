@@ -478,7 +478,7 @@ int main() {
     TestCase<popcount_avx512_64_3, UNROLL_LO, UNROLL_HI>("popcount_avx512_64_3", "AVX512 3 64", bufRawdata64, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 
-    printResults<false>(vecTestInfos, OutputConfiguration(false, false));
+    printResults<false>(testConfig, vecTestInfos, OutputConfiguration(false, false, true));
     std::cout << "\n\n";
-    printResults<true>(vecTestInfos, OutputConfiguration(false, false));
+    printResults<true>(testConfig, vecTestInfos, OutputConfiguration(false, false, true));
 }

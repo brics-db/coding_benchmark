@@ -27,21 +27,26 @@
 #include <vector>
 
 #include <Util/TestInfo.hpp>
+#include <Util/TestConfiguration.hpp>
 
 struct OutputConfiguration {
     bool doRenameFirst;
     bool doAppendTestMethod;
+    bool doPrintCountNumbersColumn;
 
     OutputConfiguration()
             : doRenameFirst(true),
-              doAppendTestMethod(true) {
+              doAppendTestMethod(true),
+              doPrintCountNumbersColumn(true) {
     }
 
     OutputConfiguration(
             bool doRenameFirst,
-            bool doAppendTestMethod)
+            bool doAppendTestMethod,
+            bool doPrintCountNumbersColumn)
             : doRenameFirst(doRenameFirst),
-              doAppendTestMethod(doAppendTestMethod) {
+              doAppendTestMethod(doAppendTestMethod),
+              doPrintCountNumbersColumn(doPrintCountNumbersColumn) {
     }
 };
 
@@ -50,13 +55,16 @@ void printUsage(
 
 template<bool doRelative>
 void printResults(
+        TestConfiguration testConfig,
         std::vector<std::vector<TestInfos>> & results,
         OutputConfiguration config = OutputConfiguration());
 
 extern template void printResults<true>(
+        TestConfiguration testConfig,
         std::vector<std::vector<TestInfos>> & results,
         OutputConfiguration config);
 extern template void printResults<false>(
+        TestConfiguration testConfig,
         std::vector<std::vector<TestInfos>> & results,
         OutputConfiguration config);
 

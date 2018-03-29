@@ -51,6 +51,7 @@ namespace coding_benchmark {
                 const Config & config) {
             static_assert(check | materialize);
             for (size_t iteration = 0; iteration < config.numIterations; ++iteration) {
+                _ReadWriteBarrier();
                 auto inV = materialize ? config.source.template begin<VEC>() : config.target.template begin<VEC>(); // We materialize for decode, so we need source. We do NOT materialize for check, where we need target.
                 const auto inVend = this->template ComputeEnd<DATAENC>(inV, config);
                 auto outS __attribute__((unused)) = config.target.template begin<DATARAW>();
@@ -63,7 +64,7 @@ namespace coding_benchmark {
                     // let the compiler unroll the loop
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmInDec = mm_op<VEC, DATAENC, mul>::compute(mm<VEC>::loadu(inV++), mmAInv);
-                        if ((!check) || ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) && (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK)))) {
+                        if ((!check) || ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) & (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK)))) {
                             if constexpr (materialize) {
                                 writeout<DATARAW, DATAENC, VEC>(mmInDec, outS);
                                 outS += (sizeof(VEC) / sizeof(DATAENC));
@@ -76,7 +77,7 @@ namespace coding_benchmark {
                 // remaining numbers
                 while (inV <= (inVend - 1)) {
                     auto mmInDec = mm_op<VEC, DATAENC, mul>::compute(mm<VEC>::loadu(inV++), mmAInv);
-                    if ((!check) || ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) && (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK)))) {
+                    if ((!check) || ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) & (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK)))) {
                         if constexpr (materialize) {
                             writeout<DATARAW, DATAENC, VEC>(mmInDec, outS);
                             outS += (sizeof(VEC) / sizeof(DATAENC));
@@ -90,7 +91,7 @@ namespace coding_benchmark {
                     const auto in32end = reinterpret_cast<DATAENC* const >(inVend);
                     while (inS < in32end) {
                         auto dec = *inS++ * this->A_INV;
-                        if ((!check) || ((dec <= dMax) && (std::is_unsigned_v<DATARAW> || (dec >= dMin)))) {
+                        if ((!check) || ((dec <= dMax) & (std::is_unsigned_v<DATARAW> || (dec >= dMin)))) {
                             if constexpr (materialize) {
                                 *outS++ = dec;
                             }
@@ -153,7 +154,7 @@ namespace coding_benchmark {
                     for (size_t unroll = 0; unroll < UNROLL; ++unroll) {
                         auto mmIn = mm<VEC>::loadu(inV++);
                         auto mmInDec = mm_op<VEC, DATAENC, mul>::compute(mmIn, mmAInv);
-                        if ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) && (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK))) {
+                        if ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) & (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK))) {
                             auto x = mm_op<VEC, DATAENC, Functor>::compute(mmIn, mmOperand);
                             if (std::is_same_v<Functor<void>, div<void>>) {
                                 x = mm_op<VEC, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
@@ -168,7 +169,7 @@ namespace coding_benchmark {
                 while (inV <= (inVend - 1)) {
                     auto mmIn = mm<VEC>::loadu(inV++);
                     auto mmInDec = mm_op<VEC, DATAENC, mul>::compute(mmIn, mmAInv);
-                    if ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) && (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK))) {
+                    if ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) & (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK))) {
                         auto x = mm_op<VEC, DATAENC, Functor>::compute(mmIn, mmOperand);
                         if (std::is_same_v<Functor<void>, div<void>>) {
                             x = mm_op<VEC, DATAENC, mul>::compute(x, mmA); // make sure we get a code word again
@@ -185,7 +186,7 @@ namespace coding_benchmark {
                     auto outS = reinterpret_cast<DATAENC*>(outV);
                     while (inS < inSend) {
                         auto dec = *inS * test.A_INV;
-                        if ((dec <= dMax) && (std::is_unsigned_v<DATARAW> || (dec >= dMin))) {
+                        if ((dec <= dMax) & (std::is_unsigned_v<DATARAW> || (dec >= dMin))) {
                             auto x = functor(*inS++, operand);
                             if (std::is_same_v<Functor<void>, div<void>>) {
                                 x *= test.A; // make sure we get a code word again
@@ -260,7 +261,7 @@ namespace coding_benchmark {
                     for (size_t k = 0; k < UNROLL; ++k) {
                         auto mmIn = mm<VEC>::loadu(inV++);
                         auto mmInDec = mm_op<VEC, DATAENC, mul>::compute(mmIn, mmAInv);
-                        if ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) && (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK))) {
+                        if ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) & (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK))) {
                             mmValue = funcKernelVector(mmValue, mmIn);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(inV - 1) - config.source.template begin<DATAENC>(), iteration);
@@ -270,7 +271,7 @@ namespace coding_benchmark {
                 while (inV <= (inVend - 1)) {
                     auto mmIn = mm<VEC>::loadu(inV++);
                     auto mmInDec = mm_op<VEC, DATAENC, mul>::compute(mmIn, mmAInv);
-                    if ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) && (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK))) {
+                    if ((mmEncLE::cmp_mask(mmInDec, mmDMax) == mmEnc::FULL_MASK) & (std::is_unsigned_v<DATARAW> || (mmEncGE::cmp_mask(mmInDec, mmDMin) == mmEnc::FULL_MASK))) {
                         mmValue = funcKernelVector(mmValue, mmIn);
                     } else {
                         throw ErrorInfo(__FILE__, __LINE__, reinterpret_cast<DATAENC*>(inV - 1) - config.source.template begin<DATAENC>(), iteration);
@@ -282,7 +283,7 @@ namespace coding_benchmark {
                     const auto inSend = reinterpret_cast<DATAENC* const >(inVend);
                     while (inS < inSend) {
                         auto dec = *inS * test.A_INV;
-                        if ((dec <= dMax) && (std::is_unsigned_v<DATARAW> || (dec >= dMin))) {
+                        if ((dec <= dMax) & (std::is_unsigned_v<DATARAW> || (dec >= dMin))) {
                             value = funcKernelScalar(value, *inS++);
                         } else {
                             throw ErrorInfo(__FILE__, __LINE__, inS - config.source.template begin<DATAENC>(), iteration);

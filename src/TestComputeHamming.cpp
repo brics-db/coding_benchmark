@@ -81,9 +81,9 @@ int main() {
     TestCase<Hamming_compute_avx2_3_32, UNROLL_LO, UNROLL_HI>("Hamming_compute_avx2_3_32", "AVX2 3 32", bufRawdata32, bufResult, bufResult, testConfig, dataGenConfig, vecTestInfos, idx);
 #endif
 
-    printResults<false>(vecTestInfos, OutputConfiguration(false, false));
+    printResults<false>(testConfig, vecTestInfos, OutputConfiguration(false, false, true));
     std::cout << "\n\n";
-    printResults<true>(vecTestInfos, OutputConfiguration(false, false));
+    printResults<true>(testConfig, vecTestInfos, OutputConfiguration(false, false, true));
 
     return 0;
 }
