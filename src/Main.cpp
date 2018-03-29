@@ -113,7 +113,11 @@ int main(
     std::cout << "# UNROLL_LO = " << UNROLL_LO << '\n';
     std::cout << "# UNROLL_HI = " << UNROLL_HI << '\n';
 
+#ifdef TEST8
+    size_t AUser = 233ull;
+#else
     size_t AUser = 64311ull;
+#endif
     int result = checkArgs(argc, argv, AUser);
     if (result != 0) {
         return result;
@@ -245,11 +249,11 @@ int main(
         std::clog << "# 32-bit Scalar tests:" << std::endl;
         // 32-bit data sequential tests
         TestCase<XOR_scalar_32_32, UNROLL_LO, UNROLL_HI>("XOR_scalar_32_32", "XOR Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
-        TestCase<Hamming_scalar_32, UNROLL_LO, UNROLL_HI>("Hamming_scalar_32", "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
         TestCase<AN_scalar_32_64_u_divmod, UNROLL_LO, UNROLL_HI>("AN_scalar_32_64_u_divmod", "AN Scalar U DivMod", bufRawdata32, bufEncoded32, bufResult32, AUser, AUserInv, testConfig, dataGenConfig32, vecTestInfos, refIdx);
         TestCase<AN_scalar_32_64_s_divmod, UNROLL_LO, UNROLL_HI>("AN_scalar_32_64_s_divmod", "AN Scalar S DivMod", bufRawdata32, bufEncoded32, bufResult32, AUser, AUserInv, testConfig, dataGenConfig32, vecTestInfos, refIdx);
         TestCase<AN_scalar_32_64_u_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_32_64_u_inv", "AN Scalar U Inv", bufRawdata32, bufEncoded32, bufResult32, AUser, AUserInv, testConfig, dataGenConfig32, vecTestInfos, refIdx);
         TestCase<AN_scalar_32_64_s_inv, UNROLL_LO, UNROLL_HI>("AN_scalar_32_64_s_inv", "AN Scalar S Inv", bufRawdata32, bufEncoded32, bufResult32, AUser, AUserInv, testConfig, dataGenConfig32, vecTestInfos, refIdx);
+        TestCase<Hamming_scalar_32, UNROLL_LO, UNROLL_HI>("Hamming_scalar_32", "Hamming Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
 #ifdef TESTCRC
         TestCase<CRC32_scalar_32, UNROLL_LO, UNROLL_HI>("CRC32_scalar_32", "CRC32 Scalar", bufRawdata32, bufEncoded32, bufResult32, testConfig, dataGenConfig32, vecTestInfos, refIdx);
 #endif
