@@ -88,24 +88,35 @@ void test_buffer(
 int main(
         int argc,
         char** argv) {
-    const constexpr size_t NUM = 10000;
-    const constexpr size_t NUM_BYTES_CHAR = NUM * sizeof(unsigned char);
-    const constexpr size_t NUM_BYTES_SHORT = NUM * sizeof(unsigned short);
-    const constexpr size_t NUM_BYTES_INT = NUM * sizeof(unsigned int);
-    const constexpr size_t NUM_ITERATIONS = 1000;
-    const constexpr ssize_t LENGTH_PART_MAX = 100;
-    const constexpr ssize_t LENGTH_PART_START = LENGTH_PART_MAX;
-    const constexpr ssize_t LENGTH_PART_DECREASE = 1;
+    size_t NUM = 10000;
+    size_t NUM_ITERATIONS = 1000;
+    const ssize_t LENGTH_PART_MAX = 100;
+    ssize_t LENGTH_PART_START = LENGTH_PART_MAX;
+    ssize_t LENGTH_PART_DECREASE = 1;
 
     Stopwatch sw;
     int __attribute__((unused)) res;
     int64_t time[9][LENGTH_PART_MAX + 1];
 
     char* ptr_end;
+
+    if (argc > 1) {
+        NUM = strtol(argv[1], &ptr_end, 10);
+    }
+    const size_t NUM_BYTES_CHAR = NUM * sizeof(unsigned char);
+    const size_t NUM_BYTES_SHORT = NUM * sizeof(unsigned short);
+    const size_t NUM_BYTES_INT = NUM * sizeof(unsigned int);
+    if (argc > 2) {
+        NUM_ITERATIONS = strtol(argv[2], &ptr_end, 10);
+    }
+    if (argc > 3) {
+        LENGTH_PART_START = strtol(argv[3], &ptr_end, 10);
+    }
+
     unsigned short A = 233;
     // force the compiler to NOT assume A a constant
-    if (argc > 1) {
-        A = strtol(argv[1], &ptr_end, 10);
+    if (argc > 4) {
+        A = strtol(argv[4], &ptr_end, 10);
     }
 
     {
@@ -136,9 +147,9 @@ int main(
         test_buffer(us2, "buf_short_2", NUM);
 
         for (ssize_t i = LENGTH_PART_START; i > 0; i -= LENGTH_PART_DECREASE) {
-//#ifndef NDEBUG
+#ifndef NDEBUG
             std::cerr << "iteration " << (LENGTH_PART_START + 1 - i) << '\n';
-//#endif
+#endif
             if (i < LENGTH_PART_START) {
                 auto p1 = &uc1[(NUM * i) / LENGTH_PART_MAX];
                 *p1 = ~*p1; // just change that limb to force one string being different at this location
