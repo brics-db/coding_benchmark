@@ -183,3 +183,4 @@ add_algorithm(TestPopcount "src/TestPopcount.cpp src/Util/Test.cpp" benchbase)
 TARGET_COMPILE_OPTIONS(TestPopcount PUBLIC "-fno-tree-vectorize")
 
 add_algorithm(TestString "src/TestString.cpp src/Util/Test.cpp" benchbase)
+add_algorithm(TestString2 "src/TestString2.cpp src/Util/Test.cpp" benchbase)

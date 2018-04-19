@@ -148,6 +148,12 @@ int _mm_strcmp_xor(
     mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
     int offset = _mm_cmpistri(ct16chars, cs16chars, _SIDD_SBYTE_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loopXORchar] \n jc %l[not_equalXORchar]" : : : "memory" : loopXORchar, not_equalXORchar );
+    while (ct < ctEnd) {
+        __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (ct += charsPerMM128));
+        mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
+        __m128i cs16chars = _mm_lddqu_si128((const __m128i *) (ct + diff));
+        mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
+    }
     if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1)) == 0xFFFF) {
         if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2)) == 0xFFFF) {
 #ifndef NDEBUG
