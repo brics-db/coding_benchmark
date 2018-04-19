@@ -121,6 +121,14 @@ int strcmp2_xor(
         const int32_t old_xor2,
         const size_t NUM);
 
+inline char compactXORchar(
+        __m128i & mmXOR) {
+    int64_t tmp = _mm_extract_epi64(mmXOR, 0) ^ _mm_extract_epi64(mmXOR, 1);
+    tmp = static_cast<int32_t>(tmp) ^ static_cast<int32_t>(tmp >> 32);
+    tmp = static_cast<int16_t>(tmp) ^ static_cast<int16_t>(tmp >> 16);
+    return static_cast<char>(tmp) ^ static_cast<char>(tmp >> 8);
+}
+
 int _mm_strcmp_xor(
         const char* cs,
         const char* ct,
@@ -148,8 +156,8 @@ int _mm_strcmp_xor(
     mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
     int offset = _mm_cmpistri(ct16chars, cs16chars, _SIDD_SBYTE_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loopXORchar] \n jc %l[not_equalXORchar]" : : : "memory" : loopXORchar, not_equalXORchar );
-    while (ct < ctEnd) {
-        __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (ct += charsPerMM128));
+    while ((ct += charsPerMM128) < ctEnd) {
+        __m128i ct16chars = _mm_lddqu_si128((const __m128i *) ct);
         mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
         __m128i cs16chars = _mm_lddqu_si128((const __m128i *) (ct + diff));
         mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
@@ -157,11 +165,11 @@ int _mm_strcmp_xor(
     if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1)) == 0xFFFF) {
         if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2)) == 0xFFFF) {
 #ifndef NDEBUG
-            if (static_cast<size_t>((ct + diff + charsPerMM128) - csOrg) != NUM) {
-                std::cerr << "\tpos1=" << ((ct + diff + charsPerMM128) - csOrg) << " != " << NUM << std::endl;
+            if (static_cast<size_t>((ct + diff) - csOrg) != NUM) {
+                std::cerr << '[' << __FILE__ << '@' << __LINE__ << "] pos1=" << ((ct + diff) - csOrg) << " != " << NUM << std::endl;
             }
-            if (static_cast<size_t>((ct + charsPerMM128) - ctOrg) != NUM) {
-                std::cerr << "\tpos2=" << ((ct + charsPerMM128) - ctOrg) << " != " << NUM << std::endl;
+            if (static_cast<size_t>(ct - ctOrg) != NUM) {
+                std::cerr << '[' << __FILE__ << '@' << __LINE__ << "] pos2=" << (ct - ctOrg) << " != " << NUM << std::endl;
             }
 #endif
             return 0;
@@ -174,18 +182,18 @@ int _mm_strcmp_xor(
 
     not_equalXORchar:
     //
-    do {
-        __m128i ct16chars = _mm_lddqu_si128((const __m128i *) (ct += charsPerMM128));
+    while ((ct += charsPerMM128) <= (ctEnd - charsPerMM128)) {
+        __m128i ct16chars = _mm_lddqu_si128((const __m128i *) ct);
         mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
         __m128i cs16chars = _mm_lddqu_si128((const __m128i *) (ct + diff));
         mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
-    } while (ct < ctEnd);
-#ifndef NDEBUG
-    if (static_cast<size_t>((ct + diff + charsPerMM128) - csOrg) != NUM) {
-        std::cerr << "\tpos1=" << ((ct + diff + charsPerMM128) - csOrg) << " != " << NUM << std::endl;
     }
-    if (static_cast<size_t>((ct + charsPerMM128) - ctOrg) != NUM) {
-        std::cerr << "\tpos2=" << ((ct + charsPerMM128) - ctOrg) << " != " << NUM << std::endl;
+#ifndef NDEBUG
+    if (static_cast<size_t>((ct + diff) - csOrg) != NUM) {
+        std::cerr << '[' << __FILE__ << '@' << __LINE__ << "] pos1=" << ((ct + diff) - csOrg) << " != " << NUM << std::endl;
+    }
+    if (static_cast<size_t>(ct - ctOrg) != NUM) {
+        std::cerr << '[' << __FILE__ << '@' << __LINE__ << "] pos2=" << (ct - ctOrg) << " != " << NUM << std::endl;
     }
 #endif
     if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1))) {
@@ -227,14 +235,20 @@ int _mm_strcmp_xor(
     mmXOR2 = _mm_xor_si128(mmXOR2, cs8shorts);
     int offset = _mm_cmpistri(ct8shorts, cs8shorts, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loopXORchar] \n jc %l[not_equalXORchar]" : : : "memory" : loopXORchar, not_equalXORchar );
+    while ((ct += shortsPerMM128) < ctEnd) {
+        __m128i ct16chars = _mm_lddqu_si128((const __m128i *) ct);
+        mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
+        __m128i cs16chars = _mm_lddqu_si128((const __m128i *) (ct + diff));
+        mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
+    }
     if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1)) == 0xFFFF) {
         if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR2, old_xor2)) == 0xFFFF) {
 #ifndef NDEBUG
-            if (static_cast<size_t>((ct + diff + shortsPerMM128) - csOrg) != NUM) {
-                std::cerr << "\tpos1=" << ((ct + diff + shortsPerMM128) - csOrg) << " != " << NUM << std::endl;
+            if (static_cast<size_t>((ct + diff) - csOrg) != NUM) {
+                std::cerr << '[' << __FILE__ << '@' << __LINE__ << "] pos1=" << ((ct + diff) - csOrg) << " != " << NUM << std::endl;
             }
-            if (static_cast<size_t>((ct + shortsPerMM128) - ctOrg) != NUM) {
-                std::cerr << "\tpos2=" << ((ct + shortsPerMM128) - ctOrg) << " != " << NUM << std::endl;
+            if (static_cast<size_t>(ct - ctOrg) != NUM) {
+                std::cerr << '[' << __FILE__ << '@' << __LINE__ << "] pos2=" << (ct - ctOrg) << " != " << NUM << std::endl;
             }
 #endif
             return 0;
@@ -247,18 +261,18 @@ int _mm_strcmp_xor(
 
     not_equalXORchar:
     //
-    do {
-        __m128i ct8shorts = _mm_lddqu_si128((const __m128i *) (ct += charsPerMM128));
-        mmXOR1 = _mm_xor_si128(mmXOR1, ct8shorts);
-        __m128i cs8shorts = _mm_lddqu_si128((const __m128i *) (ct + diff));
-        mmXOR2 = _mm_xor_si128(mmXOR2, cs8shorts);
-    } while (ct < ctEnd);
-#ifndef NDEBUG
-    if (static_cast<size_t>((ct + diff + charsPerMM128) - csOrg) != NUM) {
-        std::cerr << "\tpos1=" << ((ct + diff + charsPerMM128) - csOrg) << " != " << NUM << std::endl;
+    while ((ct += shortsPerMM128) < ctEnd) {
+        __m128i ct16chars = _mm_lddqu_si128((const __m128i *) ct);
+        mmXOR1 = _mm_xor_si128(mmXOR1, ct16chars);
+        __m128i cs16chars = _mm_lddqu_si128((const __m128i *) (ct + diff));
+        mmXOR2 = _mm_xor_si128(mmXOR2, cs16chars);
     }
-    if (static_cast<size_t>((ct + charsPerMM128) - ctOrg) != NUM) {
-        std::cerr << "\tpos2=" << ((ct + charsPerMM128) - ctOrg) << " != " << NUM << std::endl;
+#ifndef NDEBUG
+    if (static_cast<size_t>((ct + diff) - csOrg) != NUM) {
+        std::cerr << '[' << __FILE__ << '@' << __LINE__ << "] pos1=" << ((ct + diff) - csOrg) << " != " << NUM << std::endl;
+    }
+    if (static_cast<size_t>(ct - ctOrg) != NUM) {
+        std::cerr << '[' << __FILE__ << '@' << __LINE__ << "] pos2=" << (ct - ctOrg) << " != " << NUM << std::endl;
     }
 #endif
     if (_mm_movemask_epi8(_mm_cmpeq_epi8(mmXOR1, old_xor1))) {

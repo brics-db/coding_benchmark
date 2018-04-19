@@ -88,15 +88,18 @@ void test_buffer(
 int main(
         int argc,
         char** argv) {
-    const constexpr size_t NUM = 1000;
+    const constexpr size_t NUM = 10000;
     const constexpr size_t NUM_BYTES_CHAR = NUM * sizeof(unsigned char);
     const constexpr size_t NUM_BYTES_SHORT = NUM * sizeof(unsigned short);
     const constexpr size_t NUM_BYTES_INT = NUM * sizeof(unsigned int);
     const constexpr size_t NUM_ITERATIONS = 1000;
+    const constexpr ssize_t LENGTH_PART_MAX = 100;
+    const constexpr ssize_t LENGTH_PART_START = LENGTH_PART_MAX;
+    const constexpr ssize_t LENGTH_PART_DECREASE = 1;
 
     Stopwatch sw;
     int __attribute__((unused)) res;
-    int64_t time[9][100];
+    int64_t time[9][LENGTH_PART_MAX + 1];
 
     char* ptr_end;
     unsigned short A = 233;
@@ -132,11 +135,16 @@ int main(
         test_buffer(us1, "buf_short_1", NUM);
         test_buffer(us2, "buf_short_2", NUM);
 
-        for (size_t i = 100; i; --i) {
-            auto p1 = &uc1[(NUM * i) / 100];
-            *p1 = !*p1; // just change that limb to force one string being different at this location
-            auto p2 = &us1[(NUM * i) / 100];
-            *p2 = static_cast<unsigned short>(*p1) * A; // just change that limb to force one string being different at this location
+        for (ssize_t i = LENGTH_PART_START; i > 0; i -= LENGTH_PART_DECREASE) {
+//#ifndef NDEBUG
+            std::cerr << "iteration " << (LENGTH_PART_START + 1 - i) << '\n';
+//#endif
+            if (i < LENGTH_PART_START) {
+                auto p1 = &uc1[(NUM * i) / LENGTH_PART_MAX];
+                *p1 = ~*p1; // just change that limb to force one string being different at this location
+                auto p2 = &us1[(NUM * i) / LENGTH_PART_MAX];
+                *p2 = static_cast<unsigned short>(*p1 & 0xFF) * A; // just change that limb to force one string being different at this location
+            }
 
             char old_xor_char1 = strxor(uc1);
             char old_xor_char2 = strxor(uc2);
@@ -198,8 +206,8 @@ int main(
             time[8][i] = sw.Current() / NUM_ITERATIONS;
         }
 
-        std::cout << "ratio,std::strcmp\tnaive\tnaive XOR\tnaive XOR\tKankovski\tK. XOR\tnaive AN\tnaive AN accu\tK. AN\tK. AN accu\n";
-        for (size_t k = 0; k < 100; ++k) {
+        std::cout << "ratio\tstd::strcmp\tnaive\tnaive XOR\tKankovski\tK. XOR\tnaive AN\tnaive AN accu\tK. AN\tK. AN accu\n";
+        for (size_t k = LENGTH_PART_START; k; --k) {
             std::cout << k;
             for (size_t i = 0; i < 9; ++i) {
                 std::cout << '\t' << time[i][k];
@@ -245,11 +253,16 @@ int main(
         test_buffer(ui1, "buf_int_1", NUM);
         test_buffer(ui2, "buf_int_2", NUM);
 
-        for (size_t i = 100; i > 0; --i) {
-            auto p1 = &us1[(NUM * i) / 100];
-            *p1 = !*p1; // just change that limb to force one string being different at this location
-            auto p2 = &ui1[(NUM * i) / 100];
-            *p2 = static_cast<unsigned int>(*p1) * static_cast<unsigned int>(A); // just change that limb to force one string being different at this location
+        for (ssize_t i = LENGTH_PART_START; i > 0; i -= LENGTH_PART_DECREASE) {
+#ifndef NDEBUG
+            std::cerr << "iteration " << (LENGTH_PART_START + 1 - i) << '\n';
+#endif
+            if (i < LENGTH_PART_MAX) {
+                auto p1 = &us1[(NUM * i) / LENGTH_PART_MAX];
+                *p1 = ~*p1; // just change that limb to force one string being different at this location
+                auto p2 = &ui1[(NUM * i) / LENGTH_PART_MAX];
+                *p2 = static_cast<unsigned int>(*p1 & 0xFFFF) * static_cast<unsigned int>(A); // just change that limb to force one string being different at this location
+            }
 
             unsigned short old_xor_short1 = strxor(us1);
             unsigned short old_xor_short2 = strxor(us2);
@@ -311,8 +324,8 @@ int main(
             time[8][i] = sw.Current() / NUM_ITERATIONS;
         }
 
-        std::cout << "ratio,std::strcmp\tnaive\tnaive XOR\tnaive XOR\tKankovski\tK. XOR\tnaive AN\tnaive AN accu\tK. AN\tK. AN accu\n";
-        for (size_t k = 0; k < 100; ++k) {
+        std::cout << "ratio\tstd::strcmp\tnaive\tnaive XOR\tKankovski\tK. XOR\tnaive AN\tnaive AN accu\tK. AN\tK. AN accu\n";
+        for (size_t k = LENGTH_PART_START; k; --k) {
             std::cout << k;
             for (size_t i = 0; i < 9; ++i) {
                 std::cout << '\t' << time[i][k];

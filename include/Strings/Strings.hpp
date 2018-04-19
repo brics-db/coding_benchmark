@@ -59,14 +59,6 @@ int strcmp2(
         ++ps1;
         ++ps2;
     }
-#ifndef NDEBUG
-    if (static_cast<size_t>(ps1 - s1) != (NUM - 1)) { // the loop does LATE increment
-        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
-    }
-    if (static_cast<size_t>(ps2 - s2) != (NUM - 1)) { // the loop does LATE increment
-        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
-    }
-#endif
     return (*s1 - *s2);
 }
 

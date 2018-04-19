@@ -31,10 +31,12 @@ INCLUDE_DIRECTORIES("${PROJECT_INCLUDE_DIR}")
 ADD_DEFINITIONS(-Wall)
 ADD_DEFINITIONS(-pedantic)
 ADD_DEFINITIONS(-march=native)
+#ADD_DEFINITIONS(-msse4.2)
 #ADD_DEFINITIONS(-mavx2)
 #ADD_DEFINITIONS(-march=knl)
 ADD_DEFINITIONS(-Weffc++)
 ADD_DEFINITIONS(-Wno-ignored-attributes)
+ADD_DEFINITIONS(-g3)
 
 MACRO( add_static_lib arg_name arg_source_files arg_dep_libs )
     SET(LIBNAME "${arg_name}")
@@ -95,7 +97,7 @@ src/Hamming/Hamming_compute_avx2_1_16.cpp src/Hamming/Hamming_compute_avx2_1_32.
 src/Hamming/Hamming_scalar.cpp src/Hamming/Hamming_scalar_16.cpp src/Hamming/Hamming_scalar_32.cpp \
 src/Hamming/Hamming_sse42.cpp src/Hamming/Hamming_sse42_16.cpp src/Hamming/Hamming_sse42_32.cpp \
 src/Hamming/Hamming_avx2.cpp src/Hamming/Hamming_avx2_16.cpp src/Hamming/Hamming_avx2_32.cpp \
-src/Hamming/Hamming_avx512.cpp src/Hamming/Hamming_avx512_16.cpp src/Hamming/Hamming_avx512_16.cpp \
+src/Hamming/Hamming_avx512.cpp src/Hamming/Hamming_avx512_16.cpp src/Hamming/Hamming_avx512_32.cpp \
 src/XOR/XOR_base.cpp \
 src/XOR/XOR_scalar_16_16.cpp src/XOR/XOR_scalar_16_8.cpp src/XOR/XOR_scalar_32_32.cpp src/XOR/XOR_scalar_32_8.cpp \
 src/XOR/XOR_simd.cpp src/XOR/XOR_sse42_4x32_32.cpp src/XOR/XOR_sse42_4x32_4x32.cpp src/XOR/XOR_sse42_8x16_16.cpp src/XOR/XOR_sse42_8x16_8x16.cpp \

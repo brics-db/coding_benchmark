@@ -36,12 +36,12 @@ int strcmp2_AN(
         int s1dec = static_cast<unsigned short>(*ps1 * Ainv);
         int s2dec = static_cast<unsigned short>(*ps2 * Ainv);
         if (s1dec > std::numeric_limits<unsigned char>::max()) {
-            std::cerr << "@" << (ps1 - s1) << ": s1dec=" << s1dec << '\n';
-            throw std::runtime_error("first string is corrupt");
+            std::cerr << "[" __FILE__ "@" << __LINE__ << "] @" << (ps1 - s1) << ": s1dec=" << s1dec << '\n';
+            throw std::runtime_error("[" __FILE__ "@40] first string is corrupt");
         }
         if (s2dec > std::numeric_limits<unsigned char>::max()) {
-            std::cerr << "@" << (ps2 - s2) << ": s2dec=" << s2dec << '\n';
-            throw std::runtime_error("second string is corrupt");
+            std::cerr << "[" __FILE__ "@" << __LINE__ << "] @" << (ps2 - s2) << ": s2dec=" << s2dec << '\n';
+            throw std::runtime_error("[" __FILE__ "@44] second string is corrupt");
         }
         int res = ((s1dec == 0) || (s1dec != s2dec));
         if (__builtin_expect((res), 0)) {
@@ -50,14 +50,6 @@ int strcmp2_AN(
         ++ps1;
         ++ps2;
     }
-#ifndef NDEBUG
-    if (static_cast<size_t>(ps1 - s1) != (NUM - 1)) { // the loop does LATE increment
-        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
-    }
-    if (static_cast<size_t>(ps2 - s2) != (NUM - 1)) { // the loop does LATE increment
-        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
-    }
-#endif
     return (*ps1 - *ps2);
 }
 
@@ -75,14 +67,14 @@ int strcmp2_AN_accu(
     while (1) {
 #ifndef NDEBUG
         if ((accu1 + *ps1) < accu1) {
-            std::cerr << "overflow: accu1=" << std::hex << std::showbase << accu1 << " *ps1=" << *ps1 << std::dec << std::noshowbase << std::endl;
+            std::cerr << "[" __FILE__ "@" << __LINE__ << "] overflow: accu1=" << std::hex << std::showbase << accu1 << " *ps1=" << *ps1 << std::dec << std::noshowbase << std::endl;
         }
 #endif
         accu1 += *ps1;
         unsigned short s1dec = static_cast<unsigned short>(*ps1 * Ainv);
 #ifndef NDEBUG
         if ((accu2 + *ps2) < accu2) {
-            std::cerr << "overflow: accu2=" << std::hex << std::showbase << accu1 << " *ps2=" << *ps1 << std::dec << std::noshowbase << std::endl;
+            std::cerr << "[" __FILE__ "@" << __LINE__ << "] overflow: accu2=" << std::hex << std::showbase << accu1 << " *ps2=" << *ps1 << std::dec << std::noshowbase << std::endl;
         }
 #endif
         accu2 += *ps2;
@@ -98,26 +90,18 @@ int strcmp2_AN_accu(
     const constexpr size_t MAX = (1ull << 54) - 1ull;
     if ((accu1 * accuAinv) > MAX) {
 #ifndef NDEBUG
-        std::cerr << std::hex << std::showbase << "accuAinv=" << accuAinv << " A*inv=" << (size_t(A) * accuAinv) << " accu1=" << accu1 << " dec1=" << (accu1 * accuAinv) << " accu2=" << accu2
-                << " dec2=" << (accu2 * accuAinv) << std::dec << std::noshowbase << '\n';
+        std::cerr << "[" __FILE__ "@" << __LINE__ << "] " << std::hex << std::showbase << "accuAinv=" << accuAinv << " A*inv=" << (size_t(A) * accuAinv) << " accu1=" << accu1 << " dec1="
+                << (accu1 * accuAinv) << " accu2=" << accu2 << " dec2=" << (accu2 * accuAinv) << std::dec << std::noshowbase << '\n';
 #endif
-        throw std::runtime_error("first string is corrupt");
+        throw std::runtime_error("[" __FILE__ "@104] first string is corrupt");
     }
     if ((accu2 * accuAinv) > MAX) {
 #ifndef NDEBUG
-        std::cerr << std::hex << std::showbase << "accuAinv=" << accuAinv << " A*inv=" << (size_t(A) * accuAinv) << " accu1=" << accu1 << " dec1=" << (accu1 * accuAinv) << " accu2=" << accu2
-                << " dec2=" << (accu2 * accuAinv) << std::dec << std::noshowbase << '\n';
+        std::cerr << "[" __FILE__ "@" << __LINE__ << "] " << std::hex << std::showbase << "accuAinv=" << accuAinv << " A*inv=" << (size_t(A) * accuAinv) << " accu1=" << accu1 << " dec1="
+                << (accu1 * accuAinv) << " accu2=" << accu2 << " dec2=" << (accu2 * accuAinv) << std::dec << std::noshowbase << '\n';
 #endif
-        throw std::runtime_error("second string is corrupt");
+        throw std::runtime_error("[" __FILE__ "@111] second string is corrupt");
     }
-#ifndef NDEBUG
-    if (static_cast<size_t>(ps1 - s1) != (NUM - 1)) { // the loop does LATE increment
-        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
-    }
-    if (static_cast<size_t>(ps2 - s2) != (NUM - 1)) { // the loop does LATE increment
-        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
-    }
-#endif
     return (*ps1 - *ps2);
 }
 
@@ -133,12 +117,12 @@ int strcmp2_AN(
         auto s1dec = static_cast<unsigned int>(*ps1 * Ainv);
         auto s2dec = static_cast<unsigned int>(*ps2 * Ainv);
         if (s1dec > std::numeric_limits<unsigned short>::max()) {
-            std::cerr << "@" << (ps1 - s1) << ": s1dec=" << s1dec << '\n';
-            throw std::runtime_error("first string is corrupt");
+            std::cerr << "[" __FILE__ "@" << __LINE__ << "] @" << (ps1 - s1) << ": s1dec=" << s1dec << '\n';
+            throw std::runtime_error("[" __FILE__ "@137] first string is corrupt");
         }
         if (s2dec > std::numeric_limits<unsigned short>::max()) {
-            std::cerr << "@" << (ps2 - s2) << ": s2dec=" << s2dec << '\n';
-            throw std::runtime_error("second string is corrupt");
+            std::cerr << "[" __FILE__ "@" << __LINE__ << "] @" << (ps2 - s2) << ": s2dec=" << s2dec << '\n';
+            throw std::runtime_error("[" __FILE__ "@141] second string is corrupt");
         }
         int res = ((s1dec == 0) || (s1dec != s2dec));
         if (__builtin_expect((res), 0)) {
@@ -147,14 +131,6 @@ int strcmp2_AN(
         ++ps1;
         ++ps2;
     }
-#ifndef NDEBUG
-    if (static_cast<size_t>(ps1 - s1) != (NUM - 1)) { // the loop does LATE increment
-        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
-    }
-    if (static_cast<size_t>(ps2 - s2) != (NUM - 1)) { // the loop does LATE increment
-        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
-    }
-#endif
     return (*ps1 - *ps2);
 }
 
@@ -174,14 +150,14 @@ int strcmp2_AN_accu(
         auto s1dec = static_cast<unsigned int>(*ps1 * Ainv);
 #ifndef NDEBUG
         if ((accu2 + *ps2) < accu2) {
-            std::cerr << "overflow: accu2=" << std::hex << std::showbase << accu1 << " *ps2=" << *ps1 << std::dec << std::noshowbase << std::endl;
+            std::cerr << "[" __FILE__ "@" << __LINE__ << "] overflow: accu2=" << std::hex << std::showbase << accu1 << " *ps2=" << *ps1 << std::dec << std::noshowbase << std::endl;
         }
 #endif
         accu2 += *ps2;
         auto s2dec = static_cast<unsigned int>(*ps2 * Ainv);
 #ifndef NDEBUG
         if ((accu2 + *ps2) < accu2) {
-            std::cerr << "overflow: accu2=" << std::hex << std::showbase << accu1 << " *ps2=" << *ps1 << std::dec << std::noshowbase << std::endl;
+            std::cerr << "[" __FILE__ "@" << __LINE__ << "] overflow: accu2=" << std::hex << std::showbase << accu1 << " *ps2=" << *ps1 << std::dec << std::noshowbase << std::endl;
         }
 #endif
         int res = ((s1dec == 0) || (s1dec != s2dec));
@@ -194,21 +170,13 @@ int strcmp2_AN_accu(
     // we assume at most a 10-bit A for the string characters here, so we can at most accumulate up to 2^54.
     const constexpr size_t MAX = (1ull << 54) - 1ull;
     if ((accu1 * accuAinv) > MAX) {
-        std::cerr << std::hex << "accuAinv=0x" << accuAinv << " accu1=0x" << accu1 << " accu2=0x" << accu2 << std::dec << '\n';
-        throw std::runtime_error("first string is corrupt");
+        std::cerr << "[" __FILE__ "@" << __LINE__ << "] " << std::hex << "accuAinv=0x" << accuAinv << " accu1=0x" << accu1 << " accu2=0x" << accu2 << std::dec << '\n';
+        throw std::runtime_error("[" __FILE__ "@198] first string is corrupt");
     }
     if ((accu2 * accuAinv) > MAX) {
-        std::cerr << std::hex << "accuAinv=0x" << accuAinv << " accu1=0x" << accu1 << " accu2=0x" << accu2 << std::dec << '\n';
-        throw std::runtime_error("second string is corrupt");
+        std::cerr << "[" __FILE__ "@" << __LINE__ << "] " << std::hex << "accuAinv=0x" << accuAinv << " accu1=0x" << accu1 << " accu2=0x" << accu2 << std::dec << '\n';
+        throw std::runtime_error("[" __FILE__ "@202] second string is corrupt");
     }
-#ifndef NDEBUG
-    if (static_cast<size_t>(ps1 - s1) != (NUM - 1)) { // the loop does LATE increment
-        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
-    }
-    if (static_cast<size_t>(ps2 - s2) != (NUM - 1)) { // the loop does LATE increment
-        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
-    }
-#endif
     return (*ps1 - *ps2);
 }
 
@@ -217,10 +185,12 @@ __m128i add_test_overflow(
         __m128i b) {
     auto res = _mm_add_epi64(a, b);
     if (_mm_extract_epi64(res, 0) < _mm_extract_epi64(a, 0)) {
-        std::cerr << std::showbase << std::hex << "#\t0: " << _mm_extract_epi64(a, 0) << '+' << _mm_extract_epi64(b, 0) << '=' << _mm_extract_epi64(res, 0) << '\n' << std::noshowbase << std::dec;
+        std::cerr << "[" __FILE__ "@" << __LINE__ << "] " << std::showbase << std::hex << "#\t0: " << _mm_extract_epi64(a, 0) << '+' << _mm_extract_epi64(b, 0) << '=' << _mm_extract_epi64(res, 0)
+                << '\n' << std::noshowbase << std::dec;
     }
     if (_mm_extract_epi64(res, 1) < _mm_extract_epi64(a, 1)) {
-        std::cerr << std::showbase << std::hex << "#\t1: " << _mm_extract_epi64(a, 1) << '+' << _mm_extract_epi64(b, 1) << '=' << _mm_extract_epi64(res, 1) << '\n' << std::noshowbase << std::dec;
+        std::cerr << "[" __FILE__ "@" << __LINE__ << "] " << std::showbase << std::hex << "#\t1: " << _mm_extract_epi64(a, 1) << '+' << _mm_extract_epi64(b, 1) << '=' << _mm_extract_epi64(res, 1)
+                << '\n' << std::noshowbase << std::dec;
     }
     return res;
 }
@@ -233,9 +203,6 @@ int _mm_strcmp_AN(
     const unsigned short Ainv = static_cast<unsigned short>(ext_euclidean(uint32_t(A), 16));
     __m128i mmAinv = _mm_set1_epi16(Ainv);
     __m128i mmMax = _mm_set1_epi16(std::numeric_limits<unsigned char>::max());
-#ifndef NDEBUG
-    const unsigned short* const s2Org = s2;
-#endif
     const long diff = s1 - s2;
     s2 -= shortsPerMM128;
 
@@ -246,19 +213,14 @@ int _mm_strcmp_AN(
     // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
     __m128i ct16chars1 = _mm_lddqu_si128((const __m128i *) (s2 += shortsPerMM128));
     if (_mm_movemask_epi8(_mm_cmpgt_epi16(_mm_mullo_epi16(ct16chars1, mmAinv), mmMax))) {
-        throw std::runtime_error("first string is corrupt");
+        throw std::runtime_error("[" __FILE__ "@251] first string is corrupt");
     }
     __m128i cs16chars1 = _mm_lddqu_si128((const __m128i *) (s2 + diff));
     if (_mm_movemask_epi8(_mm_cmpgt_epi16(_mm_mullo_epi16(cs16chars1, mmAinv), mmMax))) {
-        throw std::runtime_error("first string is corrupt");
+        throw std::runtime_error("[" __FILE__ "@255] first string is corrupt");
     }
     int offset = _mm_cmpistri(ct16chars1, cs16chars1, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loopAN] \n jc %l[not_equalAN]" : : : "memory" : loopAN, not_equalAN );
-#ifndef NDEBUG
-    if (static_cast<size_t>((s2 + shortsPerMM128) - s2Org) != NUM) {
-        std::cerr << "\tpos=" << ((s2 + shortsPerMM128) - s2Org) << " != " << NUM << std::endl;
-    }
-#endif
     return 0;
 
     not_equalAN: return s2[diff + offset] - s2[offset];
@@ -279,9 +241,6 @@ int _mm_strcmp_AN_accu(
     __m128i mmAccu22 = _mm_set1_epi64x(0);
     __m128i mmAccu23 = _mm_set1_epi64x(0);
     __m128i mmAccu24 = _mm_set1_epi64x(0);
-#ifndef NDEBUG
-    const unsigned short* const s2Org = s2;
-#endif
     const long diff = s1 - s2;
     s2 -= shortsPerMM128;
 
@@ -306,28 +265,23 @@ int _mm_strcmp_AN_accu(
     {
         auto mmAccu = _mm_add_epi64(mmAccu11, _mm_add_epi64(mmAccu12, _mm_add_epi64(mmAccu13, mmAccu14)));
         if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
-            throw std::runtime_error("first string is corrupt");
+            throw std::runtime_error("[" __FILE__ "@311] first string is corrupt");
         }
         mmAccu = _mm_add_epi64(mmAccu21, _mm_add_epi64(mmAccu22, _mm_add_epi64(mmAccu23, mmAccu24)));
         if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
-            throw std::runtime_error("second string is corrupt");
+            throw std::runtime_error("[" __FILE__ "@315] second string is corrupt");
         }
-#ifndef NDEBUG
-        if (static_cast<size_t>((s2 + shortsPerMM128) - s2Org) != NUM) {
-            std::cerr << "\tpos=" << ((s2 + shortsPerMM128) - s2Org) << " != " << NUM << std::endl;
-        }
-#endif
         return 0;
     }
 
     not_equalANaccu: {
         auto mmAccu = _mm_add_epi64(mmAccu11, _mm_add_epi64(mmAccu12, _mm_add_epi64(mmAccu13, mmAccu14)));
         if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
-            throw std::runtime_error("first string is corrupt");
+            throw std::runtime_error("[" __FILE__ "@328] first string is corrupt");
         }
         mmAccu = _mm_add_epi64(mmAccu21, _mm_add_epi64(mmAccu22, _mm_add_epi64(mmAccu23, mmAccu24)));
         if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
-            throw std::runtime_error("second string is corrupt");
+            throw std::runtime_error("[" __FILE__ "@332] second string is corrupt");
         }
         const unsigned short Ainv = static_cast<unsigned short>(ext_euclidean(uint32_t(A), 16));
         return (Ainv * s2[diff + offset]) - (Ainv * s2[offset]);
@@ -342,9 +296,6 @@ int _mm_strcmp_AN(
     const unsigned int Ainv = static_cast<unsigned int>(ext_euclidean(uint64_t(A), 32));
     __m128i mmAinv = _mm_set1_epi32(Ainv);
     __m128i mmMax = _mm_set1_epi32(std::numeric_limits<unsigned short>::max());
-#ifndef NDEBUG
-    const unsigned int* const i2Org = i2;
-#endif
     const long diff = i1 - i2;
     i2 -= intsPerMM128;
 
@@ -355,19 +306,14 @@ int _mm_strcmp_AN(
     // could align it ASMVOLATILE( ".align 16\n" : : : "memory" );
     __m128i ct4ints = _mm_lddqu_si128((const __m128i *) (i2 += intsPerMM128));
     if (_mm_movemask_epi8(_mm_cmpgt_epi32(_mm_mullo_epi32(ct4ints, mmAinv), mmMax))) {
-        throw std::runtime_error("first string is corrupt");
+        throw std::runtime_error("[" __FILE__ "@360] first string is corrupt");
     }
     __m128i cs4ints = _mm_lddqu_si128((const __m128i *) (i2 + diff));
     if (_mm_movemask_epi8(_mm_cmpgt_epi32(_mm_mullo_epi32(cs4ints, mmAinv), mmMax))) {
-        throw std::runtime_error("second string is corrupt");
+        throw std::runtime_error("[" __FILE__ "@364] second string is corrupt");
     }
     int offset = _mm_cmpistri(ct4ints, cs4ints, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_EACH | _SIDD_NEGATIVE_POLARITY);
     __asm__ __volatile__ goto( "ja %l[loopAN] \n jc %l[not_equalAN]" : : : "memory" : loopAN, not_equalAN );
-#ifndef NDEBUG
-    if (static_cast<size_t>((i2 + intsPerMM128) - i2Org) != NUM) {
-        std::cerr << "\tpos=" << ((i2 + intsPerMM128) - i2Org) << " != " << NUM << std::endl;
-    }
-#endif
     return 0;
 
     not_equalAN: return i2[diff + offset] - i2[offset];
@@ -384,9 +330,6 @@ int _mm_strcmp_AN_accu(
     __m128i mmAccu12 = _mm_set1_epi64x(0);
     __m128i mmAccu21 = _mm_set1_epi64x(0);
     __m128i mmAccu22 = _mm_set1_epi64x(0);
-#ifndef NDEBUG
-    const unsigned int* const i2Org = i2;
-#endif
     const long diff = i1 - i2;
     i2 -= intsPerMM128;
 
@@ -407,24 +350,19 @@ int _mm_strcmp_AN_accu(
     {
         auto mmAccu = _mm_add_epi64(mmAccu11, mmAccu12);
         if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
-            throw std::runtime_error("first string is corrupt");
+            throw std::runtime_error("[" __FILE__ "@412] first string is corrupt");
         }
         mmAccu = _mm_add_epi64(mmAccu21, mmAccu22);
         if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
-            throw std::runtime_error("second string is corrupt");
+            throw std::runtime_error("[" __FILE__ "@416] second string is corrupt");
         }
-#ifndef NDEBUG
-        if (static_cast<size_t>((i2 + intsPerMM128) - i2Org) != NUM) {
-            std::cerr << "\tpos=" << ((i2 + intsPerMM128) - i2Org) << " != " << NUM << std::endl;
-        }
-#endif
         return 0;
     }
 
     not_equalANaccu: {
         auto mmAccu = _mm_add_epi64(mmAccu11, mmAccu12);
         if (((_mm_extract_epi64(mmAccu, 0) * accuAinv) > maxAccu) || ((_mm_extract_epi64(mmAccu, 1) * accuAinv) > maxAccu)) {
-            throw std::runtime_error("first string is corrupt");
+            throw std::runtime_error("[" __FILE__ "] first string is corrupt");
         }
         const unsigned short Ainv = static_cast<unsigned short>(ext_euclidean(uint32_t(A), 16));
         return (Ainv * i2[diff + offset]) - (Ainv * i2[offset]);

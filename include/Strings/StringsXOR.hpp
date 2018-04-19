@@ -116,28 +116,20 @@ int strcmp2_xor(
         ++ps1;
         ++ps2;
     }
-    const T * const s1end = s1 + NUM;
-    while (ps1 < s1end) {
-        new_xor1 ^= *ps1++;
+    auto ps1_tmp = ps1 + (*ps1 != 0);
+    while (*ps1_tmp) {
+        new_xor1 ^= *ps1_tmp++;
     }
-    const T * const s2end = s2 + NUM;
-    while (ps2 < s2end) {
-        new_xor2 ^= *ps2++;
+    auto ps2_tmp = ps2 + (*ps2 != 0);
+    while (*ps2_tmp) {
+        new_xor2 ^= *ps2_tmp++;
     }
     if (new_xor1 != old_xor1) {
-        throw std::runtime_error("old_xor1 != new_xor1");
+        throw std::runtime_error("[" __FILE__ "@128] old_xor1 != new_xor1");
     }
     if (new_xor2 != old_xor2) {
-        throw std::runtime_error("old_xor2 != new_xor2");
+        throw std::runtime_error("[" __FILE__ "@131] old_xor2 != new_xor2");
     }
-#ifndef NDEBUG
-    if (static_cast<size_t>(ps1 - s1) != NUM) {
-        std::cerr << "\tpos1=" << (ps1 - s1) << " != " << NUM << std::endl;
-    }
-    if (static_cast<size_t>(ps2 - s2) != NUM) {
-        std::cerr << "\tpos2=" << (ps2 - s2) << " != " << NUM << std::endl;
-    }
-#endif
     return (*ps1 - *ps2);
 }
 
