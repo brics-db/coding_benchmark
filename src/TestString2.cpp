@@ -95,7 +95,7 @@ int main(
     ssize_t LENGTH_PART_DECREASE = 1;
 
     Stopwatch sw;
-    int __attribute__((unused)) res;
+    volatile int __attribute__((unused)) res;
     int64_t time[9][LENGTH_PART_MAX + 1];
 
     char* ptr_end;
@@ -112,11 +112,14 @@ int main(
     if (argc > 3) {
         LENGTH_PART_START = strtol(argv[3], &ptr_end, 10);
     }
+    if (argc > 4) {
+        LENGTH_PART_DECREASE = strtol(argv[4], &ptr_end, 10);
+    }
 
     unsigned short A = 233;
     // force the compiler to NOT assume A a constant
-    if (argc > 4) {
-        A = strtol(argv[4], &ptr_end, 10);
+    if (argc > 5) {
+        A = strtol(argv[5], &ptr_end, 10);
     }
 
     {
@@ -157,8 +160,8 @@ int main(
                 *p2 = static_cast<unsigned short>(*p1 & 0xFF) * A; // just change that limb to force one string being different at this location
             }
 
-            char old_xor_char1 = strxor(uc1);
-            char old_xor_char2 = strxor(uc2);
+            const char old_xor_char1 = strxor(uc1);
+            const char old_xor_char2 = strxor(uc2);
             __m128i old_xor_mm1 = _mm_strxor<unsigned char>(reinterpret_cast<const __m128i *>(uc1), NUM);
             __m128i old_xor_mm2 = _mm_strxor<unsigned char>(reinterpret_cast<const __m128i *>(uc2), NUM);
 
@@ -218,10 +221,10 @@ int main(
         }
 
         std::cout << "ratio\tstd::strcmp\tnaive\tnaive XOR\tKankovski\tK. XOR\tnaive AN\tnaive AN accu\tK. AN\tK. AN accu\n";
-        for (size_t k = LENGTH_PART_START; k; --k) {
-            std::cout << k;
-            for (size_t i = 0; i < 9; ++i) {
-                std::cout << '\t' << time[i][k];
+        for (ssize_t i = LENGTH_PART_START; i > 0; i -= LENGTH_PART_DECREASE) {
+            std::cout << i;
+            for (size_t k = 0; k < 9; ++k) {
+                std::cout << '\t' << time[k][i];
             }
             std::cout << '\n';
         }
@@ -277,8 +280,8 @@ int main(
 
             unsigned short old_xor_short1 = strxor(us1);
             unsigned short old_xor_short2 = strxor(us2);
-            auto old_xor_mm1 = _mm_strxor<unsigned short>(reinterpret_cast<const __m128i *>(us1), NUM);
-            auto old_xor_mm2 = _mm_strxor<unsigned short>(reinterpret_cast<const __m128i *>(us2), NUM);
+            const auto old_xor_mm1 = _mm_strxor<unsigned short>(reinterpret_cast<const __m128i *>(us1), NUM);
+            const auto old_xor_mm2 = _mm_strxor<unsigned short>(reinterpret_cast<const __m128i *>(us2), NUM);
 
             sw.Reset();
             for (size_t k = NUM_ITERATIONS; k; --k) {
@@ -336,10 +339,10 @@ int main(
         }
 
         std::cout << "ratio\tstd::strcmp\tnaive\tnaive XOR\tKankovski\tK. XOR\tnaive AN\tnaive AN accu\tK. AN\tK. AN accu\n";
-        for (size_t k = LENGTH_PART_START; k; --k) {
-            std::cout << k;
-            for (size_t i = 0; i < 9; ++i) {
-                std::cout << '\t' << time[i][k];
+        for (ssize_t i = LENGTH_PART_START; i > 0; i -= LENGTH_PART_DECREASE) {
+            std::cout << i;
+            for (size_t k = 0; k < 9; ++k) {
+                std::cout << '\t' << time[k][i];
             }
             std::cout << '\n';
         }
