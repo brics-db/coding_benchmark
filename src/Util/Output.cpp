@@ -164,7 +164,7 @@ void printResults(
     headlineWriter(isMaxChk, "maxC");
     headlineWriter(isAvgChk, "avgC");
     headlineWriter(isReencChk, "renC");
-    headlineWriter(isDecChk, "dec");
+    headlineWriter(isDec, "dec");
     headlineWriter(isDecChk, "decC");
     std::cout << "|\n#   " << std::setfill('-');
     for (size_t i = 0; i < num; ++i) {
