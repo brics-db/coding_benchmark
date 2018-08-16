@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if not defined __SSE4_2__ or not defined __AVX2__
+#error "To reproduce the results for the SIGMOD 2018 \"AHEAD\" paper, you must use a machine which supports both SSE4.2 and AVX2 !"
+#endif
+
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -113,11 +117,7 @@ int main(
     std::cout << "# UNROLL_LO = " << UNROLL_LO << '\n';
     std::cout << "# UNROLL_HI = " << UNROLL_HI << '\n';
 
-#ifdef TEST8
-    size_t AUser = 233ull;
-#else
     size_t AUser = 64311ull;
-#endif
     int result = checkArgs(argc, argv, AUser);
     if (result != 0) {
         return result;
@@ -127,6 +127,10 @@ int main(
     std::vector<std::vector<TestInfos>> vecTestInfos;
 
     TestConfiguration testConfig(iterations, numElements);
+    // The following is for the reproducibility of the SIGMOD 2018 "AHEAD" paper, to reduce the amount of tests
+    testConfig.disableAll();
+    testConfig.enableCheck = true;
+    testConfig.enableDecode = true;
 
 #ifdef TEST8
     {
