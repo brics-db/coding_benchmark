@@ -36,7 +36,7 @@ ADD_DEFINITIONS(-march=native)
 #ADD_DEFINITIONS(-march=knl)
 ADD_DEFINITIONS(-Weffc++)
 ADD_DEFINITIONS(-Wno-ignored-attributes)
-ADD_DEFINITIONS(-g3)
+ADD_DEFINITIONS(-fPIC)
 
 MACRO( add_static_lib arg_name arg_source_files arg_dep_libs )
     SET(LIBNAME "${arg_name}")
