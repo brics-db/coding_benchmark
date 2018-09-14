@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if not defined __SSE4_2__ or not defined __AVX2__
-#error "To reproduce the results for the SIGMOD 2018 \"AHEAD\" paper, you must use a machine which supports both SSE4.2 and AVX2 !"
-#endif
-
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -80,26 +76,26 @@ int checkArgs(
         printUsage(argv);
         return 2;
     }
-#ifdef TEST8
+#if defined(TEST8)
     if (AUser1 >= (1ull << 8)) {
         std::cerr << "Error: Given A is too large! Must be at most 2^8-1\n";
         printUsage(argv);
         return 3;
     }
-#endif
-#ifdef TEST16
+#elif defined(TEST16)
     if (AUser1 >= (1ull << 16)) {
         std::cerr << "Error: Given A is too large! Must be at most 2^16-1\n";
         printUsage(argv);
         return 3;
     }
-#endif
-#ifdef TEST32
+#elif defined(TEST32)
     if (AUser1 >= (1ull << 32)) {
         std::cerr << "Error: Given A is too large! Must be at most 2^32-1\n";
         printUsage(argv);
         return 3;
     }
+#else
+#error "You must define (-D) exactly one of TEST8, TEST16, or TEST32"
 #endif
     return 0;
 }
